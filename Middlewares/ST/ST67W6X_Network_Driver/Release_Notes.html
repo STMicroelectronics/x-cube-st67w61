@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Release Notes for ST67W6X Network Driver Middleware</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="_htmresc/mini-st_2020.css" />
+  <link rel="icon" type="image/x-icon" href="_htmresc/favicon.png" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="row">
+<div class="col-sm-12 col-lg-4">
+<center>
+<h1 id="release-notes-for">Release Notes for</h1>
+<h1 id="st67w6x-network-driver-middleware"><mark>ST67W6X Network Driver Middleware</mark></h1>
+<p>Copyright © 2024 STMicroelectronics<br />
+</p>
+<a href="https://www.st.com" class="logo"><img src="_htmresc/st_logo_2020.png" alt="ST logo" /></a>
+</center>
+<h1 id="purpose">Purpose</h1>
+<p>This Middleware is controlling the <strong>X-NUCLEO-67W61M1</strong> Expansion board. It exposes an API corresponding to the Network interface on Wi-Fi or BLE protocols.</p>
+<p>The ST67W6X Network Driver is responsible for:</p>
+<ul>
+<li>Providing API to manage Wi-Fi, BLE, Sockets or System features.</li>
+<li>Transporting messages between the host and the ST67W611M over the underlying bus via AT command over SPI Interface.</li>
+</ul>
+<p>It is comprised of the following 8 folders :</p>
+<ul>
+<li><strong>Api</strong> : Exposed APIs available for the application.</li>
+<li><strong>Conf</strong> : This middleware configuration template files.</li>
+<li><strong>Core</strong> : Implementation of API and common components to different drivers and few higher layer functionality (check states, blocking calls, etc).</li>
+<li><strong>Driver/W61_at</strong> : ST67W611M AT commands implementation with parser and formatter processing.</li>
+<li><strong>Driver/W61_bus</strong> : ST67W611M communication interface over SPI bus.</li>
+<li><strong>Utils/Logging</strong> : Logging utility to manage the print traces over UART or ITM.</li>
+<li><strong>Utils/Misc</strong> : Common parser macros and functions.</li>
+<li><strong>Utils/Performance</strong> : Iperf, memory and task performance utilities.</li>
+<li><strong>Utils/Shell</strong> : Shell utility to manage the command line interface.</li>
+</ul>
+<p>The scope the Utils: - <strong>Utils/Logging</strong> : Called by the W61_at driver, the service APIs and can be also called by the application. - <strong>Utils/Misc</strong> : Called by the W61_at driver, the service APIs and can be also called by the application. - <strong>Utils/Performance</strong> : Called by the application as predefined examples code. Some are based on the service APIs. - <strong>Utils/Shell</strong> : Called by the service APIs and can be also called by the application.</p>
+<p>This Middleware and drivers require FreeRTOS.</p>
+</div>
+<section id="update-history" class="col-sm-12 col-lg-8">
+<h1>Update History</h1>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 /28-May-2025</strong></label>
+<div>
+<h2 id="main-changes">Main Changes</h2>
+<ul>
+<li><strong>First official release</strong></li>
+</ul>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong>
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>FOTA</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+</ul>
+<h2 id="known-limitations">Known limitations</h2>
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>Wi-Fi scan command is ignored immediately after a boot if auto-connect is enabled</li>
+<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
+<li>Performance Rx throughput with Soft-AP is instable</li>
+<li>Performance UDP Rx throughput is below expectation (expected 14 Mbps, actual 12 Mbps)</li>
+</ul>
+</div>
+</div>
+</section>
+</div>
+<footer class="sticky">
+<div class="columns">
+<div class="column" style="width:95%;">
+<p>For complete documentation on ST, visit: <a href="http://www.st.com">www.st.com</a></p>
+<p><em>This release note uses up to date web standards and, for this reason, should not be opened with Internet Explorer but preferably with popular browsers such as Google Chrome, Mozilla Firefox, Opera or Microsoft Edge.</em></p>
+</div><div class="column" style="width:5%;">
+<p><abbr title="Based on template cx566953 version 2.0">Info</abbr></p>
+</div>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,7 @@
+[Groups]
+Application/User/X-CUBE-MEMS1/App=../X-CUBE-MEMS1/App/sys_sensors.c;
+Doc=../readme.md;
+[ProjectFiles]
+HeaderPath=../X-CUBE-MEMS1/App;
+[Others]
+Define=;

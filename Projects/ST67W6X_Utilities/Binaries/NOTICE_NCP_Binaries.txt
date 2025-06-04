@@ -1,0 +1,1613 @@
+This file contains certain notices of software components included with the software that Qualcomm Technologies, Inc. ("QTI") and/or its subsidiaries are required to provide you. Except where prohibited by the open source license, the content of this file is provided solely to satisfy QTI's and/or its subsidiaries’ attribution and notice requirements, and your use of these software components together with the software of QTI and/or its subsidiaries ("Software") is subject to the terms of your license from QTI and/or its subsidiaries, as the case may be. Compliance with all copyright laws and software license agreements included in the notice section of this file are the responsibility of the user. Except as may be granted by separate express written agreement, this file provides no license to any patents, trademarks, copyrights, or other intellectual property of Qualcomm Incorporated or any of its subsidiaries.
+
+Software provided with this notice is NOT A CONTRIBUTION to any open source project. If alternative licensing is available for any of the components with licenses or attributions provided below, a license choice is made for receiving such code by QTI and/or its subsidiaries, as the case may be.
+
+Copyright (c) Qualcomm Technologies, Inc.  All rights reserved.
+
+Qualcomm is a trademark of Qualcomm Incorporated, registered in the United States and other countries. All Qualcomm Incorporated trademarks are used with permission. Other products and brand names may be trademarks or registered trademarks of their respective owners.
+
+This software may be subject to U.S. and international export, re-export or transfer (export) laws.  Diversion contrary to U.S. and international law is strictly prohibited.
+
+
+====================================================================================================
+====================================================================================================
+"author (c) Eyal Rozenberg <eyalroz1@gmx.com>
+2021, Haifa, Palestine/Israel
+@author (c) Marco Paland (info@paland.com)
+2014-2019, PALANDesign Hannover, Germany
+
+@note Others have made smaller contributions to this file: see the
+contributors page at https://github.com/eyalroz/printf/graphs/contributors
+or ask one of the authors.
+
+@brief Small stand-alone implementation of the printf family of functions
+(`(v)printf`, `(v)s(n)printf` etc., geared towards use on embedded systems with
+a very limited reSources.
+
+@note the implementations are thread-safe; re-entrant; use no functions from
+the standard library; and do not dynamically allocate any memory.
+
+@license The MIT License (MIT)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the ""Software""), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE."
+====================================================================================================
+"Copyright (c) 1990, 1993
+The Regents of the University of California.  All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the University of
+California, Berkeley and its contributors.
+4. Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 1994-2002 Paul Mackerras. All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+2. The name(s) of the authors of this software must not be used to
+endorse or promote products derived from this software without
+prior written permission.
+
+3. Redistributions of any form whatsoever must retain the following
+acknowledgment:
+""This product includes software developed by Paul Mackerras
+<paulus@samba.org>"".
+
+THE AUTHORS OF THIS SOFTWARE DISCLAIM ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE."
+====================================================================================================
+"Copyright (c) 1999-2002 Paul Mackerras. All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+2. The name(s) of the authors of this software must not be used to
+endorse or promote products derived from this software without
+prior written permission.
+
+3. Redistributions of any form whatsoever must retain the following
+acknowledgment:
+""This product includes software developed by Paul Mackerras
+<paulus@samba.org>"".
+
+THE AUTHORS OF THIS SOFTWARE DISCLAIM ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE."
+====================================================================================================
+"Copyright (C) 1999-2010 Daniel Vik
+
+Adaptations include:
+File name change
+Use of types defined in stdint.h
+Integration with the NuttX configuration system
+Other cosmetic changes for consistency with NuttX coding standards
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any
+damages arising from the use of this software.
+Permission is granted to anyone to use this software for any
+purpose, including commercial applications, and to alter it and
+redistribute it freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you
+must not claim that you wrote the original software. If you
+use this software in a product, an acknowledgment in the
+use this software in a product, an acknowledgment in the
+product documentation would be appreciated but is not
+required.
+
+2. Altered Source versions must be plainly marked as such, and
+must not be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any Source
+distribution."
+====================================================================================================
+"Copyright (c) 2001 by Sun Microsystems, Inc.
+All rights reserved.
+
+Non-exclusive rights to redistribute, modify, translate, and use
+this software in Source and Object forms, in whole or in part, is
+hereby granted, provided that the above copyright notice is
+duplicated in any Source form, and that neither the name of the
+copyright holder nor the author is used to endorse or promote
+products derived from this software.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE."
+====================================================================================================
+"Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+Copyright (c) 2003-2004 Leon Woestenberg <leon.woestenberg@axon.tv>
+Copyright (c) 2003-2004 Axon Digital Design B.V., The Netherlands.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2001-2004 Leon Woestenberg <leon.woestenberg@gmx.net>
+Copyright (c) 2001-2004 Axon Digital Design B.V., The Netherlands.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2001-2004 Swedish Institute of Computer Science.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2002 CITEL Technologies Ltd.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. Neither the name of CITEL Technologies Ltd nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY CITEL TECHNOLOGIES AND CONTRIBUTORS ``AS IS''
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL CITEL TECHNOLOGIES OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2002 Google, Inc.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the
+distribution.
+
+3. The name(s) of the authors of this software must not be used to
+endorse or promote products derived from this software without
+prior written permission.
+
+THE AUTHORS OF THIS SOFTWARE DISCLAIM ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE."
+====================================================================================================
+"Copyright (C) 2002 Michael Ringgaard. All rights reserved.
+Copyright (C) 2006-2007 H. Peter Anvin.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. Neither the name of the project nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2002-2003, Adam Dunkels.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote
+products derived from this software without specific prior
+written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2002-2004, Instant802 Networks, Inc.
+Copyright (c) 2005-2006, Devicescape Software, Inc.
+Copyright (c) 2008-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2009
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2009, Jouni Malinen <j@w1.fi>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of BSD license
+
+See README and COPYING for more details."
+====================================================================================================
+"Copyright (c) 2002-2009, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2009, Jouni Malinen <j@w1.fi>
+Copyright (c) 2003-2004, Instant802 Networks, Inc.
+Copyright (c) 2006, Devicescape Software, Inc.
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2009, Jouni Malinen <j@w1.fi>
+Copyright (c) 2007-2008, Intel Corporation
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2013, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2013, Jouni Malinen <j@w1.fi>
+Copyright (c) 2013-2017, Qualcomm Atheros, Inc.
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2013, Jouni Malinen <j@w1.fi>
+Copyright (c) 2015, Qualcomm Atheros, Inc.
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2015, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2017, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2018, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2019, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2002-2021, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2006, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2009, Jouni Malinen <j@w1.fi>
+Copyright (c) 2009, Atheros Communications
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2014, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2015, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2016, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2017, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2018, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2018, Jouni Malinen <j@w1.fi>
+Copyright(c) 2015 Intel Deutschland GmbH
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2019, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2003-2021, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2005, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2008, 2012-2015, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2009, 2011-2015, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2009, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2014, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2016, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2018, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2019, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2004-2020, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2005-2019, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2006, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (C) 2006-2008  Christophe Devine
+
+Copyright (C) 2009  Paul Bakker <polarssl_maintainer at polarssl dot org>
+
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+Neither the names of PolarSSL or XySSL nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2006-2009, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2006-2014, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2006-2021, RT-Thread Development Team
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2007 Dominik Spies <kontakt@dspies.de>
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2007 Dominik Spies <kontakt@dspies.de>
+Copyright (c) 2018 Jasper Verschueren <jasper.verschueren@apart-audio.com>
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (C) 2007, 2009, 2011 Gregory Nutt. All rights reserved.
+Author: Gregory Nutt <gnutt@nuttx.org>
+
+Leveraged from:
+
+Copyright (c) 1992, 1993
+The Regents of the University of California.  All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the University of
+California, Berkeley and its contributors.
+4. Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2007, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2007-2009 Fr??d??ric Bernon, Simon Goldschmidt
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2007-2009, 2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2007-2009, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2007-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2008, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2008-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2008-2014, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2008-2016, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2009, 2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2009, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2009-2010, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2009-2014, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2009-2015, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2009-2017 Dave Gamble and cJSON contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the ""Software""), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE."
+====================================================================================================
+"Copyright (c) 2009-2019, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (C) 2010 Gregory Nutt. All rights reserved.
+Author: Michael Hrabanek
+
+Derives from the file libs/libc/lib_strlen.c:
+
+Copyright (C) 2007, 2008, 2010 Gregory Nutt. All rights reserved.
+Author: Gregory Nutt <gnutt@nuttx.org>
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the
+distribution.
+3. Neither the name NuttX nor the names of its contributors may be
+used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2010 Inico Technologies Ltd.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2010, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2010-2011, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2012-2016, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2012-2016, Jouni Malinen <j@w1.fi>
+Copyright (c) 2019, The Linux Foundation
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (C) 2013 Brooks Automation, Inc. All rights reserved.
+Author: Ryan Sundberg <ryan.sundberg@brooks.com>
+
+This file is a part of NuttX:
+
+Copyright (C) 2010-2011 Gregory Nutt. All rights reserved.
+Author: Gregory Nutt <gnutt@nuttx.org>
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the
+distribution.
+3. Neither the name NuttX nor the names of its contributors may be
+used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2013, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2014 Simon Goldschmidt
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2014, Kenneth MacKay
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions are met:
+Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ""AS IS"" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2014, Kenneth MacKay
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions are met:
+Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ""AS IS""
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2014-2017, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (C) 2015 Gregory Nutt. All rights reserved.
+Author: Gregory Nutt <gnutt@nuttx.org>
+
+A direct leverage of the div() inplement by:
+
+Copyright (C) 2015 Stavros Polymenis. All rights reserved.
+Author: Stavros Polymenis <sp@orbitalfox.com>
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the
+distribution.
+3. Neither the name NuttX nor the names of its contributors may be
+used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2015 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2015-2016 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2016 Erik Andersson <erian747@gmail.com>
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2016 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2016 Intel Corporation
+Copyright (c) 2011-2014 Wind River Systems, Inc.
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2016 Intel Corporation
+Copyright (c) 2016 Wind River Systems, Inc.
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2016 Nordic Semiconductor ASA
+Copyright (c) 2016 Vinayak Kariappa Chettimada
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2016, Chris Morrison
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+Redistributions of Source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+
+Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ""AS IS""
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2016-2017, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ""AS IS""
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (C) 2017 Haltian Ltd. All rights reserved.
+Author: Jussi Kivilinna <jussi.kivilinna@haltian.com>
+
+Redistribution and use in Source and Object forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of Source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the
+distribution.
+3. Neither the name NuttX nor the names of its contributors may be
+used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2017 Nordic Semiconductor ASA
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2017 Nordic Semiconductor ASA
+Copyright (c) 2015-2016 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2017 Nordic Semiconductor ASA
+Copyright (c) 2016 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2017 Simon Goldschmidt
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2017 Simon Goldschmidt.
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2017 Wind River Systems, Inc.
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (C) 2018 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the ""Software""), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+====================================================================================================
+"Copyright (c) 2018 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2018 Nordic Semiconductor ASA
+Copyright (c) 2016 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2018 Simon Goldschmidt <goldsimon@gmx.de>
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2018 Simon Goldschmidt
+All rights reserved.
+
+Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"Copyright (c) 2019 Demant
+Copyright (c) 2018 Nordic Semiconductor ASA
+Copyright (c) 2016 Intel Corporation
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2019 John Crispin <john@phrozen.org>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (c) 2019 Oticon A/S
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (c) 2020, The Linux Foundation
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+
+SPDX-License-Identifier: MIT
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the ""Software""), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+====================================================================================================
+"Copyright (c) 2022, The littlefs authors.
+Copyright (c) 2017, Arm Limited. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause"
+====================================================================================================
+"Copyright (c) Nuttx
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Copyright (C) RivieraWaves 2017-2021
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright ?? 2005-2020 Rich Felker, et al.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+""Software""), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+====================================================================================================
+"Copyright 2002-2003, Instant802 Networks, Inc.
+Copyright 2005-2006, Devicescape Software, Inc.
+Copyright (c) 2008-2012, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright 2002-2003, Instant802 Networks, Inc.
+Copyright 2005-2006, Devicescape Software, Inc.
+Copyright (c) 2009, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright 2003-2006, Jouni Malinen <j@w1.fi>
+Copyright 2003-2004, Instant802 Networks, Inc.
+Copyright 2005-2006, Devicescape Software, Inc.
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+
+Licensed under the Apache License, Version 2.0 (the ""License"");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an ""AS IS"" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License."
+====================================================================================================
+"Copyright The Mbed TLS Contributors
+SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later"
+====================================================================================================
+"Copyright The Mbed TLS Contributors
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the ""License""); you may
+not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an ""AS IS"" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License."
+====================================================================================================
+"Copyright(c) 2013 - 2016 Intel Mobile Communications GmbH.
+Copyright(c) 2011 - 2016 Intel Corporation. All rights reserved.
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright(c) 2013 - 2016 Intel Mobile Communications GmbH.
+Copyright(c) 2011 - 2016 Intel Corporation. All rights reserved.
+Copyright (c) 2016-2017, Jouni Malinen <j@w1.fi>
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright(c) 2014, Intel Mobile Communication GmbH.
+Copyright(c) 2014, Intel Corporation. All rights reserved.
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright(c) 2015 Intel Deutschland GmbH
+Contact Information:
+Intel Linux Wireless <ilw@linux.intel.com>
+Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
+
+This software may be distributed under the terms of the BSD license.
+See README for more details."
+====================================================================================================
+"Copyright(c) 2018 Liam Bindle
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files(the ""Software""), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions :
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."
+====================================================================================================
+"CopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+
+SPDX-License-Identifier: Apache-2.0"
+====================================================================================================
+"Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.  The
+ASF licenses this file to you under the Apache License, Version 2.0 (the
+""License""); you may not use this file except in compliance with the
+License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an ""AS IS"" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+License for the specific language governing permissions and limitations
+under the License."
+====================================================================================================
+"Redistribution and use in Source and Object forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of Source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in Object form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE."
+====================================================================================================
+"WPA Supplicant - WPA state machine and EAPOL-Key processing
+Copyright (c) 2003-2010, Jouni Malinen <j@w1.fi>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+Alternatively, this software may be distributed under the terms of BSD
+license.
+
+See README and COPYING for more details."
+
+====================================================================================================
+====================================================================================================

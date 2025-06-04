@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+  <project>
+    <path>$WS_DIR$\Boot\ST67W6X_CLI_Boot.ewp</path>
+  </project><project>
+    <path>$WS_DIR$\Appli\ST67W6X_CLI_Appli.ewp</path>
+  </project>
+  <batchBuild />
+</workspace>

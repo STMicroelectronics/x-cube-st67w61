@@ -1,0 +1,6 @@
+[Groups]
+Application/User/App_CLI/App=../App_CLI/App/fota_flash.c;../App_CLI/App/fota_header.c;../App_CLI/App/sha256.c;
+Doc=../readme.md;
+[ProjectFiles]
+[Others]
+Define=;

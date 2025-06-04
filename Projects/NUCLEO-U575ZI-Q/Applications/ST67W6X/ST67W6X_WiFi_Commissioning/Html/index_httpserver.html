@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTTP Server example with STM32</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --dark-blue: #03234b;
+            --yellow: #ffd200;
+            --light-blue: #3cb4e6;
+            --background-margin: 6vw;
+            --spin-border: 0.25em;
+        }
+
+        body {
+            color: var(--dark-blue);
+            font-family: arial, helvetica, sans-serif;
+            font-size: 2vw;
+            background: #ffffff linear-gradient(var(--yellow), var(--yellow)) repeat-y left top;
+            background-size: var(--background-margin);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        div {
+            margin-left: calc(var(--background-margin) + 2vw);
+        }
+
+        header,
+        footer {
+            background: var(--dark-blue);
+            color: #ffffff;
+            margin: 0;
+        }
+
+        header {
+            height: 8vh;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        #header_logo {
+            height: 8vh;
+        }
+
+        footer {
+            height: 4vh;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 1vh;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .button {
+            background-color: var(--light-blue);
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            border-radius: 10px;
+        }
+        .button-on {
+            background-color: var(--light-blue);
+        }
+        .button-off {
+            background-color: #9d9ea0;
+            cursor: not-allowed;
+        }
+
+        .console {
+            background-color: black;
+            color: white;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 10px;
+            max-height: 200px;
+            overflow: auto;
+            margin-right: calc(var(--background-margin) + 2vw);
+        }
+        .ping-table {
+	        width: 100%;
+	        border-collapse: collapse;
+	        color: white;
+        }
+
+        .ping-box {
+            background-color: var(--dark-blue);
+            color: white;
+            padding: 10px;
+            margin-left: 0;
+            margin-right: 2vw;
+            box-sizing: border-box;
+            text-align: center;
+            flex: 1 1 auto;
+        }
+        .credentials {
+            background-color: var(--dark-blue);
+            color: white;
+            padding: 10px;
+            margin-left: 0;
+            margin-right: 2vw;
+            box-sizing: border-box;
+            text-align: center;
+            flex: 1 1 auto;
+        }
+        .status-text {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header><img src="ST_logo_2020_white_no_tagline_rgb.svg" id="header_logo"></header>
+    <div>
+        <h1>Welcome to WiFi Commissioning page !</h1>
+        <!-- <h2> Enter the SSID and the password of the Local_AP:</h2> -->
+    <div>
+        <h2>Credentials</h2>
+        <div class="credentials">
+            <form action="" method="post">
+            
+            <label for="ssid" class="text">Enter your local AP SSID : </label>
+            <input type="text" size="28" name="ssid" id="ssid" min="2" max="32" required />
+            <br>
+            <br>
+            <label for="pwd" class="text">Enter your local AP password : </label>
+            <input type="text" size="28" name="pwd" id="pwd" max="63" />
+            <br>
+            <br>
+            <input type="submit" value="Connect" class="button" />
+            </form>
+            <button id="disconnect-button" class="button button-off" onClick="sendGetRequest('disconnect')"> Disconnect </button>
+        </div>
+    </div>
+    <div>
+        <h2>Connection status</h2>
+        <div class="ping-box" id="ping-box">
+          <p class="status-text" id="sta-state">Station disconnected</p>
+            <table class="ping-table" id="ping-table">
+              <thead>
+                <tr>
+                  <th>Ping Count</th>
+                  <th>Average Ping Delay</th>
+                  <th>Packet Lost</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="ping-count"></td>
+                  <td id="ping-delay"></td>
+                  <td id="ping-loss"></td>
+                </tr>
+              </tbody>
+            </table>
+            <button id="ping-button" class="button button-off" onClick="sendGetRequest('ping')"> Ping </button>
+        </div>
+    </div>
+    <div>
+      <h2>Console</h2>
+      <div>
+          <p class="console" id="console"></p>
+      </div>
+    </div>
+</body>
+<script>
+    document.getElementById('ping-button').disabled = true;
+    document.getElementById("ping-table").hidden = true;
+    document.querySelector('form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    document.getElementById("console").innerHTML = "> Credentials sent : server may closed temporary to switch to another channel<br />" + document.getElementById("console").innerHTML;
+    submitForm();
+    });
+    function sendPeriodicGetRequest(val) {
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 11000;
+        xhr.open("GET", "/connect_status", true);
+        xhr.ontimeout = function () {
+            sendPeriodicGetRequest();
+        }
+        xhr.onerror = function () {
+            sendPeriodicGetRequest();
+        }
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById("console").innerHTML = "> Connection status : " + xhr.responseText + " <br />" + document.getElementById("console").innerHTML;
+                const resp = JSON.parse(xhr.responseText);
+                switch_status(resp.StaState);
+                sendPeriodicGetRequest();
+            }
+            else if (xhr.readyState === 4 && xhr.status == 404) {
+                sendPeriodicGetRequest();
+            }
+        };
+        xhr.send();
+    }
+    sendPeriodicGetRequest();
+    function sendGetRequest(val) {
+        var xhr = new XMLHttpRequest();
+        var timeout = 6000;
+        var requestTimeout = setTimeout(function() {
+            xhr.abort();
+            console.error('Request GET timed out after ' + timeout + ' milliseconds');
+        }, timeout);
+
+        var get_req = "/" + val;
+        xhr.open("GET", get_req, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                clearTimeout(requestTimeout);
+                if (xhr.status === 200) {
+                    if (get_req === '/ping') {
+                        document.getElementById("console").innerHTML = "> Ping results :" + xhr.responseText + " <br />" + document.getElementById("console").innerHTML;
+                        const resp = JSON.parse(xhr.responseText);
+                        set_ping_values(resp.PingCount, resp.PingDelay, resp.PingLoss);
+                    }
+                    else if (get_req === '/disconnect') {
+                        document.getElementById("console").innerHTML = "> Disconnection status :" + xhr.responseText + " <br />" + document.getElementById("console").innerHTML;
+                        switch_status(0);
+                    }
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    function submitForm() {
+        var xhr = new XMLHttpRequest();
+        var ssid_val = document.getElementById('ssid').value;
+        var pwd_val = document.getElementById('pwd').value;
+        var cred = { "ssid": ssid_val, "pwd": pwd_val }
+        xhr.open('POST', '/credential');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function () {
+          if (xhr.status !== 200) {
+            document.getElementById("console").innerHTML = "> Credentials sent Failed <br />" + document.getElementById("console").innerHTML;
+          }
+        };
+        xhr.send(JSON.stringify(cred));
+    }
+
+    function switch_status(val) {
+        switch (val) {
+            case 1:
+                document.getElementById("sta-state").innerHTML = "Station connected";
+                document.getElementById("ping-table").hidden = false;
+                document.getElementById('ping-button').disabled = false;
+                document.getElementById("ping-button").className = "button button-on";
+                document.getElementById("disconnect-button").className = "button button-on";
+                break;
+            case 0:
+                document.getElementById("sta-state").innerHTML = "Station disconnected";
+                document.getElementById("ping-table").hidden = true;
+                document.getElementById('ping-button').disabled = true;
+                document.getElementById("ping-button").className = "button button-off";
+                document.getElementById("disconnect-button").className = "button button-off";
+                set_ping_values(0, 0, 0);
+                break;
+            default:
+                console.log("value not supported : " + val + ".");
+                break;
+        }
+    }
+
+    function set_ping_values(count, delay, loss) {
+        document.getElementById("ping-count").innerHTML = count;
+        document.getElementById("ping-delay").innerHTML = delay+" ms";
+        document.getElementById("ping-loss").innerHTML = loss+" %";
+    }
+</script>
+</html>

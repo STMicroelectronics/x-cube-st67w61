@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>HTTP Server example with STM32</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --dark-blue: #03234b;
+            --yellow: #ffd200;
+            --light-blue: #3cb4e6;
+            --background-margin: 6vw;
+            --spin-border: 0.25em;
+        }
+
+        body {
+            color: var(--dark-blue);
+            font-family: arial, helvetica, sans-serif;
+            font-size: 2vw;
+            background: #ffffff linear-gradient(var(--yellow), var(--yellow)) repeat-y left top;
+            background-size: var(--background-margin);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        div {
+            margin-left: calc(var(--background-margin) + 2vw);
+        }
+
+        header,
+        footer {
+            background: var(--dark-blue);
+            color: #ffffff;
+            margin: 0;
+        }
+
+        header {
+            height: 8vh;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        #header_logo {
+            height: 8vh;
+        }
+
+        footer {
+            height: 4vh;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 1vh;
+        }
+
+        a:link {
+            color: var(--light-blue);
+            text-decoration: none;
+        }
+
+        a:visited {
+            color: var(--pink);
+        }
+
+        a:hover,
+        a:focus {
+            text-decoration: underline;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .button {
+            background-color: #3cb4e6;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            border-radius: 10px;
+        }
+
+        .button-on-green {
+            background-color: #49b171;
+            color: black;
+        }
+
+        .button-on-red {
+            background-color: #e3381b;
+            color: black;
+        }
+
+        .button-off {
+            background-color: #d1d1d1;
+            color: black;
+        }
+
+        .console {
+            background-color: black;
+            color: white;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 10px;
+            max-height: 200px;
+            overflow: auto;
+            margin-right: calc(var(--background-margin) + 2vw);
+        }
+    </style>
+</head>
+
+<body>
+    <header><img src="ST_logo_2020_white_no_tagline_rgb.svg" id="header_logo"></header>
+    <div>
+        <h1>Welcome to STM32 NUCLEO-U575ZI-Q Monitor page !</h1>
+        <h2>LED Control</h2>
+        <div>
+            <button class="button" onclick="sendGetRequest('LedGreen')" id="LedGreen">LED Green</button>
+            <button class="button" onclick="sendGetRequest('LedRed')" id="LedRed">LED Red</button>
+        </div>
+        <h2>User button status</h2>
+        <div>
+            <p class="button" id="user_btn">User Button State</p>
+        </div>
+        <h2>Console</h2>
+        <div>
+            <p class="console" id="console"></p>
+        </div>
+        <!-- <footer></footer> -->
+</body>
+<script>
+    function sendPeriodicGetRequest(val) {
+
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 13000;
+        xhr.open("GET", "/pins_status", true);
+        xhr.ontimeout = function () {
+            setTimeout(sendPeriodicGetRequest, 200);
+        }
+        xhr.onerror = function () {
+            setTimeout(sendPeriodicGetRequest, 200);
+        }
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById("console").innerHTML = "> Board pins status : " + xhr.responseText + " <br />" + document.getElementById("console").innerHTML;
+                const resp = JSON.parse(xhr.responseText);
+
+                switch_color(resp.BtnPin, "user_btn", "green");
+                switch_name(resp.BtnPin, "user_btn");
+                switch_color(resp.LedGreenPin, "LedGreen", "green");
+                switch_color(resp.LedRedPin, "LedRed", "red");
+                setTimeout(sendPeriodicGetRequest, 200);
+            }
+            else if (xhr.readyState === 4 && xhr.status == 404) {
+                setTimeout(sendPeriodicGetRequest, 200);
+            }
+        };
+        xhr.send();
+    }
+    sendPeriodicGetRequest();
+    function sendGetRequest(val) {
+        var xhr = new XMLHttpRequest();
+        var timeout = 6000;
+        var requestTimeout = setTimeout(function() {
+            xhr.abort();
+            console.error('Request LED timed out after ' + timeout + ' milliseconds');
+        }, timeout);
+
+        var get_req = "/" + val;
+        xhr.open("GET", get_req, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                clearTimeout(requestTimeout);
+                if (xhr.status === 200) {
+                    if (get_req === '/LedGreen' || get_req === '/LedRed') {
+                        document.getElementById("console").innerHTML = "> LED Toggling <br />" + document.getElementById("console").innerHTML;
+                    }
+                }
+            };
+        };
+        xhr.send();
+    }
+    function switch_color(val, id, color) {
+        switch (val) {
+            case 1:
+                if (color == "green") {
+                    document.getElementById(id).className = "button button-on-green";
+                }
+                else if (color == "red") {
+                    document.getElementById(id).className = "button button-on-red";
+                }
+                break;
+            case 0:
+                document.getElementById(id).className = "button button-off";
+                break;
+
+            default:
+                console.log("value not supported : " + val + ".");
+                break;
+        }
+    }
+    function switch_name(val, id) {
+        switch (val) {
+            case 1:
+                document.getElementById(id).innerHTML = "Button ON";
+                break;
+            case 0:
+                document.getElementById(id).innerHTML = "Button OFF";
+                break;
+
+            default:
+                console.log("value not supported : " + val + ".");
+                break;
+        }
+    }
+    function goToPage(val) {
+        window.location.href = "/" + val;
+    }
+</script>
+
+</html>

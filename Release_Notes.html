@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Release Notes for X-CUBE-ST67W61 Expansion Software Package</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="_htmresc/mini-st_2020.css" />
+  <link rel="icon" type="image/x-icon" href="_htmresc/favicon.png" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="row">
+<div class="col-sm-12 col-lg-4">
+<center>
+<h1 id="release-notes-for">Release Notes for</h1>
+<h1 id="x-cube-st67w61-expansion-software-package"><mark>X-CUBE-ST67W61 Expansion Software Package</mark></h1>
+<p>Copyright © 2024 STMicroelectronics<br />
+</p>
+<a href="https://www.st.com" class="logo"><img src="_htmresc/st_logo_2020.png" alt="ST logo" /></a>
+</center>
+<h1 id="purpose">Purpose</h1>
+<p>The <strong>X-CUBE-ST67W61 expansion software package</strong> is a set of software components implementing host applications driving a Wi‑Fi® and Bluetooth® LE coprocessor (ST67W611M1).<br/> It runs on STM32 Nucleo boards and is designed to be used with the <strong>X-NUCLEO-67W61M1</strong> expansion board in using the Middleware <strong>ST67W6X_Network_Driver</strong> as a communication interface.<br/></p>
+<p>Minimal memory requirements for host device are 48kB RAM and 256kB Flash.</p>
+<p>Some pins are used to connect the X-NUCLEO-67W61M1 expansion board to the STM32 Nucleo board in using the Arduino connectors.<br/> The table below shows the GPIO pin configuration:</p>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 20%" />
+<col style="width: 26%" />
+<col style="width: 19%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Pin function</th>
+<th style="text-align: left;">NUCLEO pin name</th>
+<th style="text-align: left;">GPIO mode</th>
+<th style="text-align: left;">GPIO pull mode</th>
+<th style="text-align: left;">GPIO speed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">SPI_CLK</td>
+<td style="text-align: left;">D13</td>
+<td style="text-align: left;">AF PP</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">Very high</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_MISO</td>
+<td style="text-align: left;">D12</td>
+<td style="text-align: left;">AF PP</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">Very high</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SPI_MOSI</td>
+<td style="text-align: left;">D11</td>
+<td style="text-align: left;">AF PP</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">Very high</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_CS</td>
+<td style="text-align: left;">D10</td>
+<td style="text-align: left;">Output PP</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">High</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">USER_BUTTON (*)</td>
+<td style="text-align: left;">D8</td>
+<td style="text-align: left;">EXTI Falling</td>
+<td style="text-align: left;">Pull-up</td>
+<td style="text-align: left;">N/A</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHIP_EN</td>
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">Output PP</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">High</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BOOT</td>
+<td style="text-align: left;">D6</td>
+<td style="text-align: left;">Output PP</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">Low</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_RDY</td>
+<td style="text-align: left;">D3</td>
+<td style="text-align: left;">EXTI Falling/Rising</td>
+<td style="text-align: left;">No pull</td>
+<td style="text-align: left;">N/A</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>(*) USER_BUTTON refers to the blue button mounted on the <strong>X-NUCLEO-67W61M1</strong>.<br/> The user button on the STM32 Nucleo board is not used as external interrupt mode due to conflict with other EXTI pin requirement.</p>
+</blockquote>
+<p>The expansion software package is built on STM32Cube software technology to ease portability across different STM32 Microcontrollers.<br/> The software comes with a sample implementation of the Middlewares running on multiple STM32 Nucleo development boards connected to a X-NUCLEO-67W61M1 expansion board.</p>
+<p><img src="_htmresc/OverviewXPackage_in_STM32Cube.png" /></p>
+<h1 id="repository-structure">Repository structure</h1>
+<p>The STMicroelectronics <strong>X-CUBE-ST67W61</strong> content consists of the following directories:</p>
+<ul>
+<li><strong>Drivers</strong>: contains CMSIS, HAL and BSP drivers.</li>
+<li><strong>Middlewares</strong>: contains ST67W6X_Network_Driver, FreeRTOS, cJSON, LittleFS and TraceRecorder.</li>
+<li><strong>Projects</strong>: provides ready-to-run applicative examples for <strong>X-NUCLEO-67W61M1</strong> on the supported boards.</li>
+<li><strong>Utilities</strong>: contains some STM32 miscellaneous utilities.</li>
+</ul>
+<h1 id="documentation">Documentation</h1>
+<p>For further information, refer to UM3475 Getting started with X-CUBE-ST67W61. Please visit the dedicated Wiki page <a href="https://wiki.st.com/stm32mcu/wiki/Connectivity:Introduction_to_Wifi">Wiki Connectivity WiFi</a></p>
+</div>
+<section id="update-history" class="col-sm-12 col-lg-8">
+<h1>Update History</h1>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true"> <label for="collapse-section1" aria-hidden="false"><strong>V1.0.0 / 28-May-2025</strong></label>
+<div>
+<h2 id="main-changes">Main Changes</h2>
+<ul>
+<li><strong>First official release</strong></li>
+</ul>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><p><strong>Projects</strong>: Nine applications and one demonstration exercising the ST67W6X_Network_Driver capabilities, and one utility.</p>
+<ul>
+<li><strong>Applications</strong>
+<ul>
+<li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
+<li>ST67W6X_BLE_p2pClient : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</li>
+<li>ST67W6X_BLE_p2pServer : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).</li>
+<li>ST67W6X_CLI :This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi and Bluetooth LE solution via command line interface (CLI).</li>
+<li>ST67W6X_Echo : This application demonstrates the TCP Echo feature over Wi-Fi.</li>
+<li>ST67W6X_FOTA : This application aims to demonstrate the FOTA (Firmware update Over-The-Air) feature over Wi-Fi.</li>
+<li>ST67W6X_HTTP_Server : This application aims to demonstrate an HTTP server over Network API, hosted by a device configured as a soft access point (soft-AP).</li>
+<li>ST67W6X_HTTPS_Client : This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</li>
+<li>ST67W6X_WiFi_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</li>
+</ul></li>
+<li><strong>Demonstrations</strong>
+<ul>
+<li>ST67W6X_MQTT : This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>NCP_Loader: This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</li>
+</ul></li>
+</ul></li>
+<li><p><strong>Features</strong> supported:</p>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong>
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>FOTA</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+<li>Upgrade of Host Firmware Over-The-Air (STM32U5xx only supported)</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+<li><strong>Tools</strong>
+<ul>
+<li>FOTA header generation and HTTP server python scripts</li>
+<li>ST67W611M binaries for Mission and Manufacturing modes with scripts to flash them over host board</li>
+<li>LittleFS file system support with scripts to generate image of certificates</li>
+</ul></li>
+</ul></li>
+</ul>
+<p><small>The components flagged by “<span class="icon-st-update"></span>” have changed since the previous release. “<span class="icon-st-add"></span>” are new.</small></p>
+<p>The X-CUBE-ST67W61 Expansion Software package comes with a set of examples running on STMicroelectronics host boards (which drive the X-NUCLEO-67W61M1 expansion board). It is organized by board and it is provided with preconfigured projects for the main supported toolchains.</p>
+<p>The exhaustive list of projects is provided in this table (<a href="Projects/X-CUBE-ST67W61_ProjectsList.html">X-CUBE-ST67W61_ProjectsList.html</a>).</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th>Release notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ST67W61 NUCLEO-H7S3L8</td>
+<td>V1.0.0</td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ST67W61 NUCLEO-H563ZI</td>
+<td>V1.0.0</td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ST67W61 NUCLEO-N657X0-Q</td>
+<td>V1.0.0</td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ST67W61 NUCLEO-U575ZI-Q</td>
+<td>V1.0.0</td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ST67W6X Utilities</td>
+<td>V1.0.0</td>
+<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="components">Components</h2>
+<p><strong>ST67W611M Coprocessor Wireless Binaries</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th style="text-align: left;">Version</th>
+<th>Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">st67w611m_mission_t01_v2.0.75.bin</td>
+<td style="text-align: left;">V2.0.75</td>
+<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">st67w611m_mfg_v2.0.75.bin</td>
+<td style="text-align: left;">V2.0.75</td>
+<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Drivers</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th>Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Cortex-M CMSIS</td>
+<td>V5.9.0</td>
+<td><a href="Drivers/CMSIS/Documentation/index.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32H7RS CMSIS</td>
+<td>V1.2.0</td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32H7RSxx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32H5 CMSIS</td>
+<td>V1.4.0</td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32H5xx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32N6 CMSIS</td>
+<td>V1.1.0</td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32N6xx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32U5 CMSIS</td>
+<td>V1.4.1</td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32U5xx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32H7RSxx_HAL_Driver</td>
+<td>V1.2.0</td>
+<td><a href="Drivers/STM32H7RSxx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32H5xx_HAL_Driver</td>
+<td>V1.5.0</td>
+<td><a href="Drivers/STM32H5xx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32N6xx_HAL_Driver</td>
+<td>V1.1.0</td>
+<td><a href="Drivers/STM32N6xx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32U5xx_HAL_Driver</td>
+<td>V1.6.1</td>
+<td><a href="Drivers/STM32U5xx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP STM32H7RSxx_Nucleo</td>
+<td>V1.1.0</td>
+<td><a href="Drivers/BSP/STM32H7RSxx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP STM32H5xx_Nucleo</td>
+<td>V1.1.1</td>
+<td><a href="Drivers/BSP/STM32H5xx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP STM32N6xx_Nucleo</td>
+<td>V1.0.0</td>
+<td><a href="Drivers/BSP/STM32N6xx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP STM32U5xx_Nucleo</td>
+<td>V1.2.2</td>
+<td><a href="Drivers/BSP/STM32U5xx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Components</td>
+<td>V7.3.0</td>
+<td><a href="Drivers/BSP/Components/Common/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component HTS221</td>
+<td>V5.7.0</td>
+<td><a href="Drivers/BSP/Components/hts221/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component IIS2DLPC</td>
+<td>V1.4.0</td>
+<td><a href="Drivers/BSP/Components/iis2dlpc/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component IIS2MDC</td>
+<td>V1.4.0</td>
+<td><a href="Drivers/BSP/Components/iis2mdc/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component ISM330DHCX</td>
+<td>V1.6.1</td>
+<td><a href="Drivers/BSP/Components/ism330dhcx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LIS2DUXS12</td>
+<td>V1.4.0</td>
+<td><a href="Drivers/BSP/Components/lis2duxs12/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component LIS2DW12</td>
+<td>V1.5.0</td>
+<td><a href="Drivers/BSP/Components/lis2dw12/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LIS2MDL</td>
+<td>V1.7.0</td>
+<td><a href="Drivers/BSP/Components/lis2mdl/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component LPS22DF</td>
+<td>V1.4.0</td>
+<td><a href="Drivers/BSP/Components/lps22df/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LPS22HH</td>
+<td>V1.7.0</td>
+<td><a href="Drivers/BSP/Components/lps22hh/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component LSM6DSO</td>
+<td>V1.10.0</td>
+<td><a href="Drivers/BSP/Components/lsm6dso/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LSM6DSO16IS</td>
+<td>V1.5.0</td>
+<td><a href="Drivers/BSP/Components/lsm6dso16is/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component LSM6DSV16X</td>
+<td>V1.6.0</td>
+<td><a href="Drivers/BSP/Components/lsm6dsv16x/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component SHT40AD1B</td>
+<td>V1.3.0</td>
+<td><a href="Drivers/BSP/Components/sht40ad1b/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component STTS22H</td>
+<td>V1.7.0</td>
+<td><a href="Drivers/BSP/Components/stts22h/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component STTS751</td>
+<td>V1.5.0</td>
+<td><a href="Drivers/BSP/Components/stts751/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP X-NUCLEO-IKS01A3</td>
+<td>V1.14.0</td>
+<td><a href="Drivers/BSP/IKS01A3/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP X-NUCLEO-IKS4A1</td>
+<td>V1.2.0</td>
+<td><a href="Drivers/BSP/IKS4A1/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Middlewares</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th style="text-align: left;">Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">FreeRTOS</td>
+<td>V10.6.2</td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/FreeRTOS/Source/readme.txt">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td>ST modified 20241011</td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/FreeRTOS/Source/st_readme.txt">ST release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">cJSON</td>
+<td>V1.7.18</td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/cJSON/README.md">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Percepio TraceRecorder</td>
+<td>V4.10.2</td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/TraceRecorder/README.md">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">littlefs</td>
+<td>V2.10.1</td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/littlefs/README.md">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ST67W6X_Network_Driver</td>
+<td>V1.0.0</td>
+<td style="text-align: left;"><a href="Middlewares/ST/ST67W6X_Network_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Utilities</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th style="text-align: left;">Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">conf</td>
+<td>V1.6.1</td>
+<td style="text-align: left;"><a href="Utilities/conf/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">tiny_lpm</td>
+<td>V1.4.2</td>
+<td style="text-align: left;"><a href="Utilities/lpm/tiny_lpm/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations">Known Limitations</h2>
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>Wi-Fi scan command is ignored immediately after a boot if auto-connect is enabled</li>
+<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
+<li>Performance Rx throughput with Soft-AP is instable</li>
+<li>Performance UDP Rx throughput is below expectation (expected 14 Mbps, actual 12 Mbps)</li>
+</ul>
+<h2 id="development-toolchains-and-compilers">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for Arm (EWARM) toolchain <strong>V9.30.1</strong></li>
+<li>RealView Microcontroller Development Kit (MDK-ARM) toolchain <strong>V5.39</strong></li>
+<li>STM32CubeIDE (Default GCC13 toolchain supported) <strong>V1.18.1</strong></li>
+</ul>
+<h2 id="supported-devices-and-boards">Supported Devices and Boards</h2>
+<ul>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html">NUCLEO-H7S3L8</a> <em>(MB1737)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-h563zi.html">NUCLEO-H563ZI</a> <em>(MB1404)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-n657x0-q.html">NUCLEO-N657X0-Q</a> <em>(MB1940)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-u575zi-q.html">NUCLEO-U575ZI-Q</a> <em>(MB1549)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+</ul>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Pin function</th>
+<th style="text-align: left;">NUCLEO pin name</th>
+<th style="text-align: left;">NUCLEO-H7S3L8 STM32 pin name</th>
+<th style="text-align: left;">NUCLEO-H563ZI STM32 pin name</th>
+<th style="text-align: left;">NUCLEO-N657X0-Q STM32 pin name</th>
+<th style="text-align: left;">NUCLEO-U575ZI-Q STM32 pin name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">SPI_CLK</td>
+<td style="text-align: left;">D13</td>
+<td style="text-align: left;">PA5</td>
+<td style="text-align: left;">PA5</td>
+<td style="text-align: left;">PE15</td>
+<td style="text-align: left;">PA5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_MISO</td>
+<td style="text-align: left;">D12</td>
+<td style="text-align: left;">PA6</td>
+<td style="text-align: left;">PG9</td>
+<td style="text-align: left;">PG1</td>
+<td style="text-align: left;">PA6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SPI_MOSI</td>
+<td style="text-align: left;">D11</td>
+<td style="text-align: left;">PB5</td>
+<td style="text-align: left;">PB5</td>
+<td style="text-align: left;">PG2</td>
+<td style="text-align: left;">PA7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_CS</td>
+<td style="text-align: left;">D10</td>
+<td style="text-align: left;">PD14</td>
+<td style="text-align: left;">PD14</td>
+<td style="text-align: left;">PA3</td>
+<td style="text-align: left;">PD14</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">USER_BUTTON (*)</td>
+<td style="text-align: left;">D8</td>
+<td style="text-align: left;">PF5</td>
+<td style="text-align: left;">PF3</td>
+<td style="text-align: left;">PD12</td>
+<td style="text-align: left;">PF12</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHIP_EN</td>
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">PE11</td>
+<td style="text-align: left;">PE11</td>
+<td style="text-align: left;">PE10</td>
+<td style="text-align: left;">PE11</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BOOT</td>
+<td style="text-align: left;">D6</td>
+<td style="text-align: left;">PE9</td>
+<td style="text-align: left;">PE9</td>
+<td style="text-align: left;">PD5</td>
+<td style="text-align: left;">PE9</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_RDY</td>
+<td style="text-align: left;">D3</td>
+<td style="text-align: left;">PE13</td>
+<td style="text-align: left;">PE13</td>
+<td style="text-align: left;">PE9</td>
+<td style="text-align: left;">PE13</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>(*) USER_BUTTON refers to the blue button mounted on the <strong>X-NUCLEO-67W61M1</strong>.<br/> The user button on the STM32 Nucleo board is not used as external interrupt mode due to conflict with other EXTI pin requirement.</p>
+</blockquote>
+<p><strong>Important</strong>: The minimal memory requirements for the host device are 48kB RAM and 256kB Flash.</p>
+</div>
+</div>
+</section>
+</div>
+<footer class="sticky">
+<div class="columns">
+<div class="column" style="width:95%;">
+<p>For complete documentation on ST, visit: <a href="http://www.st.com">www.st.com</a></p>
+<p><em>This release note uses up to date web standards and, for this reason, should not be opened with Internet Explorer but preferably with popular browsers such as Google Chrome, Mozilla Firefox, Opera or Microsoft Edge.</em></p>
+</div><div class="column" style="width:5%;">
+<p><abbr title="Based on template cx566953 version 2.0">Info</abbr></p>
+</div>
+</div>
+</footer>
+</body>
+</html>

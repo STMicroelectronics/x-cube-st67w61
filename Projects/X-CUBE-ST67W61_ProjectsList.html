@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+  <title>Projects Overview</title>
+  <style>
+    .descriptionColumn {
+      min-width: 550px;
+    }
+
+    em {
+      color: red;
+      font-weight: bold;
+    }
+
+    importantLink {
+      font-size: 10pt;
+      font-family: "Verdana", "sans-serif";
+      color: black;
+    }
+
+    article {
+      border: 1px solid #828282;
+      margin: 20px 0px 20px 9px;
+    }
+
+    body {
+      font-family: Verdana;
+      font-size: 10pt;
+      color: black;
+      margin-left: 40px;
+      color: #03234b;
+      @background: #ffffff;
+      background: #ffffff linear-gradient(#ffd200, #ffd200) repeat-y left top;
+      background-size: 1.5%;
+    }
+
+    .picture {
+      text-align: center
+    }
+
+    .copyright {
+      text-align: center
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 20pt;
+      font-family: Verdana;
+      color: rgb(51, 102, 255);
+    }
+
+    h2 {
+      font-size: calc(1rem * 1.2 * 1.2);
+      border-style: none none solid none;
+      border-width: thin;
+      border-color: #3cb4e6;
+    }
+
+    html {
+      font-size: 13.5px;
+    }
+
+    html,
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, Helvetica, arial, sans-serif;
+      line-height: 1.25;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    table,
+    tr,
+    td {
+      border: 1px solid #03234b;
+    }
+
+    thead>tr {
+      text-align: center;
+      background-repeat: no-repeat;
+      background-position: right center;
+      background-color: #39A9DC;
+      color: #FFF
+    }
+
+    .board {
+      font-size: x-large;
+      color: green;
+      text-align: center;
+    }
+
+    .blockquote:before {
+      position: absolute;
+      top: calc(0rem - 0.25rem);
+      left: 0;
+      font-family: sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      content: "\201c";
+      color: #e6007e;
+    }
+
+    .blockquote {
+      display: block;
+      position: relative;
+      font-style: italic;
+      color: #03234b;
+      margin: 1.5%;
+      padding: calc(3* 0.25rem);
+      border: 0.0714285714rem solid #3cb4e6;
+      border-left: 0.3rem solid #e6007e;
+      border-radius: 0 0.075rem 0.075rem 0;
+    }
+
+    .aligned-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .aligned-list li {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .aligned-list .title {
+      min-width: 270px;
+      font-family: Menlo, Consolas, monospace;
+      color: blue;
+      font-weight: bold;
+      white-space: pre;
+    }
+    .aligned-list .desc {
+      margin-left: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="box-sizing: border-box; display: flex; flex: 0 1 auto; flex-flow: row wrap; margin: 0 0 0 1.5%;">
+    <div style="max-width: 8.3333333333%; flex-basis: 8.3333333333%; flex: 0 0 auto;">
+    </div>
+    <div style="max-width: 83.3333333333%; flex-basis: 83.3333333333%; flex: 0 0 auto;">
+      <h1>X-CUBE-ST67W61 Expansion Package Projects list</h1>
+
+      <p class="copyright">Copyright 2024 STMicroelectronics</p>
+
+      <div class="picture">
+        <img alt="" id="_x0000_i1025" src="../_htmresc/st_logo_2020.png"
+          style="border: 0px solid ; width: 104px; height: 77px;" />
+      </div>
+      <p>The X-CUBE-ST67W61 package comes with a set of applications and demonstrations running on STMicroelectronics boards, organized
+        by
+        board and provided with preconfigured projects for the main supported toolchains.</p>
+      <p>The Projects are located under X-CUBE-ST67W61_VX.Y.Z\Projects\, and all of them have the same structure:</p>
+      <ul class="aligned-list">
+        <li>
+          <span class="title">/[Project Name]/App_xxx/App</span>
+          <span class="desc">folder that contains the Wi-Fi/BLE/Net/MQTT/HTTP/FOTA application code.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/App_xxx/Target</span>
+          <span class="desc">folder that contains the Logging, Shell, Low-Power and SPI BSP interfaces.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/Core/Src</span>
+          <span class="desc">folder that contains all STM32CubeMX generated sources code.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/Core/Inc</span>
+          <span class="desc">folder that contains all STM32CubeMX generated header files.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/ST67W6X/Target</span>
+          <span class="desc">folder that contains the configuration and port files to manage the ST67W6X_Network_Driver Middleware.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/EWARM</span>
+          <span class="desc">folder contains the preconfigured project for the IAR Embedded workbench for Arm.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/MDK-ARM</span>
+          <span class="desc">folder contains the preconfigured project for the RealView Microcontroller Development Kit.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/STM32CubeIDE</span>
+          <span class="desc">folder contains the preconfigured project for the STM32CubeIDE toolchain.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/readme.md</span>
+          <span class="desc">describing the example behavior and the environment required to run the example.</span>
+        </li>
+      </ul>
+
+      <p>The projects are classified depending on the level they apply to, and are named as follows:</p>
+      <ul>
+        <li id="importantLink"><b>Applications</b> intends to demonstrate the product performance and how to use the different Middleware stacks available. The Applications are organized per product feature that need high level firmware bricks. Integration Applications that use several Middleware stacks are provided as well.</li>
+        <li id="importantLink"><b>Demonstrations</b> aims to integrate and run the maximum of peripherals and Middleware stacks to showcase the product features and performance.</li>
+      </ul>
+
+      <p>To run the example, you have to do the following:</p>
+      <div class="blockquote">
+          <p>These project require to use the ST67W611M Coprocessor binary st67w611m_mission_v2.0.75.bin.<br/>
+          Please follow the <b>NCP Binaries <a href="ST67W6X_Utilities/Binaries/README.md" target="_blank">README.md</a></b> instructions using the <b>NCP_update_mission_profile.bat</b> script.</p>
+      </div>
+
+      <ul>
+        <li>Open the example using your preferred toolchain.</li>
+        <li>Rebuild all files and load the image into target memory.</li>
+        <li>Run the example by following the readme instructions.</li>
+        <li>
+          <i><u>Note</u>: refer to section "Development Toolchains and Compilers" and "Supported Devices and EVAL,
+            Nucleo
+            and Discovery boards" of the Firmware package release notes to know about the SW/HW environment used for the
+            Firmware development and validation. The correct operation of the provided examples is not guaranteed on
+            some
+            environments, for example when using different compiler or board versions.</i>
+        </li>
+      </ul>
+
+      <p>The provided Projects can be tailored to run on any compatible hardware.<br/>User must to adapt the SPI configuration and align
+        GPIO (SPI_CS, SPI_RDY, BOOT, CHIP_EN, USER_BUTTON) signals with the X-NUCLEO-67W61M1 Arduino connectors.</p>
+
+      <h2 id="applications"><b>Projects Description</b></h2>
+      <p>
+      <div>The table below contains the list of Projects provided within X-CUBE-ST67W61 Expansion Package.<br/><br/>
+           In this table, the label <b style="color: green;">CubeMX</b> means the projects have been created using
+           <a href="https://www.st.com/en/development-tools/stm32cubemx.html" target="_blank">STM32CubeMX</a> initialization code generator.<br/>
+           Those projects can be opened with this tool to modify the IP, Clock domain and Middlewares configuration including the ST67W6X_Network_Driver delivered in X-CUBE-ST67W61 Expansion Package.<br/><br/>
+           The ioc files are generated for the STM32CubeMX 6.14.1 version.
+      </div>
+      </p>
+      <table border='1' bgcolor='#f0f0fF' >
+        <col style="min-width: 120px" />
+        <col style="min-width: 200px" />
+        <col />
+        <col style="min-width: 160px; max-width: 160px" />
+        <col style="min-width: 160px; max-width: 160px" />
+        <col style="min-width: 160px; max-width: 160px" />
+        <col style="min-width: 160px; max-width: 160px" />
+        <col style="min-width: 160px; max-width: 160px" />
+        <thead>
+          <tr align=center style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;"></tr>
+            <th>Level</th>
+            <th>Middleware</th>
+            <th>Project Name</th>
+            <th>Short Description</th>
+            <th>NUCLEO-U575ZI-Q</th>
+            <th>NUCLEO-H7S3L8</th>
+            <th>NUCLEO-H563ZI</th>
+            <th>NUCLEO-N657X0-Q</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=9>
+              <p id="ST67W6X_Network_Driver">Applications</p>
+            </td>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=11>
+              <p id="ST67W6X_Network_Driver">ST67W6X_Network_Driver</p>
+            </td>
+            <td>ST67W6X_BLE_Commissioning</td>
+            <td>This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_BLE_p2pClient</td>
+            <td>This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_BLE_p2pServer</td>
+            <td>This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_CLI</td>
+            <td>This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi and Bluetooth LE solutions via command line interface (CLI).</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_Echo</td>
+            <td>This application aims to demonstrate the TCP Echo feature over Wi-Fi.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_FOTA</td>
+            <td>This application aims to demonstrate the FOTA (Firmware update Over-The-Air) feature over Wi-Fi.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_HTTP_Server</td>
+            <td>This application aims to demonstrate an HTTP server over Network API, hosted by a device configured as a soft access point (soft-AP).</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_HTTPS_Client</td>
+            <td>This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_WiFi_Commissioning</td>
+            <td>This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=1>
+              <p id="ST67W6X_Network_Driver">Demonstrations</p>
+            </td>
+            <td>ST67W6X_MQTT</td>
+            <td>This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=1>
+              <p id="ST67W6X_Network_Driver">Utilities</p>
+            </td>
+            <td>NCP_Loader</td>
+            <td>This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+
+</html>

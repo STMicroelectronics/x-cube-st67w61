@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Release Notes for Projects of X-CUBE-ST67W61 Expansion Software Package</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../_htmresc/mini-st_2020.css" />
+  <link rel="icon" type="image/x-icon" href="../_htmresc/favicon.png" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="row">
+<div class="col-sm-12 col-lg-4">
+<center>
+<h1 id="release-notes-for">Release Notes for</h1>
+<h1 id="projects-of-x-cube-st67w61-expansion-software-package"><mark>Projects of X-CUBE-ST67W61 Expansion Software Package</mark></h1>
+<p>Copyright © 2024 STMicroelectronics<br />
+</p>
+<a href="https://www.st.com" class="logo"><img src="../_htmresc/st_logo_2020.png" alt="ST logo" /></a>
+</center>
+<h1 id="purpose">Purpose</h1>
+<p>The projects are a set of applicative tasks that aim to explain and provide use cases of the different products features based on the products hardware (Boards, STM32 Core(s) features, interconnections and peripherals) and built around the different firmware components. They can be directly used or adapted by the X-CUBE-ST67W61 Expansion Software Package. They provide basic functionalities, show main features or demonstrate performance. They are provided with preconfigured projects for the main supported toolchains.</p>
+<p>In the X-CUBE-ST67W61 Expansion Software Package, the projects are organized in a sequential scheme based on the following levels:</p>
+<ul>
+<li>Boards: Hardware platform (evaluation, discovery, nucleo boards)</li>
+<li>Project Category:
+<ul>
+<li>Applications</li>
+<li>Demonstrations</li>
+<li>Utilities</li>
+</ul></li>
+</ul>
+<p>The exhaustive list of projects is provided in this table: <a href="X-CUBE-ST67W61_ProjectsList.html">X-CUBE-ST67W61_ProjectsList</a>.</p>
+</div>
+<section id="update-history" class="col-sm-12 col-lg-8">
+<h1>Update History</h1>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true"> <label for="collapse-section1" aria-hidden="false"><strong>V1.0.0 / 28-May-2025</strong></label>
+<div>
+<h2 id="main-changes">Main Changes</h2>
+<ul>
+<li><strong>First official release</strong></li>
+</ul>
+<h2 id="contents">Contents</h2>
+<p>Nine applications and one demonstration exercising the ST67W6X_Network_Driver capabilities, and one utility.</p>
+<ul>
+<li><strong>Applications</strong>
+<ul>
+<li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
+<li>ST67W6X_BLE_p2pClient : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</li>
+<li>ST67W6X_BLE_p2pServer : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).</li>
+<li>ST67W6X_CLI :This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi and Bluetooth LE solution via command line interface (CLI).</li>
+<li>ST67W6X_Echo : This application demonstrates the TCP Echo feature over Wi-Fi.</li>
+<li>ST67W6X_FOTA : This application aims to demonstrate the FOTA (Firmware update Over-The-Air) feature over Wi-Fi.</li>
+<li>ST67W6X_HTTP_Server : This application aims to demonstrate an HTTP server over Network API, hosted by a device configured as a soft access point (soft-AP).</li>
+<li>ST67W6X_HTTPS_Client : This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</li>
+<li>ST67W6X_WiFi_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</li>
+</ul></li>
+<li><strong>Demonstrations</strong>
+<ul>
+<li>ST67W6X_MQTT : This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>NCP_Loader: This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</li>
+</ul></li>
+</ul>
+<p><small>The components flagged by “<span class="icon-st-update"></span>” have changed since the previous release. “<span class="icon-st-add"></span>” are new.</small></p>
+<p><strong>Projects</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Board/Component</th>
+<th>Project Category</th>
+<th style="text-align: left;">Path</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NUCLEO-H7S3L8</td>
+<td>Applications</td>
+<td style="text-align: left;">Projects\NUCLEO-H7R3L8\Applications</td>
+</tr>
+<tr class="even">
+<td>NUCLEO-H7S3L8</td>
+<td>Utilities</td>
+<td style="text-align: left;">Projects\NUCLEO-H7R3L8\Utilities</td>
+</tr>
+<tr class="odd">
+<td>NUCLEO-H563ZI</td>
+<td>Applications</td>
+<td style="text-align: left;">Projects\NUCLEO-H563ZI\Applications</td>
+</tr>
+<tr class="even">
+<td>NUCLEO-H563ZI</td>
+<td>Utilities</td>
+<td style="text-align: left;">Projects\NUCLEO-H563ZI\Utilities</td>
+</tr>
+<tr class="odd">
+<td>NUCLEO-N657X0-Q</td>
+<td>Applications</td>
+<td style="text-align: left;">Projects\NUCLEO-N657X0-Q\Applications</td>
+</tr>
+<tr class="even">
+<td>NUCLEO-N657X0-Q</td>
+<td>Utilities</td>
+<td style="text-align: left;">Projects\NUCLEO-N657X0-Q\Utilities</td>
+</tr>
+<tr class="odd">
+<td>NUCLEO-U575ZI-Q</td>
+<td>Applications</td>
+<td style="text-align: left;">Projects\NUCLEO-U575ZI-Q\Applications</td>
+</tr>
+<tr class="even">
+<td>NUCLEO-U575ZI-Q</td>
+<td>Demonstrations</td>
+<td style="text-align: left;">Projects\NUCLEO-U575ZI-Q\Demonstrations</td>
+</tr>
+<tr class="odd">
+<td>NUCLEO-U575ZI-Q</td>
+<td>Utilities</td>
+<td style="text-align: left;">Projects\NUCLEO-U575ZI-Q\Utilities</td>
+</tr>
+<tr class="even">
+<td>ST67W6X_Utilities</td>
+<td>Utilities</td>
+<td style="text-align: left;">Projects\ST67W6X_Utilities</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations">Known Limitations</h2>
+<p>None</p>
+<h2 id="development-toolchains-and-compilers">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for Arm (EWARM) toolchain <strong>V9.30.1</strong></li>
+<li>RealView Microcontroller Development Kit (MDK-ARM) toolchain <strong>V5.39</strong></li>
+<li>STM32CubeIDE (Default GCC13 toolchain supported) <strong>V1.18.1</strong></li>
+</ul>
+<h2 id="supported-devices-and-boards">Supported Devices and Boards</h2>
+<ul>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html">NUCLEO-H7S3L8</a> <em>(MB1737)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-h563zi.html">NUCLEO-H563ZI</a> <em>(MB1404)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-n657x0-q.html">NUCLEO-N657X0-Q</a> <em>(MB1940)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-u575zi-q.html">NUCLEO-U575ZI-Q</a> <em>(MB1549)</em> + X-NUCLEO-67W61M1 <em>(MB2230-A03)</em></li>
+</ul>
+</div>
+</div>
+</section>
+</div>
+<footer class="sticky">
+<div class="columns">
+<div class="column" style="width:95%;">
+<p>For complete documentation on ST, visit: <a href="http://www.st.com">www.st.com</a></p>
+<p><em>This release note uses up to date web standards and, for this reason, should not be opened with Internet Explorer but preferably with popular browsers such as Google Chrome, Mozilla Firefox, Opera or Microsoft Edge.</em></p>
+</div><div class="column" style="width:5%;">
+<p><abbr title="Based on template cx566953 version 2.0">Info</abbr></p>
+</div>
+</div>
+</footer>
+</body>
+</html>

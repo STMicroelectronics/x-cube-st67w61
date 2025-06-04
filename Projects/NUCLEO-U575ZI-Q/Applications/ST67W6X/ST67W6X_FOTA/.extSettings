@@ -1,0 +1,6 @@
+[Groups]
+Application/User/App_FOTA/App=../App_FOTA/App/fota_flash.c;../App_FOTA/App/fota_header.c;../App_FOTA/App/sha256.c;
+Doc=../readme.md;
+[ProjectFiles]
+[Others]
+Define=;
