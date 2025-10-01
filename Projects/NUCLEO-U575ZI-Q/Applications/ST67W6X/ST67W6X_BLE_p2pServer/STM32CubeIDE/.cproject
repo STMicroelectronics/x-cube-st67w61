@@ -23,7 +23,7 @@
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.1349443095" name="Floating-point unit" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv5-sp-d16" valueType="enumerated"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.1590529024" name="Floating-point ABI" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard" valueType="enumerated"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board.787908037" name="Board" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board" useByScannerDiscovery="false" value="NUCLEO-U575ZI-Q" valueType="string"/>
-							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults.183416396" name="Defaults" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults" value="com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Debug || true || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || NUCLEO-U575ZI-Q || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../../Core/Inc | ../../App_BLE_p2pServer/App | ../../App_BLE_p2pServer/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core || ../../Core/Inc | ../../App_BLE_p2pServer/App | ../../App_BLE_p2pServer/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core ||  || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 | USE_HAL_DRIVER | STM32U575xx || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 ||  ||  ||  || ${workspace_loc:/${ProjName}/STM32U575ZITXQ_FLASH.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || " valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults.1083295843" name="Defaults" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults" value="com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Debug || true || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || NUCLEO-U575ZI-Q || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../../Core/Inc | ../../ST67W6X/App | ../../Appli/App | ../../Appli/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus || ../../Core/Inc | ../../ST67W6X/App | ../../Appli/App | ../../Appli/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus ||  || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 | ST67_ARCH=W6X_ARCH_T01 | USE_HAL_DRIVER | STM32U575xx || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 ||  ||  ||  || ${workspace_loc:/${ProjName}/STM32U575ZITXQ_FLASH.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || " valueType="string"/>
 							<option id="com.st.stm32cube.ide.mcu.debug.option.cpuclock.579659166" name="Cpu clock frequence" superClass="com.st.stm32cube.ide.mcu.debug.option.cpuclock" useByScannerDiscovery="false" value="160" valueType="string"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary.1226515621" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary" value="true" valueType="boolean"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat.1322089742" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat" value="true" valueType="boolean"/>
@@ -37,8 +37,9 @@
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.439699070" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/App"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/Target"/>
+									<listOptionValue builtIn="false" value="../../ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/Target"/>
 									<listOptionValue builtIn="false" value="../../ST67W6X/Target"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy"/>
@@ -49,10 +50,10 @@
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/CMSIS/RTOS2/Include/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Utilities/lpm/tiny_lpm"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.970364375" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -62,13 +63,15 @@
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols.2056733358" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
 									<listOptionValue builtIn="false" value="configTASK_NOTIFICATION_ARRAY_ENTRIES=8"/>
+									<listOptionValue builtIn="false" value="ST67_ARCH=W6X_ARCH_T01"/>
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 									<listOptionValue builtIn="false" value="STM32U575xx"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.272516889" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/App"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/Target"/>
+									<listOptionValue builtIn="false" value="../../ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/Target"/>
 									<listOptionValue builtIn="false" value="../../ST67W6X/Target"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy"/>
@@ -79,10 +82,10 @@
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/CMSIS/RTOS2/Include/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Utilities/lpm/tiny_lpm"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1340490708" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -134,7 +137,7 @@
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.832094574" name="Floating-point unit" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv5-sp-d16" valueType="enumerated"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.519217357" name="Floating-point ABI" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard" valueType="enumerated"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board.313631081" name="Board" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board" useByScannerDiscovery="false" value="NUCLEO-U575ZI-Q" valueType="string"/>
-							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults.560848477" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults" value="com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Release || false || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || NUCLEO-U575ZI-Q || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../../Core/Inc | ../../App_BLE_p2pServer/App | ../../App_BLE_p2pServer/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core || ../../Core/Inc | ../../App_BLE_p2pServer/App | ../../App_BLE_p2pServer/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core ||  || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 | USE_HAL_DRIVER | STM32U575xx || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 ||  ||  ||  || ${workspace_loc:/${ProjName}/STM32U575ZITXQ_FLASH.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || " valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults.2098780114" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults" value="com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Release || false || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || NUCLEO-U575ZI-Q || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../../Core/Inc | ../../ST67W6X/App | ../../Appli/App | ../../Appli/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus || ../../Core/Inc | ../../ST67W6X/App | ../../Appli/App | ../../Appli/Target | ../../ST67W6X/Target | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc | ../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy | ../../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include | ../../../../../../../Drivers/CMSIS/Include | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/ | ../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/ | ../../../../../../../Drivers/CMSIS/RTOS2/Include/ | ../../../../../../../Utilities/lpm/tiny_lpm | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus ||  || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 | ST67_ARCH=W6X_ARCH_T01 | USE_HAL_DRIVER | STM32U575xx || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 ||  ||  ||  || ${workspace_loc:/${ProjName}/STM32U575ZITXQ_FLASH.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || " valueType="string"/>
 							<option id="com.st.stm32cube.ide.mcu.debug.option.cpuclock.823515074" name="Cpu clock frequence" superClass="com.st.stm32cube.ide.mcu.debug.option.cpuclock" useByScannerDiscovery="false" value="160" valueType="string"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat.462337559" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat" value="true" valueType="boolean"/>
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary.2128420433" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary" value="true" valueType="boolean"/>
@@ -147,8 +150,9 @@
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.398954072" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/App"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/Target"/>
+									<listOptionValue builtIn="false" value="../../ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/Target"/>
 									<listOptionValue builtIn="false" value="../../ST67W6X/Target"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy"/>
@@ -159,10 +163,10 @@
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/CMSIS/RTOS2/Include/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Utilities/lpm/tiny_lpm"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.1058661151" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
 							</tool>
@@ -171,13 +175,15 @@
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.1474745200" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.value.os" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols.68959056" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="configTASK_NOTIFICATION_ARRAY_ENTRIES=8"/>
+									<listOptionValue builtIn="false" value="ST67_ARCH=W6X_ARCH_T01"/>
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 									<listOptionValue builtIn="false" value="STM32U575xx"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.405379180" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/App"/>
-									<listOptionValue builtIn="false" value="../../App_BLE_p2pServer/Target"/>
+									<listOptionValue builtIn="false" value="../../ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/App"/>
+									<listOptionValue builtIn="false" value="../../Appli/Target"/>
 									<listOptionValue builtIn="false" value="../../ST67W6X/Target"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy"/>
@@ -188,10 +194,10 @@
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Drivers/CMSIS/RTOS2/Include/"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Utilities/lpm/tiny_lpm"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
-									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
 									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1795741423" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>

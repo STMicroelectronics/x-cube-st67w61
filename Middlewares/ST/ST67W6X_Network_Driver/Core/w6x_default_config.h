@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    w6x_default_config.h
   * @author  GPM Application Team
-  * @brief   Header file for the W61 configuration module
+  * @brief   Header file for the W6X configuration module
   ******************************************************************************
   * @attention
   *
@@ -43,6 +43,12 @@ extern "C" {
 #define W6X_CLOCK_MODE                          1
 #endif /* W6X_CLOCK_MODE */
 
+#ifndef W6X_ASSERT_ENABLE
+/** Enable/Disable NULL pointer check in the API functions.
+  * 0: Disabled, 1: Enabled */
+#define W6X_ASSERT_ENABLE                       0
+#endif /* W6X_ASSERT_ENABLE */
+
 /** @} */
 
 /** @addtogroup ST67W6X_API_WiFi_Public_Constants
@@ -50,54 +56,14 @@ extern "C" {
   */
 
 #ifndef W6X_WIFI_AUTOCONNECT
-/** Boolean to enable/disable autoconnect functionality. */
+/** Boolean to enable/disable autoconnect functionality */
 #define W6X_WIFI_AUTOCONNECT                    0
 #endif /* W61_AUTOCONNECT */
-
-#ifndef W6X_WIFI_DHCP
-/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_WIFI_DHCP                           1
-#endif /* W6X_WIFI_DHCP */
 
 #ifndef W6X_WIFI_SAP_MAX_CONNECTED_STATIONS
 /** Define the max number of stations that can connect to the Soft-AP */
 #define W6X_WIFI_SAP_MAX_CONNECTED_STATIONS     4
 #endif /* W6X_WIFI_SAP_MAX_CONNECTED_STATIONS */
-
-#ifndef W6X_WIFI_SAP_IP_SUBNET
-/** String defining Soft-AP subnet to use.
-  *  Last digit of IP address automatically set to 1 */
-#define W6X_WIFI_SAP_IP_SUBNET                  {192, 168, 8}
-#endif /* W6X_WIFI_SAP_IP_SUBNET */
-
-#ifndef W6X_WIFI_SAP_IP_SUBNET_BACKUP
-/** String defining Soft-AP subnet to use in case of conflict with the AP the STA is connected to.
-  *  Last digit of IP address automatically set to 1 */
-#define W6X_WIFI_SAP_IP_SUBNET_BACKUP           {192, 168, 9}
-#endif /* W6X_WIFI_SAP_IP_SUBNET_BACKUP */
-
-#ifndef W6X_WIFI_DNS_MANUAL
-/** Define if the DNS addresses are set manually or automatically */
-#define W6X_WIFI_DNS_MANUAL                     0
-#endif /* W6X_WIFI_DNS_MANUAL */
-
-#ifndef W6X_WIFI_DNS_IP_1
-/** String defining DNS IP 1 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_1                       {208, 67, 222, 222}
-#endif /* W6X_WIFI_DNS_IP_1 */
-
-#ifndef W6X_WIFI_DNS_IP_2
-/** String defining DNS IP 2 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_2                       {8, 8, 8, 8}
-#endif /* W6X_WIFI_DNS_IP_2 */
-
-#ifndef W6X_WIFI_DNS_IP_3
-/** String defining DNS IP 3 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_3                       {0, 0, 0, 0}
-#endif /* W6X_WIFI_DNS_IP_3 */
 
 #ifndef W6X_WIFI_COUNTRY_CODE
 /** Define the region code, supported values : [CN, JP, US, EU, 00] */
@@ -110,11 +76,6 @@ extern "C" {
   * 1: static country code */
 #define W6X_WIFI_ADAPTIVE_COUNTRY_CODE          0
 #endif /* W6X_WIFI_ADAPTIVE_COUNTRY_CODE */
-
-#ifndef W6X_WIFI_HOSTNAME
-/** String defining Wi-Fi hostname */
-#define W6X_WIFI_HOSTNAME                       "ST67W61_WiFi"
-#endif /* W6X_WIFI_HOSTNAME */
 
 /** @} */
 
@@ -133,13 +94,29 @@ extern "C" {
   * @{
   */
 
+#ifndef W6X_NET_DHCP
+/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
+#define W6X_NET_DHCP                            1
+#endif /* W6X_NET_DHCP */
+
+#ifndef W6X_NET_SAP_IP_SUBNET
+/** String defining Soft-AP subnet to use.
+  *  Last digit of IP address automatically set to 1 */
+#define W6X_NET_SAP_IP_SUBNET                   {10, 19, 96}
+#endif /* W6X_NET_SAP_IP_SUBNET */
+
+#ifndef W6X_NET_HOSTNAME
+/** String defining Wi-Fi hostname */
+#define W6X_NET_HOSTNAME                        "ST67W61_WiFi"
+#endif /* W6X_NET_HOSTNAME */
+
 #ifndef W6X_NET_RECV_TIMEOUT
-/** Default net socket receive timeout in ms */
+/** Timeout in ticks when calling W6X_Net_Recv() */
 #define W6X_NET_RECV_TIMEOUT                    5000
 #endif /* W6X_NET_RECV_TIMEOUT */
 
 #ifndef W6X_NET_SEND_TIMEOUT
-/** Default net socket send timeout in ms */
+/** Timeout in ticks when calling W6X_Net_Send() */
 #define W6X_NET_SEND_TIMEOUT                    5000
 #endif /* W6X_NET_SEND_TIMEOUT */
 
@@ -166,7 +143,7 @@ extern "C" {
 
 #ifndef W6X_HTTP_CLIENT_TCP_SOCKET_SIZE
 /** Size of the TCP socket used by the HTTP client, recommended to be at least 0x2000 when fetching lots of data.
-  * 0x2000 is the value used in the SPI host project for OTA update, which retrieves around 1 mega bytes of data.*/
+  * 0x2000 is the value used in the SPI host project for OTA update, which retrieves around 1 mega bytes of data. */
 #define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         0x3000
 #endif /* W6X_HTTP_CLIENT_TCP_SOCKET_SIZE */
 

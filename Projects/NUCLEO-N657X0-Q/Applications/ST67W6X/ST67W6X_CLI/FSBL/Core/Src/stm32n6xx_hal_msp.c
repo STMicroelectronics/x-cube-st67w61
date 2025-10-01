@@ -159,12 +159,6 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 
     __HAL_LINKDMA(hspi, hdmarx, handle_GPDMA1_Channel11);
 
-    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel11, DMA_CHANNEL_PRIV|DMA_CHANNEL_SEC
-                              |DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
     /* GPDMA1_REQUEST_SPI5_TX Init */
     handle_GPDMA1_Channel10.Instance = GPDMA1_Channel10;
     handle_GPDMA1_Channel10.Init.Request = GPDMA1_REQUEST_SPI5_TX;
@@ -193,12 +187,6 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     }
 
     __HAL_LINKDMA(hspi, hdmatx, handle_GPDMA1_Channel10);
-
-    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel10, DMA_CHANNEL_PRIV|DMA_CHANNEL_SEC
-                              |DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC) != HAL_OK)
-    {
-      Error_Handler();
-    }
 
     /* SPI5 interrupt Init */
     HAL_NVIC_SetPriority(SPI5_IRQn, 5, 0);

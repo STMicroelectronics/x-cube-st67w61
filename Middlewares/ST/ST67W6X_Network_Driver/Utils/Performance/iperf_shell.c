@@ -87,7 +87,7 @@ static const char *iperf_usage[] =
 
 #if (IPERF_ENABLE == 1)
 /**
-  * @brief  iperf shell function
+  * @brief  Iperf shell function
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
   * @retval ::SHELL_STATUS_OK on success
@@ -110,12 +110,19 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   int32_t o_b = IPERF_DEFAULT_BW_LIMIT;
   int32_t o_S = 0;
   int32_t o_n = 0;
+  uint8_t o_V = 0;
 #if (IPERF_DUAL_MODE == 1)
   int32_t o_d = 0;
 #endif /* IPERF_DUAL_MODE */
   int32_t o_P = IPERF_TRAFFIC_TASK_PRIORITY;
-  uint32_t dst_addr = 0;
-  uint8_t ip_addr[4] = {0};
+
+  union
+  {
+    struct sockaddr_in ipv4;
+#if (LWIP_IPV6 == 1)
+    struct sockaddr_in6 ipv6;
+#endif /* LWIP_IPV6 */
+  } dest_addr = {0};
 
   iperf_cfg_t cfg;
 
@@ -155,8 +162,19 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToIP(argv[current_arg], ip_addr);
-      dst_addr = ATON_R(ip_addr);
+      if (NET_INET_PTON(AF_INET, argv[current_arg], &dest_addr.ipv4.sin_addr) == 1)
+      {
+      }
+#if (LWIP_IPV6 == 1)
+      else if (NET_INET_PTON(AF_INET6, argv[current_arg], &dest_addr.ipv6.sin6_addr) == 1)
+      {
+      }
+#endif /* LWIP_IPV6 */
+      else
+      {
+        SHELL_E("Invalid server address\n");
+        return SHELL_STATUS_UNKNOWN_ARGS;
+      }
     }
     /* Server mode */
     else if (IPERF_CMP_ARG("-s"))
@@ -176,7 +194,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_p);
+      o_p = atoi(argv[current_arg]);
     }
     /* Buffer size */
     else if (IPERF_CMP_ARG("-l"))
@@ -186,7 +204,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_l);
+      o_l = atoi(argv[current_arg]);
     }
     /* Interval time to display current bandwidth */
     else if (IPERF_CMP_ARG("-i"))
@@ -196,7 +214,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_i);
+      o_i = atoi(argv[current_arg]);
     }
     /* Duration of the execution. Client mode */
     else if (IPERF_CMP_ARG("-t"))
@@ -206,7 +224,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_t);
+      o_t = atoi(argv[current_arg]);
     }
     /* Bandwidth limit. Client mode */
     else if (IPERF_CMP_ARG("-b"))
@@ -216,7 +234,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_b);
+      o_b = atoi(argv[current_arg]);
     }
     /* TOS */
     else if (IPERF_CMP_ARG("-S"))
@@ -226,7 +244,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_S);
+      o_S = atoi(argv[current_arg]);
     }
     /* Number of bytes to send/recv */
     else if (IPERF_CMP_ARG("-n"))
@@ -236,7 +254,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_n);
+      o_n = atoi(argv[current_arg]);
     }
     /* Traffic task priority */
     else if (IPERF_CMP_ARG("-P"))
@@ -246,7 +264,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      Parser_StrToInt(argv[current_arg], NULL, &o_P);
+      o_P = atoi(argv[current_arg]);
     }
 #if (IPERF_DUAL_MODE == 1)
     /* Dual mode */
@@ -255,6 +273,10 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       ++o_d;
     }
 #endif /* IPERF_DUAL_MODE */
+    else if (IPERF_CMP_ARG("-V"))
+    {
+      o_V++;
+    }
     else
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
@@ -264,7 +286,16 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   }
 
   memset(&cfg, 0, sizeof(cfg));
-  cfg.type = IPERF_IP_TYPE_IPV4;
+#if (IPERF_V6 == 1)
+  if (o_V)
+  {
+    cfg.type = IPERF_IP_TYPE_IPV6;
+  }
+  else
+#endif /* IPERF_V6 */
+  {
+    cfg.type = IPERF_IP_TYPE_IPV4;
+  }
 
   if (!((o_c && !o_s) || (!o_c && o_s)))
   {
@@ -275,7 +306,16 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   /* Client or Server mode */
   if (o_c)
   {
-    cfg.destination_ip4 = dst_addr;
+#if (LWIP_IPV6 == 1)
+    if (cfg.type == IPERF_IP_TYPE_IPV6)
+    {
+      memcpy(cfg.destination_ip6, &dest_addr.ipv6.sin6_addr, sizeof(cfg.destination_ip6));
+    }
+    else
+#endif /* LWIP_IPV6 */
+    {
+      cfg.destination_ip4 = dest_addr.ipv4.sin_addr.s_addr;
+    }
     cfg.flag |= IPERF_FLAG_CLIENT;
   }
   else

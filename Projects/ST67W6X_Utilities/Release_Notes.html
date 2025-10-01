@@ -83,32 +83,44 @@ vertical-align: middle;
 <td>Bootrom of the chip, according to the partition table, starts the latest firmware</td>
 </tr>
 <tr class="even">
-<td>st67w611m_mfg_v2.0.75.bin</td>
+<td>st67w611m_mfg_v2.0.89.bin</td>
 <td>Manufacturing test solution includes testing of RF and other modules</td>
 </tr>
 <tr class="odd">
-<td>st67w611m_mission_t01_v2.0.75.bin</td>
+<td>st67w611m_mission_t01_v2.0.89.bin</td>
 <td>Network Coprocessor includes BLE, Wi-Fi, TCP/IP features managed by AT commands over SPI</td>
 </tr>
 <tr class="even">
+<td>st67w611m_mission_t02_v2.0.89.bin</td>
+<td>Network Coprocessor includes BLE and Wi-Fi features managed by AT commands over SPI. TCP/IP feature must be defined on Host</td>
+</tr>
+<tr class="odd">
 <td>partition.bin</td>
 <td>Partition table image containing all memory region addresses</td>
 </tr>
-<tr class="odd">
-<td>st67w611m_mfg_v2.0.75.bin.ota</td>
+<tr class="even">
+<td>st67w611m_mfg_v2.0.89.bin.ota</td>
 <td>Manufacturing test image for Firmware Upgrade Over-The-Air</td>
 </tr>
+<tr class="odd">
+<td>st67w611m_mission_t01_v2.0.89.bin.ota</td>
+<td>Network Coprocessor t01 image for Firmware Upgrade Over-The-Air</td>
+</tr>
 <tr class="even">
-<td>st67w611m_mission_t01_v2.0.75.bin.ota</td>
-<td>Network Coprocessor image for Firmware Upgrade Over-The-Air</td>
+<td>st67w611m_mission_t02_v2.0.89.bin.ota</td>
+<td>Network Coprocessor t02 image for Firmware Upgrade Over-The-Air</td>
 </tr>
 <tr class="odd">
-<td>st67w611m_mfg_v2.0.75.xz.ota</td>
+<td>st67w611m_mfg_v2.0.89.xz.ota</td>
 <td>Manufacturing test compressed image for Firmware Upgrade Over-The-Air</td>
 </tr>
 <tr class="even">
-<td>st67w611m_mission_t01_v2.0.75.xz.ota</td>
-<td>Network Coprocessor compressed image for Firmware Upgrade Over-The-Air</td>
+<td>st67w611m_mission_t01_v2.0.89.xz.ota</td>
+<td>Network Coprocessor compressed t01 image for Firmware Upgrade Over-The-Air</td>
+</tr>
+<tr class="odd">
+<td>st67w611m_mission_t02_v2.0.89.xz.ota</td>
+<td>Network Coprocessor compressed t02 image for Firmware Upgrade Over-The-Air</td>
 </tr>
 </tbody>
 </table>
@@ -131,27 +143,324 @@ vertical-align: middle;
 </tr>
 <tr class="even">
 <td>UART_bypass.bin</td>
-<td>Link ST-Link and X-NUCLEO-67W61M1 UARTs to execute the Manufacturing test over STM32 UART link (in using the st67w611m_mfg_v2.0.75.bin)</td>
+<td>Link ST-Link and X-NUCLEO-67W61M1 UARTs to execute the Manufacturing test over STM32 UART link (in using the st67w611m_mfg_*.bin)</td>
 </tr>
 <tr class="odd">
 <td>ST67W6X_CLI.bin</td>
-<td>Command line interface Host project to test the X-NUCLEO-67W61M1 Wi-Fi solution based on Network Coprocessor (in using the st67w611m_mission_t01_v2.0.75.bin)</td>
+<td>Command line interface Host project to test the X-NUCLEO-67W61M1 Wi-Fi solution based on Network Coprocessor (in using the st67w611m_mission_t01_*.bin)</td>
+</tr>
+<tr class="even">
+<td>ST67W6X_CLI_LWIP.bin</td>
+<td>Command line interface Host project to test the X-NUCLEO-67W61M1 Wi-Fi solution based on LwIP on host (in using the st67w611m_mission_t02_*.bin)</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_FOTA.bin</td>
+<td>Host project to test the X-NUCLEO-67W61M1 Firmware upgrade over Wi-Fi (in using the st67w611m_mission_t01_*.bin)</td>
 </tr>
 </tbody>
 </table>
 <p>Here is the list of the supported files available in Littlefs directory:</p>
-<div class="line-block">littlefs.bin | File system image containing some predefined certificates for security features</div>
+<table>
+<colgroup>
+<col style="width: 76%" />
+<col style="width: 23%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>LittleFS binary</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>littlefs.bin</td>
+<td>File system image containing some predefined certificates for security features</td>
+</tr>
+</tbody>
+</table>
 </div>
 <section id="update-history" class="col-sm-12 col-lg-8">
 <h1>Update History</h1>
 <div class="collapse">
-<input type="checkbox" id="collapse-section01" checked aria-hidden="true"> <label for="collapse-section01" aria-hidden="false"><strong>V1.0.0 / 28-May-2025</strong></label>
+<input type="checkbox" id="collapse-section02" checked aria-hidden="true"> <label for="collapse-section02" aria-hidden="false"><strong>V1.1.0 / 26-September-2025</strong></label>
 <div>
 <h2 id="main-changes">Main Changes</h2>
 <ul>
-<li><strong>First official release</strong></li>
+<li>ST67W611M Binaries updated to version 2.0.89</li>
+<li>Add of new ST67W611M binaries and scripts for T02 architecture (LwIP on host)</li>
+<li>ID 211259: Add ST67W6X_FOTA binary and FOTA HTTP server example to exercise the feature</li>
+<li>ID 211264: Replace WMIC by powershell command in NCP_update Windows scripts</li>
+<li>ID 210737: Improve python scripts provided for FOTA</li>
 </ul>
 <h2 id="contents">Contents</h2>
+<ul>
+<li>FOTA header generation and HTTP server python scripts</li>
+<li>ST67W611M binaries for Mission and Manufacturing modes with scripts to flash them over host board</li>
+<li>LittleFS file system support with scripts to generate image of certificates</li>
+</ul>
+<p><small>The components flagged by “<span class="icon-st-update"></span>” have changed since the previous release. “<span class="icon-st-add"></span>” are new.</small></p>
+<p><strong>ST67W611M Binary Table</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 34%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>ST67W611M binaries</th>
+<th>Version</th>
+<th>SHA256 Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>st67w611m_boot2_v8.1.9.bin</td>
+<td>V8.1.9<span class="icon-st-update"></span></td>
+<td>cf17800b765a1fad50fb338e2eed14240bf728831cb7426e97aa858703227f99</td>
+</tr>
+<tr class="even">
+<td>st67w611m_mfg_v2.0.89.bin</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>5856e144c14998bb20ff0b83cbc95eef0a0673090b1ff464f3d9f7bdbcf6c080</td>
+</tr>
+<tr class="odd">
+<td>st67w611m_mission_t01_v2.0.89.bin</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>bbd64876cda506786d925e398d257445f7c1e59ff3a5ef59f083196d83c3ec33</td>
+</tr>
+<tr class="even">
+<td>st67w611m_mission_t02_v2.0.89.bin</td>
+<td>V2.0.89<span class="icon-st-add"></span></td>
+<td>a79717f51174b4d0d6b93598400d959e28dd644346794e24b8dd35405597934d</td>
+</tr>
+<tr class="odd">
+<td>partition.bin</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>3893b11c48ee01669b1867743ca3297bb7e0511f4167c133095f8454c2313d72</td>
+</tr>
+<tr class="even">
+<td>st67w611m_mfg_v2.0.89.bin.ota</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>5a7cfdf26c61b95ea018016341db2e4cd405eab6bbfcf23e9d8e12ebb5d0df40</td>
+</tr>
+<tr class="odd">
+<td>st67w611m_mission_t01_v2.0.89.bin.ota</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>475b75ffd21b9a6191071c8cb2bac8897bd8ae1668afb6fec146105031924f2d</td>
+</tr>
+<tr class="even">
+<td>st67w611m_mission_t02_v2.0.89.bin.ota</td>
+<td>V2.0.89<span class="icon-st-add"></span></td>
+<td>f3a7b307be53cec5ce678ac735c3b9de5df2f26b616ef3cdcaca1c10589ffeb4</td>
+</tr>
+<tr class="odd">
+<td>st67w611m_mfg_v2.0.89.xz.ota</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>5233d714d053e4b856086b3b115e56c9ad686effb15fdbb6567294187ef4992c</td>
+</tr>
+<tr class="even">
+<td>st67w611m_mission_t01_v2.0.89.xz.ota</td>
+<td>V2.0.89<span class="icon-st-update"></span></td>
+<td>fc6eba97620ff4acc9b96e9619003332d27b400bf0ccb6af06dadaa9af4958a2</td>
+</tr>
+<tr class="odd">
+<td>st67w611m_mission_t02_v2.0.89.xz.ota</td>
+<td>V2.0.89<span class="icon-st-add"></span></td>
+<td>926157d1e1c1196a262ed946ca16662d557d9d37ba1c5c6a6b6a2727ef7e652b</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NUCLEO-H7S3L8 Host Binary Table</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 34%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>STM32 Host binaries</th>
+<th>Version</th>
+<th>SHA256 Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bootloader.bin</td>
+<td>V1.0.0</td>
+<td>c8793aea8fc0a6e110cd37b641b38b1b5f4c440cb5b3feb181c1d063ab0b2042</td>
+</tr>
+<tr class="even">
+<td>UART_bypass.bin</td>
+<td>V1.0.0</td>
+<td>44037d9935e7c7c6228a8577ae910bcb376ebfe138e4bef17fa12a724b1a4317</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_CLI_Appli.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>373c5301cad6b80ea018bdf4ea0cb3bacf71c653e94ea036661a3a825af8f89e</td>
+</tr>
+<tr class="even">
+<td>ST67W6X_CLI_Boot.bin</td>
+<td>V1.0.0</td>
+<td>ae90139628756eb4a78bf7347fe85073edc966a4bf7a25489363fa024cd9726a</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_CLI_LWIP_Appli.bin</td>
+<td>V1.1.0<span class="icon-st-add"></span></td>
+<td>87cc021ad2478eaaed78993275564f88487628496cee4b12f404c81d339fd100</td>
+</tr>
+<tr class="even">
+<td>ST67W6X_CLI_LWIP_Boot.bin</td>
+<td>V1.1.0<span class="icon-st-add"></span></td>
+<td>b4dd6e2eb1c6afeda9a626fae7ac8a9c8b761df51d20e326ac0ba38828a29818</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NUCLEO-H563ZI Host Binary Table</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 34%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>STM32 Host binaries</th>
+<th>Version</th>
+<th>SHA256 Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bootloader.bin</td>
+<td>V1.0.0</td>
+<td>3b1684904bc7a431b1923806feabbddebe5797a297728e473dd7a56bb148318f</td>
+</tr>
+<tr class="even">
+<td>UART_bypass.bin</td>
+<td>V1.0.0</td>
+<td>e1d938b1d4ca76f100db3d73ca40955de0b61ea0eb3c3d2f4a3bc7946a35a486</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_CLI.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>2c575edc86e38ce0504a7e6a85a313303a0fb5e0c7264a6549d58c322b383fcb</td>
+</tr>
+<tr class="even">
+<td>ST67W6X_CLI_LWIP.bin</td>
+<td>V1.1.0<span class="icon-st-add"></span></td>
+<td>2f3490c95805e78976b56222ff03cdf4d51e76248cb3c56008bcd47f22b40680</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NUCLEO-N657ZI-Q Host Binary Table</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 34%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>STM32 Host binaries</th>
+<th>Version</th>
+<th>SHA256 Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bootloader.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>a629b1df8acaeb280ecb1d3155b802d18b7f878d1290ce95acc0263491df9f10</td>
+</tr>
+<tr class="even">
+<td>UART_bypass.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>08f5862baba0ead55c2f051c96b28422b61082c7bfa4242d938abf86ecace6ce</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_CLI_FSBL.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>1354a67ff01bca7293d669405b5ec61b83a43c52aaa2a5e059d515d1ee16c4a6</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NUCLEO-U575ZI-Q Host Binary Table</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 34%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>STM32 Host binaries</th>
+<th>Version</th>
+<th>SHA256 Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bootloader.bin</td>
+<td>V1.0.0</td>
+<td>93020c8364896c02fd4881f328287a048db143f2f3ce80c9e83abc909fd71170</td>
+</tr>
+<tr class="even">
+<td>UART_bypass.bin</td>
+<td>V1.0.0</td>
+<td>e63eeccc58b0f427c1c950e378774435c865a29c93f029491cc52ec4a3563ad5</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_CLI.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>ac6a075eb7625d21365f3832b61c6df3a8ace3da9e986685696c96beff6e3e9b</td>
+</tr>
+<tr class="even">
+<td>ST67W6X_CLI_LWIP.bin</td>
+<td>V1.1.0<span class="icon-st-add"></span></td>
+<td>5d386834ff1a009ef4bafa6ca5c79156f93ad5f48d55f7d22677273dea19621a</td>
+</tr>
+<tr class="odd">
+<td>ST67W6X_FOTA.bin</td>
+<td>V1.1.0<span class="icon-st-add"></span></td>
+<td>d3026e8c5324ce689afcecf31321a52d9b7993ff5fe2194de520f4654cb51913</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Littlefs Binary Table</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 34%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Littlefs binary</th>
+<th>Version</th>
+<th>SHA256 Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>littlefs.bin</td>
+<td>V1.1.0<span class="icon-st-update"></span></td>
+<td>a34595712289f01fc0572c2f965d3b9c88f3538065632345ebf98a8df0c7b7e7</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section01" aria-hidden="true"> <label for="collapse-section01" aria-hidden="false"><strong>V1.0.0 / 28-May-2025</strong></label>
+<div>
+<h2 id="main-changes-1">Main Changes</h2>
+<ul>
+<li><strong>First official release</strong></li>
+</ul>
+<h2 id="contents-1">Contents</h2>
 <ul>
 <li>FOTA header generation and HTTP server python scripts</li>
 <li>ST67W611M binaries for Mission and Manufacturing modes with scripts to flash them over host board</li>

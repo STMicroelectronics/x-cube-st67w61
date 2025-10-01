@@ -51,6 +51,10 @@ extern "C" {
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1
 
+/** Enable/Disable NULL pointer check in the API functions.
+  * 0: Disabled, 1: Enabled */
+#define W6X_ASSERT_ENABLE                       0
+
 /** ============================
   * Wi-Fi
   *
@@ -62,34 +66,8 @@ extern "C" {
 /** Boolean to enable/disable autoconnect functionality */
 #define W6X_WIFI_AUTOCONNECT                    0
 
-/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_WIFI_DHCP                           1
-
 /** Define the max number of stations that can connect to the Soft-AP */
 #define W6X_WIFI_SAP_MAX_CONNECTED_STATIONS     4
-
-/** String defining Soft-AP subnet to use.
-  *  Last digit of IP address automatically set to 1 */
-#define W6X_WIFI_SAP_IP_SUBNET                  {192, 168, 8}
-
-/** String defining Soft-AP subnet to use in case of conflict with the AP the STA is connected to.
-  *  Last digit of IP address automatically set to 1 */
-#define W6X_WIFI_SAP_IP_SUBNET_BACKUP           {192, 168, 9}
-
-/** Define if the DNS addresses are set manually or automatically */
-#define W6X_WIFI_DNS_MANUAL                     0
-
-/** String defining DNS IP 1 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_1                       {208, 67, 222, 222}
-
-/** String defining DNS IP 2 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_2                       {8, 8, 8, 8}
-
-/** String defining DNS IP 3 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_3                       {0, 0, 0, 0}
 
 /** Define the region code, supported values : [CN, JP, US, EU, 00] */
 #define W6X_WIFI_COUNTRY_CODE                   "00"
@@ -98,9 +76,6 @@ extern "C" {
   * 0: match AP's country code,
   * 1: static country code */
 #define W6X_WIFI_ADAPTIVE_COUNTRY_CODE          0
-
-/** String defining Wi-Fi hostname */
-#define W6X_WIFI_HOSTNAME                       "ST67W61_WiFi"
 
 /** ============================
   * BLE
@@ -121,6 +96,16 @@ extern "C" {
   * ============================
   */
 
+/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
+#define W6X_NET_DHCP                            1
+
+/** String defining Soft-AP subnet to use.
+  *  Last digit of IP address automatically set to 1 */
+#define W6X_NET_SAP_IP_SUBNET                   {10, 19, 96}
+
+/** String defining Wi-Fi hostname */
+#define W6X_NET_HOSTNAME                        "ST67W61_WiFi"
+
 /** Timeout in ticks when calling W6X_Net_Recv() */
 #define W6X_NET_RECV_TIMEOUT                    5000
 
@@ -140,6 +125,14 @@ extern "C" {
   * Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_default_config.h
   * ============================
   */
+/** HTTP Client thread stack size */
+#define W6X_HTTP_CLIENT_THREAD_STACK_SIZE       1536
+
+/** HTTP Client thread priority */
+#define W6X_HTTP_CLIENT_THREAD_PRIO             30
+
+/** HTTP data receive buffer size */
+#define W6X_HTTP_CLIENT_DATA_RECV_SIZE          2048U
 
 /** Timeout value in millisecond for receiving data via TCP socket used by the HTTP client.
   * This value is set to compensate for when the NCP get stuck for a long time (1 second or more)
@@ -151,6 +144,56 @@ extern "C" {
 #define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         0x3000
 
 /** ============================
+  * Utility Performance network wrapper functions
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Api\w6x_types.h
+  * ============================
+  */
+
+/** Interface of receive data from a socket from a specific address */
+#define NET_RECVFROM                            W6X_Net_Recvfrom
+
+/** Interface of receive data from a socket */
+#define NET_RECV                                W6X_Net_Recv
+
+/** Interface of send data to a socket to a specific address */
+#define NET_SENDTO                              W6X_Net_Sendto
+
+/** Interface of send data to a socket */
+#define NET_SEND                                W6X_Net_Send
+
+/** Interface of shutdown a socket */
+#define NET_SHUTDOWN                            W6X_Net_Shutdown
+
+/** Interface of create a socket */
+#define NET_SOCKET                              W6X_Net_Socket
+
+/** Interface of set socket options */
+#define NET_SETSOCKOPT                          W6X_Net_Setsockopt
+
+/** Interface of close a socket */
+#define NET_CLOSE                               W6X_Net_Close
+
+/** Interface of connect a socket */
+#define NET_CONNECT                             W6X_Net_Connect
+
+/** Interface of accept a connection on a socket */
+#define NET_ACCEPT                              W6X_Net_Accept
+
+/** Interface of bind a socket to an address */
+#define NET_BIND                                W6X_Net_Bind
+
+/** Interface of listen on a socket */
+#define NET_LISTEN                              W6X_Net_Listen
+
+/** Interface of convert an IP address from binary to text form */
+#define NET_INET_NTOP                           W6X_Net_Inet_ntop
+
+/** Interface of convert an IP address from text to binary form */
+#define NET_INET_PTON                           W6X_Net_Inet_pton
+
+/** ============================
   * Utility Performance Iperf
   *
   * All available configuration defines in
@@ -158,19 +201,22 @@ extern "C" {
   * ============================
   */
 /** Enable Iperf feature */
-#define IPERF_ENABLE                            1
+#define IPERF_ENABLE                            0
 
 /** Enable IPv6 for Iperf */
 #define IPERF_V6                                0
+
+/** Enable dual mode for Iperf */
+#define IPERF_DUAL_MODE                         0
 
 /** Iperf traffic task priority */
 #define IPERF_TRAFFIC_TASK_PRIORITY             40
 
 /** Iperf traffic task stack size */
-#define IPERF_TRAFFIC_TASK_STACK                2048
+#define IPERF_TRAFFIC_TASK_STACK                1024
 
 /** Iperf report task stack size */
-#define IPERF_REPORT_TASK_STACK                 2048
+#define IPERF_REPORT_TASK_STACK                 1024
 
 /** Iperf memory allocator */
 #define IPERF_MALLOC                            pvPortMalloc
@@ -197,10 +243,10 @@ extern "C" {
   * ============================
   */
 /** Enable memory performance measurement */
-#define MEM_PERF_ENABLE                         1
+#define MEM_PERF_ENABLE                         0
 
 /** Number of memory allocation to keep track of */
-#define LEAKAGE_ARRAY                           100U
+#define LEAKAGE_ARRAY                           500U
 
 /** Allocator maximum iteration before to break */
 #define ALLOC_BREAK                             0xFFFFFFFFU
@@ -224,7 +270,7 @@ extern "C" {
   * ============================
   */
 /** Enable task performance measurement */
-#define TASK_PERF_ENABLE                        1
+#define TASK_PERF_ENABLE                        0
 
 /** Maximum number of thread to monitor */
 #define PERF_MAXTHREAD                          8U

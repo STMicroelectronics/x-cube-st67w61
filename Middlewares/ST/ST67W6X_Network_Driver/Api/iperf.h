@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    iperf.h
   * @author  GPM Application Team
-  * @brief   Header for iperf.c
+  * @brief   Header for iperf module
   ******************************************************************************
   * @attention
   *
@@ -26,6 +26,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "w6x_config.h"
+#include "w6x_types.h"
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup ST67W6X_Utilities_Performance_Iperf_Types ST67W6X Utility Performance Iperf Types
@@ -34,7 +35,7 @@ extern "C" {
   */
 
 /**
-  * @brief  iperf configuration structure
+  * @brief  Iperf configuration structure
   */
 typedef struct
 {
@@ -42,7 +43,7 @@ typedef struct
   union
   {
     uint32_t destination_ip4;       /*!< destination IPv4 address */
-    char *destination_ip6;          /*!< destination IPv6 address */
+    uint32_t destination_ip6[4];    /*!< destination IPv6 address */
   };
   union
   {
@@ -96,7 +97,7 @@ typedef struct
 
 #ifndef IPERF_REPORT_TASK_STACK
 /** Iperf report task stack size */
-#define IPERF_REPORT_TASK_STACK     2048
+#define IPERF_REPORT_TASK_STACK     1024
 #endif /* IPERF_REPORT_TASK_STACK */
 
 /* Memory allocator */
@@ -124,10 +125,10 @@ typedef struct
 #define IPERF_FLAG_UDP              (1 << 3)        /*!< UDP flag bitmask */
 #define IPERF_FLAG_DUAL             (1 << 4)        /*!< Dual flag bitmask */
 
-#define IPERF_UDP_TX_LEN            1470            /*!< UDP transmit length */
-#define IPERF_UDP_RX_LEN            1470            /*!< UDP receive length */
-#define IPERF_TCP_TX_LEN            (6 << 10)       /*!< TCP transmit length */
-#define IPERF_TCP_RX_LEN            (6 << 10) - 64  /*!< TCP receive length (6kB minus AT Response header length) */
+#define IPERF_UDP_TX_LEN            1470                   /*!< UDP transmit length */
+#define IPERF_UDP_RX_LEN            1470                   /*!< UDP receive length */
+#define IPERF_TCP_TX_LEN            W61_MAX_SPI_XFER       /*!< TCP transmit length */
+#define IPERF_TCP_RX_LEN            W61_MAX_SPI_XFER - 64  /*!< TCP receive length (64 bytes for AT Response header length) */
 
 #define IPERF_MAX_DELAY             64              /*!< Maximum delay */
 

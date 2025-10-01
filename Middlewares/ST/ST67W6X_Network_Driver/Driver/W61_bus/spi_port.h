@@ -47,21 +47,9 @@ typedef void (*spi_transaction_complete_t)(void);
 #define SPI_WAIT_HDR_ACK_TIMEOUT_MS     100
 #define SPI_WAIT_POLL_XFER_TIMEOUT_MS   100
 
-#ifndef SPI_PORT_LOG_ENABLE
-#define SPI_PORT_LOG_ENABLE             0
-#endif /* SPI_PORT_LOG_ENABLE */
-
-#ifndef SPI_PORT_DEBUG_ENABLE
-#define SPI_PORT_DEBUG_ENABLE           0
-#endif /* SPI_PORT_DEBUG_ENABLE */
-
 #ifndef SPI_PORT_ERROR_ENABLE
-#define SPI_PORT_ERROR_ENABLE           0
+#define SPI_PORT_ERROR_ENABLE           1
 #endif /* SPI_PORT_ERROR_ENABLE */
-
-#ifndef SPI_PORT_TRACE_ENABLE
-#define SPI_PORT_TRACE_ENABLE           0
-#endif /* SPI_PORT_TRACE_ENABLE */
 
 enum
 {
@@ -79,49 +67,13 @@ enum
 #endif /* SHORT_FILE */
 
 /* Exported macro ------------------------------------------------------------*/
-#ifdef __ICCARM__
-#define memcpy spi_port_memcpy
-#endif /* __ICCARM__ */
-
-#if (SPI_PORT_LOG_ENABLE == 1)
-#define spi_log(M, ...) do { LogDebug("[%" PRIu32 "][%s +%" PRIu32 "] " M "",\
-                             (xPortIsInsideInterrupt())?(xTaskGetTickCountFromISR()):(xTaskGetTickCount()),\
-                             SHORT_FILE, __LINE__,\
-                             ##__VA_ARGS__);\
-                           } while(0)
-#else
-#define spi_log(...)
-#endif /* SPI_PORT_LOG_ENABLE */
-
-#if (SPI_PORT_DEBUG_ENABLE == 1)
-#define spi_dbg(M, ...) do { LogDebug("[%" PRIu32 "][%s +%" PRIu32 "] " M "",\
-                             (xPortIsInsideInterrupt())?(xTaskGetTickCountFromISR()):(xTaskGetTickCount()),\
-                             SHORT_FILE, __LINE__,\
-                             ##__VA_ARGS__);\
-                           } while(0)
-#else
-#define spi_dbg(...)
-#endif /* SPI_PORT_DEBUG_ENABLE */
-
 #if (SPI_PORT_ERROR_ENABLE == 1)
-#define spi_err(M, ...) do { LogError("[%" PRIu32 "][%s +%" PRIu32 "] " M "",\
-                             (xPortIsInsideInterrupt())?(xTaskGetTickCountFromISR()):(xTaskGetTickCount()),\
-                             SHORT_FILE, __LINE__,\
-                             ##__VA_ARGS__);\
-                           } while(0)
+#define spi_err(...) LogError(__VA_ARGS__)
 #else
 #define spi_err(...)
-#endif /* SPI_PORT_LOG_ENABLE */
+#endif /* SPI_PORT_ERROR_ENABLE */
 
-#if (SPI_PORT_TRACE_ENABLE == 1)
-#define spi_trace(e, m, ...) do {                          \
-                                  if (e)                   \
-                                  spi_port_itm(e);         \
-                                  spi_log(m, __VA_ARGS__); \
-                                } while (0)
-#else
 #define spi_trace(...)
-#endif /* SPI_PORT_TRACE_ENABLE */
 
 /* Exported functions ------------------------------------------------------- */
 /**
@@ -163,18 +115,14 @@ int32_t spi_port_is_ready(void);
 int32_t spi_port_set_cs(int32_t state);
 
 /**
-  * @brief  Set an ITM event
-  * @retval 1 if high, 0 if low
-  */
-uint32_t spi_port_itm(uint32_t ch);
-
-#ifdef __ICCARM__
-/**
   * @brief  Copy memory from source to destination
+  * @note   This function can be implemented as 32-bit memcpy
+  * @param  dest: Destination address
+  * @param  src: Source address
+  * @param  len: Length of data to copy in bytes
   * @retval Destination address
   */
 void *spi_port_memcpy(void *dest, const void *src, unsigned int len);
-#endif /* __ICCARM__ */
 
 #ifdef __cplusplus
 }

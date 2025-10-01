@@ -299,24 +299,29 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/IKS4A1/iks4a1_motion_sensors_ex.c</locationURI>
 		</link>
 		<link>
-			<name>Application/User/App_MQTT/App/main_app.c</name>
+			<name>Application/User/Appli/App/main_app.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/App_MQTT/App/main_app.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/Appli/App/main_app.c</locationURI>
 		</link>
 		<link>
-			<name>Application/User/App_MQTT/Target/freertos_tickless.c</name>
+			<name>Application/User/Appli/Target/freertos_tickless.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/App_MQTT/Target/freertos_tickless.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/Appli/Target/freertos_tickless.c</locationURI>
 		</link>
 		<link>
-			<name>Application/User/App_MQTT/Target/logshell_ctrl.c</name>
+			<name>Application/User/Appli/Target/logshell_ctrl.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/App_MQTT/Target/logshell_ctrl.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/Appli/Target/logshell_ctrl.c</locationURI>
 		</link>
 		<link>
-			<name>Application/User/App_MQTT/Target/stm32_lpm_if.c</name>
+			<name>Application/User/Appli/Target/stm32_lpm_if.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/App_MQTT/Target/stm32_lpm_if.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/Appli/Target/stm32_lpm_if.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/ST67W6X/App/app_st67w6x.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/ST67W6X/App/app_st67w6x.c</locationURI>
 		</link>
 		<link>
 			<name>Application/User/ST67W6X/Target/spi_port.c</name>
@@ -349,6 +354,56 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/littlefs/lfs_util.c</locationURI>
 		</link>
 		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/common_parser.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/modem_cmd_handler.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/modem_cmd_handler.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/spi_iface.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/spi_iface.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_at_ble.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_ble.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_at_common.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_common.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_at_mqtt.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_mqtt.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_at_net.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_net.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_at_sys.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_sys.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_at_wifi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_wifi.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/w61_io.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/w61_io.c</locationURI>
+		</link>
+		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_ble.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ble.c</locationURI>
@@ -369,6 +424,11 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_net.c</locationURI>
 		</link>
 		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_netif.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</locationURI>
+		</link>
+		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_ota.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</locationURI>
@@ -387,56 +447,6 @@
 			<name>Middlewares/cJSON/Data Exchange/cJSON/cJSON.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/cJSON/cJSON.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/common_parser.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/spi_iface.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/spi_iface.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_ble.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_ble.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_common.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_common.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_mqtt.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_mqtt.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_net.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_net.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_rx_parser.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_rx_parser.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_sys.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_sys.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_at_wifi.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_wifi.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus/w61_io.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/w61_io.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Logging/logging.c</name>

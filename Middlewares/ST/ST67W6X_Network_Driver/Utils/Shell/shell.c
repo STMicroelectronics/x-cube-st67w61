@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    shell.c
   * @author  GPM Application Team
-  * @brief   This file is part of the shell module.
+  * @brief   This file is part of the shell module
   ******************************************************************************
   * @attention
   *
@@ -56,16 +56,6 @@ extern int32_t shell_start_exec(cmd_function_t func, int32_t argc, char *argv[])
 extern void shell_dup_line(char *cmd, uint32_t length);
 
 /* Exported constants --------------------------------------------------------*/
-/** @addtogroup ST67W6X_Utilities_Shell_Constants
-  * @{
-  */
-
-#define SHELL_SIGINT  1 /*!< Interrupt signal */
-#define SHELL_SIG_DFL ((shell_sig_func_ptr)0) /*!< Default action */
-#define SHELL_SIG_IGN ((shell_sig_func_ptr)1) /*!< Ignore action */
-
-/** @} */
-
 /* Exported macros -----------------------------------------------------------*/
 /** @addtogroup ST67W6X_Utilities_Shell_Macros
   * @{
@@ -172,15 +162,7 @@ static void shell_function_init(const void *begin, const void *end);
 #endif /* SHELL_ENABLE */
 
 /**
-  * @brief  This function will execute the shell signal
-  * @param  sig the signal (SHELL_SIGINT)
-  * @param  func the signal function
-  * @return the previous signal function
-  */
-shell_sig_func_ptr shell_signal(int32_t sig, shell_sig_func_ptr func);
-
-/**
-  * @brief  Display all the available commands and the relative help message.
+  * @brief  Display all the available commands and the relative help message
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
   * @retval 0
@@ -785,7 +767,7 @@ static int32_t shell_split(char *cmd, uint32_t length, char *argv[SHELL_ARG_NUM]
 
     if (argc >= SHELL_ARG_NUM)
     {
-      SHELL_E("Too many args ! We only Use:\n");
+      SHELL_E("Too many args ! Only Use:\n");
 
       for (i = 0; i < argc; i++)
       {
@@ -914,6 +896,7 @@ static int32_t shell_exec_cmd(char *cmd, uint32_t length, int32_t *retp)
   shell_signal(SHELL_SIGINT, SHELL_SIG_DFL);
   shell_dup_line(cmd, length);
   *retp = shell_start_exec(cmd_func, argc, argv);
+#if (SHELL_USING_DESCRIPTION == 1)
   if (*retp == SHELL_STATUS_UNKNOWN_ARGS)
   {
     struct shell_syscall *index;
@@ -929,6 +912,7 @@ static int32_t shell_exec_cmd(char *cmd, uint32_t length, int32_t *retp)
       }
     }
   }
+#endif /* SHELL_USING_DESCRIPTION */
 
   return 0;
 }
@@ -1006,7 +990,7 @@ int32_t shell_help(int32_t argc, char **argv)
       {
         continue;
       }
-      SHELL_PRINTF("%-20s - %s\n", &index->name[0], index->desc);
+      SHELL_PRINTF("%-30s - %s\n", &index->name[0], index->desc);
 #else
       SHELL_PRINTF("%s\n", &index->name[0]);
 #endif /* SHELL_USING_DESCRIPTION */
@@ -1019,67 +1003,6 @@ int32_t shell_help(int32_t argc, char **argv)
 
 SHELL_CMD_EXPORT_ALIAS(shell_help, help, help [ command ].
                        Display all available commands and the relative help message);
-
-#if 0 /* NOT SUPPORTED */
-int32_t shell_memtrace(int32_t argc, char **argv)
-{
-  uint32_t addr;
-  uint32_t count;
-  uint32_t value;
-  int32_t i;
-  int32_t j;
-
-  /* Check args */
-  if ((argc < 3) || (argc > 5))
-  {
-    SHELL_PRINTF("write memory: 20000000 10 abcd\n");
-    SHELL_PRINTF("read memory: 20000000 10\n");
-    return 0;
-  }
-
-  /* Get address */
-  addr = Parser_StrToHex(argv[1], NULL);
-  count = Parser_StrToHex(argv[2], NULL);
-
-  /* Display memory content at specified address */
-  if (argc == 3)
-  {
-    for (i = 0; i < count;)
-    {
-      SHELL_PRINTF("0x%08x ", (addr + 4 * i));
-      for (j = 0; j < 4; j++)
-      {
-        if (i < count)
-        {
-          /* Read word */
-          SHELL_PRINTF("%08x ", *(uint32_t *)(addr + 4 * i));
-        }
-        else
-        {
-          break;
-        }
-        i++;
-      }
-      SHELL_PRINTF("\n");
-    }
-  }
-  /* Write memory content at specified address */
-  if (argc == 4)
-  {
-    /* Write value */
-    value = Parser_StrToHex(argv[3], NULL);
-
-    for (i = 0; i < count; i++)
-    {
-      *(uint32_t *)(addr + 4 * i) = (uint32_t) value;
-    }
-    return 0;
-  }
-  return 0;
-}
-
-SHELL_CMD_EXPORT_ALIAS(shell_memtrace, memtrace, read / write memory);
-#endif /* NOT SUPPORTED */
 
 /**
   * @brief  Abort the command execution

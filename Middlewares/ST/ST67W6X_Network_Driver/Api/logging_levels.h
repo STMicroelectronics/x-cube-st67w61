@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    logging_levels.h
   * @author  GPM Application Team
-  * @brief   Defines the configuration constants for all logging verbosity levels.
+  * @brief   Defines the configuration constants for all logging verbosity levels
   ******************************************************************************
   * @attention
   *
@@ -82,14 +82,14 @@ extern "C" {
   */
 
 /**
-  * @brief  No log messages.
+  * @brief  No log messages
   *         When LOG_LEVEL is #LOG_NONE, logging is disabled and no
   *         logging messages are printed.
   */
 #define LOG_NONE     0
 
 /**
-  * @brief  Represents erroneous application state or event.
+  * @brief  Represents erroneous application state or event
   *         These messages describe the situations when a library encounters an error from
   *         which it cannot recover.
   * @note   These messages are printed when LOG_LEVEL is defined as either
@@ -98,7 +98,7 @@ extern "C" {
 #define LOG_ERROR    1
 
 /**
-  * @brief  Message about an abnormal event.
+  * @brief  Message about an abnormal event
   *         These messages describe the situations when a library encounters
   *         abnormal event that may be indicative of an error. Libraries continue
   *         execution after logging a warning.
@@ -108,7 +108,7 @@ extern "C" {
 #define LOG_WARN     2
 
 /**
-  * @brief  A helpful, informational message.
+  * @brief  A helpful, informational message
   *         These messages describe normal execution of a library. They provide
   *         the progress of the program at a coarse-grained level.
   * @note   These messages are printed when LOG_LEVEL is defined as either
@@ -117,7 +117,7 @@ extern "C" {
 #define LOG_INFO     3
 
 /**
-  * @brief  Detailed and excessive debug information.
+  * @brief  Detailed and excessive debug information
   *         Debug log messages are used to provide the
   *         progress of the program at a fine-grained level. These are mostly used
   *         for debugging and may contain excessive information such as internal

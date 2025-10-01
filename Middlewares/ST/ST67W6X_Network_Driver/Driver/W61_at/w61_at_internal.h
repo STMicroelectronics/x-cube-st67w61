@@ -26,6 +26,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
+#include "w61_default_config.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -35,14 +36,38 @@ extern "C" {
   * @{
   */
 
-/** Macro to check if the pointer is NULL and return the error code */
-#define W61_NULL_ASSERT(p) if ((p) == NULL) { return ret; }
+/**
+  * \def W61_ASSERT(p)
+  * Macro to check if the expression is true and call the assert function if it is false
+  */
 
-/** Macro to check if the pointer is NULL does not return the error code */
-#define W61_NULL_ASSERT_VOID(p) if ((p) == NULL) { return; }
+/**
+  * \def W61_NULL_ASSERT(p)
+  * Macro to check if the pointer is NULL and return the error code
+  */
 
+/**
+  * \def W61_NULL_ASSERT_VOID(p)
+  * Macro to check if the pointer is NULL does not return the error code
+  */
+
+/**
+  * \def W61_NULL_ASSERT_STR(p, s)
+  * Macro to check if the pointer is NULL and return the error code with error string log
+  */
+
+#if (W61_ASSERT_ENABLE == 1)
 /** Macro to check if the pointer is NULL and return the error code with error string log */
-#define W61_NULL_ASSERT_STR(p, s) if ((p) == NULL) { LogError("%s\n", (s)); return ret; }
+#define W61_ASSERT(expr) if (!(expr)) { LogError("Assert failed: file: %s, line: %d", __FILE__, __LINE__); while(1); }
+#define W61_NULL_ASSERT(p) if ((p) == NULL) { return W61_STATUS_ERROR; }
+#define W61_NULL_ASSERT_VOID(p) if ((p) == NULL) { return; }
+#define W61_NULL_ASSERT_STR(p, s) if ((p) == NULL) { LogError("%s\n", (s)); return W61_STATUS_ERROR; }
+#else
+#define W61_ASSERT(expr)
+#define W61_NULL_ASSERT(p)
+#define W61_NULL_ASSERT_VOID(p)
+#define W61_NULL_ASSERT_STR(p, s)
+#endif /* W61_ASSERT_ENABLE */
 
 /** @} */
 

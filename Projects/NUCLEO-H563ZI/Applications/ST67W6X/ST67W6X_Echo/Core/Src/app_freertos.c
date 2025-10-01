@@ -23,8 +23,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
-#include "main_app.h"
 
 /* USER CODE END Includes */
 
@@ -47,12 +45,12 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTsk */
-osThreadId_t defaultTskHandle;
-const osThreadAttr_t defaultTsk_attributes = {
-  .name = "defaultTsk",
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 512 * 4
+  .stack_size = 128 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,7 +71,6 @@ void vApplicationMallocFailedHook(void)
    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
    to query the size of free heap space that remains (although it does not
    provide information on how the remaining heap might be fragmented). */
-  printf("Malloc failed ...\n");
 }
 /* USER CODE END 5 */
 
@@ -89,13 +86,6 @@ void vApplicationIdleHook(void)
    important that vApplicationIdleHook() is permitted to return to its calling
    function, because it is the responsibility of the idle task to clean up
    memory allocated by the kernel to any task that has since been deleted. */
-  /*
-  size_t freeHeapSize = 0;
-  size_t freeHeapSizeMin = 0;
-
-  freeHeapSize = xPortGetFreeHeapSize();
-  freeHeapSizeMin = xPortGetMinimumEverFreeHeapSize();
-  */
 }
 /* USER CODE END 2 */
 
@@ -105,7 +95,6 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName)
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
-  printf("Task %s stack overflow...\n", pcTaskName);
 }
 /* USER CODE END 4 */
 
@@ -147,8 +136,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
-  /* creation of defaultTsk */
-  defaultTskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTsk_attributes);
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -161,22 +150,20 @@ void MX_FREERTOS_Init(void) {
 }
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-* @brief Function implementing the defaultTsk thread.
+* @brief Function implementing the defaultTask thread.
 * @param argument: Not used
 * @retval None
 */
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN defaultTsk */
-  main_app();
-
+  /* USER CODE BEGIN defaultTask */
   /* Infinite loop */
-  for (;;)
+  for(;;)
   {
-    osDelay(1000);
+    osDelay(1);
   }
-  /* USER CODE END defaultTsk */
+  /* USER CODE END defaultTask */
 }
 
 /* Private application code --------------------------------------------------*/

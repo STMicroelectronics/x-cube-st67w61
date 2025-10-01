@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1277076700">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1277076700" moduleId="org.eclipse.cdt.core.settings" name="Debug">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1277076700" name="Debug" parent="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug">
+					<folderInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1277076700." name="/" resourcePath="">
+						<toolChain id="com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.exe.debug.1060662580" name="MCU ARM GCC" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.exe.debug">
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_mcu.75772141" name="MCU" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_mcu" useByScannerDiscovery="true" value="STM32H7S3L8Hx" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_cpuid.1169302441" name="CPU" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_cpuid" useByScannerDiscovery="false" value="0" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_coreid.1657504082" name="Core" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_coreid" useByScannerDiscovery="false" value="0" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.1284359995" name="Floating-point unit" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv5-d16" valueType="enumerated"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.1215129097" name="Floating-point ABI" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard" valueType="enumerated"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board.1095039511" name="Board" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board" useByScannerDiscovery="false" value="NUCLEO-H7S3L8" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults.512306013" name="Defaults" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults" useByScannerDiscovery="false" value="com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Debug || true || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || NUCLEO-H7S3L8 || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../../../Appli/Core/Inc | ../../../Appli/ST67W6X/App | ../../../Appli/Appli/App | ../../../Appli/Appli/Target | ../../../Appli/ST67W6X/Target | ../../../Appli/littlefs/Target | ../../../Appli/LWIP/App | ../../../Appli/LWIP/Target | ../../../Appli/LWIP/Target/arch | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/ | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../../Middlewares/Third_Party/littlefs | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F | ../../../../../../../../Drivers/CMSIS/RTOS2/Include | ../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include | ../../../../../../../../Drivers/CMSIS/Include || ../../../Appli/Core/Inc | ../../../Appli/ST67W6X/App | ../../../Appli/Appli/App | ../../../Appli/Appli/Target | ../../../Appli/ST67W6X/Target | ../../../Appli/littlefs/Target | ../../../Appli/LWIP/App | ../../../Appli/LWIP/Target | ../../../Appli/LWIP/Target/arch | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/ | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../../Middlewares/Third_Party/littlefs | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F | ../../../../../../../../Drivers/CMSIS/RTOS2/Include | ../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include | ../../../../../../../../Drivers/CMSIS/Include ||  || USE_HAL_DRIVER | STM32H7S3xx | configTASK_NOTIFICATION_ARRAY_ENTRIES=8 | ST67_ARCH=W6X_ARCH_T02 | LFS_CONFIG=lfs_util_config.h || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 ||  ||  ||  || ${workspace_loc:/${ProjName}/STM32H7S3L8HX_ROMxspi2.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || " valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.debug.option.cpuclock.312169323" name="Cpu clock frequence" superClass="com.st.stm32cube.ide.mcu.debug.option.cpuclock" useByScannerDiscovery="false" value="-0" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat.1816373460" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat" value="true" valueType="boolean"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary.424840163" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary" value="true" valueType="boolean"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.targetplatform.1591463692" isAbstract="false" osList="all" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.targetplatform"/>
+							<builder buildPath="${workspace_loc:/ST67W6X_CLI_LWIP_Appli}/Debug" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.builder.487350235" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.builder"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.1981911048" name="MCU/MPU GCC Assembler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.1749798933" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g3" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols.547770590" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="DEBUG"/>
+									<listOptionValue builtIn="false" value="configTASK_NOTIFICATION_ARRAY_ENTRIES=8"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.1020903582" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../../Appli/Core/Inc"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/littlefs/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target/arch"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/littlefs"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/RTOS2/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Include"/>
+								</option>
+								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.1340783398" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.919879042" name="MCU/MPU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.453977917" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.value.g3" valueType="enumerated"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.792097667" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.value.og" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols.456291903" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="DEBUG"/>
+									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
+									<listOptionValue builtIn="false" value="STM32H7S3xx"/>
+									<listOptionValue builtIn="false" value="configTASK_NOTIFICATION_ARRAY_ENTRIES=8"/>
+									<listOptionValue builtIn="false" value="ST67_ARCH=W6X_ARCH_T02"/>
+									<listOptionValue builtIn="false" value="LFS_CONFIG=lfs_util_config.h"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.451404897" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../../Appli/Core/Inc"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/littlefs/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target/arch"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/littlefs"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/RTOS2/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Include"/>
+								</option>
+								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.717997661" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.2072518181" name="MCU/MPU G++ Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel.544854879" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel.value.g3" valueType="enumerated"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level.1619832181" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level" useByScannerDiscovery="false"/>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.1575905049" name="MCU/MPU GCC Linker" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.script.1800356216" name="Linker Script (-T)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.script" value="${workspace_loc:/${ProjName}/STM32H7S3L8HX_ROMxspi2.ld}" valueType="string"/>
+								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.input.598647864" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.linker.1401025110" name="MCU/MPU G++ Linker" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.linker"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.archiver.917951212" name="MCU/MPU GCC Archiver" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.archiver"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.size.1982571348" name="MCU Size" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.size"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objdump.listfile.1580184377" name="MCU Output Converter list file" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objdump.listfile"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.hex.233482871" name="MCU Output Converter Hex" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.hex"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.binary.424278367" name="MCU Output Converter Binary" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.binary"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.verilog.365711103" name="MCU Output Converter Verilog" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.verilog"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.srec.9455330" name="MCU Output Converter Motorola S-rec" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.srec"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec.13157341" name="MCU Output Converter Motorola S-rec with symbols" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec"/>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1758281339">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1758281339" moduleId="org.eclipse.cdt.core.settings" name="Release">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1758281339" name="Release" parent="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release">
+					<folderInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1758281339." name="/" resourcePath="">
+						<toolChain id="com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.exe.release.684206186" name="MCU ARM GCC" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.exe.release">
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_mcu.183586195" name="MCU" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_mcu" useByScannerDiscovery="true" value="STM32H7S3L8Hx" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_cpuid.383123417" name="CPU" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_cpuid" useByScannerDiscovery="false" value="0" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_coreid.43393958" name="Core" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_coreid" useByScannerDiscovery="false" value="0" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.645745384" name="Floating-point unit" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv5-d16" valueType="enumerated"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.2076969543" name="Floating-point ABI" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi" useByScannerDiscovery="true" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard" valueType="enumerated"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board.1843538652" name="Board" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_board" useByScannerDiscovery="false" value="NUCLEO-H7S3L8" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults.552061316" name="Defaults" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.defaults" useByScannerDiscovery="false" value="com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Release || false || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || NUCLEO-H7S3L8 || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../../../Appli/Core/Inc | ../../../Appli/ST67W6X/App | ../../../Appli/Appli/App | ../../../Appli/Appli/Target | ../../../Appli/ST67W6X/Target | ../../../Appli/littlefs/Target | ../../../Appli/LWIP/App | ../../../Appli/LWIP/Target | ../../../Appli/LWIP/Target/arch | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/ | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../../Middlewares/Third_Party/littlefs | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F | ../../../../../../../../Drivers/CMSIS/RTOS2/Include | ../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include | ../../../../../../../../Drivers/CMSIS/Include || ../../../Appli/Core/Inc | ../../../Appli/ST67W6X/App | ../../../Appli/Appli/App | ../../../Appli/Appli/Target | ../../../Appli/ST67W6X/Target | ../../../Appli/littlefs/Target | ../../../Appli/LWIP/App | ../../../Appli/LWIP/Target | ../../../Appli/LWIP/Target/arch | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/ | ../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/ | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at | ../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus | ../../../../../../../../Middlewares/Third_Party/littlefs | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc | ../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 | ../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F | ../../../../../../../../Drivers/CMSIS/RTOS2/Include | ../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include | ../../../../../../../../Drivers/CMSIS/Include ||  || USE_HAL_DRIVER | STM32H7S3xx | configTASK_NOTIFICATION_ARRAY_ENTRIES=8 | ST67_ARCH=W6X_ARCH_T02 | LFS_CONFIG=lfs_util_config.h || configTASK_NOTIFICATION_ARRAY_ENTRIES=8 ||  ||  ||  || ${workspace_loc:/${ProjName}/STM32H7S3L8HX_ROMxspi2.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || " valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.debug.option.cpuclock.743580105" name="Cpu clock frequence" superClass="com.st.stm32cube.ide.mcu.debug.option.cpuclock" useByScannerDiscovery="false" value="-0" valueType="string"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat.2020282505" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.nanoprintffloat" value="true" valueType="boolean"/>
+							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary.767003984" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.convertbinary" value="true" valueType="boolean"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.targetplatform.1826114805" isAbstract="false" osList="all" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.targetplatform"/>
+							<builder buildPath="${workspace_loc:/ST67W6X_CLI_LWIP_Appli}/Release" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.builder.1510381816" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.builder"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.811940162" name="MCU/MPU GCC Assembler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.1482100063" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g0" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols.809168777" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.definedsymbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="configTASK_NOTIFICATION_ARRAY_ENTRIES=8"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths.376842427" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.includepaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../../Appli/Core/Inc"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/littlefs/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target/arch"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/littlefs"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/RTOS2/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Include"/>
+								</option>
+								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input.1603659724" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.input"/>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.718501710" name="MCU/MPU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.1935128947" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.value.g0" valueType="enumerated"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.1539164331" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.value.os" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols.1516945338" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
+									<listOptionValue builtIn="false" value="STM32H7S3xx"/>
+									<listOptionValue builtIn="false" value="configTASK_NOTIFICATION_ARRAY_ENTRIES=8"/>
+									<listOptionValue builtIn="false" value="ST67_ARCH=W6X_ARCH_T02"/>
+									<listOptionValue builtIn="false" value="LFS_CONFIG=lfs_util_config.h"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.1774397432" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../../Appli/Core/Inc"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/Appli/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/ST67W6X/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/littlefs/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/App"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target"/>
+									<listOptionValue builtIn="false" value="../../../Appli/LWIP/Target/arch"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/littlefs"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/STM32H7RSxx_HAL_Driver/Inc/Legacy"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/RTOS2/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Device/ST/STM32H7RSxx/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../../../../Drivers/CMSIS/Include"/>
+								</option>
+								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1315372523" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.930988318" name="MCU/MPU G++ Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel.1547635474" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel.value.g0" valueType="enumerated"/>
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level.1417813225" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level.value.os" valueType="enumerated"/>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.326732577" name="MCU/MPU GCC Linker" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker">
+								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.script.262374277" name="Linker Script (-T)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.script" value="${workspace_loc:/${ProjName}/STM32H7S3L8HX_ROMxspi2.ld}" valueType="string"/>
+								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.input.1597127576" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.linker.771592363" name="MCU/MPU G++ Linker" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.linker"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.archiver.1914235328" name="MCU/MPU GCC Archiver" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.archiver"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.size.1800638487" name="MCU Size" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.size"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objdump.listfile.823680367" name="MCU Output Converter list file" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objdump.listfile"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.hex.1428289544" name="MCU Output Converter Hex" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.hex"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.binary.1210175586" name="MCU Output Converter Binary" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.binary"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.verilog.713649023" name="MCU Output Converter Verilog" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.verilog"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.srec.1533631586" name="MCU Output Converter Motorola S-rec" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.srec"/>
+							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec.1006246681" name="MCU Output Converter Motorola S-rec with symbols" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec"/>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.pathentry"/>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="ST67W6X_CLI_LWIP_Appli.null.1254336906" name="ST67W6X_CLI_LWIP_Appli"/>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1758281339;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1758281339.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.718501710;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1315372523">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1277076700;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1277076700.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.919879042;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.717997661">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/ST67W6X_CLI_LWIP_Appli"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/ST67W6X_CLI_LWIP_Appli"/>
+		</configuration>
+	</storageModule>
+</cproject>

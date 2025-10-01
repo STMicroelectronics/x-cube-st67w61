@@ -28,16 +28,16 @@
 #include <FreeRTOS.h>
 #include <semphr.h>
 
-#define DBG_TAG "LFS"
-
 #include "lfs_port.h"
 #include "easyflash.h"
 
 #include "logging.h"
+#include "w6x_config.h" /* LFS_ENABLE */
 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
+#if (LFS_ENABLE == 1)
 
 /* Global variables ----------------------------------------------------------*/
 /* USER CODE BEGIN GV */
@@ -584,3 +584,4 @@ void abort(void)
 /* USER CODE BEGIN FD */
 
 /* USER CODE END FD */
+#endif /* LFS_ENABLE */

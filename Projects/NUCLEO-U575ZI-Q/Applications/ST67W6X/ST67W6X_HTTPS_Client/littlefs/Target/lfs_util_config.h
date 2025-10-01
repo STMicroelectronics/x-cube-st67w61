@@ -40,16 +40,21 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* Exported constants --------------------------------------------------------*/
+/** Disable assertions */
 #define LFS_NO_ASSERT
 
+/** Enable thread safe */
 #define LFS_THREADSAFE
 
+/** Enable read-only filesystem */
 #define LFS_READONLY
 
 /* #define LFS_YES_TRACE */
 
+/** Disable debug messages */
 #define LFS_NO_DEBUG
 
+/** Disable error messages */
 #define LFS_NO_WARN
 
 /* USER CODE BEGIN EC */
@@ -58,7 +63,28 @@ extern "C" {
 
 /* Exported macros -----------------------------------------------------------*/
 /* Logging functions */
+/**
+  * \def LFS_TRACE( ... )
+  * Send a message to the log with trace level
+  */
+/**
+  * \def LFS_DEBUG( ... )
+  * Send a message to the log with debug level
+  */
+/**
+  * \def LFS_WARN( ... )
+  * Send a message to the log with warn level
+  */
+/**
+  * \def LFS_ERROR( ... )
+  * Send a message to the log with error level
+  */
+/**
+  * \def LFS_ASSERT( ... )
+  * Send a message to the log with assert level
+  */
 #ifdef LFS_YES_TRACE
+/** Trace logging */
 #define LFS_TRACE_(fmt, ...) \
   LogInfo("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_TRACE(...) LFS_TRACE_(__VA_ARGS__, "")
@@ -67,6 +93,7 @@ extern "C" {
 #endif /* LFS_YES_TRACE */
 
 #ifndef LFS_NO_DEBUG
+/** Debug logging */
 #define LFS_DEBUG_(fmt, ...) \
   LogDebug("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_DEBUG(...) LFS_DEBUG_(__VA_ARGS__, "")
@@ -75,6 +102,7 @@ extern "C" {
 #endif /* LFS_NO_DEBUG */
 
 #ifndef LFS_NO_WARN
+/** Warning logging */
 #define LFS_WARN_(fmt, ...) \
   LogWarn("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_WARN(...) LFS_WARN_(__VA_ARGS__, "")
@@ -83,6 +111,7 @@ extern "C" {
 #endif /* LFS_NO_WARN */
 
 #ifndef LFS_NO_ERROR
+/** Error logging */
 #define LFS_ERROR_(fmt, ...) \
   LogError("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_ERROR(...) LFS_ERROR_(__VA_ARGS__, "")
@@ -107,29 +136,55 @@ extern "C" {
  * expensive basic C implementation for debugging purposes
  */
 
-/* Min/max functions for unsigned 32-bit numbers */
+/**
+  * @brief  Returns the maximum of two uint32_t numbers
+  * @param  a First number
+  * @param  b Second number
+  * @return The maximum of a and b
+  */
 static inline uint32_t lfs_max(uint32_t a, uint32_t b)
 {
   return (a > b) ? a : b;
 }
 
+/**
+  * @brief  Returns the minimum of two uint32_t numbers
+  * @param  a First number
+  * @param  b Second number
+  * @return The minimum of a and b
+  */
 static inline uint32_t lfs_min(uint32_t a, uint32_t b)
 {
   return (a < b) ? a : b;
 }
 
-/* Align to nearest multiple of a size */
+/**
+  * @brief  Aligns a value down to the nearest multiple of a given alignment
+  * @param  a The value to align
+  * @param  alignment The alignment value
+  * @return The aligned value
+  */
 static inline uint32_t lfs_aligndown(uint32_t a, uint32_t alignment)
 {
   return a - (a % alignment);
 }
 
+/**
+  * @brief  Aligns a value up to the nearest multiple of a given alignment
+  * @param  a The value to align
+  * @param  alignment The alignment value
+  * @return The aligned value
+  */
 static inline uint32_t lfs_alignup(uint32_t a, uint32_t alignment)
 {
   return lfs_aligndown(a + alignment - 1, alignment);
 }
 
-/* Find the smallest power of 2 greater than or equal to a */
+/**
+  * @brief  Finds the smallest power of 2 greater than or equal to a
+  * @param  a The value to check
+  * @return The smallest power of 2 greater than or equal to a
+  */
 static inline uint32_t lfs_npw2(uint32_t a)
 {
 #if !defined(LFS_NO_INTRINSICS) && (defined(__GNUC__) || defined(__CC_ARM))
@@ -154,7 +209,11 @@ static inline uint32_t lfs_npw2(uint32_t a)
 #endif /* LFS_NO_INTRINSICS */
 }
 
-/* Count the number of trailing binary zeros in a. lfs_ctz(0) may be undefined */
+/**
+  * @brief  Counts the number of trailing binary zeros in a given number
+  * @param  a The value to check
+  * @return The number of trailing binary zeros in a
+  */
 static inline uint32_t lfs_ctz(uint32_t a)
 {
 #if !defined(LFS_NO_INTRINSICS) && defined(__GNUC__)
@@ -164,7 +223,11 @@ static inline uint32_t lfs_ctz(uint32_t a)
 #endif /* LFS_NO_INTRINSICS */
 }
 
-/* Count the number of binary ones in a */
+/**
+  * @brief  Counts the number of binary ones in a given number
+  * @param  a The value to check
+  * @return The number of binary ones in a
+  */
 static inline uint32_t lfs_popc(uint32_t a)
 {
 #if !defined(LFS_NO_INTRINSICS) && (defined(__GNUC__) || defined(__CC_ARM))
@@ -176,15 +239,22 @@ static inline uint32_t lfs_popc(uint32_t a)
 #endif /* LFS_NO_INTRINSICS */
 }
 
-/* Find the sequence comparison of a and b, this is the distance
- * between a and b ignoring overflow
- */
+/**
+  * @brief  Compares two unsigned integers
+  * @param  a First number
+  * @param  b Second number
+  * @return The difference between a and b
+  */
 static inline int32_t lfs_scmp(uint32_t a, uint32_t b)
 {
   return (int)(unsigned)(a - b);
 }
 
-/* Convert between 32-bit little-endian and native order */
+/**
+  * @brief  Converts a 32-bit little-endian value to native order
+  * @param  a The value to convert
+  * @return The converted value
+  */
 static inline uint32_t lfs_fromle32(uint32_t a)
 {
 #if (defined(  BYTE_ORDER  ) && defined(  ORDER_LITTLE_ENDIAN  ) &&   BYTE_ORDER   ==   ORDER_LITTLE_ENDIAN  ) || \
@@ -204,12 +274,21 @@ static inline uint32_t lfs_fromle32(uint32_t a)
 #endif /* LFS_NO_INTRINSICS */
 }
 
+/**
+  * @brief  Converts a 32-bit little-endian value to native order
+  * @param  a The value to convert
+  * @return The converted value
+  */
 static inline uint32_t lfs_tole32(uint32_t a)
 {
   return lfs_fromle32(a);
 }
 
-/* Convert between 32-bit big-endian and native order */
+/**
+  * @brief  Converts a 32-bit big-endian value to native order
+  * @param  a The value to convert
+  * @return The converted value
+  */
 static inline uint32_t lfs_frombe32(uint32_t a)
 {
 #if !defined(LFS_NO_INTRINSICS) && ( \
@@ -229,12 +308,23 @@ static inline uint32_t lfs_frombe32(uint32_t a)
 #endif /* LFS_NO_INTRINSICS */
 }
 
+/**
+  * @brief  Converts a 32-bit big-endian value to native order
+  * @param  a The value to convert
+  * @return The converted value
+  */
 static inline uint32_t lfs_tobe32(uint32_t a)
 {
   return lfs_frombe32(a);
 }
 
-/* Calculate CRC-32 with polynomial = 0x04c11db7 */
+/**
+  * @brief  Calculates the CRC-32 checksum of a buffer with polynomial = 0x04c11db7
+  * @param  crc The initial CRC value
+  * @param  buffer The buffer to calculate the CRC for
+  * @param  size The size of the buffer
+  * @return The calculated CRC-32 checksum
+  */
 static inline uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size)
 {
   static const uint32_t rtable[16] =
@@ -256,13 +346,22 @@ static inline uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size)
   return crc;
 }
 
-/* Allocate memory, only used if buffers are not provided to littlefs */
+/**
+  * @brief  Allocates memory for littlefs
+  * @note   Only used if buffers are not provided to littlefs
+  * @param  size The size of the memory to allocate
+  * @return A pointer to the allocated memory
+  */
 static inline void *lfs_malloc(size_t size)
 {
   return pvPortMalloc(size);
 }
 
-/* Deallocate memory, only used if buffers are not provided to littlefs */
+/**
+  * @brief  Frees memory allocated for littlefs
+  * @note   Only used if buffers are not provided to littlefs
+  * @param  p A pointer to the memory to free
+  */
 static inline void lfs_free(void *p)
 {
   vPortFree(p);

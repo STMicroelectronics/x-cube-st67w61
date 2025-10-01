@@ -59,24 +59,6 @@ extern "C" {
   * ============================
   */
 
-/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_WIFI_DHCP                           1
-
-/** Define if the DNS addresses are set manually or automatically */
-#define W6X_WIFI_DNS_MANUAL                     0
-
-/** String defining DNS IP 1 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_1                       {208, 67, 222, 222}
-
-/** String defining DNS IP 2 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_2                       {8, 8, 8, 8}
-
-/** String defining DNS IP 3 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_3                       {0, 0, 0, 0}
-
 /** Define the region code, supported values : [CN, JP, US, EU, 00] */
 #define W6X_WIFI_COUNTRY_CODE                   "00"
 
@@ -85,9 +67,6 @@ extern "C" {
   * 1: static country code */
 #define W6X_WIFI_ADAPTIVE_COUNTRY_CODE          0
 
-/** String defining Wi-Fi hostname */
-#define W6X_WIFI_HOSTNAME                       "ST67W61_WiFi"
-
 /** ============================
   * Net
   *
@@ -95,6 +74,12 @@ extern "C" {
   * Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_default_config.h
   * ============================
   */
+
+/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
+#define W6X_NET_DHCP                            1
+
+/** String defining Wi-Fi hostname */
+#define W6X_NET_HOSTNAME                        "ST67W61_WiFi"
 
 /** Timeout in ticks when calling W6X_Net_Recv() */
 #define W6X_NET_RECV_TIMEOUT                    10000

@@ -25,7 +25,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -86,13 +85,6 @@ void vApplicationIdleHook(void)
    important that vApplicationIdleHook() is permitted to return to its calling
    function, because it is the responsibility of the idle task to clean up
    memory allocated by the kernel to any task that has since been deleted. */
-  /*
-  size_t freeHeapSize = 0;
-  size_t freeHeapSizeMin = 0;
-
-  freeHeapSize = xPortGetFreeHeapSize();
-  freeHeapSizeMin = xPortGetMinimumEverFreeHeapSize();
-  */
 }
 /* USER CODE END 2 */
 
@@ -102,7 +94,6 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName)
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
-  printf("Task %s stack overflow...\n", pcTaskName);
 }
 /* USER CODE END 4 */
 
@@ -119,7 +110,6 @@ void vApplicationMallocFailedHook(void)
    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
    to query the size of free heap space that remains (although it does not
    provide information on how the remaining heap might be fragmented). */
-  printf("Malloc failed ...\n");
 }
 /* USER CODE END 5 */
 

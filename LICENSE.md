@@ -32,7 +32,11 @@
 | STM32N6xx CMSIS                 | Arm Limited, STMicroelectronics                                                                             | Apache-2.0
 | STM32U5xx CMSIS                 | Arm Limited, STMicroelectronics                                                                             | Apache-2.0
 | cJSON                           | Dave Gamble and cJSON contributors                                                                          | MIT
+| MQTT-C                          | Liam Bindle, Demilade Adeoye and MQTT-C contributors                                                        | MIT
 | FreeRTOS Real Time Kernel       | Amazon.com, Inc. or its affiliates                                                                          | MIT
+| LwIP                            | Swedish Institute of Computer Science                                                                       | BSD-3-Clause
+| rt-thread                       | RT-Thread Development Team                                                                                  | Apache-2.0
+| zephyr                          | Zephyr Project                                                                                              | Apache-2.0
 | littlefs-project/littlefs       | Arm Limited, littlefs authors                                                                               | BSD-3-Clause
 | TraceRecorder                   | Percepio AB                                                                                                 | Apache-2.0
 | STM32 ExtMem Manager            | STMicroelectronics                                                                                          | SLA

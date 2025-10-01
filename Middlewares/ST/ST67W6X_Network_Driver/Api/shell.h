@@ -17,7 +17,8 @@
   */
 
 /**
-  * Portions of this file are based on FreeRTOS, which is licensed under the Apache-2.0 license as indicated below.
+  * Portions of this file are based on RT-Thread Development Team,
+  * which is licensed under the Apache-2.0 license as indicated below.
   * See https://github.com/RT-Thread/rt-thread for more information.
   *
   * Reference source:
@@ -63,6 +64,15 @@ extern "C" {
 
 /** @brief  Shell success code */
 #define SHELL_STATUS_OK             0
+
+/** @brief  Interrupt signal */
+#define SHELL_SIGINT                1
+
+/** @brief  Default action */
+#define SHELL_SIG_DFL               ((shell_sig_func_ptr)0)
+
+/** @brief  Ignore action */
+#define SHELL_SIG_IGN               ((shell_sig_func_ptr)1)
 
 /** @} */
 
@@ -115,7 +125,7 @@ typedef struct shell_sysvar
 } shell_sysvar_t;
 
 /**
-  * @brief  shell structure
+  * @brief  Shell structure
   */
 struct shell
 {
@@ -269,10 +279,10 @@ struct shell
 #endif /* SHELL_ENABLE */
 
 /**
-  * @brief  This macro exports a command to module shell.
-  * @param  command the name of command.
-  * @param  alias the alias of command.
-  * @param  desc the description of command, which will show in help.
+  * @brief  This macro exports a command to module shell
+  * @param  command the name of command
+  * @param  alias the alias of command
+  * @param  desc the description of command, which will show in help
   */
 #define SHELL_CMD_EXPORT_ALIAS(command, alias, desc) \
   SHELL_FUNCTION_EXPORT_CMD(command, alias, desc)
@@ -287,21 +297,34 @@ struct shell
 /**
   * @brief  Initialize the shell based on FreeRTOS. It creates a task that read the input chars from the uart and parse
   *         the input using the upper layer shell API. The output of the shell is sent to the stream buffer ::tx_stream.
-  * @param  p_rx_uart [IN] specifies the uart used directly by the shell to read the user input.
-  * @param  xLogQueue [IN] specifies the queue where to send all the output produced by the shell.
+  * @param  xLogQueue [IN] specifies the queue where to send all the output produced by the shell
   */
-void shell_freertos_init(UART_HandleTypeDef *p_rx_uart, void *xLogQueue);
+void shell_freertos_init(void *xLogQueue);
 
 /**
-  * @brief  Deinitialize the shell. It stops the shell task and release all the resources used by the shell.
+  * @brief  Deinitialize the shell. It stops the shell task and release all the resources used by the shell
   */
 void shell_freertos_deinit(void);
+
+/**
+  * @brief  Callback called by the uart ISR when a new byte is received
+  * @param  uart_rxbyte [IN] specifies the byte received.
+  */
+void shell_freertos_on_new_data(uint8_t uart_rxbyte);
 
 /**
   * @brief  Get the shell instance
   * @return shell instance
   */
 struct shell *shell_get_instance(void);
+
+/**
+  * @brief  This function will execute the shell signal
+  * @param  sig the signal (SHELL_SIGINT)
+  * @param  func the signal function
+  * @return the previous signal function
+  */
+shell_sig_func_ptr shell_signal(int32_t sig, shell_sig_func_ptr func);
 
 /** @} */
 

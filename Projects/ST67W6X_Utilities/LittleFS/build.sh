@@ -23,4 +23,4 @@ fi
 script_dir="$(dirname "$0")"
 
 # Run the mklfs.exe tool to generate the littlefs binary
-$script_dir/mklfs/$mklfs_setup -c Certificates -b 4096 -p 256 -r 256 -s 0x71000 -i ./littlefs/littlefs.bin
+$script_dir/mklfs/$mklfs_setup -c Certificates -b 4096 -p 256 -r 256 -s 0x6d000 -i ./littlefs/littlefs.bin

@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    stm32n6xx_hal_conf.h
@@ -15,6 +16,7 @@
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef STM32N6xx_HAL_CONF_H
@@ -70,6 +72,7 @@ extern "C" {
 /*#define HAL_RTC_MODULE_ENABLED   */
 /*#define HAL_SAI_MODULE_ENABLED   */
 /*#define HAL_SD_MODULE_ENABLED   */
+/*#define HAL_SDIO_MODULE_ENABLED   */
 /*#define HAL_SDRAM_MODULE_ENABLED   */
 /*#define HAL_SMARTCARD_MODULE_ENABLED   */
 /*#define HAL_SMBUS_MODULE_ENABLED   */
@@ -203,6 +206,7 @@ extern "C" {
 #define  USE_HAL_RTC_REGISTER_CALLBACKS       0U /* RTC register callback disabled       */
 #define  USE_HAL_SAI_REGISTER_CALLBACKS       0U /* SAI register callback disabled       */
 #define  USE_HAL_SD_REGISTER_CALLBACKS        0U /* SD register callback disabled        */
+#define  USE_HAL_SDIO_REGISTER_CALLBACKS      0U /* SDIO register callback disabled      */
 #define  USE_HAL_SDRAM_REGISTER_CALLBACKS     0U /* SDRAM register callback disabled     */
 #define  USE_HAL_SMARTCARD_REGISTER_CALLBACKS 0U /* SMARTCARD register callback disabled */
 #define  USE_HAL_SMBUS_REGISTER_CALLBACKS     0U /* SMBUS register callback disabled     */
@@ -226,6 +230,11 @@ extern "C" {
 /* ################## SDMMC peripheral configuration ######################### */
 
 #define USE_SD_TRANSCEIVER            0U
+
+/* ################## SDIO peripheral configuration ######################### */
+
+#define USE_SDIO_TRANSCEIVER          0U
+#define SDIO_MAX_IO_NUMBER            7U
 
 /* Includes ------------------------------------------------------------------*/
 /**
@@ -422,6 +431,10 @@ extern "C" {
 #ifdef HAL_SD_MODULE_ENABLED
 #include "stm32n6xx_hal_sd.h"
 #endif /* HAL_SD_MODULE_ENABLED */
+
+#ifdef HAL_SDIO_MODULE_ENABLED
+#include "stm32n6xx_hal_sdio.h"
+#endif /* HAL_SDIO_MODULE_ENABLED */
 
 #ifdef HAL_SDRAM_MODULE_ENABLED
 #include "stm32n6xx_hal_sdram.h"

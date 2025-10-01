@@ -42,7 +42,7 @@
 <p>This Middleware is controlling the <strong>X-NUCLEO-67W61M1</strong> Expansion board. It exposes an API corresponding to the Network interface on Wi-Fi or BLE protocols.</p>
 <p>The ST67W6X Network Driver is responsible for:</p>
 <ul>
-<li>Providing API to manage Wi-Fi, BLE, Sockets or System features.</li>
+<li>Providing API to manage Wi-Fi, BLE, Network sockets, Network direct link, MQTT, HTTP, FOTA or System features.</li>
 <li>Transporting messages between the host and the ST67W611M over the underlying bus via AT command over SPI Interface.</li>
 </ul>
 <p>It is comprised of the following 8 folders :</p>
@@ -53,23 +53,157 @@
 <li><strong>Driver/W61_at</strong> : ST67W611M AT commands implementation with parser and formatter processing.</li>
 <li><strong>Driver/W61_bus</strong> : ST67W611M communication interface over SPI bus.</li>
 <li><strong>Utils/Logging</strong> : Logging utility to manage the print traces over UART or ITM.</li>
-<li><strong>Utils/Misc</strong> : Common parser macros and functions.</li>
+<li><strong>Utils/Misc</strong> : Miscellaneous utility functions.</li>
 <li><strong>Utils/Performance</strong> : Iperf, memory and task performance utilities.</li>
 <li><strong>Utils/Shell</strong> : Shell utility to manage the command line interface.</li>
 </ul>
-<p>The scope the Utils: - <strong>Utils/Logging</strong> : Called by the W61_at driver, the service APIs and can be also called by the application. - <strong>Utils/Misc</strong> : Called by the W61_at driver, the service APIs and can be also called by the application. - <strong>Utils/Performance</strong> : Called by the application as predefined examples code. Some are based on the service APIs. - <strong>Utils/Shell</strong> : Called by the service APIs and can be also called by the application.</p>
+<p>The scope the Utils:</p>
+<ul>
+<li><strong>Utils/Logging</strong> : Called by the W61_at driver, the service APIs and can be also called by the application.</li>
+<li><strong>Utils/Misc</strong> : Called by the W61_at driver, the service APIs and can be also called by the application.</li>
+<li><strong>Utils/Performance</strong> : Called by the application as predefined examples code. Some are based on the service APIs.</li>
+<li><strong>Utils/Shell</strong> : Called by the service APIs and can be also called by the application.</li>
+</ul>
 <p>This Middleware and drivers require FreeRTOS.</p>
 </div>
 <section id="update-history" class="col-sm-12 col-lg-8">
 <h1>Update History</h1>
 <div class="collapse">
-<input type="checkbox" id="collapse-section1" checked aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 /28-May-2025</strong></label>
+<input type="checkbox" id="collapse-section2" checked aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.1 / 26-Sep-2025</strong></label>
 <div>
 <h2 id="main-changes">Main Changes</h2>
 <ul>
-<li><strong>First official release</strong></li>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>ID 210980: Fix wrong status message returned by scan command when several scans are sent in a row</li>
+<li>ID 212466: TWT frames sent only to APs with TWT support</li>
+<li>ID 213724: Maximum of Wi-Fi scan results reduced to 20 devices</li>
+<li>ID 214286: Remove the IP address compatibility check from WiFi cb to dissociate WiFi module from Net module</li>
+<li>ID 216134: The DTIM parameter used on Station side is now a factor of the Access Point DTIM, to be in phase with Access Point DTIM beacons</li>
+<li>ID 216480: The soft Access Point protocol configuration is now a parameter when starting a soft Access Point. Station protocol configuration has been removed</li>
+<li>ID 216882: Add Wi-Fi antenna diversity automatic selection for -U and -P after Wi-Fi connection</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>ID 212742: Add BLE Shell commands to perform GATT and Security operations</li>
+<li>ID 213724: Maximum of BLE scan results reduced to 20 devices</li>
+<li>ID 215560: Add support of 2 BLE connections as Client</li>
+<li>ID 215563: Report remote BD address type and Long Term Key (LTK) from BLE security events</li>
+<li>ID 216043: BLE Init rework to ensure clock is correctly configured before entering in Low Power</li>
+</ul></li>
+<li><strong>Network</strong>
+<ul>
+<li>ID 210991: Improve Iperf RX throughput</li>
+<li>ID 212413: Fix blocking state on reception when connecting multiple UDP sockets</li>
+<li>ID 213424: Move IP/DNS/DHCP APIs from Wi-Fi to Net module to be compliant with LwIP on host structure project</li>
+<li>ID 215289: Align the IP address format order in W6X_Net APIs on LwIP usage</li>
+<li>ID 215983: Fix IPv6 and IPv4 string length being too small</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>ID 211666: Increase SNI size for HTTP and choose server name as hostname when available</li>
+<li>ID 216816: Added the ability to send HTTP requests larger than W61_MAX_SPI_XFER</li>
+<li>ID 216997: Fix incorrect ALPN format for HTTPS API</li>
+<li>ID 217079: Fix case sensitive connection: close value in preformatted HTTP client headers</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>ID 212696: Add support of MQTT raw data format</li>
+<li>ID 214875: Add support of empty MQTT message for retain feature</li>
+<li>ID 216425: Add support of QoS, Retain and LWT options in MQTT APIs</li>
+</ul></li>
+<li><strong>Network interface</strong>
+<ul>
+<li>ID 211434: Add support of LwIP on host based on ST67W611M T02 architecture</li>
+</ul></li>
+<li><strong>AT Parser</strong>
+<ul>
+<li>ID 214401: Integration of AT parser based on Zephyr modem cmd handler</li>
+<li>ID 215005: Remove maximum number of parameters limitation expected from NCP in AT parser to ensure backward compatibility even if another field is added</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ID 214011: Offer capability to disable assert macros</li>
+<li>ID 214447: Display Module ID in banner based on Part Number</li>
+<li>ID 215588: Use the memcpy32 custom implementation only in spi_iface to prevent misalignment issue with limited cortex architectures</li>
+<li>ID 215597: RAM usage optimization in ST67W6X_Network_Driver code</li>
+<li>ID 216013: Modification of the W6X_FS_WriteFile API to use a certificate stored in the application or in the LFS Host</li>
+<li>ID 217233: Change default MAX_SPI_XFER from 6000 to 1520</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>ID 212675: Add the possibility to the user to disable the logs for each module of the Network Driver (Wi-Fi, NET, BLE, MQTT)</li>
+<li>ID 214193: Addition of a define (SHELL_CMD_LEVEL) to activate all or a reduced list of shell commands</li>
+<li>ID 216118: Remove HAL UART dependency of shell service</li>
+</ul></li>
 </ul>
 <h2 id="contents">Contents</h2>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong>
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>FOTA</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+</ul></li>
+<li><strong>Network interface</strong>
+<ul>
+<li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>Shell service to call APIs as command line in UART terminal interface</li>
+<li>Logging service to redirect traces on UART or ITM</li>
+<li>Iperf service to evaluate network performances</li>
+</ul></li>
+</ul>
+<h2 id="known-limitations">Known limitations</h2>
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>W6X_WiFi_Connect API cannot use special characters [,“\] in the SSID and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>Dynamic mode of W6X_WiFi_SetAntennaDiversity API is not functional in current release</li>
+<li>W6X_Ble_SetDeviceName API cannot use special characters [,“\] in the device name. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>Once the DNS IP is set manually, those values will be hardcoded until the device is reset to its default configuration</li>
+<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
+<li>W6X_MQTT_Configure API cannot use special characters [,“\] in the username and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>W6X_MQTT_Publish cannot send message larger than 1470 bytes</li>
+</ul>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section2" checked aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.0 / 05-Aug-2025</strong></label>
+<div>
+<h2 id="main-changes-1">Main Changes</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="contents-1">Contents</h2>
 <ul>
 <li><strong>Wi-Fi</strong>
 <ul>
@@ -103,8 +237,73 @@
 <ul>
 <li>ST67W611M Power save (standby and shutdown modes)</li>
 </ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>Shell service to call APIs as command line in UART terminal interface</li>
+<li>Logging service to redirect traces on UART or ITM</li>
+<li>Iperf service to evaluate network performances</li>
+</ul></li>
 </ul>
-<h2 id="known-limitations">Known limitations</h2>
+<h2 id="known-limitations-1">Known limitations</h2>
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>Wi-Fi scan command is ignored immediately after a boot if auto-connect is enabled</li>
+<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
+<li>Performance Rx throughput with Soft-AP is instable</li>
+<li>Performance UDP Rx throughput is below expectation (expected 14 Mbps, actual 12 Mbps)</li>
+</ul>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-May-2025</strong></label>
+<div>
+<h2 id="main-changes-2">Main Changes</h2>
+<ul>
+<li><strong>First official release</strong></li>
+</ul>
+<h2 id="contents-2">Contents</h2>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong>
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>FOTA</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>Shell service to call APIs as command line in UART terminal interface</li>
+<li>Logging service to redirect traces on UART or ITM</li>
+<li>Iperf service to evaluate network performances</li>
+</ul></li>
+</ul>
+<h2 id="known-limitations-2">Known limitations</h2>
 <ul>
 <li>Wi-Fi communication in static IP does not work when power save is activated</li>
 <li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>

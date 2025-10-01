@@ -18,10 +18,10 @@ Details about the content of this release are available in the release note [her
 
 ## Boards available
 
-- [NUCLEO-H7S3L8](https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html) *(MB1737)* + X-NUCLEO-67W61M1 *(MB2230-A03)*
-- [NUCLEO-H563ZI](https://www.st.com/en/evaluation-tools/nucleo-h563zi.html) *(MB1404)* + X-NUCLEO-67W61M1 *(MB2230-A03)*
-- [NUCLEO-N657X0-Q](https://www.st.com/en/evaluation-tools/nucleo-n657x0-q.html) *(MB1940)* + X-NUCLEO-67W61M1 *(MB2230-A03)*
-- [NUCLEO-U575ZI-Q](https://www.st.com/en/evaluation-tools/nucleo-u575zi-q.html) *(MB1549)* + X-NUCLEO-67W61M1 *(MB2230-A03)*
+- [NUCLEO-H7S3L8](https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html) *(MB1737)* + X-NUCLEO-67W61M1 *(MB2230)*
+- [NUCLEO-H563ZI](https://www.st.com/en/evaluation-tools/nucleo-h563zi.html) *(MB1404)* + X-NUCLEO-67W61M1 *(MB2230)*
+- [NUCLEO-N657X0-Q](https://www.st.com/en/evaluation-tools/nucleo-n657x0-q.html) *(MB1940)* + X-NUCLEO-67W61M1 *(MB2230)*
+- [NUCLEO-U575ZI-Q](https://www.st.com/en/evaluation-tools/nucleo-u575zi-q.html) *(MB1549)* + X-NUCLEO-67W61M1 *(MB2230)*
 
 ## Troubleshooting
 

@@ -36,6 +36,7 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* Exported constants --------------------------------------------------------*/
+/** Maximum length of the file name */
 #define EF_LFS_NAME_MAX 32
 
 /* USER CODE BEGIN EC */
@@ -43,7 +44,7 @@ extern "C" {
 /* USER CODE END EC */
 
 /* Exported types ------------------------------------------------------------*/
-/* EasyFlash error code */
+/** EasyFlash error code */
 typedef enum
 {
   EF_NO_ERR,
@@ -57,7 +58,7 @@ typedef enum
   EF_ENV_ARG_ERR,
 } EfErrCode;
 
-/* File info structure */
+/** File info structure */
 typedef struct
 {
   /** Size of the file, only valid for REG files. Limited to 32-bits. */
@@ -88,6 +89,7 @@ EfErrCode easyflash_init(void);
   * @param  key The key of the environment variable.
   * @param  value_buf Buffer to store the value.
   * @param  buf_len Length of the buffer.
+  * @param  saved_value_len Pointer to store the length of the saved value.
   * @return size_t The size of the value.
   */
 size_t ef_get_env_blob(const char *key, void *value_buf, size_t buf_len, size_t *saved_value_len);

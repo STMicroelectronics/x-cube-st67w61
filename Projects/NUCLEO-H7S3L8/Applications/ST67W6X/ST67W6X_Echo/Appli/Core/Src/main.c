@@ -21,11 +21,10 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "app_st67w6x.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "main_app.h"
-#include "app_config.h"
 
 /* USER CODE END Includes */
 
@@ -52,11 +51,11 @@ DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 UART_HandleTypeDef huart3;
 
-/* Definitions for defaultTsk */
-osThreadId_t defaultTskHandle;
-const osThreadAttr_t defaultTsk_attributes = {
-  .name = "defaultTsk",
-  .stack_size = 512 * 4,
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
@@ -119,6 +118,7 @@ int main(void)
   MX_GPDMA1_Init();
   MX_SPI1_Init();
   MX_USART3_UART_Init();
+  MX_ST67W6X_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -143,8 +143,8 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTsk */
-  defaultTskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTsk_attributes);
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -389,7 +389,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the defaultTsk thread.
+  * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
@@ -397,12 +397,10 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  main_app();
-
   /* Infinite loop */
-  for (;;)
+  for(;;)
   {
-    osDelay(1000);
+    osDelay(1);
   }
   /* USER CODE END 5 */
 }
@@ -442,8 +440,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

@@ -19,12 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include <inttypes.h>
 #include <string.h>
-
 #include "w6x_api.h"
 #include "shell.h"
 #include "logging.h"
 #include "common_parser.h" /* Common Parser functions */
 #include "FreeRTOS.h"
+#include "spi_iface.h" /* SPI dump function */
 
 /* Global variables ----------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -127,6 +127,15 @@ int32_t W6X_Shell_LowPower(int32_t argc, char **argv);
   */
 int32_t W6X_Shell_ATCommand(int32_t argc, char **argv);
 
+/**
+  * @brief  SPI dump shell function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval ::SHELL_STATUS_OK on success
+  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
+  */
+int32_t spi_dump_shell(int32_t argc, char **argv);
+
 /* Private Functions Definition ----------------------------------------------*/
 int32_t W6X_Shell_GetInfo(int32_t argc, char **argv)
 {
@@ -144,28 +153,37 @@ int32_t W6X_Shell_GetInfo(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 0)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_GetInfo, info, info. Display ST67W6X module info);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_Reset(int32_t argc, char **argv)
 {
-  /* optional argument 0:HAL_Reset, 1:NCP_Restore */
+  /* Optional argument 0:HAL_Reset, 1:NCP_Restore, 2:NCP_Reset */
   if (argc == 2)
   {
-    if (strcmp(argv[1], "0") == 0)
+    uint32_t mode = (uint32_t)atoi(argv[1]);
+    switch (mode)
     {
-      HAL_SYS_RESET();
-    }
-    else if (strcmp(argv[1], "1") == 0)
-    {
-      if (W6X_RestoreDefaultConfig() != W6X_STATUS_OK)
-      {
-        SHELL_E("Unable to restore default configuration\n");
-        return SHELL_STATUS_ERROR;
-      }
-    }
-    else
-    {
-      return SHELL_STATUS_UNKNOWN_ARGS;
+      case 0U: /* HAL_Reset */
+        HAL_SYS_RESET();
+        break;
+      case 1U: /* NCP_Restore */
+        if (W6X_Reset(1) != W6X_STATUS_OK)
+        {
+          SHELL_E("Unable to restore the device\n");
+          return SHELL_STATUS_ERROR;
+        }
+        break;
+      case 2U: /* NCP_Reset */
+        if (W6X_Reset(0) != W6X_STATUS_OK)
+        {
+          SHELL_E("Unable to reset the device\n");
+          return SHELL_STATUS_ERROR;
+        }
+        break;
+      default:
+        return SHELL_STATUS_UNKNOWN_ARGS;
     }
   }
   else
@@ -176,7 +194,10 @@ int32_t W6X_Shell_Reset(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Reset, reset, reset < 0: HAL_Reset; 1: NCP_Restore >);
+#if (SHELL_CMD_LEVEL >= 0)
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Reset, reset,
+                       reset < 0: HAL_Reset; 1: NCP_Restore; 2: NCP_Reset > . Reset the system);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_FS_WriteFile(int32_t argc, char **argv)
 {
@@ -185,7 +206,7 @@ int32_t W6X_Shell_FS_WriteFile(int32_t argc, char **argv)
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  if (W6X_FS_WriteFile(argv[1]) != W6X_STATUS_OK)
+  if (W6X_FS_WriteFileByName(argv[1]) != W6X_STATUS_OK)
   {
     SHELL_E("Unable to write file\n");
     return SHELL_STATUS_ERROR;
@@ -193,8 +214,10 @@ int32_t W6X_Shell_FS_WriteFile(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 1)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_FS_WriteFile, fs_write,
                        fs_write < filename >. Write file content from the Host to the NCP);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_FS_ReadFile(int32_t argc, char **argv)
 {
@@ -237,7 +260,9 @@ int32_t W6X_Shell_FS_ReadFile(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 1)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_FS_ReadFile, fs_read, fs_read < filename >. Read file content);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_FS_DeleteFile(int32_t argc, char **argv)
 {
@@ -254,8 +279,10 @@ int32_t W6X_Shell_FS_DeleteFile(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 1)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_FS_DeleteFile, fs_delete,
                        fs_delete < filename >. Delete file from the NCP file system);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_FS_ListFiles(int32_t argc, char **argv)
 {
@@ -289,30 +316,27 @@ int32_t W6X_Shell_FS_ListFiles(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 1)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_FS_ListFiles, fs_list, fs_list. List all files in the file system);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_LowPower(int32_t argc, char **argv)
 {
-  uint32_t enable = 0;
-  int32_t tmp = 0;
+  uint32_t ps_mode = 0;
 
   if (argc == 1)
   {
-    if (W6X_GetPowerMode(&enable) != W6X_STATUS_OK)
+    if (W6X_GetPowerMode(&ps_mode) != W6X_STATUS_OK)
     {
       SHELL_E("Unable to get power mode\n");
       return SHELL_STATUS_ERROR;
     }
-    SHELL_PRINTF("powersave mode is %s\n", enable ? "enabled" : "disabled");
+    SHELL_PRINTF("powersave mode is %s\n", ps_mode ? "enabled" : "disabled");
   }
   else if (argc == 2)
   {
-    if (Parser_StrToInt(argv[1], NULL, &tmp) == 0)
-    {
-      SHELL_E("Invalid argument\n");
-      return SHELL_STATUS_UNKNOWN_ARGS;
-    }
-    if (W6X_SetPowerMode((uint32_t)tmp) != W6X_STATUS_OK)
+    ps_mode = (uint32_t)atoi(argv[1]);
+    if (W6X_SetPowerMode(ps_mode) != W6X_STATUS_OK)
     {
       SHELL_E("Unable to set power mode\n");
       return SHELL_STATUS_ERROR;
@@ -326,7 +350,9 @@ int32_t W6X_Shell_LowPower(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 0)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_LowPower, powersave, powersave [ 0: disable; 1: enable ]);
+#endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_ATCommand(int32_t argc, char **argv)
 {
@@ -344,7 +370,19 @@ int32_t W6X_Shell_ATCommand(int32_t argc, char **argv)
   return SHELL_STATUS_OK;
 }
 
+#if (SHELL_CMD_LEVEL >= 1)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_ATCommand, atcmd,
                        atcmd < "AT+CMD?" >. Execute AT command);
+#endif /* SHELL_CMD_LEVEL */
+
+int32_t spi_dump_shell(int32_t argc, char **argv)
+{
+  spi_dump();
+  return 0;
+}
+
+#if (SHELL_CMD_LEVEL >= 1)
+SHELL_CMD_EXPORT_ALIAS(spi_dump_shell, spi_dump, spi_dump);
+#endif /* SHELL_CMD_LEVEL */
 
 /** @} */

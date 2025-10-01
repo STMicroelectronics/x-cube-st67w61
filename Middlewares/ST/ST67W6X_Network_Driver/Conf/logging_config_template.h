@@ -27,7 +27,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32xxxx_hal.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -67,6 +66,12 @@ extern "C" {
 
 /** Log id. must be unique per queue producer */
 #define LOG_MESSAGE_ID                          1
+
+/** Log thread stack size */
+#define LOG_THREAD_STACK_SIZE                   256
+
+/** Log thread priority */
+#define LOG_THREAD_PRIO                         25
 
 /** Log memory allocator */
 #define LOG_MALLOC                              pvPortMalloc

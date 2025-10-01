@@ -1,10 +1,10 @@
 # __ST67W6X_BLE_Commissioning Application Description__
 
-This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.
+This application aims to demonstrate the Wi-Fi credentials commissioning and FOTA over Bluetooth Low Energy.
 
 It exercises the ST67W6X_Network_Driver capabilities. It relies on the FreeRTOS RealTime Operating System.
 
-> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.75.bin.
+> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.89.bin.
 >
 > Please follow the [NCP Binaries README.md](../../../../ST67W6X_Utilities/Binaries/README.md) instructions using the __NCP_update_mission_profile.bat__ script.
 
@@ -20,11 +20,12 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_Commi
 
 |Directory  |                                                                     |Description|
 |---   |:-:                                                                       |---        |
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/App/|                            |Main application code directory|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/|                         |Logging, Shell, Low-Power and SPI BSP interfaces|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Core/Src|                        |STM32CubeMX generated sources code|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Core/Inc|                        |STM32CubeMX generated header files|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/ST67W6X/Target|                  |Configuration and port files to manage the ST67W6X_Network_Driver Middleware|
+|ST67W6X_BLE_Commissioning/Appli/App/|                                            |Main application code directory|
+|ST67W6X_BLE_Commissioning/Appli/Target/|                                         |Logging, Shell, Low-Power and BSP interfaces|
+|ST67W6X_BLE_Commissioning/Core/Src|                                              |STM32CubeMX generated sources code|
+|ST67W6X_BLE_Commissioning/Core/Inc|                                              |STM32CubeMX generated header files|
+|ST67W6X_BLE_Commissioning/ST67W6X/App|                                           |Entry point to start the application associated to the ST67W6X_Network_Driver Middleware|
+|ST67W6X_BLE_Commissioning/ST67W6X/Target|                                        |Configuration and port files to manage the ST67W6X_Network_Driver Middleware|
 |ST67W6X_BLE_Commissioning/EWARM|                                                 |Project for the IAR Embedded workbench for Arm|
 |ST67W6X_BLE_Commissioning/MDK-ARM|                                               |Project for the RealView Microcontroller Development Kit|
 |ST67W6X_BLE_Commissioning/STM32CubeIDE|                                          |Project for the STM32CubeIDE toolchain|
@@ -34,33 +35,37 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_Commi
 
 |File  |                                                                          |Description|
 |---   |:-:                                                                       |---        |
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/App/app_config.h|                |Configuration for main application|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/App/main_app.h|                  |Header for main_app.c|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/freertos_tickless.h|      |Management of timers and ticks header file|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/logshell_ctrl.h|          |Header for logshell_ctrl.h|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/spi_port_conf.h|          |Interfaces/maps the SPI instance to be used for NCP communication|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/stm32_lpm_if.h|           |Header for stm32_lpm_if.c module (device specific LP management)|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/utilities_conf.h|         |Header for configuration file to utilities|
+|ST67W6X_BLE_Commissioning/Appli/App/app_config.h|                                |Configuration for main application|
+|ST67W6X_BLE_Commissioning/Appli/App/fota_flash.h|                                |Header file for Flash operations used in FOTA.|
+|ST67W6X_BLE_Commissioning/Appli/App/main_app.h|                                  |Header for main_app.c|
+|ST67W6X_BLE_Commissioning/Appli/Target/freertos_tickless.h|                      |Management of timers and ticks header file|
+|ST67W6X_BLE_Commissioning/Appli/Target/logshell_ctrl.h|                          |Header for logshell_ctrl.h|
+|ST67W6X_BLE_Commissioning/Appli/Target/stm32_lpm_if.h|                           |Header for stm32_lpm_if.c module (device specific LP management)|
+|ST67W6X_BLE_Commissioning/Appli/Target/utilities_conf.h|                         |Header for configuration file to utilities|
 |ST67W6X_BLE_Commissioning/Core/Inc/app_freertos.h|                               |FreeRTOS applicative header file|
 |ST67W6X_BLE_Commissioning/Core/Inc/FreeRTOSConfig.h|                             |Header for FreeRTOS application specific definitions|
 |ST67W6X_BLE_Commissioning/Core/Inc/main.h|                                       |Header for main.c file.<br>This file contains the common defines of the application.|
 |ST67W6X_BLE_Commissioning/Core/Inc/stm32u5xx_hal_conf.h|                         |HAL configuration file.|
 |ST67W6X_BLE_Commissioning/Core/Inc/stm32u5xx_it.h|                               |This file contains the headers of the interrupt handlers.|
+|ST67W6X_BLE_Commissioning/ST67W6X/App/app_st67w6x.h|                             |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_BLE_Commissioning/ST67W6X/Target/bsp_conf.h|                             |This file contains definitions for the BSP interface|
 |ST67W6X_BLE_Commissioning/ST67W6X/Target/logging_config.h|                       |Header file for the W6X Logging configuration module|
 |ST67W6X_BLE_Commissioning/ST67W6X/Target/shell_config.h|                         |Header file for the W6X Shell configuration module|
 |ST67W6X_BLE_Commissioning/ST67W6X/Target/w61_driver_config.h|                    |Header file for the W61 configuration module|
 |ST67W6X_BLE_Commissioning/ST67W6X/Target/w6x_config.h|                           |Header file for the W6X configuration module|
 |      |                                                                          |           |
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/App/main_app.c|                  |main_app program body|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/freertos_tickless.c|      |Management of timers and ticks|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/logshell_ctrl.c|          |logshell_ctrl (uart interface)|
-|ST67W6X_BLE_Commissioning/App_BLE_Commissioning/Target/stm32_lpm_if.c|           |Low layer function to enter/exit low power modes (stop, sleep)|
+|ST67W6X_BLE_Commissioning/Appli/App/fota_flash.c|                                |This file provides code for Flash operations used in FOTA.|
+|ST67W6X_BLE_Commissioning/Appli/App/main_app.c|                                  |main_app program body|
+|ST67W6X_BLE_Commissioning/Appli/Target/freertos_tickless.c|                      |Management of timers and ticks|
+|ST67W6X_BLE_Commissioning/Appli/Target/logshell_ctrl.c|                          |logshell_ctrl (uart interface)|
+|ST67W6X_BLE_Commissioning/Appli/Target/stm32_lpm_if.c|                           |Low layer function to enter/exit low power modes (stop, sleep)|
 |ST67W6X_BLE_Commissioning/Core/Src/app_freertos.c|                               |Code for freertos applications|
 |ST67W6X_BLE_Commissioning/Core/Src/main.c|                                       |Main program body|
 |ST67W6X_BLE_Commissioning/Core/Src/stm32u5xx_hal_msp.c|                          |This file provides code for the MSP Initialization<br>and de-Initialization codes.|
 |ST67W6X_BLE_Commissioning/Core/Src/stm32u5xx_hal_timebase_tim.c|                 |HAL time base based on the hardware TIM.|
 |ST67W6X_BLE_Commissioning/Core/Src/stm32u5xx_it.c|                               |Interrupt Service Routines.|
 |ST67W6X_BLE_Commissioning/Core/Src/system_stm32u5xx.c|                           |CMSIS Cortex-M33 Device Peripheral Access Layer System Source File|
+|ST67W6X_BLE_Commissioning/ST67W6X/App/app_st67w6x.c|                             |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
 |ST67W6X_BLE_Commissioning/ST67W6X/Target/spi_port.c|                             |SPI bus interface porting layer implementation|
 |ST67W6X_BLE_Commissioning/STM32CubeIDE/Application/User/Core/syscalls.c|         |STM32CubeIDE Minimal System calls file|
 |ST67W6X_BLE_Commissioning/STM32CubeIDE/Application/User/Core/sysmem.c|           |STM32CubeIDE System Memory calls file|
@@ -76,7 +81,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_Commi
   - The USER_BUTTON refers to the blue button mounted on the __X-NUCLEO-67W61M1__.<br/>
     Indeed, the user button on the STM32 Nucleo board is not used as external interrupt mode due to conflict with other EXTI pin requirement.
 
-For further information, please visit the dedicated Wiki page [ST67W611M Hardware set-up](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wifi_MCU_Hardware_Setup).
+For further information, please visit the dedicated Wiki page [ST67W611M Hardware setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup).
 
 ## __How to use it?__
 
@@ -102,42 +107,20 @@ In order to make the program work, you must do the following :
 
 ###  __ST67W6X configuration__
 
-The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file.
+The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** NCP will go by default in low power mode when NCP is in idle mode
-  * Note: This define must be 0 if BLE is enabled */
-#define W6X_POWER_SAVE_AUTO                     0
-
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1
 ```
 
-The default BLE configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file.
+The default BLE configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
 /** String defining BLE hostname */
 #define W6X_BLE_HOSTNAME                        "ST_WiFi"
 ```
 
-The default Wi-Fi configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file.
+The default Wi-Fi configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_WIFI_DHCP                           1
-
-/** Define if the DNS addresses are set manually or automatically */
-#define W6X_WIFI_DNS_MANUAL                     0
-
-/** String defining DNS IP 1 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_1                       {208, 67, 222, 222}
-
-/** String defining DNS IP 2 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_2                       {8, 8, 8, 8}
-
-/** String defining DNS IP 3 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_3                       {0, 0, 0, 0}
-
 /** Define the region code, supported values : [CN, JP, US, EU, 00] */
 #define W6X_WIFI_COUNTRY_CODE                   "00"
 
@@ -145,9 +128,15 @@ The default Wi-Fi configuration can be modified in the _ST67W6X/Target/w6x_confi
   * 0: match AP's country code,
   * 1: static country code */
 #define W6X_WIFI_ADAPTIVE_COUNTRY_CODE          0
+```
+
+The default Net configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
+```
+/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
+#define W6X_NET_DHCP                            1
 
 /** String defining Wi-Fi hostname */
-#define W6X_WIFI_HOSTNAME                       "ST67W61_WiFi"
+#define W6X_NET_HOSTNAME                        "ST67W61_WiFi"
 ```
 
 Additionally, some others options can be modified in the _ST67W6X/Target_ directory with different configuration files as below:
@@ -158,21 +147,28 @@ Additionally, some others options can be modified in the _ST67W6X/Target_ direct
 
 ###  __Application configuration__
 
-The logging output mode can be modified in the _App_BLE_Commissioning/App/app_config.h_ file :
+The logging output mode can be modified in the _Appli/App/app_config.h_ file:
 ```
 /** Select output log mode [0: printf / 1: UART / 2: ITM] */
 #define LOG_OUTPUT_MODE             LOG_OUTPUT_UART
 ```
 
-The host low power mode can be modified in the _App_BLE_Commissioning/App/app_config.h_ file :
+The default DTIM Wi-Fi power mode can be modified in the _Appli/App/app_config.h_ file:
+```
+/** Define the default factor to apply to AP DTIM interval when connected and power save mode is enabled */
+#define WIFI_DTIM                   1
+```
+
+The host low power mode can be modified in the _Appli/App/app_config.h_ file:
 ```
 /** Low power configuration [0: disable / 1: sleep / 2: stop / 3: standby] */
 #define LOW_POWER_MODE              LOW_POWER_DISABLE
 ```
 
-The NCP low power mode can be modified in the _ST67W6X\Target\w6x_config.h_ file:
+The NCP low power mode can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP will go by default in low power mode when NCP is in idle mode
+  * Note: External clock oscillator must be used to support BLE in low power mode, if W6X_POWER_SAVE_AUTO is set to 1 but clock mode is not correct W6X_Ble_Init() API disable the low power */
 #define W6X_POWER_SAVE_AUTO                     0
 ```
 > [!IMPORTANT]
@@ -180,8 +176,10 @@ The NCP low power mode can be modified in the _ST67W6X\Target\w6x_config.h_ file
 > In order to setup and use external clock, SW and HW settings have to be modified.
 > Refer to [Wiki Bluetooth LE with low-power setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:How_to_measure_ST67W611M_current_consumption#Bluetooth-C2-AE_LE_with_low-power_setup) page in order to be informed about required changes.
 
+## BLE Wi-Fi Commissioning
+
 Enable Bluetooth option on your remote client (Laptop or smartphone), 
-open the [Web Bluetooth page](https://applible.github.io/Web_Bluetooth_App_WBA/) and follow the below instructions to connect to the device:
+open the [Web Bluetooth page](https://applible.github.io/Web_Bluetooth_App_ST67/) and follow the below instructions to connect to the device:
   - Click on "Connect" Button to scan and connect to your device through Bluetooth Low Energy
   - Once connected through BLE, click on Wifi Commissioning banner to open the commissioning interface
   - If the device is already connected to a Wi-Fi access point the Access Point name and the Wi-Fi connection status is displayed
@@ -192,8 +190,38 @@ open the [Web Bluetooth page](https://applible.github.io/Web_Bluetooth_App_WBA/)
   - Once connected to a Wi-Fi access point "Ping" button allows to launch a Wi-Fi ping and displays results on the interface
   - Disconnect from Wi-Fi access point by clicking "Disconnect" button from the Wifi State interface.
 
+Press User Button while connected to end BLE connection.
+Press User Button while not connected to clear the bonded devices list.
+
+## BLE FUOTA
+
+The application supports Firmware Update Over The Air (FUOTA) via Bluetooth Low Energy. This allows you to update the firmware of the ST67W6X device wirelessly using BLE.
+
+### How it works
+
+- The BLE FUOTA service exposes three main characteristics:
+  - **Base Address**: Used to initiate, stop, or cancel the FUOTA process and to specify the target address and sectors for the update.
+  - **Configuration**: Used for confirmation and status indication during the update process.
+  - **Raw Data**: Used to transfer firmware data chunks to the device.
+
+- The update process is managed by a dedicated task that receives BLE write events and processes FUOTA commands:
+  - **Start**: Initiates the FUOTA process and allocates a buffer for incoming firmware data.
+  - **Data Transfer**: Firmware data is sent in chunks via the Raw Data characteristic and written to the buffer.
+  - **Finish**: When all data is received, the buffer is written to flash memory and the device confirms completion.
+  - **Stop/Cancel**: The process can be stopped or cancelled at any time, freeing resources and resetting the state.
+
+### Usage
+
+To perform a firmware update:
+1. Connect to the device using a BLE client that supports FUOTA (such as the [ST67 Web Bluetooth page](https://applible.github.io/Web_Bluetooth_App_ST67/)).
+2. Use the FUOTA interface to send the firmware image.
+
+For more details, refer to the implementation in [`main_app.c`](Appli/App/main_app.c) and the website describing the characterisitcs for the [`STM32 WBA FUOTA`](https://wiki.st.com/stm32mcu/wiki/Connectivity:STM32WBA_FUOTA).
+
 ## __Known limitations__
 
-  - By default the country code / region configured in the device is World with 1 to 13 active channels.
-  - Enabling Wi-Fi DTIM can generates some failure during Network transaction.
-  - Static IP addressing is not compatible with DTIM lowpower mode.
+  - W6X_Ble_SetDeviceName API cannot use special characters [,"\\] in the device name. If needed, they must be preceded by a \\ to be interpreted correctly
+  - W6X_WiFi_Connect API cannot use special characters [,"\\] in the SSID and password. If needed, they must be preceded by a \\ to be interpreted correctly
+  - By default the country code / region configured in the device is World with 1 to 13 active channels
+  - Enabling Wi-Fi DTIM can generates some failure during Network transaction
+  - Static IP addressing is not compatible with power save mode (ARP broadcast issue)

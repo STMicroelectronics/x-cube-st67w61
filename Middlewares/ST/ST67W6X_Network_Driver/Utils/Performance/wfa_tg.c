@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    wfa_tg.c
   * @author  GPM Application Team
-  * @brief   Library functions for traffic generator. They are shared with both TC and DUT agent.
+  * @brief   Library functions for traffic generator. They are shared with both TC and DUT agent
   ******************************************************************************
   * @attention
   *
@@ -113,14 +113,25 @@
 #define TG_TOS_BK 0x20  /*!< 001 0  0000 (1)  AC_BK */
 #define MAX_NAME  30    /*!< Maximum name length */
 
+#ifndef INADDR_NONE
 /** 255.255.255.255 */
 #define INADDR_NONE         ((uint32_t)0xffffffffUL)
+#endif /* INADDR_NONE */
+
+#ifndef INADDR_LOOPBACK
 /** 127.0.0.1 */
 #define INADDR_LOOPBACK     ((uint32_t)0x7f000001UL)
+#endif /* INADDR_LOOPBACK */
+
+#ifndef INADDR_ANY
 /** 0.0.0.0 */
 #define INADDR_ANY          ((uint32_t)0x00000000UL)
+#endif /* INADDR_ANY */
+
+#ifndef INADDR_BROADCAST
 /** 255.255.255.255 */
 #define INADDR_BROADCAST    ((uint32_t)0xffffffffUL)
+#endif /* INADDR_BROADCAST */
 
 /* Private typedef -----------------------------------------------------------*/
 /**
@@ -328,7 +339,7 @@ void wfa_tg_reset(void)
   {
     if (Streams[i].socket_fd >= 0)
     {
-      (void) W6X_Net_Close(Streams[i].socket_fd);
+      (void) NET_CLOSE(Streams[i].socket_fd);
       Streams[i].socket_fd = -1;
     }
   }
@@ -391,7 +402,7 @@ int32_t wfa_tg_recv_start(int32_t stream_id)
       if (so < 0)
       {
         LogError("%s: Join the multicast group failed\n", __func__);
-        (void) W6X_Net_Close(sock);
+        (void) NET_CLOSE(sock);
         return TG_FAILURE;
       }
 #else
@@ -418,7 +429,7 @@ int32_t wfa_tg_recv_start(int32_t stream_id)
   /* set timeout for blocking receive */
   int32_t to = timeout_ms; /* ms or us ? */
   int32_t len = sizeof(to);
-  if (W6X_Net_Setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &to, len) != 0)
+  if (NET_SETSOCKOPT(sock, SOL_SOCKET, SO_RCVTIMEO, &to, len) != 0)
   {
     return TG_FAILURE;
   }
@@ -449,7 +460,7 @@ int32_t wfa_tg_recv_stop(int32_t stream_id)
   {
     if (stream->socket_fd >= 0)
     {
-      (void) W6X_Net_Close(stream->socket_fd);
+      (void) NET_CLOSE(stream->socket_fd);
       stream->socket_fd = -1;
     }
     vTaskDelay(100);
@@ -466,7 +477,7 @@ int32_t wfa_tg_recv_stop(int32_t stream_id)
   if (stream->socket_fd >= 0)
   {
     LogError("%s: socket force closed\n", __func__);
-    (void) W6X_Net_Close(stream->socket_fd);
+    (void) NET_CLOSE(stream->socket_fd);
     stream->socket_fd = -1;
   }
 
@@ -561,9 +572,19 @@ int32_t wfa_tg_start_echo_server(uint16_t port)
   }
 
   /* set timeout for blocking receive */
+#if (ST67_ARCH == W6X_ARCH_T01)
   int32_t to = TG_RX_TIMEOUT_MS;
+#elif (ST67_ARCH == W6X_ARCH_T02)
+#if LWIP_SO_SNDRCVTIMEO_NONSTANDARD
+  int32_t to = TG_RX_TIMEOUT_MS;
+#else
+  struct timeval to;
+  to.tv_sec = TG_RX_TIMEOUT_MS / 1000;
+  to.tv_usec = (TG_RX_TIMEOUT_MS % 1000) * 1000;
+#endif /* LWIP_SO_SNDRCVTIMEO_NONSTANDARD */
+#endif /* ST67_ARCH */
   int32_t len = sizeof(to);
-  if (W6X_Net_Setsockopt(EchoSock, SOL_SOCKET, SO_RCVTIMEO, &to, len) != 0)
+  if (NET_SETSOCKOPT(EchoSock, SOL_SOCKET, SO_RCVTIMEO, &to, len) != 0)
   {
     LogError("%s: setsockopt failed\n", __func__);
     return TG_FAILURE;
@@ -594,7 +615,7 @@ int32_t wfa_tg_stop_echo_server(void)
   if (EchoSock >= 0)
   {
     LogError("%s: socket force closed\n", __func__);
-    (void) W6X_Net_Shutdown(EchoSock, 1);
+    (void) NET_SHUTDOWN(EchoSock, 1);
     EchoSock = -1;
   }
 
@@ -660,9 +681,9 @@ static tg_stream_t *get_stream(int32_t stream_id)
 static int32_t wfa_tg_create_udp_socket(char *ipaddr, uint16_t port)
 {
   int32_t udpsock;             /* socket to create */
-  struct sockaddr_in servAddr_t; /* Local address */
+  struct sockaddr_in servAddr; /* Local address */
 
-  udpsock = W6X_Net_Socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  udpsock = NET_SOCKET(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   if (udpsock < 0)
   {
@@ -670,33 +691,19 @@ static int32_t wfa_tg_create_udp_socket(char *ipaddr, uint16_t port)
     return TG_FAILURE;
   }
 
-  memset(&servAddr_t, 0, sizeof(servAddr_t));
-  servAddr_t.sin_family = AF_INET;
-  servAddr_t.sin_addr_t.s_addr = PP_HTONL(INADDR_ANY);
-  servAddr_t.sin_port = PP_HTONS(port);
+  memset(&servAddr, 0, sizeof(servAddr));
+  servAddr.sin_family = AF_INET;
+  servAddr.sin_addr.s_addr = PP_HTONL(INADDR_ANY);
+  servAddr.sin_port = PP_HTONS(port);
 
-  if (W6X_Net_Bind(udpsock, (struct sockaddr *)&servAddr_t, sizeof(servAddr_t)) != 0)
+  if (NET_BIND(udpsock, (struct sockaddr *)&servAddr, sizeof(servAddr)) != 0)
   {
-    (void) W6X_Net_Close(udpsock);
+    (void) NET_CLOSE(udpsock);
     return TG_FAILURE;
   }
 
   return udpsock;
 }
-
-#if 0
-static int32_t wfa_tg_join_mcast(int32_t sockfd, char *mcastgroup)
-{
-  struct ip_mreq mcreq_t;
-  int32_t so;
-
-  mcreq_t.imr_multiaddr.s_addr = ATON_R(mcastgroup);
-  mcreq_t.imr_interface.s_addr = PP_HTONL(INADDR_ANY);
-  so = setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mcreq_t, sizeof(mcreq_t));
-
-  return so;
-}
-#endif /* Not supported */
 
 static int32_t wfa_tg_send_packet(tg_stream_t *stream, char *buf, int32_t len)
 {
@@ -707,17 +714,17 @@ static int32_t wfa_tg_send_packet(tg_stream_t *stream, char *buf, int32_t len)
     return TG_FAILURE;
   }
 
-  struct sockaddr_in to_addr_t = {0};
-  to_addr_t.sin_family = AF_INET;
+  struct sockaddr_in to_addr = {0};
+  to_addr.sin_family = AF_INET;
   if (profile->direction == TG_DIRECT_SEND)
   {
-    to_addr_t.sin_addr_t.s_addr = ATON_R(profile->dipaddr);
-    to_addr_t.sin_port = PP_HTONS(profile->dport);
+    to_addr.sin_addr.s_addr = ATON(profile->dipaddr);
+    to_addr.sin_port = PP_HTONS(profile->dport);
   }
   else if (profile->direction == TG_DIRECT_RECV)
   {
-    to_addr_t.sin_addr_t.s_addr = ATON_R(profile->sipaddr);
-    to_addr_t.sin_port = PP_HTONS(profile->sport);
+    to_addr.sin_addr.s_addr = ATON(profile->sipaddr);
+    to_addr.sin_port = PP_HTONS(profile->sport);
   }
 
   /* fill in the packet_n */
@@ -731,7 +738,7 @@ static int32_t wfa_tg_send_packet(tg_stream_t *stream, char *buf, int32_t len)
   int2buff(stime.sec, &((tg_header_t *)buf)->hdr[12]);
   int2buff(stime.usec, &((tg_header_t *)buf)->hdr[16]);
 
-  int32_t bytes_sent = W6X_Net_Sendto(stream->socket_fd, buf, len, 0, (struct sockaddr *)&to_addr_t, sizeof(to_addr_t));
+  int32_t bytes_sent = NET_SENDTO(stream->socket_fd, buf, len, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
 
   if (bytes_sent != -1)
   {
@@ -754,7 +761,7 @@ static int32_t wfa_tg_recv_data(tg_stream_t *stream, char *recv_buf)
     return TG_FAILURE;
   }
 
-  uint32_t bytes_received = W6X_Net_Recv(stream->socket_fd, recv_buf, MAX_RCV_BUF_LEN, 0);
+  uint32_t bytes_received = NET_RECV(stream->socket_fd, recv_buf, MAX_RCV_BUF_LEN, 0);
   if (bytes_received != -1)
   {
     stream->stats.rx_frames++;
@@ -770,102 +777,6 @@ static int32_t wfa_tg_recv_data(tg_stream_t *stream, char *recv_buf)
 
   return bytes_received;
 }
-
-#if 0
-static int32_t wfa_tg_set_tos(int32_t sockfd, int32_t tgUserPriority)
-{
-  int32_t tosval;
-
-  socklen_t size = sizeof(tosval);
-
-  if (sockfd < 0)
-  {
-    LogDebug("%s: socket closed\n", __func__);
-    return TG_FAILURE;
-  }
-
-  if (W6X_Net_Getsockopt(sockfd, IPPROTO_IP, IP_TOS, &tosval, &size) != 0)
-  {
-    LogError("%s: Failed to set IP_TOS\n", __func__);
-    return -1;
-  }
-  switch (tgUserPriority)
-  {
-    case TG_WMM_AC_BK: /* user priority "1" */
-      /*Change this value to the ported device*/
-      tosval = TG_TOS_BK;
-      break;
-
-    case TG_WMM_AC_VI: /* user priority "5" */
-      /*Change this value to the ported device*/
-      tosval = TG_TOS_VI;
-      break;
-
-    case TG_WMM_AC_UAPSD:
-      tosval = 0x88;
-      break;
-
-    case TG_WMM_AC_VO: /* user priority "6" */
-      /*Change this value to the ported device*/
-      tosval = TG_TOS_VO;
-      break;
-
-    case TG_WMM_AC_BE: /* user priority "0" */
-      tosval = TG_TOS_BE;
-      break;
-
-    /* For WMM-AC Program User Priority Definitions */
-    case TG_WMM_AC_UP0:
-      tosval = 0x00;
-      break;
-
-    case TG_WMM_AC_UP1:
-      tosval = 0x20;
-      break;
-
-    case TG_WMM_AC_UP2:
-      tosval = 0x40;
-      break;
-
-    case TG_WMM_AC_UP3:
-      tosval = 0x60;
-      break;
-
-    case TG_WMM_AC_UP4:
-      tosval = 0x80;
-      break;
-    case TG_WMM_AC_UP5:
-      tosval = 0xa0;
-      break;
-
-    case TG_WMM_AC_UP6:
-      tosval = 0xc0;
-      break;
-
-    case TG_WMM_AC_UP7:
-      tosval = 0xe0;
-      break;
-
-    default:
-      tosval = 0x00;
-      break;
-  }
-
-  if (W6X_Net_Setsockopt(sockfd, IPPROTO_IP, IP_TOS, &tosval, sizeof(tosval)) != 0)
-  {
-    LogError("%s: Failed to set IP_TOS\n", __func__);
-  }
-
-  return (tosval == 0xE0) ? 0xD8 : tosval;
-}
-
-static int32_t wfa_tg_set_mcast_send(int32_t sockfd)
-{
-  unsigned char ttlval = 1;
-
-  return setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_TTL, &ttlval, sizeof(ttlval));
-}
-#endif /* Not supported */
 
 static void wfa_tg_set_send_timing(int32_t profile, int32_t rate, int32_t *chunk_time_ms, int32_t *chunk_rate,
                                    int32_t *remainder)
@@ -933,7 +844,7 @@ static void wfa_rx_thread(void *arg)
 
   if (stream->socket_fd >= 0)
   {
-    (void) W6X_Net_Close(stream->socket_fd);
+    (void) NET_CLOSE(stream->socket_fd);
     stream->socket_fd = -1;
   }
 
@@ -945,10 +856,17 @@ static void wfa_rx_thread(void *arg)
 static void wfa_tx_thread(void *arg)
 {
   tg_stream_t *stream = (tg_stream_t *)arg;
-  tg_profile_t *profile = &stream->profile;
+  tg_profile_t *profile;
   char packet_buf[MAX_UDP_LEN + 1];
 
-  if (profile == NULL || profile->direction != TG_DIRECT_SEND)
+  if ((stream == NULL) || (stream->socket_fd < 0))
+  {
+    LogError("%s: Invalid socket\n", __func__);
+    vTaskDelete(NULL);
+    return;
+  }
+  profile = &stream->profile;
+  if ((profile == NULL) || (profile->direction != TG_DIRECT_SEND))
   {
     LogError("%s: Invalid profile\n", __func__);
     vTaskDelete(NULL);
@@ -985,7 +903,7 @@ static void wfa_tx_thread(void *arg)
   {
     int32_t to = 50; /* ms or us ? */
     int32_t len = sizeof(to);
-    if (W6X_Net_Setsockopt(stream->socket_fd, SOL_SOCKET, SO_RCVTIMEO, &to, len) != 0)
+    if (NET_SETSOCKOPT(stream->socket_fd, SOL_SOCKET, SO_RCVTIMEO, &to, len) != 0)
     {
       vTaskDelete(NULL);
       return;
@@ -1101,7 +1019,7 @@ static void wfa_tx_thread(void *arg)
 
   if (stream->socket_fd >= 0)
   {
-    (void) W6X_Net_Close(stream->socket_fd);
+    (void) NET_CLOSE(stream->socket_fd);
     stream->socket_fd = -1;
   }
 
@@ -1118,31 +1036,24 @@ static void wfa_tx_thread(void *arg)
 
 static void wfa_tg_echo_thread(void *arg)
 {
-  struct sockaddr_storage from_addr_t;
+  struct sockaddr_storage from_addr;
   char buffer[MAX_RCV_BUF_LEN] = {0};
   socklen_t from_addr_len;
   int32_t len;
-  uint32_t dtim = 0;
   uint32_t ps_mode = 0;
 
-  LogInfo("%s: thread start\n", __func__);
-
-  /* Save low power config */
-  if ((W6X_WiFi_GetDTIM(&dtim) != W6X_STATUS_OK) || (W6X_GetPowerMode(&ps_mode) != W6X_STATUS_OK))
+  /* Save and disable low power config */
+  if ((W6X_GetPowerMode(&ps_mode) != W6X_STATUS_OK) || (W6X_SetPowerMode(0) != W6X_STATUS_OK))
   {
     goto _err1;
   }
 
-  /* Disable low power */
-  if ((W6X_SetPowerMode(0) != W6X_STATUS_OK) || (W6X_WiFi_SetDTIM(0) != W6X_STATUS_OK))
-  {
-    goto _err2;
-  }
+  LogInfo("%s: thread start\n", __func__);
 
   while (EchoGo && EchoSock >= 0)
   {
-    from_addr_len = sizeof(from_addr_t);
-    len = W6X_Net_Recvfrom(EchoSock, buffer, MAX_RCV_BUF_LEN, 0, (struct sockaddr *)&from_addr_t, &from_addr_len);
+    from_addr_len = sizeof(from_addr);
+    len = NET_RECVFROM(EchoSock, buffer, MAX_RCV_BUF_LEN, 0, (struct sockaddr *)&from_addr, &from_addr_len);
     if (len <= 0)
     {
       LogInfo("%s: no data received\n", __func__);
@@ -1150,7 +1061,7 @@ static void wfa_tg_echo_thread(void *arg)
     }
     LogInfo("%s: received length = %" PRIi32 "\n", __func__, len);
 
-    len = W6X_Net_Sendto(EchoSock, (const char *)buffer, len, 0, (struct sockaddr *)&from_addr_t, from_addr_len);
+    len = NET_SENDTO(EchoSock, (const char *)buffer, len, 0, (struct sockaddr *)&from_addr, from_addr_len);
     LogInfo("%s: sent length = %" PRIi32 "\n", __func__, len);
   }
 
@@ -1158,14 +1069,12 @@ static void wfa_tg_echo_thread(void *arg)
 
   if (EchoSock >= 0)
   {
-    (void) W6X_Net_Shutdown(EchoSock, 1);
+    (void) NET_SHUTDOWN(EchoSock, 1);
   }
   EchoSock = -1;
 
-_err2:
   /* Restore low power config */
   (void)W6X_SetPowerMode(ps_mode);
-  (void)W6X_WiFi_SetDTIM(dtim);
 
 _err1:
   EchoThread = NULL;
@@ -1175,14 +1084,14 @@ _err1:
 
 static int32_t wfa_tg_connect_udp(int32_t mysock, char *daddr, int32_t dport)
 {
-  struct sockaddr_in peerAddr_t;
+  struct sockaddr_in peerAddr;
 
-  memset(&peerAddr_t, 0, sizeof(peerAddr_t));
-  peerAddr_t.sin_family = AF_INET;
-  memcpy(peerAddr_t.sin_addr_t.s4_addr, daddr, 4);
-  peerAddr_t.sin_port = PP_HTONS(dport);
+  memset(&peerAddr, 0, sizeof(peerAddr));
+  peerAddr.sin_family = AF_INET;
+  peerAddr.sin_addr.s_addr = ATON(daddr);
+  peerAddr.sin_port = PP_HTONS(dport);
 
-  if (W6X_Net_Connect(mysock, (struct sockaddr *)&peerAddr_t, sizeof(peerAddr_t)) != 0)
+  if (NET_CONNECT(mysock, (struct sockaddr *)&peerAddr, sizeof(peerAddr)) != 0)
   {
     return -1;
   }
@@ -1192,14 +1101,12 @@ static int32_t wfa_tg_connect_udp(int32_t mysock, char *daddr, int32_t dport)
 int32_t wfa_tg_start_echo_server_cmd(int32_t argc, char **argv)
 {
   int32_t ret;
-  int32_t tmp = 0;
   if (argc != 2)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  Parser_StrToInt(argv[1], NULL, &tmp);
-  uint16_t port = (uint16_t)tmp;
+  uint16_t port = (uint16_t)atoi(argv[1]);
 
   ret = wfa_tg_start_echo_server(port);
   if (ret != TG_SUCCESS)

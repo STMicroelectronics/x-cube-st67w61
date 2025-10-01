@@ -37,12 +37,13 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
+/** LittleFS context structure */
 struct lfs_context
 {
-  lfs_t lfs;
-  uint32_t flash_addr;
-  SemaphoreHandle_t fs_giant_lock;
-  char *partition_name;
+  lfs_t lfs;                        /*!< LittleFS object */
+  uint32_t flash_addr;              /*!< Start address of the flash partition */
+  SemaphoreHandle_t fs_giant_lock;  /*!< Semaphore for file system access */
+  char *partition_name;             /*!< Name of the flash partition */
 };
 
 /* USER CODE BEGIN ET */
@@ -50,6 +51,12 @@ struct lfs_context
 /* USER CODE END ET */
 
 /* Exported functions --------------------------------------------------------*/
+/**
+  * @brief  Initialize the LittleFS flash context
+  * @param  lfs_xip_ctx Pointer to the LittleFS context structure
+  * @param  cfg Pointer to the LittleFS configuration structure
+  * @return Pointer to the LittleFS object
+  */
 lfs_t *lfs_flash_init(struct lfs_context *lfs_xip_ctx, struct lfs_config *cfg);
 
 /* USER CODE BEGIN EF */

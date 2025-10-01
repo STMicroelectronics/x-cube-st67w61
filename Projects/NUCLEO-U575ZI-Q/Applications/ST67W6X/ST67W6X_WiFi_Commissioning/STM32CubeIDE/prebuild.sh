@@ -1,7 +1,7 @@
 #!/bin/bash - 
 #prebuild script 
 echo prebuild.sh : HTML generation started
-command="python $1/../Html/html_to_h.py --config $1/../Html/conf.txt --output $1/../App_WiFi_Commissioning/App"
+command="python $1/../Html/html_to_h.py --config $1/../Html/conf.txt --output $1/../Appli/App"
 echo $command
 $command
 ret=$?

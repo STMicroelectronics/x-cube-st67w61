@@ -37,6 +37,11 @@ extern "C" {
 #define SHELL_ENABLE                               1
 #endif /* SHELL_ENABLE */
 
+#ifndef SHELL_CMD_LEVEL
+/** Default shell commands list level (0: Minimal, 1: Full) */
+#define SHELL_CMD_LEVEL                            0
+#endif /* SHELL_CMD_LEVEL */
+
 #ifndef SHELL_DEFAULT_NAME
 /** Default shell prompt string */
 #define SHELL_DEFAULT_NAME                         "w61"
@@ -68,7 +73,7 @@ extern "C" {
 #endif /* SHELL_ARG_NUM */
 
 #ifndef SHELL_USING_COLOR
-/** Enable the shell color */
+/** Shell using color */
 #define SHELL_USING_COLOR                          1
 #endif /* SHELL_USING_COLOR */
 

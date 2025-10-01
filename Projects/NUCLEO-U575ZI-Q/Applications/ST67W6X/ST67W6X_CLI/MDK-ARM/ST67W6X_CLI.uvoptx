@@ -202,7 +202,7 @@
   </Group>
 
   <Group>
-    <GroupName>Application/User/App_CLI/App</GroupName>
+    <GroupName>Application/User/Appli/App</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -214,7 +214,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/App/fota_flash.c</PathWithFileName>
+      <PathWithFileName>../Appli/App/fota_flash.c</PathWithFileName>
       <FilenameWithoutPath>fota_flash.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -226,7 +226,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/App/fota_header.c</PathWithFileName>
+      <PathWithFileName>../Appli/App/fota_header.c</PathWithFileName>
       <FilenameWithoutPath>fota_header.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -238,7 +238,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/App/sha256.c</PathWithFileName>
+      <PathWithFileName>../Appli/App/sha256.c</PathWithFileName>
       <FilenameWithoutPath>sha256.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -250,7 +250,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/App/main_app.c</PathWithFileName>
+      <PathWithFileName>../Appli/App/main_app.c</PathWithFileName>
       <FilenameWithoutPath>main_app.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -262,7 +262,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/App/echo.c</PathWithFileName>
+      <PathWithFileName>../Appli/App/echo.c</PathWithFileName>
       <FilenameWithoutPath>echo.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -274,7 +274,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/App/fota.c</PathWithFileName>
+      <PathWithFileName>../Appli/App/fota.c</PathWithFileName>
       <FilenameWithoutPath>fota.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -282,7 +282,7 @@
   </Group>
 
   <Group>
-    <GroupName>Application/User/App_CLI/Target</GroupName>
+    <GroupName>Application/User/Appli/Target</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -294,7 +294,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/Target/logshell_ctrl.c</PathWithFileName>
+      <PathWithFileName>../Appli/Target/logshell_ctrl.c</PathWithFileName>
       <FilenameWithoutPath>logshell_ctrl.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -306,7 +306,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/Target/freertos_tickless.c</PathWithFileName>
+      <PathWithFileName>../Appli/Target/freertos_tickless.c</PathWithFileName>
       <FilenameWithoutPath>freertos_tickless.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -318,7 +318,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../App_CLI/Target/stm32_lpm_if.c</PathWithFileName>
+      <PathWithFileName>../Appli/Target/stm32_lpm_if.c</PathWithFileName>
       <FilenameWithoutPath>stm32_lpm_if.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -411,6 +411,38 @@
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
+    <File>
+      <GroupNumber>5</GroupNumber>
+      <FileNumber>17</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../ST67W6X/Target/util_task_port.c</PathWithFileName>
+      <FilenameWithoutPath>util_task_port.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+  </Group>
+
+  <Group>
+    <GroupName>Application/User/ST67W6X/App</GroupName>
+    <tvExp>0</tvExp>
+    <tvExpOptDlg>0</tvExpOptDlg>
+    <cbSel>0</cbSel>
+    <RteFlg>0</RteFlg>
+    <File>
+      <GroupNumber>6</GroupNumber>
+      <FileNumber>18</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../ST67W6X/App/app_st67w6x.c</PathWithFileName>
+      <FilenameWithoutPath>app_st67w6x.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
   </Group>
 
   <Group>
@@ -420,8 +452,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>6</GroupNumber>
-      <FileNumber>17</FileNumber>
+      <GroupNumber>7</GroupNumber>
+      <FileNumber>19</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -432,8 +464,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>6</GroupNumber>
-      <FileNumber>18</FileNumber>
+      <GroupNumber>7</GroupNumber>
+      <FileNumber>20</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -452,8 +484,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>7</GroupNumber>
-      <FileNumber>19</FileNumber>
+      <GroupNumber>8</GroupNumber>
+      <FileNumber>21</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -472,8 +504,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>20</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>22</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -484,8 +516,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>21</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>23</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -496,8 +528,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>22</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>24</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -508,8 +540,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>23</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>25</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -520,8 +552,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>24</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>26</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -532,8 +564,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>25</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>27</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -544,8 +576,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>26</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>28</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -556,8 +588,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>27</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>29</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -568,8 +600,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>28</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>30</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -580,8 +612,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>29</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>31</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -592,8 +624,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>30</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>32</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -604,8 +636,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>31</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>33</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -616,8 +648,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>32</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>34</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -628,8 +660,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>33</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>35</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -640,8 +672,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>34</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>36</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -652,8 +684,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>35</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>37</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -664,8 +696,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>36</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>38</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -676,8 +708,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>37</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>39</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -688,8 +720,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>38</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>40</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -700,8 +732,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>39</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>41</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -712,8 +744,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>40</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>42</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -724,8 +756,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>41</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>43</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -736,8 +768,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>8</GroupNumber>
-      <FileNumber>42</FileNumber>
+      <GroupNumber>9</GroupNumber>
+      <FileNumber>44</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -756,8 +788,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>9</GroupNumber>
-      <FileNumber>43</FileNumber>
+      <GroupNumber>10</GroupNumber>
+      <FileNumber>45</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -776,8 +808,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>44</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>46</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -788,8 +820,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>45</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>47</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -800,8 +832,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>46</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>48</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -812,8 +844,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>47</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>49</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -824,8 +856,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>48</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>50</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -836,8 +868,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>49</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>51</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -848,8 +880,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>50</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>52</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -860,8 +892,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>51</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>53</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -872,8 +904,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>52</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>54</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -884,8 +916,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>10</GroupNumber>
-      <FileNumber>53</FileNumber>
+      <GroupNumber>11</GroupNumber>
+      <FileNumber>55</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -904,8 +936,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>11</GroupNumber>
-      <FileNumber>54</FileNumber>
+      <GroupNumber>12</GroupNumber>
+      <FileNumber>56</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -924,8 +956,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>12</GroupNumber>
-      <FileNumber>55</FileNumber>
+      <GroupNumber>13</GroupNumber>
+      <FileNumber>57</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -938,128 +970,104 @@
   </Group>
 
   <Group>
-    <GroupName>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus</GroupName>
+    <GroupName>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>13</GroupNumber>
-      <FileNumber>56</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_ble.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_ble.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>13</GroupNumber>
-      <FileNumber>57</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_common.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_common.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>58</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_mqtt.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_mqtt.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ble.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_ble.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>59</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_net.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_net.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_http.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_http.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>60</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_rx_parser.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_rx_parser.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_mqtt.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_mqtt.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>61</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_sys.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_sys.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_net.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_net.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>62</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_wifi.c</PathWithFileName>
-      <FilenameWithoutPath>w61_at_wifi.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_netif.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>63</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/spi_iface.c</PathWithFileName>
-      <FilenameWithoutPath>spi_iface.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_ota.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>64</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/w61_io.c</PathWithFileName>
-      <FilenameWithoutPath>w61_io.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_sys.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_sys.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>13</GroupNumber>
+      <GroupNumber>14</GroupNumber>
       <FileNumber>65</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</PathWithFileName>
-      <FilenameWithoutPath>common_parser.c</FilenameWithoutPath>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_wifi.c</PathWithFileName>
+      <FilenameWithoutPath>w6x_wifi.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1072,7 +1080,7 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>14</GroupNumber>
+      <GroupNumber>15</GroupNumber>
       <FileNumber>66</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
@@ -1084,7 +1092,7 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>14</GroupNumber>
+      <GroupNumber>15</GroupNumber>
       <FileNumber>67</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
@@ -1096,7 +1104,7 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>14</GroupNumber>
+      <GroupNumber>15</GroupNumber>
       <FileNumber>68</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
@@ -1108,7 +1116,7 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>14</GroupNumber>
+      <GroupNumber>15</GroupNumber>
       <FileNumber>69</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
@@ -1120,7 +1128,7 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>14</GroupNumber>
+      <GroupNumber>15</GroupNumber>
       <FileNumber>70</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
@@ -1134,98 +1142,6 @@
   </Group>
 
   <Group>
-    <GroupName>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI</GroupName>
-    <tvExp>0</tvExp>
-    <tvExpOptDlg>0</tvExpOptDlg>
-    <cbSel>0</cbSel>
-    <RteFlg>0</RteFlg>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>71</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ble.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_ble.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>72</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_http.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_http.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>73</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_mqtt.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_mqtt.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>74</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_net.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_net.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>75</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_ota.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>76</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_sys.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_sys.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>15</GroupNumber>
-      <FileNumber>77</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_wifi.c</PathWithFileName>
-      <FilenameWithoutPath>w6x_wifi.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-  </Group>
-
-  <Group>
     <GroupName>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Logging</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
@@ -1233,7 +1149,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>16</GroupNumber>
-      <FileNumber>78</FileNumber>
+      <FileNumber>71</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1253,7 +1169,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>79</FileNumber>
+      <FileNumber>72</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1265,7 +1181,7 @@
     </File>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>80</FileNumber>
+      <FileNumber>73</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1277,7 +1193,7 @@
     </File>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>81</FileNumber>
+      <FileNumber>74</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1289,7 +1205,7 @@
     </File>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>82</FileNumber>
+      <FileNumber>75</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1301,7 +1217,7 @@
     </File>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>83</FileNumber>
+      <FileNumber>76</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1321,7 +1237,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>18</GroupNumber>
-      <FileNumber>84</FileNumber>
+      <FileNumber>77</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1333,7 +1249,7 @@
     </File>
     <File>
       <GroupNumber>18</GroupNumber>
-      <FileNumber>85</FileNumber>
+      <FileNumber>78</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1346,14 +1262,142 @@
   </Group>
 
   <Group>
-    <GroupName>Middlewares/LittleFS/File System/LittleFS</GroupName>
+    <GroupName>Middlewares/ST67W6X_Network_Driver/Network/ATDriver</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>19</GroupNumber>
+      <FileNumber>79</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/modem_cmd_handler.c</PathWithFileName>
+      <FilenameWithoutPath>modem_cmd_handler.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>80</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_ble.c</PathWithFileName>
+      <FilenameWithoutPath>w61_at_ble.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>81</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_common.c</PathWithFileName>
+      <FilenameWithoutPath>w61_at_common.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>82</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_mqtt.c</PathWithFileName>
+      <FilenameWithoutPath>w61_at_mqtt.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>83</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_net.c</PathWithFileName>
+      <FilenameWithoutPath>w61_at_net.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>84</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_sys.c</PathWithFileName>
+      <FilenameWithoutPath>w61_at_sys.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>85</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_wifi.c</PathWithFileName>
+      <FilenameWithoutPath>w61_at_wifi.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
       <FileNumber>86</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/spi_iface.c</PathWithFileName>
+      <FilenameWithoutPath>spi_iface.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>87</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/w61_io.c</PathWithFileName>
+      <FilenameWithoutPath>w61_io.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>88</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</PathWithFileName>
+      <FilenameWithoutPath>common_parser.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+  </Group>
+
+  <Group>
+    <GroupName>Middlewares/LittleFS/File System/LittleFS</GroupName>
+    <tvExp>0</tvExp>
+    <tvExpOptDlg>0</tvExpOptDlg>
+    <cbSel>0</cbSel>
+    <RteFlg>0</RteFlg>
+    <File>
+      <GroupNumber>20</GroupNumber>
+      <FileNumber>89</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1364,8 +1408,8 @@
       <bShared>0</bShared>
     </File>
     <File>
-      <GroupNumber>19</GroupNumber>
-      <FileNumber>87</FileNumber>
+      <GroupNumber>20</GroupNumber>
+      <FileNumber>90</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1384,8 +1428,8 @@
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
     <File>
-      <GroupNumber>20</GroupNumber>
-      <FileNumber>88</FileNumber>
+      <GroupNumber>21</GroupNumber>
+      <FileNumber>91</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>

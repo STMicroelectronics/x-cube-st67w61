@@ -22,9 +22,9 @@
 #include "w61_at_api.h"
 #include "w61_at_common.h"
 #include "w61_at_internal.h"
-#include "w61_at_rx_parser.h"
 #include "w61_io.h" /* SPI_XFER_MTU_BYTES */
 #include "common_parser.h" /* Common Parser functions */
+#include "cmsis_compiler.h" /* __CLZ */
 
 #if (SYS_DBG_ENABLE_TA4 >= 1)
 #include "trcRecorder.h"
@@ -119,11 +119,10 @@ typedef struct
 /** Global W61 context */
 W61_Object_t W61_Obj = {0};
 
+#if (W61_ASSERT_ENABLE == 1)
 /** W61 context pointer error string */
 static const char W61_Obj_Null_str[] = "Object pointer not initialized";
-
-/** sscanf parsing error string */
-static const char W61_Parsing_Error_str[] = "Parsing of the result failed";
+#endif /* W61_ASSERT_ENABLE */
 
 /** EFUSE MAC Addresses table */
 static const W61_Efuse_t efuse_mac_table[] =
@@ -136,28 +135,130 @@ static const W61_Efuse_t efuse_mac_table[] =
 /** EFUSE RF and XTAL Trimming table */
 static const W61_Trim_t trim_table[] =
 {
+  /* Wi-Fi High Power Trimming */
   {0xCC, 26, 0xC0, 0,  15, 0xC0, 15, 0, "wifi_hp_poffset0"},
   {0xCC, 27, 0xC0, 16, 15, 0xC0, 31, 0, "wifi_hp_poffset1"},
   {0xCC, 28, 0xC4, 0,  15, 0xC4, 15, 0, "wifi_hp_poffset2"},
+  /* Wi-Fi Low Power Trimming */
   {0xCC, 29, 0xC4, 16, 15, 0xC4, 31, 1, "wifi_lp_poffset0"},
   {0xCC, 30, 0xC8, 0,  15, 0xC8, 15, 1, "wifi_lp_poffset1"},
   {0xCC, 31, 0xC8, 16, 15, 0xC8, 31, 1, "wifi_lp_poffset2"},
+  /* BLE Trimming */
   {0xD0, 26, 0xCC, 0,  25, 0xCC, 25, 2, "ble_poffset0"},
   {0xD0, 27, 0xD0, 0,  25, 0xD0, 25, 2, "ble_poffset1"},
   {0xD0, 28, 0xD4, 0,  25, 0xD4, 25, 2, "ble_poffset2"},
+  /* XTAL Trimming */
   {0xEC, 7,  0XEC, 0,  6,  0XEC, 6,  3, "xtal0"},
   {0xF0, 31, 0XF4, 26, 6,  0XF0, 30, 3, "xtal1"},
   {0xEC, 23, 0XF4, 20, 6,  0XF0, 28, 3, "xtal2"},
 };
 
+/** Part Number description per module ID table */
+static const W61_ModuleID_t module_id[] =
+{
+  {W61_MODULE_ID_B, "C6AFDBD111400004"},
+  {W61_MODULE_ID_U, "72AFDBD110400005"},
+  {W61_MODULE_ID_P, "A6AFDBD110400006"},
+};
+
 /** @} */
 
 /* Private function prototypes -----------------------------------------------*/
-/* Functions Definition ------------------------------------------------------*/
 /** @addtogroup ST67W61_AT_System_Functions
   * @{
   */
 
+/**
+  * @brief  Callback function to handle Module AT version responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_at_version);
+
+/**
+  * @brief  Callback function to handle Module Wi-Fi MAC SW version responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_mac_sw_version);
+
+/**
+  * @brief  Callback function to handle Module SDK version responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_sdk_version);
+
+/**
+  * @brief  Callback function to handle Module BLE Controller version responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_bt_controller_version);
+
+/**
+  * @brief  Callback function to handle Module BLE Stack version responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_bt_stack_version);
+
+/**
+  * @brief  Callback function to handle read efuse responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings (unused)
+  * @param  argc: number of argument (unused)
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DIRECT_DECLARE(on_cmd_read_efuse);
+
+/**
+  * @brief  Callback function to handle list files responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_fs_listfiles);
+
+/**
+  * @brief  Callback function to handle read file content responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings (unused)
+  * @param  argc: number of argument (unused)
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DIRECT_DECLARE(on_cmd_fs_readfile);
+
+/**
+  * @brief  Callback function to handle AT command responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_atcmd);
+
+/* Functions Definition ------------------------------------------------------*/
 W61_Object_t *W61_ObjGet(void)
 {
   return &W61_Obj;
@@ -199,70 +300,18 @@ W61_Status_t W61_RegisterULcb(W61_Object_t *Obj,
   return W61_STATUS_OK;
 }
 
-W61_Status_t W61_RegisterBusIO(W61_Object_t *Obj,
-                               W61_IO_Init_cb_t     IO_Init,
-                               W61_IO_DeInit_cb_t   IO_DeInit,
-                               W61_IO_Delay_cb_t    IO_Delay,
-                               W61_IO_Send_cb_t     IO_Send,
-                               W61_IO_Receive_cb_t  IO_Receive)
-{
-  if (!Obj || !IO_Init || !IO_DeInit || !IO_Delay || !IO_Send || !IO_Receive)
-  {
-    return W61_STATUS_ERROR;
-  }
-
-  Obj->fops.IO_Init = IO_Init;
-  Obj->fops.IO_DeInit = IO_DeInit;
-  Obj->fops.IO_Send = IO_Send;
-  Obj->fops.IO_Delay = IO_Delay;
-  Obj->fops.IO_Receive = IO_Receive;
-
-  return W61_STATUS_OK;
-}
-
 W61_Status_t W61_Init(W61_Object_t *Obj)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  W61_Status_t ret;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  Obj->NcpTimeout = W61_NCP_TIMEOUT;
-  Obj->CmdResp = pvPortMalloc(W61_ATD_CMDRSP_STRING_SIZE);
-  if (Obj->CmdResp == NULL)
-  {
-    LogError("Unable to allocate CmdResp\n");
-    return ret;
-  }
-
-  Obj->xCmdMutex = xSemaphoreCreateMutex();
-  if (Obj->xCmdMutex == NULL)
-  {
-    goto __error;
-  }
-
-  if (Obj->fops.IO_Init == NULL)
-  {
-    LogError("IO_Init callback not defined\n");
-    goto __error;
-  }
-  if (Obj->fops.IO_Init() != 0)
-  {
-    LogError("IO_Init failed\n");
-    ret = W61_STATUS_ERROR;
-    goto __error;
-  }
-
-  ret = (W61_Status_t) W61_ATD_RxParserInit(Obj);
+  /* Initialize the Modem handler
+     Start the SPI driver
+     Boot the ST67W611M module */
+  ret = (W61_Status_t) W61_AT_ModemInit(Obj);
   if (ret != W61_STATUS_OK)
   {
-    LogError("Could not init RxParser\n");
-    goto __error;
-  }
-
-  /* Wait message ready */
-  ret = W61_WaitReady(Obj);
-  if (ret != W61_STATUS_OK)
-  {
-    LogError("Wait ready failed\n");
+    SYS_LOG_ERROR("Could not init Modem handler\n");
     goto __error;
   }
 
@@ -272,106 +321,76 @@ __error:
 
 W61_Status_t W61_DeInit(W61_Object_t *Obj)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
-
-  ret = (W61_Status_t) Obj->fops.IO_DeInit();
-
-  W61_ATD_RxParserDeInit(Obj);
-
-  vSemaphoreDelete(Obj->xCmdMutex);
-
-  if (Obj->CmdResp)
-  {
-    vPortFree(Obj->CmdResp);
-    Obj->CmdResp = NULL;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_WaitReady(W61_Object_t *Obj)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
-
-  /* Wait message ready */
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    /* Flush the read buffer if any the 'ready' message is received */
-    (void)W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, 4000);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    LogError("IO Busy\n");
-    ret = W61_STATUS_BUSY;
-    goto __err;
-  }
-
-  /* Test a first AT command to check if the system is able to receive a response */
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT\r\n");
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  if (ret == W61_STATUS_TIMEOUT)
-  {
-    LogError("No received response from NCP\n");
-    goto __err;
-  }
-  else if (ret != W61_STATUS_OK)
-  {
-    LogError("Disable store more failed\n");
-    goto __err;
-  }
-
-__err:
-  return ret;
-}
-
-W61_Status_t W61_SetTimeout(W61_Object_t *Obj, uint32_t Timeout)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
-
-  Obj->NcpTimeout = Timeout;
+  /* Deinitialize the Modem handler
+     Shutdown the ST67W611M module
+     Stop the SPI driver */
+  W61_AT_ModemDeInit(Obj);
   return W61_STATUS_OK;
 }
 
 W61_Status_t W61_ResetToFactoryDefault(W61_Object_t *Obj)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  W61_Status_t ret;
+  BaseType_t xReturned;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+RESTORE\r\n");
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, 2000);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  /* Send the factory reset command */
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+RESTORE\r\n", 2000);
   if (ret != W61_STATUS_OK)
   {
-    LogError("Restore factory default failed\n");
+    SYS_LOG_ERROR("Restore factory default failed\n");
     goto __err;
   }
 
-  /* Wait message ready */
-  ret = W61_WaitReady(Obj);
+  /* Wait for the module to be ready */
+  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
+  if (xReturned != pdPASS)
+  {
+    SYS_LOG_ERROR("sem_if_ready not received\n");
+    goto __err;
+  }
+
+  /* Send an AT command to check the module is available */
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT\r\n", W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
-    LogError("Wait ready failed\n");
+    SYS_LOG_ERROR("AT command failed after factory reset\n");
+    goto __err;
+  }
+  vTaskDelay(100); /* Add mandatory delay */
+
+__err:
+  return ret;
+}
+
+W61_Status_t W61_Reset(W61_Object_t *Obj)
+{
+  W61_Status_t ret;
+  BaseType_t xReturned;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
+
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+RST\r\n", 2000);
+  if (ret != W61_STATUS_OK)
+  {
+    SYS_LOG_ERROR("Reset command failed\n");
+    goto __err;
+  }
+
+  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
+  if (xReturned != pdPASS)
+  {
+    SYS_LOG_ERROR("sem_if_ready not received\n");
+    goto __err;
+  }
+
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT\r\n", W61_NCP_TIMEOUT);
+  if (ret != W61_STATUS_OK)
+  {
+    SYS_LOG_ERROR("AT command failed after reset\n");
+    goto __err;
   }
 
   /* Add mandatory delay */
@@ -383,495 +402,316 @@ __err:
 
 W61_Status_t W61_GetNcpHeapState(W61_Object_t *Obj, uint32_t *RemainingHeap, uint32_t *LwipHeap)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+SYSRAM?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, Obj->NcpTimeout);
-    if (ret == W61_STATUS_OK)
-    {
-      if (sscanf((char *)Obj->CmdResp, "+SYSRAM:%" SCNu32 ",%" SCNu32, RemainingHeap, LwipHeap) != 2)
-      {
-        LogError("%s\n", W61_Parsing_Error_str);
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  /* Query the remaining heap and LWIP heap sizes. The response is in the form of
+     +SYSRAM:<remaining RAM size>,<lwip heap size> */
+  strncpy(cmd, "AT+SYSRAM?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+SYSRAM:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
-    ret = W61_STATUS_ERROR;
+    return ret;
   }
+  if (argc < 2)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  *RemainingHeap = (uint32_t)atoi(argv[0]);
+  *LwipHeap = (uint32_t)atoi(argv[1]);
 
   return ret;
 }
 
 W61_Status_t W61_GetStoreMode(W61_Object_t *Obj, uint32_t *mode)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  /* Query the AT parameter store mode. The response is in the form of
+     +SYSSTORE:<store_mode> */
+  strncpy(cmd, "AT+SYSSTORE?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+SYSSTORE:", &argc, argv, W61_NCP_TIMEOUT);
+  if (ret != W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+SYSSTORE?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, Obj->NcpTimeout);
-    if (ret == W61_STATUS_OK)
-    {
-      if (sscanf((char *)Obj->CmdResp, "+SYSSTORE:%" SCNu32, mode) != 1)
-      {
-        LogError("%s\n", W61_Parsing_Error_str);
-        ret = W61_STATUS_ERROR;
-      }
-    }
+    return ret;
+  }
+  if (argc < 1)
+  {
+    return W61_STATUS_ERROR;
+  }
 
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  *mode = (uint32_t)atoi(argv[0]);
 
   return ret;
 }
 
 W61_Status_t W61_ReadEFuse(W61_Object_t *Obj, uint32_t addr, uint32_t nbytes, uint8_t *data)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  uint32_t size = 0;
-  char *str_token;
+  W61_Status_t ret;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(data);
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data_mdm = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  struct modem_cmd handlers[] =
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+EFUSE-R=%" PRIu32 ",\"0x%03" PRIx32 "\",1\r\n",
-             nbytes, addr);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, Obj->NcpTimeout);
-    if (ret == W61_STATUS_OK)
-    {
-      if (sscanf((char *)Obj->CmdResp, "+EFUSE-R:%" SCNu32, &size) != 1)
-      {
-        LogError("%s\n", W61_Parsing_Error_str);
-        ret = W61_STATUS_ERROR;
-      }
-      else
-      {
-        str_token = strstr((char *)Obj->CmdResp, ",");
-        if (str_token == NULL)
-        {
-          ret = W61_STATUS_ERROR;
-        }
-        else
-        {
-          memcpy(data, (void *)(str_token + 1), size);
-        }
-      }
-    }
+    MODEM_CMD_DIRECT("+EFUSE-R:", on_cmd_read_efuse),
+  };
 
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  (void)xSemaphoreTake(data_mdm->sem_tx_lock, portMAX_DELAY);
 
+  mdm->rx_data = data;
+
+  /* Read the content of the eFuse at the specified address. The parameters are:
+     - <nbytes>: The number of bytes to be read.
+     - <addr>: This is the address of eFuse, it needs to be filled in as a string.
+     - <reload>: The read operation reload from the eFuse address.
+     The response is in the form of
+     +EFUSE-R:<nbytes>,[data] */
+  snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+EFUSE-R=%" PRIu32 ",\"0x%03" PRIx32 "\",1\r\n", nbytes, addr);
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->modem_cmd_handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)cmd,
+                                      mdm->sem_response,
+                                      W61_NCP_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
+
+  (void)xSemaphoreGive(data_mdm->sem_tx_lock);
   return ret;
+}
+
+W61_Status_t W61_RestoreGPIO(W61_Object_t *Obj, uint32_t pin)
+{
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
+  /* Restore the specified GPIO to its default state */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+IORST=%" PRIu32 "\r\n", pin);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_FS_DeleteFile(W61_Object_t *Obj, char *filename)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(filename);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    /* Operation 0: Delete a file */
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+FS=0,0,\"%s\"\r\n", filename);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  /* Delete the specified file in the filesystem. The parameters are:
+     - <type>: 0
+     - <operation>: 0 (Delete a file)
+     - <filename>: The name of the file to delete */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+FS=0,0,\"%s\"\r\n", filename);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_FS_CreateFile(W61_Object_t *Obj, char *filename)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(filename);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    /* Operation 1: Create a file */
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+FS=0,1,\"%s\"\r\n", filename);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  /* Create a new file in the filesystem. The parameters are:
+     - <type>: 0
+     - <operation>: 1 (Create a file)
+     - <filename>: The name of the file to create */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+FS=0,1,\"%s\"\r\n", filename);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_FS_WriteFile(W61_Object_t *Obj, char *filename, uint32_t offset, uint8_t *data, uint32_t len)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(filename);
   W61_NULL_ASSERT(data);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    /* Operation 2: Write data to a file */
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+FS=0,2,\"%s\",%" PRIu32 ",%" PRIu32 "\r\n",
-             filename, offset, len);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_SYS_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      /* Send the chunk of data */
-      ret = W61_AT_RequestSendData(Obj, data, len, W61_SYS_TIMEOUT);
-    }
-
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  /* Write the specified file in the filesystem. The parameters are:
+    - <type>: 0
+    - <operation>: 2 (Write data to a file)
+    - <filename>: The name of the file to write
+    - <offset>: The offset in the file to start writing
+    - <len>: The length of data to write
+    The data to write is sent in the next request part */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+FS=0,2,\"%s\",%" PRIu32 ",%" PRIu32 "\r\n", filename, offset, len);
+  return W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, data, len, W61_SYS_TIMEOUT, true);
 }
 
 W61_Status_t W61_FS_ReadFile(W61_Object_t *Obj, char *filename, uint32_t offset, uint8_t *data, uint32_t len)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len = 0;
-  uint32_t count_digit = 0;
-  uint32_t total_len = 0;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(filename);
   W61_NULL_ASSERT(data);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  W61_Status_t ret;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data_mdm = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+
+  struct modem_cmd handlers[] =
   {
-    /* Operation 3: Read data from a file */
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+FS=0,3,\"%s\",%" PRIu32 ",%" PRIu32 "\r\n",
-             filename, offset, len);
+    MODEM_CMD_DIRECT("+FS:READ,", on_cmd_fs_readfile),
+  };
 
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      /* Wait the response '+FS:READ,' */
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, W61_SYS_TIMEOUT);
-      if (recv_len > 0)
-      {
-        /* Get the total length of the data */
-        if ((sscanf((char *)Obj->CmdResp, "+FS:READ,%" SCNu32 ",", &total_len) == 1) && (total_len == len))
-        {
-          do /* Calculate the number of digits to right shift the first data */
-          {
-            total_len /= 10;
-            ++count_digit;
-          } while (total_len != 0);
+  (void)xSemaphoreTake(data_mdm->sem_tx_lock, portMAX_DELAY);
 
-          recv_len -= (strlen("+FS:READ,") + count_digit + 1); /* Remove the '+FS:READ,' and the number of digits */
+  mdm->rx_data = (void *)data;
 
-          /* Copy the first chunk of data */
-          memcpy(data, (char *)Obj->CmdResp + strlen("+FS:READ,") + count_digit + 1, recv_len);
-          total_len = recv_len;
+  /* Read the specified file in the filesystem. The parameters are:
+    - <type>: 0
+    - <operation>: 3 (Read data from a file)
+    - <filename>: The name of the file to read
+    - <offset>: The offset in the file to start reading
+    - <len>: The length of data to read
+    The response is in the form of
+    +FS:READ,<nbytes>,[data] */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+FS=0,3,\"%s\",%" PRIu32 ",%" PRIu32 "\r\n", filename, offset, len);
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->modem_cmd_handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)cmd,
+                                      mdm->sem_response,
+                                      W61_NCP_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
 
-          while ((total_len < len) && (recv_len > 0)) /* Loop if some remaining data */
-          {
-            recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, W61_SYS_TIMEOUT);
-            if (recv_len > 0)
-            {
-              if (recv_len + total_len > len) /* Check if the data is bigger than the buffer. Remove the last CRLF */
-              {
-                memcpy(&data[total_len], (char *)Obj->CmdResp, len - total_len); /* Copy the remaining data */
-                total_len = len;
-              }
-              else
-              {
-                memcpy(&data[total_len], (char *)Obj->CmdResp, recv_len); /* Copy the next chunk of data */
-                total_len += recv_len;
-              }
-            }
-            else
-            {
-              ret = W61_STATUS_TIMEOUT;
-              break; /* Exit the loop if no data received */
-            }
-          }
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_TIMEOUT;
-      }
-    }
-
-    if (recv_len > 0) /* If all receive data are OK, Check the last OK/Error response */
-    {
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, Obj->NcpTimeout);
-      if (recv_len > 2)
-      {
-        Obj->CmdResp[recv_len] = '\0'; /* Null terminate the response */
-        ret = W61_AT_ParseOkErr((char *)Obj->CmdResp);
-      }
-      else if (recv_len == 0)
-      {
-        ret = W61_STATUS_TIMEOUT;
-      }
-    }
-
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  (void)xSemaphoreGive(data_mdm->sem_tx_lock);
   return ret;
 }
 
 W61_Status_t W61_FS_GetSizeFile(W61_Object_t *Obj, char *filename, uint32_t *size)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(filename);
   W61_NULL_ASSERT(size);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  /* Get the size of the specified file in the filesystem. The parameters are:
+    - <type>: 0
+    - <operation>: 4 (Get the size of a file)
+    - <filename>: The name of the file to read
+    The response is in the form of
+    +FS:SIZE,<size> */
+  snprintf(cmd, W61_CMD_MATCH_BUFF_SIZE, "AT+FS=0,4,\"%s\"\r\n", filename);
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+FS:SIZE", &argc, argv, W61_SYS_TIMEOUT);
+  if (ret != W61_STATUS_OK)
   {
-    /* Operation 4: Get the size of a file */
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+FS=0,4,\"%s\"\r\n", filename);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_SYS_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (sscanf((char *)Obj->CmdResp, "+FS:SIZE,%" SCNu32, size) != 1)
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
+    return ret;
   }
-  else
+  if (argc < 2)
   {
-    ret = W61_STATUS_BUSY;
+    return W61_STATUS_ERROR;
   }
+
+  *size = (uint32_t)atoi(argv[1]);
 
   return ret;
 }
 
 W61_Status_t W61_FS_ListFiles(W61_Object_t *Obj, W61_FS_FilesList_t *files_list)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len;
+  W61_Status_t ret;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT_STR(files_list, "File list pointer is NULL");
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+
+  struct modem_cmd handlers[] =
   {
-    files_list->nb_files = 0; /* Reset the number of files */
+    MODEM_CMD("", on_cmd_fs_listfiles, 1U, ""),
+  };
 
-    /* Operation 5: List the NCP files in root path */
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+FS=0,5,\".\"\r\n");
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      /* Wait the first response +FS:LIST */
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, W61_SYS_TIMEOUT);
-      if (recv_len > 0)
-      {
-        if (strncmp((char *)Obj->CmdResp, "+FS:LIST", sizeof("+FS:LIST") - 1) == 0)
-        {
-          ret = W61_STATUS_OK;
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_TIMEOUT;
-      }
+  (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
-      if (ret == W61_STATUS_OK)
-      {
-        recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, W61_SYS_TIMEOUT);
+  mdm->rx_data = (void *)files_list;
 
-        while (recv_len > 0) /* Loop until OK or ERROR are received and process the filename */
-        {
-          Obj->CmdResp[recv_len] = '\0'; /* Null terminate the response */
+  files_list->nb_files = 0; /* Reset the number of files */
 
-          if ((strncmp((char *)Obj->CmdResp, AT_OK_STRING, sizeof(AT_OK_STRING) - 1) == 0) ||
-              (strncmp((char *)Obj->CmdResp, AT_ERROR_STRING, sizeof(AT_ERROR_STRING) - 1) == 0))
-          {
-            break; /* Exit the loop if OK or ERROR are received */
-          }
+  /* Get the files list in the filesystem. The parameters are:
+    - <type>: 0
+    - <operation>: 5 (List files in a directory)
+    - <dirname>: The name of the directory to list files from
+    The multiline responses are in the form of
+    +FS:LIST,<nfiles>,[filename] */
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->modem_cmd_handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)"AT+FS=0,5,\".\"\r\n",
+                                      mdm->sem_response,
+                                      W61_NCP_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
 
-          if (Obj->CmdResp[0] == '.') /* Skip the current and parent directory entries */
-          {
-            recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, W61_SYS_TIMEOUT);
-            continue;
-          }
-
-          /* Copy the filename */
-          snprintf(files_list->filename[files_list->nb_files], W61_SYS_FS_FILENAME_SIZE, "%s", Obj->CmdResp);
-
-          /* Remove the CRLF in the filename string */
-          files_list->filename[files_list->nb_files][strlen(files_list->filename[files_list->nb_files]) - 2] = '\0';
-
-          files_list->nb_files++; /* Increment the number of files */
-
-          recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, Obj->NcpTimeout);
-        }
-
-        ret = W61_AT_ParseOkErr((char *)Obj->CmdResp);
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  (void)xSemaphoreGive(data->sem_tx_lock);
   return ret;
 }
 
 W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len;
-  int32_t tmp = 0;
-  uint32_t data_received = 0;
+  W61_Status_t ret;
   uint32_t data[8] = {0};
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
 
   memset(&Obj->ModuleInfo, 0, sizeof(W61_ModuleInfo_t));
 
   /* ====================================== */
   /* Get the module info */
   /* ====================================== */
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+
+  struct modem_cmd handlers[] =
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+GMR\r\n");
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      W61_VersionInfo_t version_table[] =
-      {
-        {(char *)Obj->ModuleInfo.AT_Version,  "AT version:", 32},
-        {(char *)Obj->ModuleInfo.MAC_Version, "component_version_macsw_", 32},
-        {(char *)Obj->ModuleInfo.SDK_Version, "component_version_sdk_", 32},
-        {(char *)Obj->ModuleInfo.Build_Date,  "compile time:", 32},
-      };
+    MODEM_CMD_ARGS_MAX("AT version:", on_cmd_at_version, 1U, 10U, ".()"),
+    MODEM_CMD_ARGS_MAX("component_version_macsw_", on_cmd_mac_sw_version, 1U, 10U, "."),
+    MODEM_CMD_ARGS_MAX("component_version_sdk_", on_cmd_sdk_version, 1U, 10U, "."),
+    MODEM_CMD_ARGS_MAX("lib_version_btblecontroller_", on_cmd_bt_controller_version, 1U, 10U, "."),
+    MODEM_CMD_ARGS_MAX("component_version_btble_", on_cmd_bt_stack_version, 1U, 10U, "."),
+  };
 
-      do
-      {
-        recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, Obj->NcpTimeout);
-        if (recv_len > 0)
-        {
-          data_received = 1; /* At least one data received */
-          /* Parse if its an OK/ERROR message */
-          /* Exit the loop if OK or ERROR are received */
-          if (strncmp((char *)Obj->CmdResp, AT_OK_STRING, sizeof(AT_OK_STRING) - 1) == 0)
-          {
-            ret = W61_STATUS_OK;
-            break;
-          }
-          else if (strncmp((char *)Obj->CmdResp, AT_ERROR_STRING, sizeof(AT_ERROR_STRING) - 1) == 0)
-          {
-            ret = W61_STATUS_ERROR;
-            break;
-          }
-
-          /* Check if the response is a version string */
-          for (int32_t i = 0; i < sizeof(version_table) / sizeof(version_table[0]); i++)
-          {
-            if (strncmp(version_table[i].prefix, (char *)Obj->CmdResp, strlen(version_table[i].prefix)) == 0)
-            {
-              Obj->CmdResp[recv_len - sizeof(CRLF) + 1] = 0; /* Remove end of line characters */
-              strncpy(version_table[i].dest, (char *)Obj->CmdResp + strlen(version_table[i].prefix),
-                      version_table[i].dest_size);
-
-              /* Split build date from AT version string */
-              if (strncmp(version_table[i].prefix, "AT version:", sizeof("AT version:") - 1) == 0)
-              {
-                char *date = strchr(version_table[i].dest, '(');
-                if (date != NULL)
-                {
-                  /* Stop AT_version string at '(' character */
-                  *date = 0;
-                }
-              }
-              break;
-            }
-          }
-        }
-      } while (recv_len > 0);
-
-      if (!data_received)
-      {
-        ret = W61_STATUS_TIMEOUT;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  /* Get the version of the available software components in the ST67W611M */
+  ret = W61_Status(modem_cmd_send(&mdm->iface,
+                                  &mdm->modem_cmd_handler,
+                                  handlers,
+                                  ARRAY_SIZE(handlers),
+                                  (const uint8_t *)"AT+GMR\r\n",
+                                  mdm->sem_response,
+                                  W61_NCP_TIMEOUT));
   if (ret != W61_STATUS_OK)
   {
     goto _err;
   }
 
   /* ====================================== */
-  /* Battery voltage */
+  /* Battery voltage. return the voltage value in mV */
   /* ====================================== */
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+VBAT?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, Obj->NcpTimeout);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *)Obj->CmdResp, "+VBAT:", sizeof("+VBAT:") - 1) == 0)
-      {
-        if (Parser_StrToInt((char *)Obj->CmdResp + strlen("+VBAT:"), NULL, &tmp) == 0)
-        {
-          ret = W61_STATUS_ERROR;
-        }
-        else
-        {
-          Obj->ModuleInfo.BatteryVoltage = (uint32_t)tmp;
-        }
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  strncpy(cmd, "AT+VBAT?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+VBAT:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
-    goto _err;
+    return ret;
   }
+  if (argc < 1)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  Obj->ModuleInfo.BatteryVoltage = (uint32_t)atoi(argv[0]);
 
   /* ====================================== */
   /* RF and XTAL Trimming */
@@ -883,7 +723,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
     {
       if (ret == W61_STATUS_ERROR)
       {
-        LogError("Unable to read %s\n", trim_table[i].desc);
+        SYS_LOG_ERROR("Unable to read %s\n", trim_table[i].desc);
       }
       goto _err;
     }
@@ -904,7 +744,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
       {
         if (ret == W61_STATUS_ERROR)
         {
-          LogError("Unable to read %s\n", trim_table[i].desc);
+          SYS_LOG_ERROR("Unable to read %s\n", trim_table[i].desc);
         }
         goto _err;
       }
@@ -913,7 +753,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
       {
         if (ret == W61_STATUS_ERROR)
         {
-          LogError("Unable to read %s\n", trim_table[i].desc);
+          SYS_LOG_ERROR("Unable to read %s\n", trim_table[i].desc);
         }
         goto _err;
       }
@@ -1004,7 +844,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
   {
     if (ret == W61_STATUS_ERROR)
     {
-      LogError("Unable to read Part number\n");
+      SYS_LOG_ERROR("Unable to read Part number\n");
     }
     goto _err;
   }
@@ -1023,7 +863,19 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
       }
       snprintf(part_number + char_cnt, 2, "%c", byte[char_cnt]);
     }
-    memcpy(Obj->ModuleInfo.ModuleID, part_number, sizeof(Obj->ModuleInfo.ModuleID));
+    strncpy(Obj->ModuleInfo.ModuleID.ModuleName, part_number, sizeof(Obj->ModuleInfo.ModuleID.ModuleName) - 1);
+    Obj->ModuleInfo.ModuleID.ModuleName[sizeof(Obj->ModuleInfo.ModuleID.ModuleName) - 1] = '\0';
+
+    /* Check the module ID */
+    for (int32_t i = 0; i < sizeof(module_id) / sizeof(module_id[0]); i++)
+    {
+      if (strncmp((char *)Obj->ModuleInfo.ModuleID.ModuleName, (char *)module_id[i].ModuleName,
+                  sizeof(module_id[i].ModuleName)) == 0)
+      {
+        Obj->ModuleInfo.ModuleID.ModuleID = module_id[i].ModuleID;
+        break;
+      }
+    }
   }
 
   /* ====================================== */
@@ -1034,7 +886,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
   {
     if (ret == W61_STATUS_ERROR)
     {
-      LogError("Unable to read BOM ID & Manufacturing Year/Week\n");
+      SYS_LOG_ERROR("Unable to read BOM ID & Manufacturing Year/Week\n");
     }
     goto _err;
   }
@@ -1063,7 +915,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
     {
       if (ret == W61_STATUS_ERROR)
       {
-        LogError("Unable to read %s\n", efuse_mac_table[i].desc);
+        SYS_LOG_ERROR("Unable to read %s\n", efuse_mac_table[i].desc);
       }
       goto _err;
     }
@@ -1099,7 +951,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
   {
     if (ret == W61_STATUS_ERROR)
     {
-      LogError("Unable to read Anti-rollback enable\n");
+      SYS_LOG_ERROR("Unable to read Anti-rollback enable\n");
     }
     goto _err;
   }
@@ -1127,7 +979,7 @@ W61_Status_t W61_GetModuleInfo(W61_Object_t *Obj)
       {
         if (ret == W61_STATUS_ERROR)
         {
-          LogError("Unable to read Anti-rollback %s\n", efuse_antirollback_table[i].desc);
+          SYS_LOG_ERROR("Unable to read Anti-rollback %s\n", efuse_antirollback_table[i].desc);
         }
         goto _err;
       }
@@ -1145,72 +997,41 @@ _err:
 
 W61_Status_t W61_OTA_starts(W61_Object_t *Obj, uint32_t enable)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+OTASTART=%" PRIu32 "\r\n", enable);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_SYS_TIMEOUT);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-  return ret;
+  /* Start or stop the OTA process. The parameter is:
+     - <enable>: 1 to start the OTA process, 0 to stop it */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+OTASTART=%" PRIu32 "\r\n", enable);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_SYS_TIMEOUT);
 }
 
 W61_Status_t W61_OTA_Finish(W61_Object_t *Obj)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+OTAFIN\r\n");
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_SYS_TIMEOUT);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-  return ret;
+  /* Finish the OTA update and reboot the ST67W611M */
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+OTAFIN\r\n", W61_SYS_TIMEOUT);
 }
 
 W61_Status_t W61_OTA_Send(W61_Object_t *Obj, uint8_t *buff, uint32_t len)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(buff);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+OTASEND=%" PRIu32 "\r\n", len);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_SYS_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      Obj->fops.IO_Delay(OTA_DATA_SEND_DELAY);
-      ret = W61_AT_RequestSendData(Obj, buff, len, W61_SYS_TIMEOUT);
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-  return ret;
+  /* Send a chunk of data for the OTA update. The parameter is:
+     - <len>: The length of data to send
+     The data to send is sent in the next request part */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+OTASEND=%" PRIu32 "\r\n", len);
+  return W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, buff, len, W61_SYS_TIMEOUT, true);
 }
 
 W61_Status_t W61_LowPowerConfig(W61_Object_t *Obj, uint32_t WakeUpPinIn, uint32_t ps_mode)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  /* In Hibernate Mode, only WakeUpPin 16 can be used*/
+  /* In Hibernate Mode, only WakeUpPin 16 can be used */
   if ((ps_mode == 1) && (WakeUpPinIn != 16))
   {
     return W61_STATUS_ERROR;
@@ -1218,46 +1039,37 @@ W61_Status_t W61_LowPowerConfig(W61_Object_t *Obj, uint32_t WakeUpPinIn, uint32_
 
   Obj->LowPowerCfg.WakeUpPinIn = WakeUpPinIn;
   Obj->LowPowerCfg.PSMode = ps_mode;
-  Obj->LowPowerCfg.WiFi_DTIM = 0; /* Disabled by default */
+  Obj->LowPowerCfg.WiFi_DTIM_Factor = 0; /* Disabled by default */
+  Obj->LowPowerCfg.WiFi_DTIM_Interval = 0; /* Disabled by default */
 
   return W61_STATUS_OK;
 }
 
 W61_Status_t W61_SetPowerMode(W61_Object_t *Obj, uint32_t ps_mode, uint32_t hbn_level)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  W61_Status_t ret;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  /* Configure the power save mode. The parameters are:
+     - <ps_mode>: The power save mode to set (0: No power save, 1: Hibernate, 2: Standby)
+     - <hbn_level>: The hibernate level to set (only used in hibernate mode) */
+
+  if (ps_mode == 1) /* Hibernate mode */
   {
-    if (ps_mode == 1) /* Hibernate mode */
-    {
-      snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-               "AT+PWR=%" PRIu32 ",%" PRIu32 "\r\n", ps_mode, hbn_level);
-      int32_t cmd_len = strlen((char *)Obj->CmdResp);
-      /* send only. No response from the ST67W when in hibernate ps mode*/
-      if (W61_ATsend(Obj, Obj->CmdResp, cmd_len, Obj->NcpTimeout) == cmd_len)
-      {
-        ret = W61_STATUS_OK;
-      }
-    }
-    else
-    {
-      snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-               "AT+PWR=%" PRIu32 "\r\n", ps_mode);
-      ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    }
-
-    if (ret == W61_STATUS_OK)
-    {
-      Obj->LowPowerCfg.PSMode = ps_mode;
-    }
-
-    W61_ATunlock(Obj);
+    snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+PWR=%" PRIu32 ",%" PRIu32 "\r\n", ps_mode, hbn_level);
+    /* No response from the ST67 when in hibernate ps mode, timeout is 0 */
+    ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, 0);
   }
   else
   {
-    ret = W61_STATUS_BUSY;
+    snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+PWR=%" PRIu32 "\r\n", ps_mode);
+    ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
+  }
+
+  if (ret == W61_STATUS_OK)
+  {
+    Obj->LowPowerCfg.PSMode = ps_mode;
   }
 
   return ret;
@@ -1265,122 +1077,327 @@ W61_Status_t W61_SetPowerMode(W61_Object_t *Obj, uint32_t ps_mode, uint32_t hbn_
 
 W61_Status_t W61_GetPowerMode(W61_Object_t *Obj, uint32_t *ps_mode)
 {
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
+
   *ps_mode = Obj->LowPowerCfg.PSMode;
   return W61_STATUS_OK;
 }
 
 W61_Status_t W61_SetWakeUpPin(W61_Object_t *Obj, uint32_t wakeup_pin)
 {
-  W61_Status_t ret;
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+SLWKIO=%" PRIu32 ",0\r\n", wakeup_pin);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-  return ret;
+  /* Configure the wakeup pin for exiting low power mode. The parameter is:
+     - <wakeup_pin>: The GPIO pin number to be used as wakeup pin (0..31) */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+SLWKIO=%" PRIu32 ",0\r\n", wakeup_pin);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_SetClockSource(W61_Object_t *Obj, uint32_t source)
 {
   W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len;
+  uint32_t current_source;
+  BaseType_t xReturned;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
   if ((source == 0) || (source > 3))
   {
-    return ret;
+    goto _err; /* Invalid clock source */
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  if (W61_GetClockSource(Obj, &current_source) != W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+SET_CLOCK=%" PRIu32 "\r\n", source);
+    goto _err; /* Failed to get the current clock source */
+  }
 
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, CLOCK_TIMEOUT);
-      if (recv_len > 0)
-      {
-        /* Check if the response is an OK or 'ready' message */
-        if ((strncmp((char *)Obj->CmdResp, AT_OK_STRING, sizeof(AT_OK_STRING) - 1) == 0) ||
-            (strncmp((char *)Obj->CmdResp, "ready", sizeof("ready") - 1) == 0))
-        {
-          ret = W61_STATUS_OK;
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_TIMEOUT;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
+  if (current_source == source) /* If the source is already set, return OK */
   {
-    ret = W61_STATUS_BUSY;
+    return W61_STATUS_OK;
   }
+
+  /* Set the clock source. The parameter is:
+     - <source>: The clock source to set (1: Internal RC, 2: External XTAL, 3: External Clock Input) */
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+SET_CLOCK=%" PRIu32 "\r\n", source);
+  /* Timeout is 0, the command cannot return any response because the ST67 reboots after setting the clock source */
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, 0);
+  if (ret != W61_STATUS_OK)
+  {
+    SYS_LOG_ERROR("Failed to set clock source");
+    goto _err;
+  }
+
+  /* Wait for the ready message from the ST67 */
+  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
+  if (xReturned != pdPASS)
+  {
+    SYS_LOG_ERROR("sem_if_ready not received\n");
+    ret = W61_STATUS_ERROR;
+  }
+
+_err:
   return ret;
 }
 
 W61_Status_t W61_GetClockSource(W61_Object_t *Obj, uint32_t *source)
 {
-  W61_Status_t ret = W61_STATUS_BUSY;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  /* Query the current clock source. The response is in the form of
+     +GET_CLOCK:<source> */
+  strncpy(cmd, "AT+GET_CLOCK\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+GET_CLOCK:", &argc, argv, W61_NCP_TIMEOUT);
+  if (ret != W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+GET_CLOCK\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, Obj->NcpTimeout);
-    if (ret == W61_STATUS_OK)
-    {
-      if (sscanf((char *)Obj->CmdResp, "+GET_CLOCK:%" SCNu32, source) != 1)
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
+    return ret;
   }
+  if (argc < 1)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  *source = (uint32_t)atoi(argv[0]);
 
   return ret;
 }
 
 W61_Status_t W61_ExeATCommand(W61_Object_t *Obj, char *at_cmd)
 {
-  W61_Status_t ret = W61_STATUS_OK;
+  W61_Status_t ret;
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+
+  struct modem_cmd handlers[] =
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "%s\r\n", at_cmd);
-    uint32_t cmd_len = strlen((char *)Obj->CmdResp);
-    uint32_t rcvlen = 0;
+    MODEM_CMD("", on_cmd_atcmd, 1, ""),
+  };
 
-    if (W61_ATsend(Obj, (uint8_t *)Obj->CmdResp, cmd_len, W61_SYS_TIMEOUT) == cmd_len)
-    {
-      LogInfo("%s", Obj->CmdResp);
-      /* Receive the responses and check if the returned length is greater than 0 */
-      while ((rcvlen = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, W61_SYS_TIMEOUT)) > 0)
-      {
-        Obj->CmdResp[rcvlen] = '\0';
-        LogInfo("%s",  Obj->CmdResp);
-        /* Stop when Response is either OK or ERROR*/
-        if ((strstr((char *)Obj->CmdResp, "OK") != NULL) || (strstr((char *)Obj->CmdResp, "ERROR") != NULL))
-        {
-          break;
-        }
-      }
-    }
-    else
-    {
-      ret = W61_STATUS_ERROR;
-    }
-    W61_ATunlock(Obj);
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "%s\r\n", at_cmd);
+  ret = W61_Status(modem_cmd_send(&mdm->iface,
+                                  &mdm->modem_cmd_handler,
+                                  handlers,
+                                  ARRAY_SIZE(handlers),
+                                  (const uint8_t *)cmd,
+                                  mdm->sem_response,
+                                  W61_NCP_TIMEOUT));
+
+  if (ret == W61_STATUS_OK)
+  {
+    SYS_LOG_INFO("OK\n");
   }
+  else
+  {
+    SYS_LOG_INFO("ERROR\n");
+  }
+
   return ret;
+}
+
+W61_Status_t W61_GetNetMode(W61_Object_t *Obj, int32_t *Netmode)
+{
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(Netmode);
+
+  /* Query the current network mode. The response is in the form of
+     +CWNETMODE:<mode> */
+  strncpy(cmd, "AT+CWNETMODE?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWNETMODE:", &argc, argv, W61_NCP_TIMEOUT);
+  if (ret != W61_STATUS_OK)
+  {
+    return ret;
+  }
+  if (argc < 1)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  *Netmode = (uint32_t)atoi(argv[0]);
+
+  return ret;
+}
+
+/* Private Functions Definition ----------------------------------------------*/
+MODEM_CMD_DEFINE(on_cmd_at_version)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc < 5)
+  {
+    return 0;
+  }
+
+  Obj->ModuleInfo.AT_Version.Major = (uint8_t)atoi((char *)argv[0]);
+  Obj->ModuleInfo.AT_Version.Sub1 = (uint8_t)atoi((char *)argv[1]);
+  Obj->ModuleInfo.AT_Version.Sub2 = (uint8_t)atoi((char *)argv[2]);
+  strncpy((char *) Obj->ModuleInfo.Build_Date, (char *) argv[4], sizeof(Obj->ModuleInfo.Build_Date) - 1);
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_mac_sw_version)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc < 3)
+  {
+    return 0;
+  }
+
+  Obj->ModuleInfo.WiFi_MAC_Version.Major = (uint8_t)atoi((char *)argv[0]);
+  Obj->ModuleInfo.WiFi_MAC_Version.Sub1 = (uint8_t)atoi((char *)argv[1]);
+  Obj->ModuleInfo.WiFi_MAC_Version.Sub2 = (uint8_t)atoi((char *)argv[2]);
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_sdk_version)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc < 3)
+  {
+    return 0;
+  }
+
+  Obj->ModuleInfo.SDK_Version.Major = (uint8_t)atoi((char *)argv[0]);
+  Obj->ModuleInfo.SDK_Version.Sub1 = (uint8_t)atoi((char *)argv[1]);
+  Obj->ModuleInfo.SDK_Version.Sub2 = (uint8_t)atoi((char *)argv[2]);
+  if (argc > 3)
+  {
+    Obj->ModuleInfo.SDK_Version.Patch = (uint8_t)atoi((char *)argv[3]);
+  }
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_bt_controller_version)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc < 3)
+  {
+    return 0;
+  }
+
+  Obj->ModuleInfo.BT_Controller_Version.Major = (uint8_t)atoi((char *)argv[0]);
+  Obj->ModuleInfo.BT_Controller_Version.Sub1 = (uint8_t)atoi((char *)argv[1]);
+  Obj->ModuleInfo.BT_Controller_Version.Sub2 = (uint8_t)atoi((char *)argv[2]);
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_bt_stack_version)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc < 3)
+  {
+    return 0;
+  }
+
+  Obj->ModuleInfo.BT_Stack_Version.Major = (uint8_t)atoi((char *)argv[0]);
+  Obj->ModuleInfo.BT_Stack_Version.Sub1 = (uint8_t)atoi((char *)argv[1]);
+  Obj->ModuleInfo.BT_Stack_Version.Sub2 = (uint8_t)atoi((char *)argv[2]);
+  return 0;
+}
+
+MODEM_CMD_DIRECT_DEFINE(on_cmd_read_efuse)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+
+  uint8_t *ptr = data->rx_buf + len;
+  uint32_t offset;
+  uint8_t *endptr;
+  uint16_t rx_data_len;
+
+  data->rx_buf[data->rx_buf_len] = 0;
+
+  rx_data_len = strtol((char *) ptr, (char **)&endptr, 10);
+  if (endptr == ptr || *endptr != ',')
+  {
+    SYS_LOG_ERROR("Invalid EFUSE read response format");
+    return -EINVAL;
+  }
+  offset = endptr - data->rx_buf + 1;
+
+  if (data->rx_buf_len >= offset + rx_data_len)
+  {
+    memcpy(mdm->rx_data, endptr + 1, rx_data_len);
+    return offset + rx_data_len;
+  }
+  else
+  {
+    return -EAGAIN;
+  }
+}
+
+MODEM_CMD_DEFINE(on_cmd_fs_listfiles)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_FS_FilesList_t *files_list = (W61_FS_FilesList_t *) mdm->rx_data;
+
+  if ((argc >= 1) && (argv[0][0] != '.') && (strcmp((char *) argv[0], "+FS:LIST") != 0))
+  {
+    /* Copy the filename */
+    snprintf(files_list->filename[files_list->nb_files], W61_SYS_FS_FILENAME_SIZE, "%s", argv[0]);
+
+    files_list->nb_files++; /* Increment the number of files */
+  }
+  return 0;
+}
+
+MODEM_CMD_DIRECT_DEFINE(on_cmd_fs_readfile)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+
+  uint8_t *ptr = data->rx_buf + len;
+  uint32_t offset;
+  uint8_t *endptr;
+  uint16_t rx_data_len;
+
+  data->rx_buf[data->rx_buf_len] = 0;
+
+  rx_data_len = strtol((char *) ptr, (char **)&endptr, 10);
+  if ((endptr == ptr) || (*endptr != ','))
+  {
+    SYS_LOG_ERROR("Invalid FS read response format");
+    return -EINVAL;
+  }
+  offset = endptr - data->rx_buf + 1;
+
+  if (data->rx_buf_len >= (offset + rx_data_len))
+  {
+    memcpy(mdm->rx_data, endptr + 1, rx_data_len);
+    return offset + rx_data_len;
+  }
+  else
+  {
+    return -EAGAIN;
+  }
+}
+
+MODEM_CMD_DEFINE(on_cmd_atcmd)
+{
+  if (argc > 0)
+  {
+    SYS_LOG_INFO("%s\n", argv[0]);
+    /*for AT+CMD?, log needs some time to push */
+    vTaskDelay(5);
+  }
+  return 0;
 }
 
 /** @} */

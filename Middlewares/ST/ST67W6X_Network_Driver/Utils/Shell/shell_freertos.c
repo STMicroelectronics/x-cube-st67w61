@@ -56,7 +56,7 @@ typedef struct
 } ShellMessage_t;
 
 /**
-  * @brief  Internal state of the low level support implementation for the shell.
+  * @brief  Internal state of the low level support implementation for the shell
   */
 struct _shell_freertos
 {
@@ -76,9 +76,6 @@ struct _shell_freertos
   /** This implementation read the user input from the uart, in interrupt mode, 1 byte at time.
     * That byte is stored here. */
   volatile uint8_t uart_rx_byte;
-
-  /** Hw used to read the user input. */
-  UART_HandleTypeDef *p_rx_uart;
 };
 
 /** @} */
@@ -88,43 +85,31 @@ struct _shell_freertos
   * @{
   */
 /**
-  * @brief  Printf implementation used by the shell.
-  * @param  p_format [IN] specifies the format string.
+  * @brief  Printf implementation used by the shell
+  * @param  p_format [IN] specifies the format string
   */
 void shell_freertos_printf(const char *const p_format, ...);
 
 /**
-  * @brief  Task that read the user input from the uart and call the upper layer to process it.
-  * @param  p_params [IN] specifies the shell instance.
+  * @brief  Task that read the user input from the uart and call the upper layer to process it
+  * @param  p_params [IN] specifies the shell instance
   */
 void shell_freertos_rx_task(void *p_params);
 
 /**
-  * @brief  Callback called by the uart ISR when a new byte is received.
-  * @param  uart_rxbyte [IN] specifies the byte received.
-  */
-static void shell_freertos_on_new_data(uint8_t uart_rxbyte);
-
-/**
-  * @brief  Release the semaphore used to synchronize the shell rx task with the uart rx ISR.
+  * @brief  Release the semaphore used to synchronize the shell rx task with the uart rx ISR
   */
 static inline void shell_freertos_release_sem(void);
 
 /**
-  * @brief  Callback called by the uart ISR when a new byte is received.
-  * @param  huart [IN] specifies the uart handle.
-  */
-void shell_freertos_uart_rx_cplt_callback(UART_HandleTypeDef *huart);
-
-/**
-  * @brief  Get the only instance of the shell.
-  * @return the only instance of the shell.
+  * @brief  Get the only instance of the shell
+  * @return the only instance of the shell
   */
 static shell_free_rtos_t *shell_freertos_get_instance(void);
 
 /**
-  * @brief  Get the only instance of the shell.
-  * @return the only instance of the shell.
+  * @brief  Get the only instance of the shell
+  * @return the only instance of the shell
   */
 shell_free_rtos_t *shell_freertos_get_instance(void);
 
@@ -136,26 +121,18 @@ shell_free_rtos_t *shell_freertos_get_instance(void)
     .task = NULL,
     .rx_sem = NULL,
     .OutputQueue = NULL,
-    .p_rx_uart = NULL
   };
 
   return &sTheObj;
 }
 
-void shell_freertos_init(UART_HandleTypeDef *p_rx_uart, void *xLogQueue)
+void shell_freertos_init(void *xLogQueue)
 {
 #if (SHELL_ENABLE == 1)
-  configASSERT(p_rx_uart != NULL);
 
   shell_free_rtos_t *p_shell = shell_freertos_get_instance();
-  HAL_StatusTypeDef status;
 
-  p_shell->p_rx_uart = p_rx_uart;
   p_shell->OutputQueue = xLogQueue;
-
-  status = HAL_UART_RegisterCallback(p_shell->p_rx_uart, HAL_UART_RX_COMPLETE_CB_ID,
-                                     shell_freertos_uart_rx_cplt_callback);
-  configASSERT(status == HAL_OK);
 
   p_shell->rx_sem = xSemaphoreCreateBinary();
   configASSERT(p_shell->rx_sem != NULL);
@@ -163,7 +140,7 @@ void shell_freertos_init(UART_HandleTypeDef *p_rx_uart, void *xLogQueue)
   /* Initialize the upper layer */
   if (xLogQueue == NULL)
   {
-    /* if no queue, then printf */
+    /* If no queue, then printf */
     shell_init((void (*)(char *fmt, ...))printf);
   }
   else
@@ -179,13 +156,6 @@ void shell_freertos_init(UART_HandleTypeDef *p_rx_uart, void *xLogQueue)
     SHELL_E("failed to create shell task\n");
     return;
   }
-
-  /* Start the process by reading the user input */
-  status = HAL_UART_Receive_IT(p_shell->p_rx_uart, (uint8_t *)&p_shell->uart_rx_byte, 1);
-  if (status != HAL_OK)
-  {
-    SHELL_E("failed to setup uart reception, %" PRIi32 "\n", status);
-  }
 #endif /* SHELL_ENABLE */
 }
 
@@ -193,8 +163,6 @@ void shell_freertos_deinit(void)
 {
 #if (SHELL_ENABLE == 1)
   shell_free_rtos_t *p_shell = shell_freertos_get_instance();
-
-  HAL_UART_UnRegisterCallback(p_shell->p_rx_uart, HAL_UART_RX_COMPLETE_CB_ID);
 
   if (p_shell->task != NULL)
   {
@@ -233,7 +201,7 @@ void shell_freertos_rx_task(void *p_params)
   }
 }
 
-static void shell_freertos_on_new_data(uint8_t uart_rxbyte)
+void shell_freertos_on_new_data(uint8_t uart_rxbyte)
 {
   shell_free_rtos_t *p_shell = shell_freertos_get_instance();
 
@@ -253,7 +221,7 @@ void shell_freertos_printf(const char *const p_format, ...)
   /* Allocate memory for the log structure */
   int32_t alloc_len;
   va_list args;
-  char dummy_str[2];/* dummy string for format length calculation */
+  char dummy_str[2];/* Dummy string for format length calculation */
   shell_free_rtos_t *p_shell = shell_freertos_get_instance();
   ShellMessage_t *newShell = (ShellMessage_t *)pvPortMalloc(sizeof(ShellMessage_t));
 
@@ -316,20 +284,6 @@ static inline void shell_freertos_release_sem(void)
   else
   {
     (void)xSemaphoreGive(p_shell->rx_sem);
-  }
-}
-
-void shell_freertos_uart_rx_cplt_callback(UART_HandleTypeDef *huart)
-{
-  HAL_StatusTypeDef status;
-  shell_free_rtos_t *p_shell = shell_freertos_get_instance();
-
-  if (huart->Instance == p_shell->p_rx_uart->Instance)
-  {
-    shell_freertos_on_new_data(p_shell->uart_rx_byte);
-    /* Set up next uart reception */
-    status = HAL_UART_Receive_IT(p_shell->p_rx_uart, (uint8_t *)&p_shell->uart_rx_byte, 1);
-    configASSERT(status == HAL_OK);
   }
 }
 

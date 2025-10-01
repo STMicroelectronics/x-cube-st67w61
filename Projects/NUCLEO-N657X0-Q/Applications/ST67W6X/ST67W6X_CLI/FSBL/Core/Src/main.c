@@ -19,11 +19,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os2.h"
+#include "app_st67w6x.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "cmsis_os2.h"
-#include "app_freertos.h"
 
 /* USER CODE END Includes */
 
@@ -56,6 +56,8 @@ UART_HandleTypeDef huart1;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
+static void SystemIsolation_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
 static void MX_SPI5_Init(void);
@@ -80,6 +82,14 @@ int main(void)
 
   /* USER CODE END 1 */
 
+  /* Enable the CPU Cache */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
+
   /* MCU Configuration--------------------------------------------------------*/
   HAL_Init();
 
@@ -99,10 +109,14 @@ int main(void)
   MX_GPDMA1_Init();
   MX_SPI5_Init();
   MX_USART1_UART_Init();
+  MX_ST67W6X_Init();
+  SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
   /* Init scheduler */
   osKernelInitialize();
-
   /* Call init function for freertos objects (in app_freertos.c) */
   MX_FREERTOS_Init();
 
@@ -110,8 +124,6 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-
-  /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -285,13 +297,13 @@ static void MX_SPI5_Init(void)
   hspi5.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi5.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi5.Init.CRCPolynomial = 0x7;
-  hspi5.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi5.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   hspi5.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
   hspi5.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
   hspi5.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
   hspi5.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
   hspi5.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
-  hspi5.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+  hspi5.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
   hspi5.Init.IOSwap = SPI_IO_SWAP_DISABLE;
   hspi5.Init.ReadyMasterManagement = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY;
   hspi5.Init.ReadyPolarity = SPI_RDY_POLARITY_HIGH;
@@ -443,6 +455,44 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
+/**
+  * @brief RIF Initialization Function
+  * @param None
+  * @retval None
+  */
+  static void SystemIsolation_Config(void)
+{
+
+/* USER CODE BEGIN RIF_Init 0 */
+
+/* USER CODE END RIF_Init 0 */
+
+  /* set all required IPs as secure privileged */
+  __HAL_RCC_RIFSC_CLK_ENABLE();
+
+  /* RIF-Aware IPs Config */
+
+  /* set up GPDMA configuration */
+  /* set GPDMA1 channel 10 used by SPI5 */
+  if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel10,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
+  {
+    Error_Handler();
+  }
+  /* set GPDMA1 channel 11 used by SPI5 */
+  if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel11,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
+  {
+    Error_Handler();
+  }
+
+/* USER CODE BEGIN RIF_Init 1 */
+
+/* USER CODE END RIF_Init 1 */
+/* USER CODE BEGIN RIF_Init 2 */
+
+/* USER CODE END RIF_Init 2 */
+
+}
+
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
@@ -483,8 +533,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

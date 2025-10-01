@@ -11,6 +11,7 @@
 # =====================================================
 # Imports
 # =====================================================
+import datetime
 import logging
 import os
 import shutil
@@ -18,6 +19,7 @@ import sys
 import argparse
 import hashlib
 import json
+import warnings
 import zlib
 from typing import IO
 import struct
@@ -69,10 +71,10 @@ HEADER_FIELDS_JSON = {
 
 # Define the header fields and their types
 # how it works :
-# On the right side of the colon, we have the value field containing the size if needed and its type.
-# Python will manage types for the bin header generation but for the .h generation, we need to translate it to C types
+# On the right side of the colon, there is the value field containing the size of the value and its type.
+# Python will manage types for the bin header generation but for the .h generation, it needs to be translated into C types
 # 8s = 8 bytes char array, uint8_t deadbeaf[8] (s stands for uint8_t )
-# To update the structure, you need to edit this dictionary and header_values dictionary in create_header_c function
+# To update the structure, this dictionary and header_values need to be edited in create_header_c function
 HEADER_FIELDS_C = {
     f"{MAGIC_NUMBER_STRING}": "16s",
     f"{HEADER_VER}": "16s",
@@ -100,6 +102,34 @@ HEADER_FIELDS_C = {
 
 # from https://docs.python.org/3/library/string.html#format-specification-mini-language
 
+# =====================================================
+# Create a local logger for this module
+logger = logging.getLogger(__name__)
+
+
+def configure_local_logging(log_level, log_file=None):
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f'Invalid log level: {log_level}')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    # Stream handler (console)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    # File handler (optional)
+    handlers: list[logging.Handler] = [stream_handler]
+    if log_file:
+        file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+        file_handler.setFormatter(formatter)
+        handlers.append(file_handler)
+
+    logger.setLevel(numeric_level)
+    # Remove old handlers to avoid duplicate logs
+    logger.handlers = []
+    for h in handlers:
+        logger.addHandler(h)
+
 
 # =====================================================
 # Create a C type string based on the field type
@@ -120,7 +150,7 @@ def get_c_variable(field: str, field_type: str, c_type: str, size: str) -> str:
 def create_header_c(target_name: str, firmware_type: str, version: str, st67_version: str, file_raw: bytes) -> bytes:
     """Create a binary header using C structure."""
 
- # Calculate the size of the other fields
+    # Calculate the size of the other fields
     other_fields_size = struct.calcsize(' '.join(v for k, v in HEADER_FIELDS_C.items() if v is not None and k is not RESERVED))
     # Calculate the reserved size
     reserved_size = FOTA_HEADER_SIZE - other_fields_size
@@ -139,6 +169,7 @@ def create_header_c(target_name: str, firmware_type: str, version: str, st67_ver
         f"{FILE_HASH}": calculate_sha256_hash(file_raw),
         f"{RESERVED}": RESERVED_VALUE * reserved_size
     }
+    logger.debug(f"Header values: {header_values}")
 
     # Pack the data into a binary format
     header = struct.pack(
@@ -176,10 +207,10 @@ def open_binary_file(file_path: str) -> IO:
         if os.path.exists(file_path):
             return open(file_path, 'r+b')
         else:
-            logging.error(f"File does not exist: {file_path}")
+            logger.error(f"File does not exist: {file_path}")
             raise FileNotFoundError
     except OSError as e_open_bin:
-        logging.error(f"Error opening file: {e_open_bin}")
+        logger.error(f"Error opening file: {e_open_bin}")
         raise
 
 
@@ -189,7 +220,7 @@ def create_binary_file(file_path: str) -> IO:
     try:
         return open(file_path, 'wb+')
     except OSError as e_create_bin:
-        logging.error(f"Error creating/opening file: {e_create_bin}")
+        logger.error(f'Error creating/opening file: {e_create_bin}')
         raise
 
 
@@ -205,11 +236,11 @@ def calculate_sha256_hash(data: bytes) -> bytes:
     try:
         sha256 = hashlib.sha256()
         sha256.update(data)
-        print(f"sha256 is : {sha256.digest()}")
+        logger.debug(f'sha256 is : {sha256.digest()}')
         return sha256.digest()
     except Exception as e_sha256:
 
-        logging.error(f"Error calculating SHA-256 hash: {e_sha256}")
+        logger.error(f'Error calculating SHA-256 hash: {e_sha256}')
         raise
 
 
@@ -218,11 +249,11 @@ def calculate_crc32(data: bytes) -> str:
     """Calculate the CRC32 of the given data and return the value in unsigned 32-bit integer format."""
     try:
         crc32 = zlib.crc32(data)
-        print(f"CRC32 is : {crc32}")
+        logger.debug(f"CRC32 is : {crc32}")
         return f"{crc32}"
     except Exception as e_crc32:
 
-        logging.error(f"Error calculating CRC32: {e_crc32}")
+        logger.error(f"Error calculating CRC32: {e_crc32}")
         raise
 
 
@@ -231,17 +262,15 @@ def pad_header(header: bytes) -> bytes:
     """Pad the header to the FOTA header size."""
     try:
         padded_header = bytearray(header)
-        # not needed anymore , was used to separate JSON from bin when parsing the bin
-        # padded_header.extend(DELIMITER)
         padded_header.extend(RESERVED_VALUE * (FOTA_HEADER_SIZE - len(padded_header)))
         return padded_header
     except Exception as e_pad:
-        logging.error(f"Error padding header: {e_pad}")
+        logger.error(f'Error padding header: {e_pad}')
         raise
 
 
 # =====================================================
-def create_header_json(target_name: str, prefix_board_name: str, board_revision: str,  firmware_type: str, version: str, st67_version: str, file_raw: bytes) -> bytes:
+def create_header_json(target_name: str, prefix_board_name: str, board_revision: str, firmware_type: str, version: str, st67_version: str, file_raw: bytes) -> bytes:
     """Create a JSON header."""
     try:
         HEADER_FIELDS_JSON[INFO_FIELDS][DATA_TYPE] = target_name
@@ -256,12 +285,13 @@ def create_header_json(target_name: str, prefix_board_name: str, board_revision:
 
         return header_bytes
     except (OSError, json.JSONDecodeError, KeyError) as e_create_header_json:
-        logging.error(f"Error creating JSON header: {e_create_header_json}")
+        logger.error(f'Error creating JSON header: {e_create_header_json}')
         raise
 
 
 # =====================================================
-def add_fota_header(target_name: str, prefix_board_name: str, board_revision: str, firmware_type: str, file_raw: bytes, file_name: str, format_header: str, output_dir, version: str, st67_version: str) -> None:
+def add_fota_header(target_name: str, prefix_board_name: str, board_revision: str, firmware_type: str, file_raw: bytes, file_name: str,
+                    format_header: str, output_dir, version: str, st67_version: str) -> None:
     """Add an FOTA header to the binary file."""
     try:
         # Because the -f -format argument is in an experimental state , default is json format
@@ -303,7 +333,7 @@ def add_fota_header(target_name: str, prefix_board_name: str, board_revision: st
             fota_file.write(output_data)
 
     except (OSError, json.JSONDecodeError, KeyError) as e_header:
-        logging.error(f"Error adding FOTA header: {e_header}")
+        logger.error(f"Error adding FOTA header: {e_header}")
         raise
 
 
@@ -313,13 +343,11 @@ def do_header_gen(args: argparse.Namespace):
     if args.format != 'json':
         raise ValueError("Format is not json, only json format is supported for now")
 
-    # Check if verbose mode is enabled
-    if args.verbose:
-        print(f'Input file: {args.input}')
-        print(f'Output directory: {args.output_dir}')
-        print(f'Format selected is: {args.format}')
-        print(f'Version is: {args.version}')
-        print(f'ST67 version is: {args.st67_version}')
+    logger.debug(f'Input file: {args.input}')
+    logger.debug(f'Output directory: {args.output_dir}')
+    logger.debug(f'Format selected is: {args.format}')
+    logger.debug(f'Version is: {args.version}')
+    logger.debug(f'ST67 version is: {args.st67_version}')
 
     try:
         # Create or open the binary file
@@ -336,7 +364,7 @@ def do_header_gen(args: argparse.Namespace):
             if os.path.exists(args.st67):
                 shutil.copy(str(args.st67), str(target_output_dir))
             else:
-                logging.warning(f"ST67 file does not exist: {args.st67}")
+                logger.warning(f"ST67 file does not exist: {args.st67}")
 
         # Create the output file path
         # Strip the input path to get only the file name with extension
@@ -346,7 +374,7 @@ def do_header_gen(args: argparse.Namespace):
         add_fota_header(args.target, args.prefix_board, args.board_revision, args.firmware_type, file_raw, file_name_with_extension, args.format, target_output_dir, args.version, args.st67_version)
 
     except Exception as e_gen:
-        logging.error(f"Error in main execution: {e_gen}")
+        logger.error(f'Error in main execution: {e_gen}')
         raise
 
 
@@ -389,10 +417,6 @@ extern "C" {{
 #define FOTA_PROTOCOL_VERSION           "{FOTA_PROTOCOL_VERSION}"
 
 '''
-    # Check if verbose mode is enabled
-    if args.verbose:
-        print(f'Output directory: {args.output_dir}')
-
     file_path = os.path.join(args.output_dir, FOTA_HEADER_STRUCT_FILE_NAME)
 
     # Add #define directives using the recursive function
@@ -408,12 +432,15 @@ extern "C" {{
     try:
         with open(file_path, 'w') as header_file:
             header_file.write(header_content)
-        print(f"Header file '{file_path}' generated successfully.")
+        logger.debug(f'Output directory: {args.output_dir}')
+        logger.debug(f'Header content generated:\n{header_content}')
+        logger.debug(f"Header file '{file_path}' generated successfully.")
     except OSError as e_c_header:
-        print(f"Error generating header file: {e_c_header}")
+        logger.error(f'Error generating header file: {e_c_header}')
 
 
 # =====================================================
+# Subcommands global mapping
 subcmds = {
     'install_header': do_header_gen,
     'gen_header': do_header_c_gen,
@@ -447,24 +474,31 @@ def main():
 
     args = parser.parse_args()
     if args.subcmd is None:
-        print('Must specify a subcommand')
+        logger.error('Must specify a subcommand')
         sys.exit(1)
+
+    # Build a unique log file name using subparser and timestamp
+    now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_file_name = f"log_fota_header_gen_{args.subcmd}_{now}.txt"
+    log_file_path = os.path.join(os.getcwd(), log_file_name)
+
+    configure_local_logging(getattr(args, "log_level", "DEBUG"), log_file_path)
+
     subcmds[args.subcmd](args)
 
 
 # =====================================================
 if __name__ == '__main__':
-    print('Starting the script...')
-    logging.debug(
+    configure_local_logging("DEBUG")
+    logger.info('Starting the script...')
+    logger.debug(
         "This script doesn't require external dependencies outside of Python builtins and the standard library.")
 
     # Check Python version
     if sys.version_info[0] < 3:
         raise Exception('Must be using Python 3')
-    if sys.version_info[1] != 11:
-        logging.warning('This script was written with Python 3.11 in mind')
     try:
         main()
-        print("Script was executed successfully.")
+        logger.info("Script was executed successfully.")
     except Exception as e:
-        logging.error(f"Script execution failed: {e}")
+        logger.error(f"Script execution failed: {e}")

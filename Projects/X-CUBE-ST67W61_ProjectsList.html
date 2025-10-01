@@ -153,12 +153,12 @@
       <p>The Projects are located under X-CUBE-ST67W61_VX.Y.Z\Projects\, and all of them have the same structure:</p>
       <ul class="aligned-list">
         <li>
-          <span class="title">/[Project Name]/App_xxx/App</span>
+          <span class="title">/[Project Name]/Appli/App</span>
           <span class="desc">folder that contains the Wi-Fi/BLE/Net/MQTT/HTTP/FOTA application code.</span>
         </li>
         <li>
-          <span class="title">/[Project Name]/App_xxx/Target</span>
-          <span class="desc">folder that contains the Logging, Shell, Low-Power and SPI BSP interfaces.</span>
+          <span class="title">/[Project Name]/Appli/Target</span>
+          <span class="desc">folder that contains the Logging, Shell, Low-Power and BSP interfaces.</span>
         </li>
         <li>
           <span class="title">/[Project Name]/Core/Src</span>
@@ -167,6 +167,10 @@
         <li>
           <span class="title">/[Project Name]/Core/Inc</span>
           <span class="desc">folder that contains all STM32CubeMX generated header files.</span>
+        </li>
+        <li>
+          <span class="title">/[Project Name]/ST67W6X/App</span>
+          <span class="desc">folder that contains the entry point to start the application associated to the ST67W6X_Network_Driver Middleware.</span>
         </li>
         <li>
           <span class="title">/[Project Name]/ST67W6X/Target</span>
@@ -192,13 +196,13 @@
 
       <p>The projects are classified depending on the level they apply to, and are named as follows:</p>
       <ul>
-        <li id="importantLink"><b>Applications</b> intends to demonstrate the product performance and how to use the different Middleware stacks available. The Applications are organized per product feature that need high level firmware bricks. Integration Applications that use several Middleware stacks are provided as well.</li>
+        <li id="importantLink"><b>Applications</b> intends to demonstrate the product performance and how to use the different Middleware stacks available. The Applications are organized per product feature that need high level firmware bricks. Integration of applications that use several Middleware stacks are provided as well.</li>
         <li id="importantLink"><b>Demonstrations</b> aims to integrate and run the maximum of peripherals and Middleware stacks to showcase the product features and performance.</li>
       </ul>
 
       <p>To run the example, you have to do the following:</p>
       <div class="blockquote">
-          <p>These project require to use the ST67W611M Coprocessor binary st67w611m_mission_v2.0.75.bin.<br/>
+          <p>These project require to use the ST67W611M Coprocessor binary st67w611m_mission_v2.0.89.bin.<br/>
           Please follow the <b>NCP Binaries <a href="ST67W6X_Utilities/Binaries/README.md" target="_blank">README.md</a></b> instructions using the <b>NCP_update_mission_profile.bat</b> script.</p>
       </div>
 
@@ -225,7 +229,7 @@
            In this table, the label <b style="color: green;">CubeMX</b> means the projects have been created using
            <a href="https://www.st.com/en/development-tools/stm32cubemx.html" target="_blank">STM32CubeMX</a> initialization code generator.<br/>
            Those projects can be opened with this tool to modify the IP, Clock domain and Middlewares configuration including the ST67W6X_Network_Driver delivered in X-CUBE-ST67W61 Expansion Package.<br/><br/>
-           The ioc files are generated for the STM32CubeMX 6.14.1 version.
+           The ioc files are generated for the STM32CubeMX 6.15.0 version.
       </div>
       </p>
       <table border='1' bgcolor='#f0f0fF' >
@@ -251,14 +255,14 @@
         </thead>
         <tbody>
           <tr>
-            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=9>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=10>
               <p id="ST67W6X_Network_Driver">Applications</p>
             </td>
-            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=11>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=12>
               <p id="ST67W6X_Network_Driver">ST67W6X_Network_Driver</p>
             </td>
             <td>ST67W6X_BLE_Commissioning</td>
-            <td>This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</td>
+            <td>This application aims to demonstrate the Wi-Fi credentials commissioning and FOTA over Bluetooth Low Energy.</td>
             <td class="board">CubeMX</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -287,6 +291,14 @@
             <td class="board">CubeMX</td>
             <td class="board">CubeMX</td>
             <td class="board">CubeMX</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_CLI_LWIP</td>
+            <td>This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi, Bluetooth LE and Network interface with LwIP solutions via command line interface (CLI).</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
           </tr>
           <tr>
             <td>ST67W6X_Echo</td>
@@ -329,7 +341,7 @@
             <td class="board">-</td>
           </tr>
           <tr>
-            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=1>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=2>
               <p id="ST67W6X_Network_Driver">Demonstrations</p>
             </td>
             <td>ST67W6X_MQTT</td>
@@ -340,9 +352,21 @@
             <td class="board">-</td>
           </tr>
           <tr>
+            <td>ST67W6X_MQTT_LWIP</td>
+            <td>This application aims to demonstrate an example of MQTT client over LwIP over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">CubeMX</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
             <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=1>
               <p id="ST67W6X_Network_Driver">Utilities</p>
             </td>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=1>
+              <p id="None">-</p>
+            </td>
+
             <td>NCP_Loader</td>
             <td>This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</td>
             <td class="board">CubeMX</td>

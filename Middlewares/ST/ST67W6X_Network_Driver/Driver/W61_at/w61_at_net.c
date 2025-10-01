@@ -22,7 +22,6 @@
 #include "w61_at_api.h"
 #include "w61_at_common.h"
 #include "w61_at_internal.h"
-#include "w61_at_rx_parser.h"
 #include "w61_io.h" /* SPI_XFER_MTU_BYTES */
 #include "common_parser.h" /* Common Parser functions */
 
@@ -32,6 +31,21 @@
 
 /* Global variables ----------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
+/** @addtogroup ST67W61_AT_Net_Types
+  * @{
+  */
+
+/**
+  * @brief  Receive data network structure
+  */
+typedef struct
+{
+  uint8_t *data;                  /*!< Pointer to the data buffer */
+  uint32_t *length;               /*!< Pointer to the length of the data buffer */
+} W61_Net_PullDataFromSocket_t;
+
+/** @} */
+
 /* Private defines -----------------------------------------------------------*/
 /** @addtogroup ST67W61_AT_Net_Constants
   * @{
@@ -46,8 +60,14 @@
 /** Minimum ping interval in ms */
 #define W61_NET_MIN_PING_INTERNAL                 100
 
+/** Default Number of ping repetition */
+#define W61_NET_DEFAULT_PING_REPETITION           4
+
 /** Maximum ping repetition */
 #define W61_NET_MAX_PING_REPETITION               65534
+
+/** Default Ping packet size */
+#define W61_NET_DEFAULT_PING_PACKET_SIZE          64
 
 /** Maximum ping size */
 #define W61_NET_MAX_PING_SIZE                     10000
@@ -61,10 +81,8 @@
 /** Size of AT Header data in bytes: +CIPRECVDATA:xxxx,"xxx.xxx.xxx.xxx",xxxxx, */
 #define W61_NET_AT_HEADER_DATA_SIZE               64
 
-#define W61_NET_EVT_SOCK_DATA_KEYWORD             "+IPD:"         /*!< Socket data event keyword */
-#define W61_NET_EVT_SOCK_GLOBAL_KEYWORD           "+CIP:"         /*!< Socket global event keyword */
-#define W61_NET_EVT_SOCK_CONNECTED_KEYWORD        "CONNECTED"     /*!< Socket connected keyword */
-#define W61_NET_EVT_SOCK_DISCONNECTED_KEYWORD     "DISCONNECTED"  /*!< Socket disconnected keyword */
+/** W61 Protocol string size */
+#define W61_PROTOCOL_STRING_SIZE                  8
 
 /** @} */
 
@@ -75,12 +93,124 @@
   */
 
 /**
-  * @brief  Parses WiFi Network event and call related callback.
+  * @brief  Callback function to handle Net Station get IP address responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_sta_ipaddress);
+
+/**
+  * @brief  Callback function to handle Net Station get Gateway address responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_sta_gateway);
+
+/**
+  * @brief  Callback function to handle Net Station get Netmask address responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_sta_netmask);
+
+/**
+  * @brief  Callback function to handle Net Access Point get IP address responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_ap_ipaddress);
+
+/**
+  * @brief  Callback function to handle Net Access Point get Netmask address responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_ap_netmask);
+
+/**
+  * @brief  Callback function to handle Net pull available data responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings (unused)
+  * @param  argc: number of argument (unused)
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DIRECT_DECLARE(on_cmd_pulldata);
+
+/**
+  * @brief  Callback function to handle Net SNTP get time responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_time);
+
+/**
+  * @brief  Callback function to handle Net socket information responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DECLARE(on_cmd_socket_info);
+
+/**
+  * @brief  Parses Wi-Fi Network event and call related callback
   * @param  hObj: pointer to module handle
-  * @param  p_evt: pointer to event buffer
-  * @param  evt_len: event length
+  * @param  argc: pointer to argument count
+  * @param  argv: pointer to argument values
   */
-static void W61_Net_AT_Event(void *hObj, const uint8_t *p_evt, int32_t evt_len);
+static void W61_Net_AT_Event(void *hObj, uint16_t *argc, char **argv);
+
+/**
+  * @brief  Parses Wi-Fi Network data event and call related callback
+  * @param  hObj: pointer to module handle
+  * @param  argc: pointer to argument count
+  * @param  argv: pointer to argument values
+  */
+static void W61_Net_data_event(void *hObj, uint16_t *argc, char **argv);
+
+/**
+  * @brief  Parses Net ping event and call related callback
+  * @param  hObj: pointer to module handle
+  * @param  argc: pointer to argument count
+  * @param  argv: pointer to argument values
+  */
+static void W61_Net_ping_event(void *hObj, uint16_t *argc, char **argv);
+
+/**
+  * @brief  Converts a string to a W61_Net_Protocol_e enum value
+  * @param  protocol_str: pointer to the protocol string
+  * @param  Protocol: pointer to the W61_Net_Protocol_e enum value
+  * @return W61_Status_t status of the operation
+  */
+static W61_Status_t W61_Net_StrToProtocol(char *protocol_str, W61_Net_Protocol_e *Protocol);
+
+/**
+  * @brief  Converts a W61_Net_Protocol_e enum value to a string
+  * @param  Protocol: W61_Net_Protocol_e enum value
+  * @param  protocol_str: pointer to the protocol string buffer
+  * @return W61_Status_t status of the operation
+  */
+static W61_Status_t W61_Net_ProtocolToStr(W61_Net_Protocol_e Protocol, char *protocol_str);
 
 /* Functions Definition ------------------------------------------------------*/
 W61_Status_t W61_Net_Init(W61_Object_t *Obj)
@@ -95,209 +225,476 @@ W61_Status_t W61_Net_Init(W61_Object_t *Obj)
     "AT+CIPDINFO=1\r\n"       /* Set IPD Verbose mode */
   };
 
-  Obj->Net_event_cb = W61_Net_AT_Event;
+  Obj->Callbacks.Net_event_cb = W61_Net_AT_Event;
+  Obj->Callbacks.Net_event_ping_cb = W61_Net_ping_event;
+  Obj->Callbacks.Net_event_data_cb = W61_Net_data_event;
 
   for (uint8_t i = 0; i < 3; i++)
   {
-    if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-    {
-      ret = W61_AT_SetExecute(Obj, (uint8_t *)cmd_lst[i], Obj->NcpTimeout);
-      W61_ATunlock(Obj);
-    }
-    else
-    {
-      ret = W61_STATUS_BUSY;
-    }
+
+    ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd_lst[i], W61_NCP_TIMEOUT);
 
     if (ret != W61_STATUS_OK)
     {
-      goto _err;
+      break;
     }
+  }
+  return ret;
+}
+
+W61_Status_t W61_Net_DeInit(W61_Object_t *Obj)
+{
+  W61_NULL_ASSERT(Obj);
+
+  Obj->Callbacks.Net_event_cb = NULL;
+  Obj->Callbacks.Net_event_ping_cb = NULL;
+  Obj->Callbacks.Net_event_data_cb = NULL;
+
+  return W61_STATUS_OK;
+}
+
+W61_Status_t W61_Net_SetHostname(W61_Object_t *Obj, uint8_t Hostname[33])
+{
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWHOSTNAME=\"%s\"\r\n", Hostname);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
+}
+
+W61_Status_t W61_Net_GetHostname(W61_Object_t *Obj, uint8_t Hostname[33])
+{
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+
+  strncpy(cmd, "AT+CWHOSTNAME?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWHOSTNAME:", &argc, argv, W61_NET_TIMEOUT);
+  if (ret != W61_STATUS_OK)
+  {
+    return ret;
+  }
+  if (argc < 1)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  if (strlen(argv[0]) < 33)
+  {
+    strncpy((char *)Hostname, argv[0], 32);
+    Hostname[32] = '\0'; /* Ensure null termination */
+  }
+  else
+  {
+    ret = W61_STATUS_ERROR;
+  }
+
+  return ret;
+}
+
+W61_Status_t W61_Net_Station_SetIPAddress(W61_Object_t *Obj, uint8_t Ip_addr[4], uint8_t Gateway_addr[4],
+                                          uint8_t Netmask_addr[4])
+{
+  W61_Status_t ret = W61_STATUS_ERROR;
+  uint8_t Gateway_addr_def[4];
+  uint8_t Netmask_addr_def[4];
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT_STR(Ip_addr, "Station IP NULL");
+
+  if (Parser_CheckValidAddress(Ip_addr, 4) != W61_STATUS_OK)
+  {
+    NET_LOG_ERROR("Station IP is invalid\n");
+    goto _err;
+  }
+
+  /* Get the actual IP configuration to replace fields not specified in the function */
+  ret = W61_Net_Station_GetIPAddress(Obj);
+  if (ret != W61_STATUS_OK)
+  {
+    goto _err;
+  }
+
+  if ((Gateway_addr == NULL) || (Parser_CheckValidAddress(Gateway_addr, 4) != W61_STATUS_OK))
+  {
+    NET_LOG_WARN("Gateway IP NULL or invalid. Previous one will be use\n");
+    memcpy(Gateway_addr_def, Obj->NetCtx.Net_sta_info.Gateway_Addr, 4);
+  }
+  else
+  {
+    memcpy(Gateway_addr_def, Gateway_addr, 4);
+  }
+
+  if ((Netmask_addr == NULL) || (Parser_CheckValidAddress(Netmask_addr, 4) != W61_STATUS_OK))
+  {
+    NET_LOG_WARN("Netmask IP NULL or invalid. Previous one will be use\n");
+    memcpy(Netmask_addr_def, Obj->NetCtx.Net_sta_info.IP_Mask, 4);
+  }
+  else
+  {
+    memcpy(Netmask_addr_def, Netmask_addr, 4);
+  }
+
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSTA=\"" IPSTR "\",\"" IPSTR "\",\"" IPSTR "\"\r\n",
+           IP2STR(Ip_addr), IP2STR(Gateway_addr_def), IP2STR(Netmask_addr_def));
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
+
+  if (ret == W61_STATUS_OK)
+  {
+    Obj->NetCtx.DHCP_STA_IsEnabled = 0;
   }
 
 _err:
   return ret;
 }
 
-W61_Status_t W61_Net_DeInit(W61_Object_t *Obj)
+W61_Status_t W61_Net_Station_GetIPAddress(W61_Object_t *Obj)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
   W61_NULL_ASSERT(Obj);
 
-  Obj->Net_event_cb = NULL;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
 
-  return W61_STATUS_OK;
+  struct modem_cmd handlers[] =
+  {
+    MODEM_CMD("+CIPSTA:ip:", on_cmd_sta_ipaddress, 1U, ""),
+    MODEM_CMD("+CIPSTA:gateway:", on_cmd_sta_gateway, 1U, ""),
+    MODEM_CMD("+CIPSTA:netmask:", on_cmd_sta_netmask, 1U, ""),
+  };
+
+  return W61_Status(modem_cmd_send(&mdm->iface,
+                                   &mdm->modem_cmd_handler,
+                                   handlers,
+                                   ARRAY_SIZE(handlers),
+                                   (const uint8_t *)"AT+CIPSTA?\r\n",
+                                   mdm->sem_response,
+                                   W61_NCP_TIMEOUT));
+}
+
+W61_Status_t W61_Net_AP_SetIPAddress(W61_Object_t *Obj, uint8_t Ip_addr[4], uint8_t Netmask_addr[4])
+{
+  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT_STR(Ip_addr, "Soft-AP IP NULL");
+  W61_NULL_ASSERT_STR(Netmask_addr, "Soft-AP Netmask NULL");
+
+  if (Parser_CheckValidAddress(Ip_addr, 4) != W61_STATUS_OK)
+  {
+    NET_LOG_ERROR("Soft-AP IP address invalid\n");
+    return ret;
+  }
+  if (Ip_addr[3] != 1)
+  {
+    NET_LOG_WARN("Soft-AP IP address must end with .1, changing to .1\n");
+    Ip_addr[3] = 1;
+  }
+
+  if (Parser_CheckValidAddress(Netmask_addr, 4) != W61_STATUS_OK)
+  {
+    NET_LOG_WARN("Netmask IP invalid. Default one will be use : 255.255.255.0\n");
+    Netmask_addr[0] = 0xFF;
+    Netmask_addr[1] = 0xFF;
+    Netmask_addr[2] = 0xFF;
+    Netmask_addr[3] = 0;
+  }
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPAP=\"" IPSTR "\",\"" IPSTR "\",\"" IPSTR "\"\r\n",
+           IP2STR(Ip_addr), IP2STR(Ip_addr), IP2STR(Netmask_addr));
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
+
+  if (ret == W61_STATUS_OK)
+  {
+    memcpy(Obj->NetCtx.Net_ap_info.IP_Addr, Ip_addr, 4);
+  }
+  return ret;
+}
+
+W61_Status_t W61_Net_AP_GetIPAddress(W61_Object_t *Obj)
+{
+  W61_NULL_ASSERT(Obj);
+
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+
+  struct modem_cmd handlers[] =
+  {
+    MODEM_CMD("+CIPAP:ip:", on_cmd_ap_ipaddress, 1U, ""),
+    MODEM_CMD("+CIPAP:netmask:", on_cmd_ap_netmask, 1U, ""),
+  };
+
+  return W61_Status(modem_cmd_send(&mdm->iface,
+                                   &mdm->modem_cmd_handler,
+                                   handlers,
+                                   ARRAY_SIZE(handlers),
+                                   (const uint8_t *)"AT+CIPAP?\r\n",
+                                   mdm->sem_response,
+                                   W61_NCP_TIMEOUT));
+}
+
+W61_Status_t W61_Net_GetDhcpConfig(W61_Object_t *Obj, W61_Net_DhcpType_e *State)
+{
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  uint16_t argc = 0;
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(State);
+
+  strncpy(cmd, "AT+CWDHCP?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWDHCP:", &argc, argv, W61_NCP_TIMEOUT);
+  if (ret != W61_STATUS_OK)
+  {
+    return ret;
+  }
+  if (argc < 1)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  *State = (W61_Net_DhcpType_e)atoi(argv[0]);
+
+  return ret;
+}
+
+W61_Status_t W61_Net_SetDhcpConfig(W61_Object_t *Obj, W61_Net_DhcpType_e *State, uint32_t *Operate)
+{
+  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(State);
+  W61_NULL_ASSERT(Operate);
+
+  if (!((*Operate == 0) || (*Operate == 1)) || !((*State == 0) || (*State == 1) || (*State == 2) || (*State == 3)))
+  {
+    NET_LOG_ERROR("Incorrect parameters\n");
+    return ret;
+  }
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWDHCP=%" PRIu32 ",%" PRIu32 "\r\n", *Operate, (uint32_t)*State);
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
+
+  if (ret == W61_STATUS_OK)
+  {
+    if ((*Operate == 0) && ((*State == 1) || (*State == 3)))
+    {
+      Obj->NetCtx.DHCP_STA_IsEnabled = 0;
+    }
+    else if ((*Operate == 1) && ((*State == 1) || (*State == 3)))
+    {
+      Obj->NetCtx.DHCP_STA_IsEnabled = 1;
+    }
+  }
+
+  return ret;
+}
+
+W61_Status_t W61_Net_GetDhcpsConfig(W61_Object_t *Obj, uint32_t *lease_time, uint8_t start_ip[4], uint8_t end_ip[4])
+{
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(lease_time);
+
+  strncpy(cmd, "AT+CWDHCPS?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWDHCPS:", &argc, argv, W61_NET_TIMEOUT);
+  if (ret != W61_STATUS_OK)
+  {
+    return ret;
+  }
+  if (argc < 3)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  *lease_time = (uint32_t)atoi(argv[0]);
+  /* Parse start ip */
+  Parser_StrToIP(argv[1], start_ip);
+
+  /* Parse end ip */
+  Parser_StrToIP(argv[2], end_ip);
+
+  return ret;
+}
+
+W61_Status_t W61_Net_SetDhcpsConfig(W61_Object_t *Obj, uint32_t lease_time)
+{
+  uint8_t StartIP[4] = {0};
+  uint8_t EndIP[4] = {0};
+  uint32_t Previous_lease_time = 0;
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+
+  if (W61_Net_GetDhcpsConfig(Obj, &Previous_lease_time, StartIP, EndIP) != W61_STATUS_OK)
+  {
+    NET_LOG_ERROR("Get DHCP server configuration failed\n");
+    return W61_STATUS_ERROR;
+  }
+
+  if (Parser_CheckValidAddress(StartIP, 4) != W61_STATUS_OK)
+  {
+    NET_LOG_ERROR("Start IP NULL or invalid\n");
+    return W61_STATUS_ERROR;
+  }
+
+  if (Parser_CheckValidAddress(EndIP, 4) != W61_STATUS_OK)
+  {
+    NET_LOG_ERROR("End IP NULL or invalid\n");
+    return W61_STATUS_ERROR;
+  }
+
+  if ((lease_time < 1) || (lease_time > 2880))
+  {
+    NET_LOG_ERROR("Lease time is invalid, range : [1;2880] minutes\n");
+    return W61_STATUS_ERROR;
+  }
+
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWDHCPS=1,%" PRIu32 ",\"" IPSTR "\",\"" IPSTR "\"\r\n",
+           lease_time, IP2STR(StartIP), IP2STR(EndIP));
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
+}
+
+W61_Status_t W61_Net_GetDnsAddress(W61_Object_t *Obj)
+{
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+
+  strncpy(cmd, "AT+CIPDNS?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPDNS:", &argc, argv, W61_NET_TIMEOUT);
+  if (ret != W61_STATUS_OK)
+  {
+    return ret;
+  }
+  if (argc < 3)
+  {
+    return W61_STATUS_ERROR;
+  }
+
+  W61_AT_RemoveStrQuotes(argv[1]);
+  Parser_StrToIP(argv[1], Obj->NetCtx.Net_sta_info.DNS1);
+  W61_AT_RemoveStrQuotes(argv[2]);
+  Parser_StrToIP(argv[2], Obj->NetCtx.Net_sta_info.DNS2);
+  W61_AT_RemoveStrQuotes(argv[3]);
+  Parser_StrToIP(argv[3], Obj->NetCtx.Net_sta_info.DNS3);
+
+  return ret;
+}
+
+W61_Status_t W61_Net_SetDnsAddress(W61_Object_t *Obj, uint8_t Dns1_addr[4], uint8_t Dns2_addr[4],
+                                   uint8_t Dns3_addr[4])
+{
+  uint32_t pos = 0;
+  uint8_t *dns_addr_table[3] = {Dns1_addr, Dns2_addr, Dns3_addr};
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+
+  pos += snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPDNS=1");
+
+  for (int32_t i = 0; i < 3; i++)
+  {
+    if ((dns_addr_table[i] == NULL) || (Parser_CheckValidAddress(dns_addr_table[i], 4) != W61_STATUS_OK))
+    {
+      NET_LOG_WARN("Dns% " PRIi32 " addr IP NULL or invalid. DNS% " PRIi32" IP will not be set\n",
+                   i + 1, i + 1);
+    }
+    else
+    {
+      pos += snprintf(&cmd[pos], W61_CMDRSP_STRING_SIZE - pos, ",\"" IPSTR "\"", IP2STR(dns_addr_table[i]));
+    }
+  }
+
+  snprintf((char *)&cmd[pos], W61_CMDRSP_STRING_SIZE - pos, "\r\n");
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
 W61_Status_t W61_Net_Ping(W61_Object_t *Obj, char *location, uint16_t length, uint16_t count, uint16_t interval,
-                          uint32_t *average_time, uint16_t *received_response)
+                          W61_Net_PingResult_t *ping_result)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  char *ping_response;
-  int32_t recv_len;
-  int32_t tmp = 0;
-  uint32_t total_time = 0;
-  uint32_t ping;
+  W61_Status_t ret;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(location);
-  W61_NULL_ASSERT(average_time);
-  W61_NULL_ASSERT(received_response);
+  W61_NULL_ASSERT(ping_result);
 
   /*Handle default values */
   if (length == 0)
   {
-    length = W61_NET_PING_PACKET_SIZE;
+    length = W61_NET_DEFAULT_PING_PACKET_SIZE;
   }
   /* If value is out of range, set to max value */
-  if (length > W61_NET_MAX_PING_SIZE)
+  else if (length > W61_NET_MAX_PING_SIZE)
   {
     length = W61_NET_MAX_PING_SIZE;
   }
 
   if (count == 0)
   {
-    count = W61_NET_PING_REPETITION;
+    count = W61_NET_DEFAULT_PING_REPETITION;
   }
   /* If value is out of range, set to max value */
-  if (count > W61_NET_MAX_PING_REPETITION)
+  else if (count > W61_NET_MAX_PING_REPETITION)
   {
     count = W61_NET_MAX_PING_REPETITION;
   }
 
-#if ((W61_NET_PING_INTERVAL < W61_NET_MIN_PING_INTERNAL) || (W61_NET_PING_INTERVAL > W61_NET_MAX_PING_INTERNAL))
-  /* If value is out of range, set to default value */
-  interval = W61_NET_DEFAULT_PING_INTERVAL;
-#else
   if ((interval < W61_NET_MIN_PING_INTERNAL) || (interval > W61_NET_MAX_PING_INTERNAL))
   {
-    interval = W61_NET_PING_INTERVAL;
+    interval = W61_NET_DEFAULT_PING_INTERVAL;
   }
-#endif /* W61_NET_PING_INTERVAL */
 
-  /* Set the received ping count */
-  *received_response = 0;
+  mdm->ping_msg = ping_result;
+  memset(ping_result, 0, sizeof(W61_Net_PingResult_t));
+  ping_result->sem_ping = xSemaphoreCreateBinary();
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+PING=\"%s\",%" PRIu16 ",%" PRIu16 ",%" PRIu16 "\r\n",
+           location, length, count, interval);
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_PING_TIMEOUT);
+  if (ret != W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+PING=\"%s\",%" PRIu16 ",%" PRIu16 ",%" PRIu16 "\r\n",
-             location, length, count, interval);
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      /* Parse the OK/ERROR response */
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_PING_TIMEOUT);
-      if (recv_len > 0)
-      {
-        ret = W61_AT_ParseOkErr((char *)Obj->CmdResp);
-      }
-      else
-      {
-        W61_ATunlock(Obj);
-        LogError("%s: W61_STATUS_TIMEOUT. It can lead to unexpected behavior\n", __func__);
-        return W61_STATUS_TIMEOUT;
-      }
-
-      if (ret != W61_STATUS_OK)
-      {
-        W61_ATunlock(Obj);
-        return ret;
-      }
-
-      for (int32_t response_count = 0; response_count < count; response_count++)
-      {
-        recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_PING_TIMEOUT + interval);
-
-        if (recv_len > 0)
-        {
-          Obj->CmdResp[recv_len] = 0;
-          ping_response = (char *)Obj->CmdResp;
-          if (strncmp(ping_response, "+PING:", sizeof("+PING:") - 1) == 0)
-          {
-            if (strncmp(ping_response, "+PING:TIMEOUT", sizeof("+PING:TIMEOUT") - 1) != 0)
-            {
-              Parser_StrToInt((char *)(ping_response + sizeof("+PING:") - 1), NULL, &tmp);
-              ping = (uint32_t)tmp;
-              if (ping > 0)
-              {
-                total_time += ping;
-                (*received_response)++;
-                LogInfo("Ping: %" PRIu32 "ms\n", ping);
-              }
-            }
-            else
-            {
-              LogInfo("Ping timeout\n");
-            }
-          }
-        }
-        else
-        {
-          LogError("%s: W61_STATUS_TIMEOUT (no status). It can lead to unexpected behavior\n", __func__);
-          ret = W61_STATUS_TIMEOUT;
-          break;
-        }
-      }
-    }
-
-    if (*received_response > 0)
-    {
-      *average_time = total_time / *received_response;
-    }
-    else
-    {
-      *average_time = 0;
-    }
-
-    W61_ATunlock(Obj);
+    NET_LOG_ERROR("Ping command failed\n");
+    vSemaphoreDelete(ping_result->sem_ping);
+    ping_result->sem_ping = NULL;
+    mdm->ping_msg = NULL;
+    return ret;
   }
-  else
+
+  while (count--)
   {
-    ret = W61_STATUS_BUSY;
+    (void)xSemaphoreTake(ping_result->sem_ping, pdMS_TO_TICKS(W61_NET_PING_TIMEOUT + interval));
   }
 
-  return ret;
+  if (ping_result->response_count > 0)
+  {
+    ping_result->lost_count = count - ping_result->response_count;
+    ping_result->average_time = ping_result->total_time / ping_result->response_count;
+  }
+
+  vSemaphoreDelete(ping_result->sem_ping);
+  ping_result->sem_ping = NULL;
+  mdm->ping_msg = NULL;
+  return W61_STATUS_OK;
 }
 
-W61_Status_t W61_Net_DNS_LookUp(W61_Object_t *Obj, const char *url, uint8_t *ipaddress)
+W61_Status_t W61_Net_ResolveHostAddress(W61_Object_t *Obj, const char *url, uint8_t *ipaddress)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  char *ptr;
-  char *token;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(url);
   W61_NULL_ASSERT(ipaddress);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  snprintf(cmd, W61_CMD_MATCH_BUFF_SIZE, "AT+CIPDOMAIN=\"%s\"\r\n", url);
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPDOMAIN:", &argc, argv, 5000);
+  if (ret == W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPDOMAIN=\"%s\"\r\n", url);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      ptr = strstr((char *)(Obj->CmdResp), "+CIPDOMAIN:");
-      if (ptr == NULL)
-      {
-        ret = W61_STATUS_ERROR;
-      }
-      else
-      {
-        ptr += sizeof("+CIPDOMAIN:");
-        token = strstr(ptr, "\r");
-        if (token == NULL)
-        {
-          ret = W61_STATUS_ERROR;
-        }
-        else
-        {
-          *(--token) = 0;
-          Parser_StrToIP(ptr, ipaddress);
-        }
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
+    W61_AT_RemoveStrQuotes(argv[0]); /* Remove quotes from the string */
+    Parser_StrToIP(argv[0], ipaddress);
   }
 
   return ret;
@@ -305,119 +702,72 @@ W61_Status_t W61_Net_DNS_LookUp(W61_Object_t *Obj, const char *url, uint8_t *ipa
 
 W61_Status_t W61_Net_StartClientConnection(W61_Object_t *Obj, W61_Net_Connection_t *conn)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  char *type = "TCP";
+  char protocol_str[W61_PROTOCOL_STRING_SIZE];
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(conn);
 
-  if (conn->Type == W61_NET_TCP_CONNECTION)
+  if (W61_Net_ProtocolToStr(conn->Protocol, protocol_str) != W61_STATUS_OK)
   {
-    type = "TCP";
-  }
-  else if (conn->Type == W61_NET_UDP_CONNECTION)
-  {
-    return ret;
-  }
-  else if (conn->Type == W61_NET_TCP_SSL_CONNECTION)
-  {
-    type = "SSL";
+    NET_LOG_ERROR("Invalid protocol type\n");
+    return W61_STATUS_ERROR;
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  if ((conn->Protocol != W61_NET_TCP_CONNECTION) && (conn->Protocol != W61_NET_TCP_SSL_CONNECTION))
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPSTART=%" PRIu16 ",\"%s\",\"" IPSTR "\",%" PRIu16 ",%" PRIu16 ",,%" PRIu16 "\r\n",
-             conn->Number, type, IP2STR(conn->RemoteIP), conn->RemotePort, conn->KeepAlive,
-             W61_NET_START_CLIENT_TIMEOUT);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_NET_START_CLIENT_TIMEOUT + W61_NET_TIMEOUT);
-    W61_ATunlock(Obj);
+    NET_LOG_ERROR("Only TCP and SSL protocols are supported for client connections\n");
+    return W61_STATUS_ERROR;
   }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-  return ret;
+
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE,
+           "AT+CIPSTART=%" PRIu16 ",\"%s\",\"%s\",%" PRIu16 ",%" PRIu16 ",,%" PRIu16 "\r\n",
+           conn->Number, protocol_str, conn->RemoteIP, conn->RemotePort, conn->KeepAlive,
+           W61_NET_START_CLIENT_TIMEOUT);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_START_CLIENT_TIMEOUT + W61_NET_TIMEOUT);
 }
 
 W61_Status_t W61_Net_StopClientConnection(W61_Object_t *Obj, W61_Net_Connection_t *conn)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(conn);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPCLOSE=%" PRIu16 "\r\n", conn->Number);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_NET_TIMEOUT);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPCLOSE=%" PRIu16 "\r\n", conn->Number);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
-W61_Status_t W61_Net_StartServer(W61_Object_t *Obj, uint32_t Port, W61_Net_ConnectionType_e Type, uint8_t ca_enable,
+W61_Status_t W61_Net_StartServer(W61_Object_t *Obj, uint32_t Port, W61_Net_Protocol_e protocol, uint8_t ca_enable,
                                  uint32_t keepalive)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char protocol_str[W61_PROTOCOL_STRING_SIZE];
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  char *type = "TCP";
-  if (Type == W61_NET_TCP_CONNECTION)
+  if (W61_Net_ProtocolToStr(protocol, protocol_str) != W61_STATUS_OK)
   {
-    type = "TCP";
-  }
-  else if (Type == W61_NET_UDP_CONNECTION)
-  {
-    type = "UDP";
-  }
-  else if (Type == W61_NET_TCP_SSL_CONNECTION)
-  {
-    type = "SSL";
+    NET_LOG_ERROR("Invalid protocol type\n");
+    return W61_STATUS_ERROR;
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPSERVER=1,%" PRIu32 ",\"%s\",%" PRIu16 ",%" PRIu32 "\r\n",
-             Port, type, ca_enable, keepalive);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_NET_TIMEOUT);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSERVER=1,%" PRIu32 ",\"%s\",%" PRIu16 ",%" PRIu32 "\r\n",
+           Port, protocol_str, ca_enable, keepalive);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
 W61_Status_t W61_Net_StopServer(W61_Object_t *Obj, uint8_t close_connections)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSERVER=0,%" PRIu16 "\r\n", close_connections);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, W61_NET_TIMEOUT);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSERVER=0,%" PRIu16 "\r\n", close_connections);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
 W61_Status_t W61_Net_SendData(W61_Object_t *Obj, uint8_t Socket, uint8_t *pdata, uint32_t Reqlen,
                               uint32_t *SentLen, uint32_t Timeout)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  W61_Status_t ret;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(pdata);
   W61_NULL_ASSERT(SentLen);
@@ -429,26 +779,13 @@ W61_Status_t W61_Net_SendData(W61_Object_t *Obj, uint8_t Socket, uint8_t *pdata,
 
   *SentLen = Reqlen;
 
-  if (W61_ATlock(Obj, Timeout))
+  /* W61_AT_Common_SetExecute timeout should let the time to NCP to return SEND:ERROR message */
+  if (Timeout < W61_NET_TIMEOUT)
   {
-    /* W61_AT_SetExecute timeout should let the time to NCP to return SEND:ERROR message */
-    if (Timeout < W61_NET_TIMEOUT)
-    {
-      Timeout = W61_NET_TIMEOUT;
-    }
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPSEND=%" PRIu16 ",%" PRIu32 "\r\n", Socket, Reqlen);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Timeout);
-    if (ret == W61_STATUS_OK)
-    {
-      ret = W61_AT_RequestSendData(Obj, pdata, Reqlen, Timeout);
-    }
-    W61_ATunlock(Obj);
+    Timeout = W61_NET_TIMEOUT;
   }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSEND=%" PRIu16 ",%" PRIu32 "\r\n", Socket, Reqlen);
+  ret = W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, pdata, Reqlen, Timeout, true);
 
   if (ret != W61_STATUS_OK)
   {
@@ -461,7 +798,8 @@ W61_Status_t W61_Net_SendData(W61_Object_t *Obj, uint8_t Socket, uint8_t *pdata,
 W61_Status_t W61_Net_SendData_Non_Connected(W61_Object_t *Obj, uint8_t Socket, char *IpAddress, uint32_t Port,
                                             uint8_t *pdata, uint32_t Reqlen, uint32_t *SentLen, uint32_t Timeout)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  W61_Status_t ret;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(IpAddress);
   W61_NULL_ASSERT(pdata);
@@ -474,27 +812,14 @@ W61_Status_t W61_Net_SendData_Non_Connected(W61_Object_t *Obj, uint8_t Socket, c
 
   *SentLen = Reqlen;
 
-  if (W61_ATlock(Obj, Timeout))
+  /* W61_AT_Common_SetExecute timeout should let the time to NCP to return SEND:ERROR message */
+  if (Timeout < W61_NET_TIMEOUT)
   {
-    /* W61_AT_SetExecute timeout should let the time to NCP to return SEND:ERROR message */
-    if (Timeout < W61_NET_TIMEOUT)
-    {
-      Timeout = W61_NET_TIMEOUT;
-    }
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPSEND=%" PRIu16 ",%" PRIu32 ",\"%s\",%" PRIu32 "\r\n",
-             Socket, Reqlen, IpAddress, Port);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Timeout);
-    if (ret == W61_STATUS_OK)
-    {
-      ret = W61_AT_RequestSendData(Obj, pdata, Reqlen, Timeout);
-    }
-    W61_ATunlock(Obj);
+    Timeout = W61_NET_TIMEOUT;
   }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSEND=%" PRIu16 ",%" PRIu32 ",\"%s\",%" PRIu32 "\r\n",
+           Socket, Reqlen, IpAddress, Port);
+  ret = W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, pdata, Reqlen, Timeout, true);
 
   if (ret != W61_STATUS_OK)
   {
@@ -506,117 +831,33 @@ W61_Status_t W61_Net_SendData_Non_Connected(W61_Object_t *Obj, uint8_t Socket, c
 
 W61_Status_t W61_Net_SetReceiveBufferLen(W61_Object_t *Obj, uint8_t Socket, uint32_t BufLen)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPRECVBUF=%" PRIu16 ",%" PRIu32 "\r\n", Socket, BufLen);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPRECVBUF=%" PRIu16 ",%" PRIu32 "\r\n", Socket, BufLen);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_Net_GetReceiveBufferLen(W61_Object_t *Obj, uint8_t Socket, uint32_t *BufLen)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  snprintf(cmd, W61_CMD_MATCH_BUFF_SIZE, "AT+CIPRECVBUF=%" PRIu16 "?\r\n", Socket);
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPRECVBUF:", &argc, argv, W61_NCP_TIMEOUT);
+  if (ret != W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPRECVBUF=%" PRIu16 "?\r\n", Socket);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, Obj->NcpTimeout);
-    if (ret == W61_STATUS_OK)
-    {
-      if (sscanf((char const *) Obj->CmdResp, "+CIPRECVBUF:%" SCNu32 "\r\n", BufLen) != 1)
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
+    return ret;
   }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_IsDataAvailableOnSocket(W61_Object_t *Obj, uint8_t Socket, uint32_t *AvailableDataSize)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len;
-  int32_t len[5] = {0};   /* There are 5 comma in the string */
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(AvailableDataSize);
-
-  if (Socket > 4)
+  if (argc < 1)
   {
     return W61_STATUS_ERROR;
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPRECVLEN?\r\n");
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_TIMEOUT);
-
-      if (recv_len > 0)
-      {
-        Obj->CmdResp[recv_len] = 0;
-        if (sscanf((char *)Obj->CmdResp,
-                   "+CIPRECVLEN:%" SCNd32 ",%" SCNd32 ",%" SCNd32 ",%" SCNd32 ",%" SCNd32 ",",
-                   &len[0], &len[1], &len[2], &len[3], &len[4]) != 5)
-        {
-          W61_ATunlock(Obj);
-          return W61_STATUS_ERROR;
-        }
-      }
-      else
-      {
-        /* No response received */
-        LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-        ret = W61_STATUS_TIMEOUT;
-      }
-      *AvailableDataSize = len[Socket];
-
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_TIMEOUT);
-      if ((recv_len > 0) && (recv_len <= strlen(AT_OK_STRING)))
-      {
-        Obj->CmdResp[recv_len] = 0;
-        if (IS_STRING_OK)
-        {
-          ret = W61_STATUS_OK;
-        }
-      }
-      else if (recv_len <= 0)
-      {
-        /* No response received */
-        LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-        ret = W61_STATUS_TIMEOUT;
-      }
-      else
-      {
-        ret = W61_STATUS_IO_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  *BufLen = (uint32_t)atoi(argv[0]);
 
   return ret;
 }
@@ -624,629 +865,241 @@ W61_Status_t W61_Net_IsDataAvailableOnSocket(W61_Object_t *Obj, uint8_t Socket, 
 W61_Status_t W61_Net_PullDataFromSocket(W61_Object_t *Obj, uint8_t Socket, uint32_t Reqlen, uint8_t *pData,
                                         uint32_t *Receivedlen, uint32_t Timeout)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(pData);
   W61_NULL_ASSERT(Receivedlen);
+  W61_Status_t ret;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+  W61_Net_PullDataFromSocket_t pull_data =
+  {
+    .data = pData,
+    .length = Receivedlen,
+  };
+  struct modem_cmd handlers[] =
+  {
+    MODEM_CMD_DIRECT("+CIPRECVDATA:", on_cmd_pulldata),
+  };
+
+  if (Reqlen > W61_MAX_SPI_XFER - 64)
+  {
+    Reqlen = W61_MAX_SPI_XFER - 64;
+  }
+
+  (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   *Receivedlen = 0;
-  if (Reqlen > (SPI_XFER_MTU_BYTES - W61_NET_AT_HEADER_DATA_SIZE))
-  {
-    Reqlen = (SPI_XFER_MTU_BYTES - W61_NET_AT_HEADER_DATA_SIZE);
-  }
+  mdm->rx_data = &pull_data;
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    Obj->NetCtx.AppBuffRecvData = pData;
-    Obj->NetCtx.AppBuffRecvDataSize = Reqlen;
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPRECVDATA=%" PRIu16 ",%" PRIu32 "\r\n", Socket, Reqlen);
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, Timeout);
-      Obj->NetCtx.AppBuffRecvData = NULL;
-      Obj->NetCtx.AppBuffRecvDataSize = 0;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPRECVDATA=%" PRIu16 ",%" PRIu32 "\r\n", Socket, Reqlen);
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->modem_cmd_handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)cmd,
+                                      mdm->sem_response,
+                                      W61_NET_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
 
-      if (recv_len > 0)
-      {
-        if (sscanf((char *)Obj->CmdResp, "+CIPRECVDATA:%" SCNu32, Receivedlen) != 1)
-        {
-          W61_ATunlock(Obj);
-          return ret;
-        }
-      }
-      else
-      {
-        /* No response received */
-        LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-        ret = W61_STATUS_TIMEOUT;
-      }
-
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, Timeout);
-      if ((recv_len > 0) && (recv_len <= strlen(AT_OK_STRING)))
-      {
-        Obj->CmdResp[recv_len] = 0;
-        if (IS_STRING_OK)
-        {
-          ret = W61_STATUS_OK;
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_UNEXPECTED_RESPONSE;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_GetServerMaxConnections(W61_Object_t *Obj, uint8_t *MaxConnections)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t tmp = 0;
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(MaxConnections);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSERVERMAXCONN?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSERVERMAXCONN:", sizeof("+CIPSERVERMAXCONN:") - 1) == 0)
-      {
-        Parser_StrToInt((char *) Obj->CmdResp + sizeof("+CIPSERVERMAXCONN:") - 1, NULL, &tmp);
-        *MaxConnections = (uint8_t)tmp;
-        ret = W61_STATUS_OK;
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
+  (void)xSemaphoreGive(data->sem_tx_lock);
   return ret;
 }
 
 W61_Status_t W61_Net_SetServerMaxConnections(W61_Object_t *Obj, uint8_t MaxConnections)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSERVERMAXCONN=%" PRIu16 "\r\n", MaxConnections);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSERVERMAXCONN=%" PRIu16 "\r\n", MaxConnections);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
-W61_Status_t W61_Net_GetSNTPConfiguration(W61_Object_t *Obj, uint8_t *Enable, int16_t *Timezone,
-                                          uint8_t *SntpServer1, uint8_t *SntpServer2, uint8_t *SntpServer3)
+W61_Status_t W61_Net_SNTP_GetConfiguration(W61_Object_t *Obj, uint8_t *Enable, int16_t *Timezone,
+                                           uint8_t SntpServer1[64], uint8_t SntpServer2[64], uint8_t SntpServer3[64])
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t i;
-  char *parameters_strings[5];
-  char *end;
-  int32_t tmp = 0;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Enable);
   W61_NULL_ASSERT(Timezone);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  strncpy(cmd, "AT+CIPSNTPCFG?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPSNTPCFG:", &argc, argv, W61_NET_TIMEOUT);
+  if ((ret == W61_STATUS_OK) && (argc > 2))
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSNTPCFG?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
+    switch (argc)
     {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSNTPCFG:", sizeof("+CIPSNTPCFG:") - 1) == 0)
-      {
-        end = strstr((char *)Obj->CmdResp, "\r");
-        if (end)
+      case 6:
+        if (SntpServer3 != NULL)
         {
-          *end = 0;
+          W61_AT_RemoveStrQuotes(argv[4]);
+          strncpy((char *)SntpServer3, argv[4], 63);
         }
-        parameters_strings[0] = strtok((char *) Obj->CmdResp + sizeof("+CIPSNTPCFG:") - 1, ",");
-        Parser_StrToInt(parameters_strings[0], NULL, &tmp);
-        *Enable = (uint8_t)tmp;
-        if (*Enable == 1)
+      case 5:
+        if (SntpServer2 != NULL)
         {
-          for (i = 1; i < 5; i++)
-          {
-            parameters_strings[i] = strtok(NULL, ",");
-            if (parameters_strings[i] == NULL)
-            {
-              break;
-            }
-          }
-
-          Parser_StrToInt(parameters_strings[1], NULL, &tmp);
-          *Timezone = (int16_t)tmp;
-          if (SntpServer1 != NULL)
-          {
-            if ((parameters_strings[2] != NULL) && (strlen(parameters_strings[2]) >= 2))
-            {
-              strncpy((char *)SntpServer1, &(parameters_strings[2][1]), strlen(parameters_strings[2]) - 2);
-              SntpServer1[strlen(parameters_strings[2]) - 2] = '\0';
-            }
-            else
-            {
-              SntpServer1[0] = '\0';
-            }
-          }
-
-          if (SntpServer2 != NULL)
-          {
-            if ((parameters_strings[3] != NULL) && (strlen(parameters_strings[3]) >= 2))
-            {
-              strncpy((char *)SntpServer2, &(parameters_strings[3][1]), strlen(parameters_strings[3]) - 2);
-              SntpServer2[strlen(parameters_strings[3]) - 2] = '\0';
-            }
-            else
-            {
-              SntpServer2[0] = '\0';
-            }
-          }
-
-          if (SntpServer3 != NULL)
-          {
-            if ((parameters_strings[4] != NULL) && (strlen(parameters_strings[4]) >= 2))
-            {
-              strncpy((char *)SntpServer3, &(parameters_strings[4][1]), strlen(parameters_strings[4]) - 2);
-              SntpServer3[strlen(parameters_strings[4]) - 2] = '\0';
-            }
-            else
-            {
-              SntpServer3[0] = '\0';
-            }
-          }
+          W61_AT_RemoveStrQuotes(argv[3]);
+          strncpy((char *)SntpServer2, argv[3], 63);
         }
-      }
-      else
-      {
+      case 4:
+        if (SntpServer1 != NULL)
+        {
+          W61_AT_RemoveStrQuotes(argv[2]);
+          strncpy((char *)SntpServer1, argv[2], 63);
+        }
+        *Timezone = (int16_t)atoi(argv[1]);
+        *Enable = (uint8_t)atoi(argv[0]);
+        break;
+      default:
         ret = W61_STATUS_ERROR;
-      }
     }
-
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
   }
 
   return ret;
 }
 
-W61_Status_t W61_Net_SetSNTPConfiguration(W61_Object_t *Obj, uint8_t Enable, int16_t Timezone, uint8_t *SntpServer1,
-                                          uint8_t *SntpServer2, uint8_t *SntpServer3)
+W61_Status_t W61_Net_SNTP_SetConfiguration(W61_Object_t *Obj, uint8_t Enable, int16_t Timezone, uint8_t *SntpServer1,
+                                           uint8_t *SntpServer2, uint8_t *SntpServer3)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
   int32_t len;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
   if ((SntpServer1 == NULL) && (SntpServer2 == NULL) && (SntpServer3 == NULL))
   {
-    LogError("SNTP servers URL missing\n");
-    return ret;
+    NET_LOG_ERROR("SNTP servers URL missing\n");
+    return W61_STATUS_ERROR;
   }
 
-  len = snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-                 "AT+CIPSNTPCFG=%" PRIu16 ",%" PRIi16, Enable, Timezone);
+  len = snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSNTPCFG=%" PRIu16 ",%" PRIi16, Enable, Timezone);
 
   if (SntpServer1 != NULL)
   {
-    len += snprintf((char *)&Obj->CmdResp[len], W61_ATD_CMDRSP_STRING_SIZE - len, ",\"%s\"", SntpServer1);
+    len += snprintf(&cmd[len], W61_CMDRSP_STRING_SIZE - len, ",\"%s\"", SntpServer1);
   }
 
   if (SntpServer2 != NULL)
   {
-    len += snprintf((char *)&Obj->CmdResp[len], W61_ATD_CMDRSP_STRING_SIZE - len, ",\"%s\"", SntpServer2);
+    len += snprintf(&cmd[len], W61_CMDRSP_STRING_SIZE - len, ",\"%s\"", SntpServer2);
   }
 
   if (SntpServer3 != NULL)
   {
-    len += snprintf((char *)&Obj->CmdResp[len], W61_ATD_CMDRSP_STRING_SIZE - len, ",\"%s\"", SntpServer3);
+    len += snprintf(&cmd[len], W61_CMDRSP_STRING_SIZE - len, ",\"%s\"", SntpServer3);
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)&Obj->CmdResp[len], W61_ATD_CMDRSP_STRING_SIZE - len, "\r\n");
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(&cmd[len], W61_CMDRSP_STRING_SIZE - len, "\r\n");
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
-W61_Status_t W61_Net_GetSNTPTime(W61_Object_t *Obj, uint8_t *Time)
+W61_Status_t W61_Net_SNTP_GetTime(W61_Object_t *Obj, W61_Net_Time_t *Time)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Time);
+  W61_Status_t ret;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  struct modem_cmd handlers[] =
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSNTPTIME?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSNTPTIME:", sizeof("+CIPSNTPTIME:") - 1) == 0)
-      {
-        strncpy((char *)Time, (char *)Obj->CmdResp + strlen("+CIPSNTPTIME:"),
-                strlen((char *)Obj->CmdResp) - strlen("+CIPSNTPTIME:") - 2);
-        Time[strlen((char *)Obj->CmdResp) - strlen("+CIPSNTPTIME:") - 2] = '\0';
-        ret = W61_STATUS_OK;
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-        Time[0] = '\0';
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+    MODEM_CMD_ARGS_MAX("+CIPSNTPTIME:", on_cmd_time, 7, 8, " :"),
+  };
 
+  (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
+
+  mdm->rx_data = Time;
+
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->modem_cmd_handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)"AT+CIPSNTPTIME?\r\n",
+                                      mdm->sem_response,
+                                      W61_NET_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
+
+  (void)xSemaphoreGive(data->sem_tx_lock);
   return ret;
 }
 
-W61_Status_t W61_Net_GetSNTPInterval(W61_Object_t *Obj, uint16_t *Interval)
+W61_Status_t W61_Net_SNTP_GetInterval(W61_Object_t *Obj, uint16_t *Interval)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t tmp = 0;
+  char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+  char cmd[W61_CMD_MATCH_BUFF_SIZE];
+  uint16_t argc = 0;
+  W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Interval);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
+  strncpy(cmd, "AT+CIPSNTPINTV?\r\n", sizeof(cmd));
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPSNTPINTV:", &argc, argv, W61_NET_TIMEOUT);
+  if (ret == W61_STATUS_OK)
   {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSNTPINTV?\r\n");
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSNTPINTV:", sizeof("+CIPSNTPINTV:") - 1) == 0)
-      {
-        Parser_StrToInt((char *) Obj->CmdResp + sizeof("+CIPSNTPINTV:") - 1, NULL, &tmp);
-        *Interval = (uint16_t)tmp;
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
+    *Interval = (uint16_t)atoi(argv[0]);
   }
 
   return ret;
 }
 
-W61_Status_t W61_Net_SetSNTPInterval(W61_Object_t *Obj, uint16_t Interval)
+W61_Status_t W61_Net_SNTP_SetInterval(W61_Object_t *Obj, uint16_t Interval)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSNTPINTV=%" PRIu16 "\r\n", Interval);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_GetTCPOpt(W61_Object_t *Obj, uint8_t Socket, int16_t *Linger, uint16_t *TcpNoDelay,
-                               uint16_t *SoSndTimeout, uint16_t *KeepAlive)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t recv_len;
-  int32_t cmp;
-  uint32_t parameters[5];
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(Linger);
-  W61_NULL_ASSERT(TcpNoDelay);
-  W61_NULL_ASSERT(SoSndTimeout);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPTCPOPT?\r\n");
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      for (int32_t cur_conn = 0; cur_conn < 5; cur_conn++)
-      {
-        recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_TIMEOUT);
-        if (recv_len > 0)
-        {
-          cmp = sscanf((char *)Obj->CmdResp,
-                       "+CIPTCPOPT:%" SCNu32 ",%" SCNu32 ",%" SCNu32 ",%" SCNu32 ",%" SCNu32,
-                       &parameters[0], &parameters[1], &parameters[2], &parameters[3], &parameters[4]);
-
-          if (cmp == 0)
-          {
-            break; /* No more connection */
-          }
-
-          if (cmp != 5) /*Parameters are missing */
-          {
-            ret = W61_STATUS_ERROR;
-            goto _err;
-          }
-
-          if (parameters[0] == Socket)
-          {
-            *Linger = (int16_t) parameters[1];
-            *TcpNoDelay = (uint16_t) parameters[2];
-            *SoSndTimeout = (uint16_t) parameters[3];
-            *KeepAlive = (uint16_t) parameters[4];
-          }
-        }
-        else
-        {
-          /* No response received */
-          LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-          ret = W61_STATUS_TIMEOUT;
-          goto _err;
-        }
-      }
-
-      recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_TIMEOUT);
-      if (recv_len > 0)
-      {
-        Obj->CmdResp[recv_len] = 0;
-        ret = W61_AT_ParseOkErr((char *)Obj->CmdResp);
-      }
-      else
-      {
-        /* No response received */
-        LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-        ret = W61_STATUS_TIMEOUT;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-_err:
-  W61_ATunlock(Obj);
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSNTPINTV=%" PRIu16 "\r\n", Interval);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_Net_SetTCPOpt(W61_Object_t *Obj, uint8_t Socket, int16_t Linger, uint16_t TcpNoDelay,
                                uint16_t SoSndTimeout, uint16_t KeepAlive)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPTCPOPT=%" PRIu16 ",%" PRIu16 ",%" PRIu16 ",%" PRIu16 ",%" PRIu16 "\r\n",
-             Socket, Linger, TcpNoDelay, SoSndTimeout, KeepAlive);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPTCPOPT=%" PRIu16 ",%" PRIu16 ",%" PRIu16 ",%" PRIu16 ",%" PRIu16 "\r\n",
+           Socket, Linger, TcpNoDelay, SoSndTimeout, KeepAlive);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
+}
 
+W61_Status_t W61_Net_GetSocketInformation(W61_Object_t *Obj, uint8_t Socket, W61_Net_Connection_t *conn)
+{
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(conn);
+
+  struct modem_cmd handlers[] =
+  {
+    MODEM_CMD("+CIPSTATUS:", on_cmd_socket_info, 6U, ","),
+  };
+
+  (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
+
+  memset(conn, 0, sizeof(W61_Net_Connection_t));
+  conn->Number = Socket;
+  mdm->rx_data = conn;
+
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->modem_cmd_handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)"AT+CIPSTATE?\r\n",
+                                      mdm->sem_response,
+                                      W61_NET_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
+
+  (void)xSemaphoreGive(data->sem_tx_lock);
   return ret;
 }
 
-W61_Status_t W61_Net_GetSocketInformation(W61_Object_t *Obj, uint8_t Socket, uint8_t *Protocol, uint8_t *RemoteIp,
-                                          uint32_t *RemotePort, uint32_t *LocalPort, uint8_t *Type)
+W61_Status_t W61_Net_SSL_SetConfiguration(W61_Object_t *Obj, uint8_t Socket, uint8_t AuthMode, uint8_t *Certificate,
+                                          uint8_t *PrivateKey, uint8_t *CaCertificate)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t cmp;
-  int32_t recv_len;
-  uint8_t read_status = 0;
-  uint32_t local_socket = 0;
-  char local_protocol[8];
-  char remote_ip[24];
-  uint32_t remote_port;
-  uint32_t local_port;
-  uint32_t tetype;
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(Protocol);
-  W61_NULL_ASSERT(RemoteIp);
-  W61_NULL_ASSERT(RemotePort);
-  W61_NULL_ASSERT(LocalPort);
-  W61_NULL_ASSERT(Type);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSTATE?\r\n");
-    if (W61_ATsend(Obj, Obj->CmdResp, strlen((char *)Obj->CmdResp), Obj->NcpTimeout) > 0)
-    {
-      for (int32_t cur_conn = 0; cur_conn < 5; cur_conn++)
-      {
-        recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_TIMEOUT);
-        if (recv_len > 0)
-        {
-          cmp = sscanf((const char *)Obj->CmdResp,
-                       "+CIPSTATUS:%" SCNu32 ",\"%[^\"]\",\"%[^\"]\",%" SCNu32 ",%" SCNu32 ",%" SCNu32 "\r\n",
-                       &local_socket, local_protocol, remote_ip, &remote_port, &local_port, &tetype);
-          if (cmp == 6)
-          {
-            if (local_socket == Socket)
-            {
-              memcpy((char *)Protocol, local_protocol, strlen(local_protocol) + 1);
-              memcpy((char *)RemoteIp, remote_ip, strlen(remote_ip) + 1);
-              *RemotePort = remote_port;
-              *LocalPort = local_port;
-              *Type = tetype;
-            }
-          }
-          else
-          {
-            /* Since only open connections are displayed, status was read instead in the last occurrence
-             * if all available connections are not used
-             */
-            read_status = 1;
-            break;
-          }
-        }
-        else
-        {
-          /* No response received */
-          LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-          W61_ATunlock(Obj);
-          return W61_STATUS_TIMEOUT;
-        }
-      }
-      if (read_status == 0)
-      {
-        recv_len = W61_ATD_Recv(Obj, Obj->CmdResp, W61_ATD_RSP_SIZE, W61_NET_TIMEOUT);
-      }
-      if (recv_len > 0)
-      {
-        Obj->CmdResp[recv_len] = 0;
-        ret = W61_AT_ParseOkErr((char *)Obj->CmdResp);
-      }
-      else
-      {
-        /* No response received */
-        LogError("%s: W61_STATUS_TIMEOUT (no response). It can lead to unexpected behavior\n", __func__);
-        ret = W61_STATUS_TIMEOUT;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_GetSSLConfiguration(W61_Object_t *Obj, uint8_t Socket, uint8_t *AuthMode, uint8_t *Certificate,
-                                         uint8_t *PrivateKey, uint8_t *CaCertificate)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t i;
-  int32_t tmp = 0;
-  char *parameters_strings[5];
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(AuthMode);
-  W61_NULL_ASSERT(Certificate);
-  W61_NULL_ASSERT(PrivateKey);
-  W61_NULL_ASSERT(CaCertificate);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSSLCCONF=%" PRIu16 "?\r\n", Socket);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSSLCCONF:", sizeof("+CIPSSLCCONF:") - 1) == 0)
-      {
-        char *end = strstr((char *)Obj->CmdResp, "\r");
-        if (end)
-        {
-          *end = 0;
-        }
-        parameters_strings[0] = strtok((char *) Obj->CmdResp + sizeof("+CIPSSLCCONF:") - 1, ",");
-        for (i = 1; i < 5; i++)
-        {
-          parameters_strings[i] = strtok(NULL, ",");
-          if (parameters_strings[i] == NULL)
-          {
-            break;
-          }
-        }
-        strtok((char *)Obj->CmdResp, "\r\n");
-
-        Parser_StrToInt(parameters_strings[1], NULL, &tmp);
-        *AuthMode = (uint8_t)tmp;
-
-        if ((parameters_strings[2] != NULL) && (strlen(parameters_strings[2]) >= 2))
-        {
-          strncpy((char *)Certificate, &(parameters_strings[2][1]), strlen(parameters_strings[2]) - 2);
-          Certificate[strlen(parameters_strings[2]) - 2] = '\0';
-        }
-        else
-        {
-          Certificate[0] = '\0';
-        }
-
-        if ((parameters_strings[3] != NULL) && (strlen(parameters_strings[3]) >= 2))
-        {
-          strncpy((char *)PrivateKey, &(parameters_strings[3][1]), strlen(parameters_strings[3]) - 2);
-          PrivateKey[strlen(parameters_strings[3]) - 2] = '\0';
-        }
-        else
-        {
-          PrivateKey[0] = '\0';
-        }
-
-        if ((parameters_strings[4] != NULL) && (strlen(parameters_strings[4]) >= 2))
-        {
-          strncpy((char *)CaCertificate, &(parameters_strings[4][1]), strlen(parameters_strings[4]) - 2);
-          CaCertificate[strlen(parameters_strings[4]) - 2] = '\0';
-        }
-        else
-        {
-          CaCertificate[0] = '\0';
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_SetSSLConfiguration(W61_Object_t *Obj, uint8_t Socket, uint8_t AuthMode, uint8_t *Certificate,
-                                         uint8_t *PrivateKey, uint8_t *CaCertificate)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   if (!Certificate)
   {
@@ -1261,168 +1114,30 @@ W61_Status_t W61_Net_SetSSLConfiguration(W61_Object_t *Obj, uint8_t Socket, uint
     CaCertificate = (uint8_t *)"";
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPSSLCCONF=%" PRIu16 ",%" PRIu16 ",\"%s\",\"%s\",\"%s\"\r\n",
-             Socket, AuthMode, Certificate, PrivateKey, CaCertificate);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSSLCCONF=%" PRIu16 ",%" PRIu16 ",\"%s\",\"%s\",\"%s\"\r\n",
+           Socket, AuthMode, Certificate, PrivateKey, CaCertificate);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
-W61_Status_t W61_Net_GetSSLServerName(W61_Object_t *Obj, uint8_t Socket, uint8_t *SslSni)
+W61_Status_t W61_Net_SSL_SetServerName(W61_Object_t *Obj, uint8_t Socket, uint8_t *SslSni)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  char *parameters_strings[2];
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(SslSni);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSSLCSNI=%" PRIu16 "?\r\n", Socket);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSSLCSNI:", sizeof("+CIPSSLCSNI:") - 1) == 0)
-      {
-        char *end = strstr((char *)Obj->CmdResp, "\r");
-        if (end)
-        {
-          *end = 0;
-        }
-        parameters_strings[0] = strtok((char *) Obj->CmdResp + sizeof("+CIPSSLCSNI:") - 1, ",");
-        parameters_strings[1] = strtok(NULL, ",");
-        strtok((char *)Obj->CmdResp, "\r\n");
-
-        if ((parameters_strings[1] != NULL) && (strlen(parameters_strings[1]) >= 2))
-        {
-          strncpy((char *)SslSni, &(parameters_strings[1][1]), strlen(parameters_strings[1]) - 2);
-          SslSni[strlen(parameters_strings[1]) - 2] = '\0';
-        }
-        else
-        {
-          SslSni[0] = '\0';
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSSLCSNI=%" PRIu16 ",\"%s\"\r\n", Socket, SslSni);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
-W61_Status_t W61_Net_SetSSLServerName(W61_Object_t *Obj, uint8_t Socket, uint8_t *SslSni)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(SslSni);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSSLCSNI=%" PRIu16 ",\"%s\"\r\n", Socket, SslSni);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_GetSSLApplicationLayerProtocol(W61_Object_t *Obj, uint8_t Socket, uint8_t *Alpn1,
-                                                    uint8_t *Alpn2, uint8_t *Alpn3)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  int32_t i;
-  char *parameters_strings[4];
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(Alpn1);
-  W61_NULL_ASSERT(Alpn2);
-  W61_NULL_ASSERT(Alpn3);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSSLCALPN=%" PRIu16 "?\r\n", Socket);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSSLCALPN:", sizeof("+CIPSSLCALPN:") - 1) == 0)
-      {
-        char *end = strstr((char *)Obj->CmdResp, "\r");
-        if (end)
-        {
-          *end = 0;
-        }
-        parameters_strings[0] = strtok((char *) Obj->CmdResp + sizeof("+CIPSSLCALPN:") - 1, ",");
-        if (parameters_strings[0] != NULL)
-        {
-          for (i = 1; i < 4; i++)
-          {
-            parameters_strings[i] = strtok(NULL, ",");
-            if (parameters_strings[i] == NULL)
-            {
-              break;
-            }
-          }
-          if ((parameters_strings[1] != NULL) && (strlen(parameters_strings[1]) >= 2))
-          {
-            strncpy((char *)Alpn1, &(parameters_strings[1][1]), strlen(parameters_strings[1]) - 2);
-            Alpn1[strlen(parameters_strings[1]) - 2] = '\0';
-
-            if ((parameters_strings[2] != NULL) && (strlen(parameters_strings[2]) >= 2))
-            {
-              strncpy((char *)Alpn2, &(parameters_strings[2][1]), strlen(parameters_strings[2]) - 2);
-              Alpn2[strlen(parameters_strings[2]) - 2] = '\0';
-
-              if ((parameters_strings[3] != NULL) && (strlen(parameters_strings[3]) >= 2))
-              {
-                strncpy((char *)Alpn3, &(parameters_strings[3][1]), strlen(parameters_strings[3]) - 2);
-                Alpn3[strlen(parameters_strings[3]) - 2] = '\0';
-              }
-            }
-          }
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_SetSSLALPN(W61_Object_t *Obj, uint8_t Socket, uint8_t *Alpn1,
-                                uint8_t *Alpn2, uint8_t *Alpn3)
+W61_Status_t W61_Net_SSL_SetALPN(W61_Object_t *Obj, uint8_t Socket, uint8_t *Alpn1,
+                                 uint8_t *Alpn2, uint8_t *Alpn3)
 {
   W61_Status_t ret = W61_STATUS_ERROR;
   uint8_t alpn_count = 0;
   char alpns[50] = {0};
   int32_t size = 0;
   int32_t offset = 0;
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
   if ((Alpn1 != NULL) && (strlen((char *)Alpn1) > 0))
@@ -1467,174 +1182,332 @@ W61_Status_t W61_Net_SetSSLALPN(W61_Object_t *Obj, uint8_t Socket, uint8_t *Alpn
     }
   }
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE,
-             "AT+CIPSSLCALPN=%" PRIu16 ",%" PRIu16 "%s\r\n",
-             Socket, alpn_count, alpns);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSSLCALPN=%" PRIu16 ",%" PRIu16 "%s\r\n", Socket, alpn_count, alpns);
+  ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 
 _err:
   return ret;
 }
 
-W61_Status_t W61_Net_GetSSLPSK(W61_Object_t *Obj, uint8_t Socket, uint8_t *Psk, uint8_t *Hint)
+W61_Status_t W61_Net_SSL_SetPSK(W61_Object_t *Obj, uint8_t Socket, uint8_t *Psk, uint8_t *Hint)
 {
-  W61_Status_t ret = W61_STATUS_ERROR;
-  char *parameters_strings[2];
+  char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Psk);
   W61_NULL_ASSERT(Hint);
 
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSSLCPSK=%" PRIu16 "?\r\n", Socket);
-    ret = W61_AT_Query(Obj, Obj->CmdResp, Obj->CmdResp, W61_NET_TIMEOUT);
-    if (ret == W61_STATUS_OK)
-    {
-      if (strncmp((char *) Obj->CmdResp, "+CIPSSLCPSK:", sizeof("+CIPSSLCPSK:") - 1) == 0)
-      {
-        char *end = strstr((char *)Obj->CmdResp, "\r");
-        if (end)
-        {
-          *end = 0;
-        }
-
-        parameters_strings[0] = strtok((char *) Obj->CmdResp + sizeof("+CIPSSLCPSK:X,"), ",");
-        if ((parameters_strings[0] != NULL) && (strlen(parameters_strings[0]) >= 2))
-        {
-          strncpy((char *)Psk, &(parameters_strings[0][1]), strlen(parameters_strings[0]) - 2);
-          Psk[strlen(parameters_strings[0]) - 2] = '\0';
-
-          parameters_strings[1] = strtok(NULL, ",");
-          if ((parameters_strings[1] != NULL) && (strlen(parameters_strings[1])  >= 2))
-          {
-            strncpy((char *)Hint, &(parameters_strings[1][1]), strlen(parameters_strings[1]) - 2);
-            Hint[strlen(parameters_strings[1]) - 2] = '\0';
-          }
-        }
-      }
-      else
-      {
-        ret = W61_STATUS_ERROR;
-      }
-    }
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
-}
-
-W61_Status_t W61_Net_SetSSLPSK(W61_Object_t *Obj, uint8_t Socket, uint8_t *Psk, uint8_t *Hint)
-{
-  W61_Status_t ret = W61_STATUS_ERROR;
-  W61_NULL_ASSERT(Obj);
-  W61_NULL_ASSERT(Psk);
-  W61_NULL_ASSERT(Hint);
-
-  if (W61_ATlock(Obj, W61_AT_LOCK_TIMEOUT))
-  {
-    snprintf((char *)Obj->CmdResp, W61_ATD_CMDRSP_STRING_SIZE, "AT+CIPSSLCPSK=%" PRIu16 ",\"%s\",\"%s\"\r\n",
-             Socket, Psk, Hint);
-    ret = W61_AT_SetExecute(Obj, Obj->CmdResp, Obj->NcpTimeout);
-    W61_ATunlock(Obj);
-  }
-  else
-  {
-    ret = W61_STATUS_BUSY;
-  }
-
-  return ret;
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CIPSSLCPSK=%" PRIu16 ",\"%s\",\"%s\"\r\n", Socket, Psk, Hint);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 /* Private Functions Definition ----------------------------------------------*/
-static void W61_Net_AT_Event(void *hObj, const uint8_t *rxbuf, int32_t rxbuf_len)
+MODEM_CMD_DEFINE(on_cmd_sta_ipaddress)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]); /* Remove quotes from the string */
+    Parser_StrToIP((char *)argv[0], Obj->NetCtx.Net_sta_info.IP_Addr);
+  }
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_sta_gateway)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]); /* Remove quotes from the string */
+    Parser_StrToIP((char *)argv[0], Obj->NetCtx.Net_sta_info.Gateway_Addr);
+  }
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_sta_netmask)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]); /* Remove quotes from the string */
+    Parser_StrToIP((char *)argv[0], Obj->NetCtx.Net_sta_info.IP_Mask);
+  }
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_ap_ipaddress)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]); /* Remove quotes from the string */
+    Parser_StrToIP((char *)argv[0], Obj->NetCtx.Net_ap_info.IP_Addr);
+  }
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_ap_netmask)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]); /* Remove quotes from the string */
+    Parser_StrToIP((char *)argv[0], Obj->NetCtx.Net_ap_info.IP_Mask);
+  }
+  return 0;
+}
+
+MODEM_CMD_DIRECT_DEFINE(on_cmd_pulldata)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+
+  uint8_t *ptr = data->rx_buf + len;
+  uint32_t offset;
+  uint8_t *endptr;
+  uint16_t rx_data_len;
+
+  data->rx_buf[data->rx_buf_len] = 0;
+
+  rx_data_len = strtol((char *)ptr, (char **)&endptr, 10);
+  if (endptr == ptr || *endptr != ',')
+  {
+    NET_LOG_ERROR("Invalid +CIPRECVDATA response format\n");
+    return -EINVAL;
+  }
+  offset = endptr - data->rx_buf + 1;
+
+  if (data->rx_buf_len >= (offset + rx_data_len))
+  {
+    W61_Net_PullDataFromSocket_t *pull_data = (W61_Net_PullDataFromSocket_t *)mdm->rx_data;
+    memcpy(pull_data->data, endptr + 1, rx_data_len);
+    *pull_data->length = rx_data_len;
+    return offset + rx_data_len;
+  }
+  else
+  {
+    return -EAGAIN;
+  }
+}
+
+MODEM_CMD_DEFINE(on_cmd_time)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Net_Time_t *Time = (W61_Net_Time_t *)mdm->rx_data;
+  uint32_t argc_count = 0;
+  static const char *WeekDayString[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+  static const char *MonthString[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                                       "Aug", "Sep", "Oct", "Nov", "Dec"
+                                     };
+
+  if (argc >= 7)
+  {
+    /* Convert the week day string into value */
+    char day_of_week[4] = {0};
+    strncpy(day_of_week, (char *)argv[argc_count++], sizeof(day_of_week) - 1);
+    for (uint32_t weekday = 0; weekday < 7; weekday++)
+    {
+      if (strcmp(day_of_week, WeekDayString[weekday]) == 0)
+      {
+        Time->day_of_week = weekday + 1; /* 1 = Monday, 7 = Sunday */
+        break;
+      }
+    }
+
+    /* Convert the month string into value */
+    char mon[4] = {0};
+    strncpy(mon, (char *)argv[argc_count++], sizeof(mon) - 1);
+    for (uint32_t month = 0; month < 12; month++)
+    {
+      if (strcmp(mon, MonthString[month]) == 0)
+      {
+        Time->month = month + 1; /* 1 = January, 12 = December */
+        break;
+      }
+    }
+    if (argv[argc_count][0] == '\0')
+    {
+      argc_count++;
+    }
+
+    Time->day = atoi((char *)argv[argc_count++]);
+    Time->hours = atoi((char *)argv[argc_count++]);
+    Time->minutes = atoi((char *)argv[argc_count++]);
+    Time->seconds = atoi((char *)argv[argc_count++]);
+    Time->year = atoi((char *)argv[argc_count]);
+    snprintf(Time->raw, sizeof(Time->raw), "%s %s %02" PRIu32 " %02" PRIu32 ":%02" PRIu32 ":%02" PRIu32 " %04" PRIu32,
+             argv[0], argv[1], Time->day, Time->hours, Time->minutes, Time->seconds, Time->year);
+  }
+
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_socket_info)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Net_Connection_t *conn = (W61_Net_Connection_t *)mdm->rx_data;
+
+  if ((argc >= 6) && (conn->Number == atoi((char *)argv[0])))
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[1]); /* Remove quotes from the string */
+    W61_Net_StrToProtocol((char *)argv[1], &conn->Protocol);
+    W61_AT_RemoveStrQuotes((char *)argv[2]); /* Remove quotes from the string */
+    strncpy(conn->RemoteIP, (char *)argv[2], sizeof(conn->RemoteIP) - 1);
+    conn->RemotePort = (uint32_t)atoi((char *)argv[3]);
+    conn->LocalPort = (uint32_t)atoi((char *)argv[4]);
+    conn->TeType = (uint8_t)atoi((char *)argv[5]);
+  }
+
+  return 0;
+}
+
+static void W61_Net_AT_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
-  char *ptr = (char *)rxbuf;
-  int32_t tmp = 0;
   W61_Net_CbParamData_t  cb_param_net_data;
 
-  if ((Obj == NULL) || (Obj->ulcbs.UL_net_cb == NULL))
+  if ((Obj == NULL) || (Obj->ulcbs.UL_net_cb == NULL) || (*argc < 2))
   {
     return;
   }
 
-  if (strncmp(ptr, W61_NET_EVT_SOCK_DATA_KEYWORD, sizeof(W61_NET_EVT_SOCK_DATA_KEYWORD) - 1) == 0)
+  /* Get the socket ID (Multi socket mode always enabled) */
+  cb_param_net_data.socket_id = (uint32_t)atoi(argv[0]);
+  if (cb_param_net_data.socket_id > W61_NET_MAX_CONNECTIONS - 1)
   {
-    ptr += sizeof(W61_NET_EVT_SOCK_DATA_KEYWORD) - 1;
-    Parser_StrToInt(ptr, NULL, &tmp);
-    if ((tmp < 0) || (tmp > W61_NET_MAX_CONNECTIONS - 1))
-    {
-      return;
-    }
-    cb_param_net_data.socket_id = (uint8_t)tmp;
-
-    /* Move pointer after the socket ID */
-    ptr += (sizeof("0,") - 1);
-
-    /* Get the available data length */
-    uint8_t offset = 0;
-    Parser_StrToInt(ptr, &offset, &tmp);
-    cb_param_net_data.available_data_length = (uint32_t)tmp;
-
-    /* Get remote ip*/
-    ptr += offset + (sizeof(",\"") - 1);              /* Skip the " that comes before the IP */
-    Parser_StrToInt(ptr, &offset, &tmp);
-    cb_param_net_data.remote_ip[3] = (uint8_t)tmp;
-    ptr += offset + 1;
-    Parser_StrToInt(ptr, &offset, &tmp);
-    cb_param_net_data.remote_ip[2] = (uint8_t)tmp;
-    ptr += offset + 1;
-    Parser_StrToInt(ptr, &offset, &tmp);
-    cb_param_net_data.remote_ip[1] = (uint8_t)tmp;
-    ptr += offset + 1;
-    Parser_StrToInt(ptr, &offset, &tmp);
-    cb_param_net_data.remote_ip[0] = (uint8_t)tmp;
-    ptr += offset + (sizeof("\",") - 1);                        /* Skip the " that comes after the IP */
-
-    /* Get remote Port*/
-    Parser_StrToInt(ptr, &offset, &tmp);
-    cb_param_net_data.remote_port = (uint16_t)tmp;
-
-    Obj->ulcbs.UL_net_cb(W61_NET_EVT_SOCK_DATA_ID, &cb_param_net_data);
     return;
   }
 
-  if (strncmp(ptr, W61_NET_EVT_SOCK_GLOBAL_KEYWORD, sizeof(W61_NET_EVT_SOCK_GLOBAL_KEYWORD) - 1) == 0)
+  if (strcmp(argv[1], "CONNECTED") == 0)
   {
-    ptr += sizeof(W61_NET_EVT_SOCK_GLOBAL_KEYWORD) - 1;
-    /* Get the socket ID (Multi socket mode always enabled) */
-    Parser_StrToInt(ptr, NULL, &tmp);
-    if ((tmp < 0) || (tmp > W61_NET_MAX_CONNECTIONS - 1))
-    {
-      return;
-    }
-    cb_param_net_data.socket_id = (uint32_t)tmp;
-
-    /* Move pointer after the socket ID */
-    ptr += sizeof("0,") - 1;
-    if (strncmp(ptr, W61_NET_EVT_SOCK_CONNECTED_KEYWORD, sizeof(W61_NET_EVT_SOCK_CONNECTED_KEYWORD) - 1) == 0)
-    {
-      Obj->ulcbs.UL_net_cb(W61_NET_EVT_SOCK_CONNECTED_ID, &cb_param_net_data);
-    }
-    else if (strncmp(ptr, W61_NET_EVT_SOCK_DISCONNECTED_KEYWORD,
-                     sizeof(W61_NET_EVT_SOCK_DISCONNECTED_KEYWORD) - 1) == 0)
-    {
-      Obj->ulcbs.UL_net_cb(W61_NET_EVT_SOCK_DISCONNECTED_ID, &cb_param_net_data);
-    }
+    Obj->ulcbs.UL_net_cb(W61_NET_EVT_SOCK_CONNECTED_ID, &cb_param_net_data);
     return;
   }
+
+  if (strcmp(argv[1], "DISCONNECTED") == 0)
+  {
+    Obj->ulcbs.UL_net_cb(W61_NET_EVT_SOCK_DISCONNECTED_ID, &cb_param_net_data);
+    return;
+  }
+}
+
+static void W61_Net_ping_event(void *hObj, uint16_t *argc, char **argv)
+{
+  W61_Object_t *Obj = (W61_Object_t *)hObj;
+  W61_Net_PingResult_t *ping_result = (W61_Net_PingResult_t *)Obj->Modem.ping_msg;
+
+  if ((ping_result == NULL) || (ping_result->sem_ping == NULL))
+  {
+    NET_LOG_ERROR("Ping result or semaphore is NULL\n");
+    return;
+  }
+
+  if (*argc >= 1)
+  {
+    if (strncmp((char *)argv[0], "TIMEOUT", sizeof("TIMEOUT") - 1) == 0)
+    {
+      NET_LOG_INFO("Ping timeout\n");
+    }
+    else
+    {
+
+      uint32_t ping = atoi((char *)argv[0]);
+      if (ping > 0)
+      {
+        ping_result->response_count++;
+        ping_result->total_time += ping;
+        NET_LOG_INFO("Ping: %" PRIu32 "ms\n", ping);
+      }
+    }
+  }
+  (void)xSemaphoreGive(ping_result->sem_ping);
+
+  return;
+}
+
+static void W61_Net_data_event(void *hObj, uint16_t *argc, char **argv)
+{
+  W61_Object_t *Obj = (W61_Object_t *)hObj;
+  W61_Net_CbParamData_t cb_param_net_data;
+
+  if (*argc < 4)
+  {
+    return;
+  }
+
+  /* Socket ID */
+  cb_param_net_data.socket_id = (uint32_t)atoi((char *)argv[0]);
+  if (cb_param_net_data.socket_id > W61_NET_MAX_CONNECTIONS - 1)
+  {
+    return;
+  }
+
+  /* Data length */
+  cb_param_net_data.available_data_length = (uint32_t)atoi((char *)argv[1]);
+
+  /* Remote IP */
+  W61_AT_RemoveStrQuotes((char *)argv[2]);
+  strncpy(cb_param_net_data.remote_ip, (char *)argv[2], sizeof(cb_param_net_data.remote_ip) - 1);
+  cb_param_net_data.remote_ip[sizeof(cb_param_net_data.remote_ip) - 1] = '\0'; /* Ensure null termination */
+
+  /* Remote port */
+  cb_param_net_data.remote_port = (uint16_t)atoi((char *)argv[3]);
+
+  Obj->ulcbs.UL_net_cb(W61_NET_EVT_SOCK_DATA_ID, &cb_param_net_data);
+
+  return;
+}
+
+static W61_Status_t W61_Net_StrToProtocol(char *protocol_str, W61_Net_Protocol_e *Protocol)
+{
+  if (strcmp(protocol_str, "TCP") == 0)
+  {
+    *Protocol = W61_NET_TCP_CONNECTION;
+  }
+  else if (strcmp(protocol_str, "UDP") == 0)
+  {
+    *Protocol = W61_NET_UDP_CONNECTION;
+  }
+  else if (strcmp(protocol_str, "SSL") == 0)
+  {
+    *Protocol = W61_NET_TCP_SSL_CONNECTION;
+  }
+  else
+  {
+    *Protocol = W61_NET_UNKNOWN_CONNECTION;
+    return W61_STATUS_ERROR; /* Unknown protocol */
+  }
+  return W61_STATUS_OK;
+}
+
+static W61_Status_t W61_Net_ProtocolToStr(W61_Net_Protocol_e Protocol, char *protocol_str)
+{
+  if (Protocol == W61_NET_TCP_CONNECTION)
+  {
+    strncpy(protocol_str, "TCP", W61_PROTOCOL_STRING_SIZE - 1);
+  }
+  else if (Protocol == W61_NET_UDP_CONNECTION)
+  {
+    strncpy(protocol_str, "UDP", W61_PROTOCOL_STRING_SIZE - 1);
+  }
+  else if (Protocol == W61_NET_TCP_SSL_CONNECTION)
+  {
+    strncpy(protocol_str, "SSL", W61_PROTOCOL_STRING_SIZE - 1);
+  }
+  else
+  {
+    strncpy(protocol_str, "UNDEF", W61_PROTOCOL_STRING_SIZE - 1);
+    return W61_STATUS_ERROR; /* Unknown protocol */
+  }
+  return W61_STATUS_OK;
 }
 
 /** @} */

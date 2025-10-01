@@ -27,7 +27,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32u5xx_hal.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -40,6 +39,9 @@ extern "C" {
 
 /** Enable the shell component */
 #define SHELL_ENABLE                            1
+
+/** Default shell commands list level (0: Minimal, 1: Full) */
+#define SHELL_CMD_LEVEL                         0
 
 /** Shell command maximum size */
 #define SHELL_CMD_SIZE                          256

@@ -34,8 +34,8 @@
 #include "semphr.h"
 #include "event_groups.h"
 
-/* For redefinitions purposes*/
-#include "w61_driver_config.h"
+/* For redefinitions purposes */
+#include "w61_default_config.h"
 
 #include "spi_iface.h"
 #include "spi_port.h"
@@ -123,6 +123,8 @@ struct spi_xfer_engine
   struct spi_buffer *txbuf;
   /* Transfer statistics */
   struct spi_stat stat;
+  spi_rxd_notify_func_t cb[SPI_MSG_CTRL_TRAFFIC_TYPE_MAX];
+  void *cb_arg[SPI_MSG_CTRL_TRAFFIC_TYPE_MAX];
 };
 
 static struct spi_xfer_engine xfer_engine = {0};
@@ -287,7 +289,7 @@ static struct spi_buffer *spi_get_txbuf(struct spi_xfer_engine *engine)
   return buf;
 }
 
-/* return 1 if the header is valid. */
+/* Return 1 if the header is valid. */
 static int32_t inline spi_header_validate(struct spi_header *hdr)
 {
   if (hdr->magic != SPI_HEADER_MAGIC_CODE)
@@ -304,7 +306,7 @@ static int32_t inline spi_header_validate(struct spi_header *hdr)
   return 1;
 }
 
-int32_t spi_wait_event(void *evnt_ctx, uint32_t event, int32_t timeout_ms)
+static int32_t spi_wait_event(void *evnt_ctx, uint32_t event, int32_t timeout_ms)
 {
   EventBits_t bits;
   TickType_t ticks;
@@ -431,7 +433,7 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
   int32_t ret;
   int32_t err = -1;
   uint16_t xfer_size;
-  struct spi_header mh_t;
+  struct spi_header mh;
   struct spi_header *pmh;
   struct spi_header *psh;
   struct spi_buffer *rxbuf = NULL;
@@ -478,16 +480,16 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
     }
     else
     {
-      SPI_HEADER_INIT(&mh_t, 0, 0);
-      txp = &mh_t;
+      SPI_HEADER_INIT(&mh, 0, 0);
+      txp = &mh;
       xfer_size = sizeof(struct spi_header);
     }
   }
   else
   {
     /* Initialize master header. */
-    SPI_HEADER_INIT(&mh_t, 0, 0);
-    txp = &mh_t;
+    SPI_HEADER_INIT(&mh, 0, 0);
+    txp = &mh;
     xfer_size = sizeof(struct spi_header);
   }
 
@@ -544,7 +546,7 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
     spi_trace(SPI_TP_SECOND_TXN_END, "Remaining transfer completed\n");
   }
 
-  /* free txbuf after the message transaction. */
+  /* Free txbuf after the message transaction. */
   if (txbuf)
   {
     if (!engine->rx_stall && !rx_restore)
@@ -559,7 +561,7 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
     SPI_STAT_INC(&engine->stat, rx_pkts, 1);
     SPI_STAT_INC(&engine->stat, rx_bytes, psh->len);
     spi_buffer_pull(rxbuf, sizeof(struct spi_header));
-    /* rx buffer length fix-up */
+    /* Rx buffer length fix-up */
     rxbuf->len = psh->len;
     /* Get message type from header and store in buffer's control block */
     uint8_t msg_type = psh->type;
@@ -587,7 +589,7 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
         else
         {
           rxbuf_resized->flags = rxbuf->flags;
-          memcpy(rxbuf_resized->data, rxbuf->data, psh->len);
+          spi_port_memcpy(rxbuf_resized->data, rxbuf->data, psh->len);
           spi_buffer_free(rxbuf);
           rxbuf = rxbuf_resized;
         }
@@ -599,6 +601,13 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
         spi_trace(SPI_TP_NONE, "failed to send to type %d rxq, msg discarded\r\n", msg_type);
         spi_buffer_free(rxbuf);
         SPI_STAT_INC(&engine->stat, rx_drop, 1);
+      }
+      else
+      {
+        if (engine->cb[msg_type])
+        {
+          engine->cb[msg_type](engine->cb_arg[msg_type]);
+        }
       }
     }
     else
@@ -620,11 +629,9 @@ static int32_t spi_xfer_one(struct spi_xfer_engine *engine, struct spi_buffer *t
   {
     if (!spi_port_is_ready())
     {
-      spi_dbg("Since the slave txn/data pin is already low, did we miss that interrupt?\n");
       break;
     }
 
-    spi_dbg("wait header ack timeouted\n");
     SPI_STAT_INC(&engine->stat, wait_hdr_ack_timeouts, 1);
   }
   spi_trace(SPI_TP_WAIT_HDR_ACK_END, "Got header ack\n");
@@ -687,18 +694,6 @@ static int32_t spi_do_xfer(struct spi_xfer_engine *engine, int32_t flags)
   }
 
   return 0;
-}
-
-static void spi_show_stat(struct spi_stat *stat)
-{
-  spi_dbg("tx %" PRIu64 " pkts, %" PRIu64 " bytes, rx %" PRIu64 " pkts, %" PRIu64 " bytes, drop %" PRIu64
-          " pkts, mem_err %" PRIu64 ", stall %" PRIu64 "\n",
-          stat->tx_pkts, stat->tx_bytes, stat->rx_pkts, stat->rx_bytes, stat->rx_drop, stat->mem_err,
-          stat->rx_stall);
-  spi_dbg("IO error %" PRIu64 ", header error %" PRIu64 ", wait_txn_timeout %" PRIu64
-          ", wait_msg_xfer_timeouts %" PRIu64 ", wait_hdr_ack_timeout %" PRIu64 "\n",
-          stat->io_err, stat->hdr_err, stat->wait_txn_timeouts, stat->wait_msg_xfer_timeouts,
-          stat->wait_hdr_ack_timeouts);
 }
 
 static void spi_xfer_engine_task(void *arg)
@@ -774,7 +769,6 @@ int32_t spi_transaction_init(void)
 
   xfer_engine.rx_stall = 0;
   xfer_engine.initialized = 1;
-  spi_log("SPI transaction initialized\n");
   return 0;
 
 error:
@@ -796,6 +790,12 @@ error:
 
 int32_t spi_transaction_deinit(void)
 {
+  if (xfer_engine.task)
+  {
+    vTaskDelete(xfer_engine.task);
+    xfer_engine.task = NULL;
+  }
+
   /* Clean up resources in case of error */
   if (xfer_engine.txq)
   {
@@ -815,7 +815,7 @@ int32_t spi_transaction_deinit(void)
     }
   }
 
-  /* clear xfer_engine context*/
+  /* Clear xfer_engine context */
   memset(&xfer_engine, 0, sizeof(struct spi_xfer_engine));
 
   spi_port_deinit();
@@ -829,8 +829,8 @@ int32_t spi_transaction_deinit(void)
   * This function handles both raw data and buffer pointer operations based on the
   * message operation type (op_type) field.
   *
-  * @param msg         Message structure for receiving data
-  * @param timeout_ms  Timeout for queue operations in milliseconds (-1 for infinite)
+  * @param msg:        Message structure for receiving data
+  * @param timeout_ms: Timeout for queue operations in milliseconds (-1 for infinite)
   * @return            Number of bytes read or negative error code
   */
 int32_t spi_read(struct spi_msg *msg, int32_t timeout_ms)
@@ -932,7 +932,7 @@ int32_t spi_read(struct spi_msg *msg, int32_t timeout_ms)
       }
 
       /* Copy data and free buffer */
-      memcpy(msg->data, buf->data, msg->data_len);
+      spi_port_memcpy(msg->data, buf->data, msg->data_len);
       spi_buffer_free(buf);
       return msg->data_len;
 
@@ -957,8 +957,8 @@ int32_t spi_read(struct spi_msg *msg, int32_t timeout_ms)
   * This function handles both raw data and pre-allocated buffers based on the
   * message operation type (op_type) field.
   *
-  * @param msg         Message containing data or buffer to send
-  * @param timeout_ms  Timeout for queue operations in milliseconds (-1 for infinite)
+  * @param msg:        Message containing data or buffer to send
+  * @param timeout_ms: Timeout for queue operations in milliseconds (-1 for infinite)
   * @return            Number of bytes written or negative error code
   */
 int32_t spi_write(struct spi_msg *msg, int32_t timeout_ms)
@@ -1021,7 +1021,7 @@ int32_t spi_write(struct spi_msg *msg, int32_t timeout_ms)
       }
 
       data_len = msg->data_len;
-      memcpy(buf->data, msg->data, msg->data_len);
+      spi_port_memcpy(buf->data, msg->data, msg->data_len);
       break;
 
     case SPI_MSG_OP_BUFFER:
@@ -1064,7 +1064,7 @@ int32_t spi_write(struct spi_msg *msg, int32_t timeout_ms)
   ret = xQueueSend(xfer_engine.txq, &buf, ticks);
   if (ret != pdTRUE)
   {
-    /* Free buffer on queue send failure if we allocated it */
+    /* Free buffer on queue send failure if it is allocated */
     if (msg->op_type == SPI_MSG_OP_DATA)
     {
       spi_buffer_free(buf);
@@ -1082,8 +1082,8 @@ int32_t spi_write(struct spi_msg *msg, int32_t timeout_ms)
 /**
   * Bind a specific traffic type to a dedicated receive queue
   *
-  * @param type      Traffic type to bind (must be < SPI_MSG_CTRL_TRAFFIC_TYPE_MAX)
-  * @param rxq_size  Size of receive queue to create (0 for default)
+  * @param type:     Traffic type to bind (must be < SPI_MSG_CTRL_TRAFFIC_TYPE_MAX)
+  * @param rxq_size: Size of receive queue to create (0 for default)
   * @return          0 on success, negative value on error
   *
   * @note This function should be called during initialization before
@@ -1143,6 +1143,17 @@ int32_t spi_get_stats(struct spi_stat *stat)
   return 0;
 }
 
+int32_t spi_rxd_callback_register(spi_msg_ctrl_t type, spi_rxd_notify_func_t cb, void *arg)
+{
+  if (type >= SPI_MSG_CTRL_TRAFFIC_TYPE_MAX)
+  {
+    return -1;
+  }
+  xfer_engine.cb[type] = cb;
+  xfer_engine.cb_arg[type] = arg;
+  return 0;
+}
+
 int32_t spi_on_txn_data_ready(void)
 {
   if (xfer_engine.event != NULL)
@@ -1199,7 +1210,6 @@ static void spi_on_transaction_complete(void)
   }
 }
 
-#if (SPI_PORT_DEBUG_ENABLE == 1)
 static const char *spi_state_str[] =
 {
   [SPI_XFER_STATE_IDLE] = "Idle",
@@ -1207,7 +1217,72 @@ static const char *spi_state_str[] =
   [SPI_XFER_STATE_SECOND_PART] = "Second Part Transaction",
   [SPI_XFER_STATE_TXN_DONE] = "Transfer Complete",
 };
-#endif /* SPI_PORT_DEBUG_ENABLE */
+
+#include <stdlib.h>
+#define STR64BIT_DIGIT        20+1
+
+static void num2string64(char *out, int32_t out_strlen, const uint64_t num)
+{
+  uint64_t temp = num;
+  uint32_t count = 0;
+
+  /* Count number of digit */
+  while ((temp != 0) && (count < out_strlen))
+  {
+    temp = temp / 10;
+    count++;
+  }
+
+  if (count == 0)
+  {
+    out[0] = '0';
+    out[1] = '\0';
+    return;
+  }
+
+  /* Go to end of string */
+  out += count;
+
+  /* Write end of string char */
+  *out-- = '\0';
+
+  temp = num;
+  while (temp != 0)
+  {
+    *out-- = (char)((temp % 10) + '0');
+    temp = temp / 10;
+  }
+}
+
+static void spi_show_stat(struct spi_stat *stat)
+{
+  char count_ui64[STR64BIT_DIGIT];
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->tx_pkts);
+  LogInfo("TX                    %-10s pkts\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->tx_bytes);
+  LogInfo("TX                    %-10s bytes\n", count_ui64);
+
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->rx_pkts);
+  LogInfo("RX                    %-10s pkts\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->rx_bytes);
+  LogInfo("RX                    %-10s bytes\n", count_ui64);
+
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->rx_drop);
+  LogInfo("drop                  %s\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->mem_err);
+  LogInfo("mem_err               %s\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->rx_stall);
+  LogInfo("stall                 %s\n", count_ui64);
+
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->io_err);
+  LogInfo("IO error              %s\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->hdr_err);
+  LogInfo("header error          %s\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->wait_txn_timeouts);
+  LogInfo("wait_txn_timeout      %s\n", count_ui64);
+  num2string64(count_ui64, STR64BIT_DIGIT, stat->wait_hdr_ack_timeouts);
+  LogInfo("wait_hdr_ack_timeout  %s\n", count_ui64);
+}
 
 void spi_dump(void)
 {
@@ -1221,10 +1296,9 @@ void spi_dump(void)
     return;
   }
 
-  spi_dbg("Master transfer state %s\n", spi_state_str[xfer_engine.state]);
+  LogInfo("Master transfer state %s\n", spi_state_str[xfer_engine.state]);
 
   bits = xEventGroupGetBits(xfer_engine.event);
-  spi_dbg("SPI pending events %lu ", bits);
   if (bits & SPI_EVT_TXN_RDY)
   {
     pos = snprintf(pending_events, sizeof(pending_events), ", TXN Ready");
@@ -1237,20 +1311,18 @@ void spi_dump(void)
   {
     snprintf(pending_events + pos, sizeof(pending_events) - pos, ", Hardware Xfer done");
   }
-  spi_dbg("SPI pending events %" PRIu32 " %s\n", bits, pending_events);
+  LogInfo("SPI pending events    %" PRIu32 " %s\n", bits, pending_events);
 
-  spi_dbg("Slave data ready pin %s\n", spi_port_is_ready() == 1 ? "High" : "Low");
+  LogInfo("Slave data ready pin  %s\n", spi_port_is_ready() == 1 ? "High" : "Low");
 
   spi_show_stat(&xfer_engine.stat);
-
-  spi_dbg("Number of queue items, TX %" PRIi32 "\n",
-          uxQueueMessagesWaiting(xfer_engine.txq));
+  LogInfo("TX queue items        %" PRIu32 "\n", uxQueueMessagesWaiting(xfer_engine.txq));
 
   for (int32_t i = 0; i < SPI_MSG_CTRL_TRAFFIC_TYPE_MAX; i++)
   {
     if (xfer_engine.rxq_bound & (1 << i))
     {
-      spi_dbg("  RX type %d: %lu items\r\n", i,
+      LogInfo("RX queue[%" PRIi32 "] items     %" PRIu32 "\n", i,
               uxQueueMessagesWaiting(xfer_engine.rxq[i]));
     }
   }

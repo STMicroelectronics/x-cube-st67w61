@@ -25,6 +25,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+#include <stddef.h>
 #include "w6x_default_config.h"
 #include "w61_default_config.h"
 
@@ -40,18 +41,32 @@ extern "C" {
   */
 typedef enum
 {
-  W6X_STATUS_OK                  = 0,  /*!< Operation successful */
-  W6X_STATUS_BUSY                = 1,  /*!< Operation not done: driver in use by another task */
-  W6X_STATUS_ERROR               = 2,  /*!< Operation failed */
-  W6X_STATUS_TIMEOUT             = 3,  /*!< Operation timeout */
-  W6X_STATUS_UNEXPECTED_RESPONSE = 4,  /*!< Response not supported */
-  W6X_STATUS_NOT_SUPPORTED       = 5,  /*!< Operation not supported */
-
+  W6X_STATUS_OK                  = 0,     /*!< Operation successful */
+  W6X_STATUS_BUSY                = 1,     /*!< Operation not done: driver in use by another task */
+  W6X_STATUS_ERROR               = 2,     /*!< Operation failed */
+  W6X_STATUS_TIMEOUT             = 3,     /*!< Operation timeout */
+  W6X_STATUS_UNEXPECTED_RESPONSE = 4,     /*!< Unexpected response */
+  W6X_STATUS_NOT_SUPPORTED       = 5,     /*!< Operation not supported */
 } W6X_Status_t;
 
-#define W6X_SYS_FS_FILENAME_SIZE      32 /*!< Maximum size of the filename */
+/**
+  * @brief  W6X Module ID enumeration
+  */
+typedef enum
+{
+  W6X_MODULE_ID_UNDEF = 0,                /*!< Module ID undefined */
+  W6X_MODULE_ID_B = 1,                    /*!< Module ID -B Model */
+  W6X_MODULE_ID_U = 2,                    /*!< Module ID -U Model */
+  W6X_MODULE_ID_P = 3,                    /*!< Module ID -P Model */
+} W6X_ModuleID_e;
 
-#define W6X_SYS_FS_MAX_FILES          20 /*!< Maximum number of files */
+#define W6X_ARCH_T01                  1   /*!< W6X Architecture - T01: NCP with embedded LwIP */
+
+#define W6X_ARCH_T02                  2   /*!< W6X Architecture - T02: NCP with LwIP on Host */
+
+#define W6X_SYS_FS_FILENAME_SIZE      32  /*!< Maximum size of the filename */
+
+#define W6X_SYS_FS_MAX_FILES          20  /*!< Maximum number of files */
 
 /** @} */
 
@@ -67,8 +82,6 @@ typedef enum
 
 #define W6X_WIFI_MAX_CONNECTED_STATIONS 4                         /*!< Maximum number of connected stations */
 
-#define W6X_WIFI_SIZEOF_IPV4_BYTES      4                         /*!< Size of an IPv4 address in bytes */
-
 /* W6X_event_id_t */
 #define W6X_WIFI_EVT_CONNECTED_ID                      102  /*!< No param */
 #define W6X_WIFI_EVT_DISCONNECTED_ID                   103  /*!< No param */
@@ -79,6 +92,8 @@ typedef enum
 #define W6X_WIFI_EVT_STA_CONNECTED_ID                  110  /*!< Not yet used */
 #define W6X_WIFI_EVT_STA_DISCONNECTED_ID               111  /*!< Not yet used */
 #define W6X_WIFI_EVT_DIST_STA_IP_ID                    112  /*!< Not yet used */
+
+#define W6X_WIFI_MAX_TWT_FLOWS                         8  /*!< Maximum number of TWT flows */
 
 /**
   * @brief  Wi-Fi Scan type enumeration
@@ -154,15 +169,27 @@ typedef enum
 } W6X_WiFi_ApStateType_e;
 
 /**
-  * @brief  Wi-Fi DHCP Client type enumeration
+  * @brief  Wi-Fi protocol enumeration
   */
 typedef enum
 {
-  W6X_WIFI_DHCP_DISABLED               = 0,  /*!< DHCP disabled */
-  W6X_WIFI_DHCP_STA_ENABLED            = 1,  /*!< DHCP client enabled for station */
-  W6X_WIFI_DHCP_AP_ENABLED             = 2,  /*!< DHCP server enabled for Soft-AP */
-  W6X_WIFI_DHCP_STA_AP_ENABLED         = 3,  /*!< DHCP client enabled for station and DHCP server for Soft-AP */
-} W6X_WiFi_DhcpType_e;
+  W6X_WIFI_PROTOCOL_UNKNOWN,
+  W6X_WIFI_PROTOCOL_11B,
+  W6X_WIFI_PROTOCOL_11G,
+  W6X_WIFI_PROTOCOL_11N,
+  W6X_WIFI_PROTOCOL_11AX
+} W6X_WiFi_Protocol_e;
+
+/**
+  * @brief  Wi-Fi antenna diversity mode enumeration
+  */
+typedef enum
+{
+  W6X_WIFI_ANTENNA_DISABLED,                      /*!< Antenna diversity disabled */
+  W6X_WIFI_ANTENNA_STATIC,                        /*!< Static antenna selection */
+  W6X_WIFI_ANTENNA_DYNAMIC,                       /*!< Dynamic antenna selection. Not yet supported */
+  W6X_WIFI_ANTENNA_UNKNOWN,                       /*!< Unknown antenna selection */
+} W6X_WiFi_AntennaMode_e;
 
 /** @} */
 
@@ -179,13 +206,14 @@ typedef enum
 #define NET_IPV6          0             /*!< IPv6 enabled */
 
 #ifndef INET6_ADDRSTRLEN
-#define INET6_ADDRSTRLEN  40            /*!< IPv6 string length */
+#define INET6_ADDRSTRLEN  46            /*!< IPv6 string length */
 #endif /* INET6_ADDRSTRLEN */
 
 #ifndef INET_ADDRSTRLEN
-#define INET_ADDRSTRLEN   15            /*!< IPv4 string length */
+#define INET_ADDRSTRLEN   16            /*!< IPv4 string length */
 #endif /* INET_ADDRSTRLEN */
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /* Socket protocol types */
 #define SOCK_STREAM       1             /*!< TCP socket */
 #define SOCK_DGRAM        2             /*!< UDP socket */
@@ -205,12 +233,14 @@ typedef enum
 #define IPPROTO_IPV6      41            /*!< IPv6 protocol */
 #define IPPROTO_ICMPV6    58            /*!< ICMPv6 protocol */
 #endif /* NET_IPV6 */
+#endif /* ST67_ARCH */
 #define IPPROTO_UDPLITE   136           /*!< UDPLite protocol */
 #define IPPROTO_RAW       255           /*!< Raw protocol */
 #define IPPROTO_TLS_1_2   282           /*!< TLS 1.2 protocol */
 
-#define SOL_SOCKET        0             /*!< Socket level */
 #define SOL_TLS           282           /*!< TLS level */
+#if (ST67_ARCH == W6X_ARCH_T01)
+#define SOL_SOCKET        0             /*!< Socket level */
 
 /* Socket options */
 #define TCP_NODELAY       0x0001        /*!< Don't delay send to coalesce packets */
@@ -219,10 +249,22 @@ typedef enum
 #define SO_RCVBUF         0x1002        /*!< Receive buffer size */
 #define SO_SNDTIMEO       0x1005        /*!< Send timeout */
 #define SO_RCVTIMEO       0x1006        /*!< Receive timeout */
+#endif /* ST67_ARCH */
 
 #define TLS_SEC_TAG_LIST  1             /*!< Security tag list */
 #define TLS_HOSTNAME      2             /*!< Hostname for SNI */
 #define TLS_ALPN_LIST     7             /*!< ALPN list */
+
+/**
+  * @brief  DHCP Client type enumeration
+  */
+typedef enum
+{
+  W6X_NET_DHCP_DISABLED       = 0,      /*!< DHCP disabled */
+  W6X_NET_DHCP_STA_ENABLED    = 1,      /*!< DHCP client enabled for station */
+  W6X_NET_DHCP_AP_ENABLED     = 2,      /*!< DHCP server enabled for Soft-AP */
+  W6X_NET_DHCP_STA_AP_ENABLED = 3,      /*!< DHCP client enabled for station and DHCP server for Soft-AP */
+} W6X_Net_DhcpType_e;
 
 /**
   * @brief  Network connection type
@@ -252,6 +294,16 @@ typedef enum
   /** Identity to be used with PSK for PSK authentication */
   W6X_NET_TLS_CREDENTIAL_PSK_ID = 5
 } W6X_Net_Tls_Credential_e;
+
+/**
+  * @brief  Network interface type
+  */
+typedef enum
+{
+  W6X_NET_IF_STA = 0,                   /*!< Station interface */
+  W6X_NET_IF_AP  = 1,                   /*!< Access Point interface */
+  W6X_NET_IF_MAX,                       /*!< Maximum number of interfaces */
+} W6X_Net_if_type_t;
 
 /** @} */
 
@@ -305,11 +357,12 @@ typedef enum
 #define W6X_BLE_EVT_PAIRING_FAILED_ID                  134  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
 #define W6X_BLE_EVT_PAIRING_COMPLETED_ID               135  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
 #define W6X_BLE_EVT_PAIRING_CONFIRM_ID                 136  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
-#define W6X_BLE_EVT_PASSKEY_ENTRY_ID                   137  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
-#define W6X_BLE_EVT_PASSKEY_DISPLAY_ID                 138  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
-#define W6X_BLE_EVT_PASSKEY_CONFIRM_ID                 139  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
-#define W6X_BLE_EVT_INDICATION_ACK_ID                  140  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
-#define W6X_BLE_EVT_INDICATION_NACK_ID                 141  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
+#define W6X_BLE_EVT_PAIRING_CANCELED_ID                137  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
+#define W6X_BLE_EVT_PASSKEY_ENTRY_ID                   138  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
+#define W6X_BLE_EVT_PASSKEY_DISPLAY_ID                 139  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
+#define W6X_BLE_EVT_PASSKEY_CONFIRM_ID                 140  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
+#define W6X_BLE_EVT_INDICATION_ACK_ID                  141  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
+#define W6X_BLE_EVT_INDICATION_NACK_ID                 142  /*!< event_args parameter to be casted to W6X_Ble_CbParamData_t */
 
 /** Maximum number of BLE connections */
 #define W6X_BLE_MAX_CONN_NBR                           W61_BLE_MAX_CONN_NBR
@@ -317,7 +370,10 @@ typedef enum
 /** Maximum number of BLE bonded devices */
 #define W6X_BLE_MAX_BONDED_DEVICES                     W61_BLE_MAX_BONDED_DEVICES
 
-/** Maximum number of BLE service */
+/** Maximum number of BLE application services that can be created */
+#define W6X_BLE_MAX_CREATED_SERVICE_NBR                 W61_BLE_MAX_CREATED_SERVICE_NBR
+
+/** Maximum number of BLE services supported including Generic access and Generic attributes predefined services */
 #define W6X_BLE_MAX_SERVICE_NBR                        W61_BLE_MAX_SERVICE_NBR
 
 /** Maximum number of BLE characteristics per service */
@@ -335,6 +391,14 @@ typedef enum
 /** BLE Service/Characteristic UUID maximum size size */
 #define W6X_BLE_MAX_UUID_SIZE                          17
 
+/** Maximum BLE advertising data length */
+#define W6X_BLE_MAX_ADV_DATA_LENGTH                    31
+
+/** Maximum BLE advertising data length */
+#define W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH              31
+
+/** Maximum BLE notification/indication data length */
+#define W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH              247
 /**
   * @brief  BLE characteristic property index enumeration
   */
@@ -533,6 +597,79 @@ typedef enum
   * @{
   */
 
+#ifndef NET_RECVFROM
+/** @brief  Interface of receive data from a socket from a specific address */
+#define NET_RECVFROM            W6X_Net_Recvfrom
+#endif /* NET_RECVFROM */
+
+#ifndef NET_RECV
+/** @brief  Interface of receive data from a socket */
+#define NET_RECV                W6X_Net_Recv
+#endif /* NET_RECV */
+
+#ifndef NET_SENDTO
+/** @brief  Interface of send data to a socket to a specific address */
+#define NET_SENDTO              W6X_Net_Sendto
+#endif /* NET_SENDTO */
+
+#ifndef NET_SEND
+/** @brief  Interface of send data to a socket */
+#define NET_SEND                W6X_Net_Send
+#endif /* NET_SEND */
+
+#ifndef NET_SHUTDOWN
+/** @brief  Interface of shutdown a socket */
+#define NET_SHUTDOWN            W6X_Net_Shutdown
+#endif /* NET_SHUTDOWN */
+
+#ifndef NET_SOCKET
+/** @brief  Interface of create a socket */
+#define NET_SOCKET              W6X_Net_Socket
+#endif /* NET_SOCKET */
+
+#ifndef NET_SETSOCKOPT
+/** @brief  Interface of set socket options */
+#define NET_SETSOCKOPT          W6X_Net_Setsockopt
+#endif /* NET_SETSOCKOPT */
+
+#ifndef NET_CLOSE
+/** @brief  Interface of close a socket */
+#define NET_CLOSE               W6X_Net_Close
+#endif /* NET_CLOSE */
+
+#ifndef NET_CONNECT
+/** @brief  Interface of connect a socket */
+#define NET_CONNECT             W6X_Net_Connect
+#endif /* NET_CONNECT */
+
+#ifndef NET_ACCEPT
+/** @brief  Interface of accept a connection on a socket */
+#define NET_ACCEPT              W6X_Net_Accept
+#endif /* NET_ACCEPT */
+
+#ifndef NET_BIND
+/** @brief  Interface of bind a socket to an address */
+#define NET_BIND                W6X_Net_Bind
+#endif /* NET_BIND */
+
+#ifndef NET_LISTEN
+/** @brief  Interface of listen on a socket */
+#define NET_LISTEN              W6X_Net_Listen
+#endif /* NET_LISTEN */
+
+#ifndef NET_INET_NTOP
+/** @brief  Interface of convert an IP address from binary to text form */
+#define NET_INET_NTOP           W6X_Net_Inet_ntop
+#endif /* NET_INET_NTOP */
+
+#ifndef NET_INET_PTON
+/** @brief  Interface of convert an IP address from text to binary form */
+#define NET_INET_PTON           W6X_Net_Inet_pton
+#endif /* NET_INET_PTON */
+
+#if (ST67_ARCH == W6X_ARCH_T02)
+#include "lwip/sockets.h"
+#else
 /**
   * @brief  Convert 16-bit value from host byte order to network byte order
   */
@@ -550,12 +687,27 @@ typedef enum
                         (((x) & 0x0000ff00UL) <<  8) | \
                         (((x) & 0x00ff0000UL) >>  8) | \
                         (((x) & 0xff000000UL) >> 24))
+#endif /* ST67_ARCH */
 
 /**
-  * @brief  Convert 4-bytes array to 32-bit value
+  * @brief  Convert 4-bytes array to 32-bit value in big-endian
+  */
+#define ATON(x)        (uint32_t)(((x)[3] << 24) + ((x)[2] << 16) + ((x)[1]  << 8) + (x)[0])
+
+/**
+  * @brief  Convert 4-bytes array to 32-bit value in little-endian
   */
 #define ATON_R(x)      (uint32_t)(((x)[0] << 24) + ((x)[1] << 16) + ((x)[2]  << 8) + (x)[3])
 
+/**
+  * @brief  Convert 32-bit value to 4-bytes array
+  */
+#define NTOA_R(x, a)   do { \
+                            (a)[3] = (uint8_t)((x) >> 24); \
+                            (a)[2] = (uint8_t)((x) >> 16); \
+                            (a)[1] = (uint8_t)((x) >> 8); \
+                            (a)[0] = (uint8_t)(x); \
+                          } while(0)
 /** @} */
 
 /* Exported types ------------------------------------------------------------*/
@@ -570,15 +722,11 @@ typedef enum
   */
 typedef  uint8_t W6X_event_id_t;
 
-#if defined(__ICCARM__) || defined(__ICCRX__) /* For IAR Compiler */
-#ifdef __SIZE_T_TYPE__
-typedef __SIZE_T_TYPE__ ssize_t;
-#else
-#error __SIZE_T_TYPE__ not defined
-#endif /* __SIZE_T_TYPE__ */
-#elif defined (__ARMCC_VERSION)
-typedef uint32_t ssize_t;
-#endif /* __ICCARM__ */
+#if (ST67_ARCH == W6X_ARCH_T01)
+#if defined(__ICCARM__) || defined(__ICCRX__) || defined (__ARMCC_VERSION) /* For IAR Compiler */
+typedef int32_t ssize_t;
+#endif /* __ICCARM__ | __ARMCC_VERSION */
+#endif /* ST67_ARCH */
 
 /**
   * @brief  W6X error callback function type
@@ -588,13 +736,35 @@ typedef uint32_t ssize_t;
 typedef void (*W6X_Error_cb_t)(W6X_Status_t ret_w6x, char const *func_name);
 
 /**
+  * @brief  W6X module version structure
+  */
+typedef struct
+{
+  uint8_t Major;                              /*!< Major version */
+  uint8_t Sub1;                               /*!< Minor sub1 version */
+  uint8_t Sub2;                               /*!< Minor sub2 version */
+  uint8_t Patch;                              /*!< Patch version */
+} W6X_Version_t;
+
+/**
+  * @brief  W6X module ID structure
+  */
+typedef struct
+{
+  W6X_ModuleID_e ModuleID;                    /*!< Module ID */
+  char ModuleName[25];                        /*!< Module name */
+} W6X_ModuleID_t;
+
+/**
   * @brief  W6X module information
   */
 typedef struct
 {
-  uint8_t AT_Version[32];                     /*!< AT version string */
-  uint8_t SDK_Version[32];                    /*!< SDK version string */
-  uint8_t MAC_Version[32];                    /*!< MAC version string */
+  W6X_Version_t AT_Version;                   /*!< AT version string */
+  W6X_Version_t SDK_Version;                  /*!< SDK version string */
+  W6X_Version_t WiFi_MAC_Version;             /*!< Wi-Fi MAC version string */
+  W6X_Version_t BT_Controller_Version;        /*!< Bluetooth controller version string */
+  W6X_Version_t BT_Stack_Version;             /*!< Bluetooth stack version string */
   uint8_t Build_Date[32];                     /*!< Build date string */
   uint32_t BatteryVoltage;                    /*!< Battery voltage */
   int8_t trim_wifi_hp[14];                    /*!< Wi-Fi high power trim */
@@ -604,11 +774,20 @@ typedef struct
   uint8_t Mac_Address[6];                     /*!< Customer MAC address */
   uint8_t AntiRollbackBootloader;             /*!< AntiRollback Bootloader counter */
   uint8_t AntiRollbackApp;                    /*!< AntiRollback Application counter */
-  char ModuleID[25];                          /*!< Module name */
+  W6X_ModuleID_t ModuleID;                    /*!< Module ID */
   uint16_t BomID;                             /*!< BOM ID */
   uint8_t Manufacturing_Week;                 /*!< Manufacturing week */
   uint8_t Manufacturing_Year;                 /*!< Manufacturing year */
 } W6X_ModuleInfo_t;
+
+/**
+  * @brief  Certificate structure
+  */
+typedef struct
+{
+  char *name;                                 /*!< Certificate name */
+  char *content;                              /*!< Certificate content */
+} W6X_Certificate_t;
 
 /**
   * @brief  File System list structure
@@ -640,7 +819,7 @@ typedef struct
   */
 /* ===================================================================== */
 /**
-  * @brief  callback for Wi-Fi events. the type of event_args depends of the event_id:\
+  * @brief  Callback for Wi-Fi events. the type of event_args depends of the event_id:\
   *         - W6X_WiFi_CbParamData_t for [W6X_WIFI_EVT_CONNECTED_ID, W6X_WIFI_EVT_DISCONNECTED_ID,
   *                                      W6X_WIFI_EVT_GOT_IP_ID]
   *         - .. for [W6X_WIFI_EVT_STA_CONNECTED_ID, W6X_WIFI_EVT_STA_DISCONNECTED_ID, W6X_WIFI_EVT_DIST_STA_IP_ID]
@@ -657,21 +836,6 @@ typedef struct
 } W6X_WiFi_CbParamData_t;
 
 /**
-  * @brief  Wi-Fi mode bitmask
-  */
-typedef union
-{
-  struct
-  {
-    uint8_t b_mode:1;                         /*!< 802.11 b */
-    uint8_t g_mode:1;                         /*!< 802.11 g */
-    uint8_t n_mode:1;                         /*!< 802.11n at 2.4GHz */
-    uint8_t ax_mode:1;                        /*!< 802.11ax at 2.4GHz */
-  } bit;                                      /*!< Bitfield */
-  uint8_t byte;                               /*!< Byte */
-} W6X_WiFi_Mode_t;
-
-/**
   * @brief  Access Point structure
   */
 typedef struct
@@ -682,7 +846,7 @@ typedef struct
   uint8_t MAC[6];                             /*!< MAC address of spot */
   uint8_t Channel;                            /*!< Wi-Fi channel */
   W6X_WiFi_CipherType_e Group_cipher;         /*!< Group cipher value */
-  W6X_WiFi_Mode_t WiFi_version;               /*!< Wi-Fi revision supported */
+  W6X_WiFi_Protocol_e Protocol;               /*!< Wi-Fi protocol supported */
   uint8_t WPS;                                /*!< Is WPS enabled */
 } W6X_WiFi_Ap_t;
 
@@ -761,6 +925,7 @@ typedef struct
   uint32_t Channel;                                 /*!< Channel Wi-Fi is operating at */
   uint32_t MaxConnections;                          /*!< Max number of stations that Soft-AP will allow to connect. Range [1,4] */
   uint32_t Hidden;                                  /*!< Flag to indicate if the SSID is hidden. 0: broadcasting SSID, 1: hidden SSID */
+  W6X_WiFi_Protocol_e Protocol;                     /*!< Wi-Fi protocol (b/g/n/ax) */
 } W6X_WiFi_ApConfig_t;
 
 /**
@@ -791,23 +956,54 @@ typedef struct
   /** Flow Type (0: Announced, 1: Unannounced) */
   uint8_t flow_type;
   /** Wake interval Exponent */
-  uint8_t wake_int_exp;
+  uint32_t wake_int_exp;
   /** Nominal Minimum TWT Wake Duration */
-  uint8_t min_twt_wake_dur;
+  uint32_t min_twt_wake_dur;
   /** TWT Wake Interval Mantissa */
-  uint16_t wake_int_mantissa;
+  uint32_t wake_int_mantissa;
 } W6X_WiFi_TWT_Setup_Params_t;
+
+/**
+  * @brief  Wi-Fi TWT status
+  */
+typedef struct
+{
+  /** Flag indicating whether TWT is supported (=1) or not (=0) */
+  uint8_t is_supported;
+  struct
+  {
+    /** Flow Type (0: Announced, 1: Unannounced) */
+    uint8_t flow_type;
+    /** Wake interval Exponent */
+    uint32_t wake_int_exp;
+    /** Nominal Minimum TWT Wake Duration */
+    uint32_t min_twt_wake_dur;
+    /** TWT Wake Interval Mantissa */
+    uint32_t wake_int_mantissa;
+  } flow[W6X_WIFI_MAX_TWT_FLOWS]; /*!< Array of TWT flows */
+  /** Number of TWT flows */
+  uint8_t flow_count;
+} W6X_WiFi_TWT_Status_t;
 
 /**
   * @brief  Wi-Fi TWT teardown parameters
   */
 typedef struct
 {
-  /** Flag indicating whether to teardown all TWT flows */
+  /** Unused: Flag indicating whether to teardown all TWT flows */
   uint8_t all_twt;
-  /** TWT flow ID */
+  /** Unused: TWT flow ID */
   uint8_t id;
 } W6X_WiFi_TWT_Teardown_Params_t;
+
+/**
+  * @brief  Wi-Fi Antenna information structure
+  */
+typedef struct
+{
+  W6X_WiFi_AntennaMode_e mode;  /*!< Antenna selection mode */
+  uint32_t antenna_id;          /*!< Antenna ID used in static mode (0: antenna 1, 1: antenna 2) */
+} W6X_WiFi_AntennaInfo_t;
 
 /** @} */
 
@@ -828,10 +1024,26 @@ typedef void (*W6X_Net_App_cb_t)(W6X_event_id_t event_id, void *event_args);
   */
 typedef struct
 {
-  uint32_t socket_id;             /*!< Socket ID */
-  uint32_t available_data_length; /*!< Length of the available data */
+  uint32_t socket_id;                     /*!< Socket ID */
+  uint32_t available_data_length;         /*!< Length of the available data */
 } W6X_Net_CbParamData_t;
 
+/**
+  * @brief  Time structure
+  */
+typedef struct
+{
+  uint32_t seconds;                       /*!< Seconds */
+  uint32_t minutes;                       /*!< Minutes */
+  uint32_t hours;                         /*!< Hours */
+  uint32_t day;                           /*!< Day */
+  uint32_t month;                         /*!< Month */
+  uint32_t year;                          /*!< Year */
+  uint32_t day_of_week;                   /*!< Day of the week */
+  char raw[26];                           /*!< Raw time string */
+} W6X_Net_Time_t;
+
+#if (ST67_ARCH == W6X_ARCH_T01)
 /**
   * @brief  Socket length type
   */
@@ -854,10 +1066,10 @@ struct in_addr
 {
   union
   {
-    uint8_t s4_addr[4];         /*!< IPv4 address 1-byte type array */
-    uint16_t s4_addr16[2];      /*!< IPv4 address 2-bytes type array */
-    uint32_t s4_addr32[1];      /*!< IPv4 address 4-bytes type array */
-    uint32_t s_addr;            /*!< IPv4 address 4-bytes type */
+    uint8_t s4_addr[4];                   /*!< IPv4 address 1-byte type array */
+    uint16_t s4_addr16[2];                /*!< IPv4 address 2-bytes type array */
+    uint32_t s4_addr32[1];                /*!< IPv4 address 4-bytes type array */
+    uint32_t s_addr;                      /*!< IPv4 address 4-bytes type */
   };
 };
 
@@ -868,9 +1080,9 @@ struct in6_addr
 {
   union
   {
-    uint32_t u32_addr[4];       /*!< IPv6 address 4-bytes type array */
-    uint8_t  u8_addr[16];       /*!< IPv6 address 1-byte type array */
-  } un;                         /*!< IPv6 address union */
+    uint32_t u32_addr[4];                 /*!< IPv6 address 4-bytes type array */
+    uint8_t  u8_addr[16];                 /*!< IPv6 address 1-byte type array */
+  } un;                                   /*!< IPv6 address union */
 };
 
 /**
@@ -882,7 +1094,7 @@ struct sockaddr_in
   uint8_t         sin_len;                /*!< Length of this structure */
   sa_family_t     sin_family;             /*!< AF_INET */
   in_port_t       sin_port;               /*!< Transport layer port # */
-  struct in_addr  sin_addr_t;             /*!< IPv4 address */
+  struct in_addr  sin_addr;               /*!< IPv4 address */
 #define SIN_ZERO_LEN 8                    /*!< Reserved */
   char            sin_zero[SIN_ZERO_LEN]; /*!< Reserved */
 };
@@ -897,7 +1109,7 @@ struct sockaddr_in6
   sa_family_t     sin6_family;            /*!< AF_INET6 */
   in_port_t       sin6_port;              /*!< Transport layer port # */
   uint32_t        sin6_flowinfo;          /*!< IPv6 flow information */
-  struct in6_addr sin6_addr_t;            /*!< IPv6 address */
+  struct in6_addr sin6_addr;              /*!< IPv6 address */
   uint32_t        sin6_scope_id;          /*!< Set of interfaces for scope */
 };
 
@@ -924,6 +1136,7 @@ struct sockaddr_storage
   uint32_t    s2_data3[3];                /*!< Reserved */
 #endif /* NET_IPV6 */
 };
+#endif /* ST67_ARCH */
 
 /** @} */
 
@@ -936,8 +1149,6 @@ struct sockaddr_storage
 /**
   * @brief  Callback for MQTT events. the type of event_args depends of the event_id:
   *         - W6X_MQTT_CbParamData_t for [W6X_MQTT_EVT_SUBSCRIPTION_RECEIVED_ID]
-  *         The callback shall be re-entrant because the lower driver can call it from
-  *         different tasks: (W61_ATD_RxPooling_task and W61_ATD_EventsPooling_task with different prio)
   */
 typedef void (*W6X_MQTT_App_cb_t)(W6X_event_id_t event_id, void *event_args);
 
@@ -955,18 +1166,27 @@ typedef struct
   */
 typedef struct
 {
-  uint32_t State;           /*!< Connection state ::W6X_MQTT_State_e */
+  uint32_t State;                 /*!< Connection state ::W6X_MQTT_State_e */
   /** Authentication scheme (0: No security, 1: Username/Password, 2: CACertificate, 4: CACertificate/PrivateKey) */
   uint32_t Scheme;
-  uint32_t HostPort;        /*!< Host port */
-  uint8_t HostName[64];     /*!< Host name */
-  uint8_t MQClientId[32];   /*!< Client ID */
-  uint8_t MQUserName[32];   /*!< User name. Not required when the scheme is greater or equal to 1 */
-  uint8_t MQUserPwd[32];    /*!< User password. Not required when the scheme is greater or equal to 1 */
-  uint8_t Certificate[64];  /*!< Client Certificate. Required when the scheme is greater or equal to 2 */
-  uint8_t PrivateKey[64];   /*!< Client Private key. Required when the scheme is greater or equal to 2 */
-  uint8_t CACertificate[64];/*!< CA certificate. Required when the scheme is greater or equal to 2 */
-  uint32_t SNI_enabled;     /*!< Server Name Indication (SNI) enabled */
+  uint32_t HostPort;              /*!< Host port */
+  uint8_t HostName[64];           /*!< Host name */
+  uint8_t MQClientId[32];         /*!< Client ID */
+  uint8_t MQUserName[32];         /*!< User name. Not required when the scheme is greater or equal to 1 */
+  uint8_t MQUserPwd[32];          /*!< User password. Not required when the scheme is greater or equal to 1 */
+  uint8_t CertificateName[64];    /*!< Client Certificate Name. Required when the scheme is greater or equal to 2 */
+  char *CertificateContent;       /*!< Client Certificate Content. Required when the scheme is greater or equal to 2 */
+  uint8_t PrivateKeyName[64];     /*!< Client Private key. Required when the scheme is greater or equal to 2 */
+  char *PrivateKeyContent;        /*!< Client Private key Content. Required when the scheme is greater or equal to 2 */
+  uint8_t CACertificateName[64];  /*!< CA certificate. Required when the scheme is greater or equal to 2 */
+  char *CACertificateContent;     /*!< CA certificate Content. Required when the scheme is greater or equal to 2 */
+  uint32_t SNI_enabled;           /*!< Server Name Indication (SNI) enabled */
+  uint32_t KeepAlive;             /*!< Keep Alive interval using MQTT ping. Range [0, 7200]. 0 is forced to 120 */
+  uint32_t DisableCleanSession;   /*!< Skip cleaning the MQTT session */
+  uint8_t WillTopic[64];          /*!< Last Will and Testament (LWT) topic */
+  uint8_t WillMessage[64];        /*!< LWT message */
+  uint32_t WillQos;               /*!< LWT QoS. Range [0, 2] */
+  uint32_t WillRetain;            /*!< LWT Retain flag */
 } W6X_MQTT_Connect_t;
 
 /**
@@ -989,8 +1209,6 @@ typedef struct
 /**
   * @brief  Callback for BLE events. the type of event_args depends of the event_id:\
   *         - W6X_Ble_CbParamData_t for all existing events
-  *         The callback shall be re-entrant because the lower driver can call it from
-  *         different tasks: (W61_ATD_RxPooling_task and W61_ATD_EventsPooling_task with different prio)
   */
 typedef void (*W6X_Ble_App_cb_t)(W6X_event_id_t event_id, void *event_args);
 
@@ -1041,20 +1259,20 @@ typedef struct
   uint8_t ManufacturerData[W6X_BLE_MANUF_DATA_SIZE];  /*!< Device manufacturer data */
   uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];               /*!< BD address of BLE Device */
   uint8_t bd_addr_type;                               /*!< Type of BD address */
-  W6X_Ble_Service_t Service[W6X_BLE_MAX_SERVICE_NBR]; /*!< BLE services */
 } W6X_Ble_Device_t;
 
 /**
-  * @brief  BLE scanned device structure
+  * @brief  BLE connected device structure
   */
 typedef struct
 {
-  int16_t RSSI;                                      /*!< Signal strength of BLE connection */
-  uint8_t DeviceName[W6X_BLE_DEVICE_NAME_SIZE];      /*!< BLE device name */
-  uint8_t ManufacturerData[W6X_BLE_MANUF_DATA_SIZE]; /*!< Device manufacturer data */
-  uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];              /*!< BD address of BLE Device */
-  uint8_t bd_addr_type;                              /*!< Type of BD address */
-} W6X_Ble_Scanned_Device_t;
+  uint8_t IsConnected;                                /*!< Connection status */
+  uint8_t conn_handle;                                /*!< Connection handle */
+  uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];               /*!< BD address of BLE Device */
+  uint8_t bd_addr_type;                               /*!< Type of BD address */
+  uint32_t PassKey;                                   /*!< BLE Security passkey */
+  W6X_Ble_Service_t Service[W6X_BLE_MAX_SERVICE_NBR]; /*!< BLE services */
+} W6X_Ble_Connected_Device_t;
 
 /**
   * @brief  BLE bonded device structure
@@ -1062,6 +1280,8 @@ typedef struct
 typedef struct
 {
   uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];              /*!< BD address of BLE Device */
+  uint8_t bd_addr_type;                              /*!< Type of BD address */
+  uint8_t LongTermKey[32];                           /*!< Long Term Key */
 } W6X_Ble_Bonded_Device_t;
 
 /**
@@ -1071,12 +1291,15 @@ typedef struct
 {
   uint8_t service_idx;                                    /*!< Service index */
   uint8_t charac_idx;                                     /*!< Characteristic index */
+  uint16_t charac_value_handle;                           /*!< Characteristic value handle */
   uint8_t notification_status[2];                         /*!< Notification status */
   uint8_t indication_status[2];                           /*!< Indication status */
   uint16_t mtu_size;                                      /*!< MTU size */
   uint32_t PassKey;                                       /*!< BLE Security passkey */
+  uint8_t LongTermKey[32];                                /*!< BLE Security Long Term Key */
   uint32_t available_data_length;                         /*!< Length of the available data */
   W6X_Ble_Device_t remote_ble_device;                     /*!< BLE Remote device */
+  W6X_Ble_Service_t Service;                              /*!< BLE service */
 } W6X_Ble_CbParamData_t;
 
 /**
@@ -1101,7 +1324,7 @@ typedef struct
 typedef struct
 {
   uint32_t Count;                                   /*!< Number of BLE peripherals detected */
-  W6X_Ble_Scanned_Device_t *Detected_Peripheral;    /*!< Array of BLE peripherals information. */
+  W6X_Ble_Device_t *Detected_Peripheral;    /*!< Array of BLE peripherals information. */
 } W6X_Ble_Scan_Result_t;
 
 /**
@@ -1161,14 +1384,23 @@ typedef struct
   */
 typedef struct
 {
-  uint8_t data[4096];         /*!< Data buffer */
+  uint8_t *data;              /*!< Data buffer */
   int32_t length;             /*!< Data length */
 } W6X_HTTP_buffer_t;
+
+#if (ST67_ARCH == W6X_ARCH_T01)
+/**
+  * @brief  HTTP IPv4 local address structure aligned version of ip4_addr_t
+  */
+struct ip4_addr
+{
+  uint32_t addr;              /*!< IPv4 address */
+};
 
 /**
   * @brief  HTTP IPv4 address structure
   */
-typedef uint32_t ip4_addr_t;
+typedef struct ip4_addr ip4_addr_t;
 
 /**
   * @brief  HTTP IPv6 address structure
@@ -1190,6 +1422,7 @@ typedef struct ip_addr
   } u_addr;                   /*!< IP address union */
   uint8_t type;               /*!< IP address type */
 } ip_addr_t;
+#endif /* ST67_ARCH */
 
 /**
   * @brief  HTTP connection state
@@ -1243,8 +1476,7 @@ typedef struct
   uint8_t use_proxy;                          /*!< Use proxy */
   uint16_t proxy_port;                        /*!< Proxy port */
   const ip_addr_t *proxy_addr;                /*!< Proxy address */
-  char *https_certificate;                    /*!< HTTPS certificate */
-  uint32_t https_certificate_len;             /*!< HTTPS certificate length */
+  W6X_Certificate_t https_certificate;        /*!< HTTPS certificate */
   char *server_name;                          /*!< Server name */
   W6X_HTTP_headers_done_cb_t headers_done_fn; /*!< Headers done callback */
   W6X_HTTP_result_cb_t result_fn;             /*!< Result callback */
@@ -1254,6 +1486,40 @@ typedef struct
   uint32_t timeout;                           /*!< Timeout */
   uint32_t max_response_len;                  /*!< Maximum response length */
 } W6X_HTTP_connection_t;
+
+/** @} */
+
+/* ===================================================================== */
+/** @defgroup ST67W6X_API_Netif_Public_Types ST67W6X Network Interface Types
+  * @ingroup  ST67W6X_API_Netif
+  * @{
+  */
+/* ===================================================================== */
+
+/**
+  * @brief  Network interface link up/down function type
+  * @return Status of the operation (0 for success, negative for error)
+  */
+typedef int32_t (*W6X_Net_if_link_t)(void);
+
+/**
+  * @brief  Network interface RX notify function type
+  * @param  arg: Argument passed to the callback
+  * @note   This function is called when a packet is received on the network interface.
+  *         The argument can be used to pass additional information if needed.
+  */
+typedef void (*W6X_Net_if_rxd_notify_func_t)(void *arg);
+
+/**
+  * @brief  Network interface callbacks structure
+  */
+typedef struct
+{
+  W6X_Net_if_link_t link_sta_up_fn;                 /*!< Function to handle link up events */
+  W6X_Net_if_link_t link_sta_down_fn;               /*!< Function to handle link down events */
+  W6X_Net_if_rxd_notify_func_t rxd_sta_notify_fn;   /*!< Function to handle RX station notifications */
+  W6X_Net_if_rxd_notify_func_t rxd_ap_notify_fn;    /*!< Function to handle RX AP notifications */
+} W6X_Net_if_cb_t;
 
 /** @} */
 

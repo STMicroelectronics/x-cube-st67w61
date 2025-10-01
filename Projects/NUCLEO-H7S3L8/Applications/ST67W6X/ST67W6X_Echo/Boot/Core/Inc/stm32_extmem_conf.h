@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : stm32_extmem_conf.h
-  * @version        : 1.0.0
-  * @brief          : Header for extmem.c file.
+  * @file    stm32_extmem_conf.h
+  * @version 1.0.0
+  * @brief   Header for extmem.c file.
   ******************************************************************************
   * @attention
   *

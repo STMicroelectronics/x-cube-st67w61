@@ -27,7 +27,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32h7rsxx_hal.h"
 #include "logging_levels.h"
 
 /* USER CODE BEGIN Includes */

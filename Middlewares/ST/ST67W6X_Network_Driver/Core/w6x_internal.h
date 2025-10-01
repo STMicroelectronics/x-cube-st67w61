@@ -25,6 +25,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+#include "w6x_default_config.h"
 
 /** @defgroup ST67W6X_Private ST67W6X Internal
   */
@@ -61,6 +62,10 @@ extern "C" {
   * @ingroup  ST67W6X_Private
   */
 
+/** @defgroup ST67W6X_Private_Netif ST67W6X Network Interface
+  * @ingroup  ST67W6X_Private
+  */
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup ST67W6X_Private_Common_Constants ST67W6X Common Constants
@@ -68,8 +73,10 @@ extern "C" {
   * @{
   */
 
+#if (W6X_ASSERT_ENABLE == 1)
 /** W61 context pointer error string */
 static const char W6X_Obj_Null_str[] = "W61 Object pointer not initialized";
+#endif /* W6X_ASSERT_ENABLE */
 
 /** @} */
 
@@ -80,11 +87,23 @@ static const char W6X_Obj_Null_str[] = "W61 Object pointer not initialized";
   * @{
   */
 
-/** Pointer NULL check and return error */
-#define NULL_ASSERT(p, s) if ((p) == NULL) { LogError("%s\n", (s)); return ret; }
+/**
+  * \def NULL_ASSERT(p, s)
+  * Pointer NULL check and return error
+  */
 
-/** Pointer NULL check and no return */
+/**
+  * \def NULL_ASSERT_VOID(p, s)
+  * Pointer NULL check and no return
+  */
+
+#if (W6X_ASSERT_ENABLE == 1)
+#define NULL_ASSERT(p, s) if ((p) == NULL) { LogError("%s\n", (s)); return W6X_STATUS_ERROR; }
 #define NULL_ASSERT_VOID(p, s) if ((p) == NULL) { LogError("%s\n", (s)); return; }
+#else
+#define NULL_ASSERT(p, s)
+#define NULL_ASSERT_VOID(p, s)
+#endif /* W6X_ASSERT_ENABLE */
 
 /** Translate W61 to W6X status */
 #define TranslateErrorStatus(ret_w61)  TranslateErrorStatus_W61_W6X((ret_w61), __func__)

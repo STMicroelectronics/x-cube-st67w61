@@ -17,6 +17,8 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "w6x_types.h"     /* W6X_ARCH_** */
+#if (ST67_ARCH == W6X_ARCH_T01)
 #include <string.h>
 #include "w6x_api.h"       /* Prototypes of the functions implemented in this file */
 #include "w61_at_api.h"    /* Prototypes of the functions called by this file */
@@ -34,8 +36,10 @@
   */
 static W61_Object_t *p_DrvObj = NULL; /*!< Global W61 context pointer */
 
+#if (W6X_ASSERT_ENABLE == 1)
 /** W6X MQTT init error string */
 static const char W6X_MQTT_Uninit_str[] = "W6X MQTT module not initialized";
+#endif /* W6X_ASSERT_ENABLE */
 
 /** MQTT state string */
 static const char *const W6X_MQTT_State_str[] =
@@ -84,7 +88,7 @@ W6X_Status_t W6X_MQTT_Init(W6X_MQTT_Data_t *p_mqtt_config)
   p_cb_handler = W6X_GetCbHandler();
   if ((p_cb_handler == NULL) || (p_cb_handler->APP_mqtt_cb == NULL))
   {
-    LogError("Please register the APP callback before initializing the module\n");
+    MQTT_LOG_ERROR("Please register the APP callback before initializing the module\n");
     return ret;
   }
 
@@ -101,6 +105,10 @@ W6X_Status_t W6X_MQTT_Init(W6X_MQTT_Data_t *p_mqtt_config)
 
 void W6X_MQTT_DeInit(void)
 {
+  if (p_DrvObj == NULL)
+  {
+    return; /* Nothing to do */
+  }
   W61_MQTT_DeInit(p_DrvObj); /* Deinitialize MQTT */
 
   p_DrvObj = NULL; /* Reset the global pointer */
@@ -108,74 +116,91 @@ void W6X_MQTT_DeInit(void)
 
 W6X_Status_t W6X_MQTT_SetRecvDataPtr(W6X_MQTT_Data_t *p_mqtt_config)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_mqtt_config, "MQTT configuration pointer is NULL");
 
   p_DrvObj = W61_ObjGet();
   NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
 
-  /* Careful: The application shall change the pointer only on callback, APP_mqtt_cb SUBSCRIPTION_RECEIVED_ID event,
-     i.e. only when the W61_ATD_RxPooling_task is running and it has completed previous data copy */
   return TranslateErrorStatus(W61_MQTT_Init(p_DrvObj, p_mqtt_config->p_recv_data, p_mqtt_config->recv_data_buf_size));
 }
 
 W6X_Status_t W6X_MQTT_Configure(W6X_MQTT_Connect_t *Config)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
-  W6X_FS_FilesListFull_t *files_list = NULL;
-  uint32_t file_found;
-  uint8_t empty_char = '\0';
-  uint8_t *certificate_lst[3] = {&empty_char, &empty_char, &empty_char};
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
-
-  if (W6X_FS_ListFiles(&files_list) != W6X_STATUS_OK)
-  {
-    LogError("Unable to list files\n");
-    goto _err;
-  }
 
   if ((Config->Scheme == 2) || (Config->Scheme == 4)) /* Server certificate */
   {
-    if (Config->CACertificate[0] == '\0')
+    if (Config->CACertificateName[0] == '\0')
     {
-      LogError("CA certificate is mandatory for scheme 2 or 4\n");
+      MQTT_LOG_ERROR("CA certificate is mandatory for scheme 2 or 4\n");
       goto _err;
     }
-    certificate_lst[2] = Config->CACertificate;
+
+    if (Config->CACertificateContent != NULL)
+    {
+      /* Write the file into the NCP */
+      if (W6X_FS_WriteFileByContent((char *)Config->CACertificateName, Config->CACertificateContent,
+                                    strlen(Config->CACertificateContent) + 1) != W6X_STATUS_OK)
+      {
+        MQTT_LOG_ERROR("Writing file %s into the NCP failed\n", Config->CACertificateName);
+        goto _err;
+      }
+    }
+    else
+    {
+      /* Write the file into the NCP */
+      if (W6X_FS_WriteFileByName((char *)Config->CACertificateName) != W6X_STATUS_OK)
+      {
+        MQTT_LOG_ERROR("Writing file %s into the NCP failed\n", Config->CACertificateName);
+        goto _err;
+      }
+    }
   }
+
   if ((Config->Scheme == 3) || (Config->Scheme == 4)) /* Client certificate */
   {
-    if ((Config->Certificate[0] == '\0') || (Config->PrivateKey[0] == '\0'))
+    if ((Config->CertificateName[0] == '\0') || (Config->PrivateKeyName[0] == '\0'))
     {
-      LogError("Client certificate and private key are mandatory for scheme 3 or 4\n");
+      MQTT_LOG_ERROR("Client certificate and private key are mandatory for scheme 3 or 4\n");
       goto _err;
     }
-    certificate_lst[1] = Config->PrivateKey;
-    certificate_lst[0] = Config->Certificate;
-  }
-  for (uint32_t cert_index = 0; cert_index < 3; cert_index++)
-  {
-    if ((certificate_lst[cert_index] != NULL) && (certificate_lst[cert_index][0] != '\0'))
+    if (Config->CertificateContent != NULL)
     {
-      /* Check if the file is already in the NCP */
-      file_found = 0;
-      for (uint32_t i = 0; i < files_list->ncp_files_list.nb_files; i++)
+      /* Write the file into the NCP */
+      if (W6X_FS_WriteFileByContent((char *)Config->CertificateName, Config->CertificateContent,
+                                    strlen(Config->CertificateContent) + 1) != W6X_STATUS_OK)
       {
-        if (strncmp(files_list->ncp_files_list.filename[i], (char *)certificate_lst[cert_index],
-                    W6X_SYS_FS_FILENAME_SIZE) == 0)
-        {
-          file_found = 1;
-          break;
-        }
+        MQTT_LOG_ERROR("Writing file %s into the NCP failed\n", Config->CertificateName);
+        goto _err;
       }
-      if (file_found == 0)
+    }
+    else
+    {
+      /* Write the file into the NCP */
+      if (W6X_FS_WriteFileByName((char *)Config->CertificateName) != W6X_STATUS_OK)
       {
-        /* Write the file into the NCP. Skipped if file is already in the NCP */
-        if (W6X_FS_WriteFile((char *)certificate_lst[cert_index]) != W6X_STATUS_OK)
-        {
-          LogError("Writing file %s into the NCP failed\n", certificate_lst[cert_index]);
-          goto _err;
-        }
+        MQTT_LOG_ERROR("Writing file %s into the NCP failed\n", Config->CertificateName);
+        goto _err;
+      }
+    }
+    if (Config->PrivateKeyContent != NULL)
+    {
+      /* Write the file into the NCP */
+      if (W6X_FS_WriteFileByContent((char *)Config->PrivateKeyName, Config->PrivateKeyContent,
+                                    strlen(Config->PrivateKeyContent) + 1) != W6X_STATUS_OK)
+      {
+        MQTT_LOG_ERROR("Writing file %s into the NCP failed\n", Config->PrivateKeyName);
+        goto _err;
+      }
+    }
+    else
+    {
+      /* Write the file into the NCP */
+      if (W6X_FS_WriteFileByName((char *)Config->PrivateKeyName) != W6X_STATUS_OK)
+      {
+        MQTT_LOG_ERROR("Writing file %s into the NCP failed\n", Config->PrivateKeyName);
+        goto _err;
       }
     }
   }
@@ -185,17 +210,17 @@ W6X_Status_t W6X_MQTT_Configure(W6X_MQTT_Connect_t *Config)
   /* Set the MQTT User configuration */
   ret = TranslateErrorStatus(W61_MQTT_SetUserConfiguration(p_DrvObj, Config->Scheme, Config->MQClientId,
                                                            Config->MQUserName, Config->MQUserPwd,
-                                                           certificate_lst[0], certificate_lst[1],
-                                                           certificate_lst[2]));
+                                                           Config->CertificateName, Config->PrivateKeyName,
+                                                           Config->CACertificateName));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
   }
 
-  /* Set the MQTT Connection configuration.
-  * - MQTT client keepalive time at 120s.
-  * - Clean session is disabled. */
-  ret = TranslateErrorStatus(W61_MQTT_SetConfiguration(p_DrvObj, 120, 0, (uint8_t *)"", (uint8_t *)"", 0, 0));
+  /* Set the MQTT Connection configuration */
+  ret = TranslateErrorStatus(W61_MQTT_SetConfiguration(p_DrvObj, Config->KeepAlive, Config->DisableCleanSession,
+                                                       Config->WillTopic, Config->WillMessage, Config->WillQos,
+                                                       Config->WillRetain));
 
 _err:
   return ret;
@@ -203,7 +228,7 @@ _err:
 
 W6X_Status_t W6X_MQTT_Connect(W6X_MQTT_Connect_t *Config)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
+  W6X_Status_t ret;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   if (W6X_MQTT_SNI_enabled == 1)
@@ -225,7 +250,7 @@ _err:
 
 W6X_Status_t W6X_MQTT_GetConnectionStatus(W6X_MQTT_Connect_t *Config)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
+  W6X_Status_t ret;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   /* Get the connection status */
@@ -240,8 +265,8 @@ W6X_Status_t W6X_MQTT_GetConnectionStatus(W6X_MQTT_Connect_t *Config)
   /* Get the MQTT user configuration */
   ret = TranslateErrorStatus(W61_MQTT_GetUserConfiguration(p_DrvObj, Config->MQClientId,
                                                            Config->MQUserName, Config->MQUserPwd,
-                                                           Config->Certificate, Config->PrivateKey,
-                                                           Config->CACertificate));
+                                                           Config->CertificateName, Config->PrivateKeyName,
+                                                           Config->CACertificateName));
 
 _err:
   return ret;
@@ -249,21 +274,22 @@ _err:
 
 W6X_Status_t W6X_MQTT_Disconnect(void)
 {
-  W6X_MQTT_Connect_t config = {0};
-  W6X_Status_t ret = W6X_STATUS_ERROR;
+  uint8_t HostName[64];
+  uint32_t HostPort;
+  uint32_t Scheme;
+  uint32_t State = W6X_MQTT_STATE_UNINIT;
+  W6X_Status_t ret;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   /* Get the connection status */
-  ret = TranslateErrorStatus(W61_MQTT_GetConnectionStatus(p_DrvObj, config.HostName,
-                                                          &config.HostPort, &config.Scheme,
-                                                          &config.State));
+  ret = TranslateErrorStatus(W61_MQTT_GetConnectionStatus(p_DrvObj, HostName, &HostPort, &Scheme, &State));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
   }
 
-  if ((config.State == W6X_MQTT_STATE_CONNECTED) || (config.State == W6X_MQTT_STATE_CONNECTED_SUBSCRIBED) ||
-      (config.State == W6X_MQTT_STATE_CONNECTED_NO_SUB))
+  if ((State == W6X_MQTT_STATE_CONNECTED) || (State == W6X_MQTT_STATE_CONNECTED_SUBSCRIBED) ||
+      (State == W6X_MQTT_STATE_CONNECTED_NO_SUB))
   {
     /* Disconnect from the MQTT broker */
     return TranslateErrorStatus(W61_MQTT_Disconnect(p_DrvObj));
@@ -276,7 +302,6 @@ _err:
 
 W6X_Status_t W6X_MQTT_Subscribe(uint8_t *Topic)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   /* Subscribe to the topic */
@@ -285,7 +310,6 @@ W6X_Status_t W6X_MQTT_Subscribe(uint8_t *Topic)
 
 W6X_Status_t W6X_MQTT_GetSubscribedTopics(void)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   /* Get the list of subscribed topics */
@@ -294,20 +318,18 @@ W6X_Status_t W6X_MQTT_GetSubscribedTopics(void)
 
 W6X_Status_t W6X_MQTT_Unsubscribe(uint8_t *Topic)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   /* Unsubscribe from the topic */
   return TranslateErrorStatus(W61_MQTT_Unsubscribe(p_DrvObj, Topic));
 }
 
-W6X_Status_t W6X_MQTT_Publish(uint8_t *Topic, uint8_t *Message, uint32_t Message_len)
+W6X_Status_t W6X_MQTT_Publish(uint8_t *Topic, uint8_t *Message, uint32_t Message_len, uint32_t Qos, uint32_t Retain)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_MQTT_Uninit_str);
 
   /* Publish the message to the topic */
-  return TranslateErrorStatus(W61_MQTT_Publish(p_DrvObj, Topic, Message, Message_len));
+  return TranslateErrorStatus(W61_MQTT_Publish(p_DrvObj, Topic, Message, Message_len, Qos, Retain));
 }
 
 const char *W6X_MQTT_StateToStr(uint32_t state)
@@ -341,7 +363,7 @@ static void W6X_MQTT_cb(W61_event_id_t event_id, void *event_args)
   W6X_App_Cb_t *p_cb_handler = W6X_GetCbHandler();
   if ((p_cb_handler == NULL) || (p_cb_handler->APP_mqtt_cb == NULL))
   {
-    LogError("Please register the APP callback before initializing the module\n");
+    MQTT_LOG_ERROR("Please register the APP callback before initializing the module\n");
     return;
   }
 
@@ -366,3 +388,5 @@ static void W6X_MQTT_cb(W61_event_id_t event_id, void *event_args)
 }
 
 /** @} */
+
+#endif /* ST67_ARCH */

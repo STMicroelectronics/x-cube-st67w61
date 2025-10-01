@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : extmem_manager.c
-  * @version        : 1.0.0
-  * @brief          : This file implements the extmem configuration
+  * @file    extmem_manager.c
+  * @version 1.0.0
+  * @brief   This file implements the extmem configuration
   ******************************************************************************
   * @attention
   *

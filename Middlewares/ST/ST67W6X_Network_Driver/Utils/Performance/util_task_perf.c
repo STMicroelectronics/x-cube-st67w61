@@ -35,17 +35,6 @@
   * @{
   */
 
-#ifndef TASK_PERF_ENABLE
-/** Enable task performance measurement */
-#define TASK_PERF_ENABLE      0
-#endif /* TASK_PERF_ENABLE */
-
-#if (__CORTEX_M < 3)
-#undef TASK_PERF_ENABLE
-#define TASK_PERF_ENABLE      0
-#pragma message("TASK_PERF is not supported because Data Watchpoint and Trace (DWT) is required on the cortex")
-#endif /* __CORTEX_M < 3 */
-
 #ifndef PERF_MAXTHREAD
 /** Maximum number of thread to monitor */
 #define PERF_MAXTHREAD        8U
@@ -131,7 +120,7 @@ uint32_t get_cycle(void);
 const char *task_perf_get_task_name(TaskHandle_t xHandle);
 
 /**
-  * @brief  num64 to string converter as not available in reduced C
+  * @brief  Num64 to string converter as not available in reduced C
   * @param  out: pointer to the output string
   * @param  out_strlen: length of the output string
   * @param  num: 64 bit number to convert
@@ -157,7 +146,7 @@ int32_t task_perf_shell_report(int32_t argc, char **argv);
 #endif /* TASK_PERF_ENABLE */
 
 /**
-  * @brief  Display a table of tasks in the system.
+  * @brief  Display a table of tasks in the system
   * @param  argc: Number of arguments
   * @param  argv: Pointer to the list of arguments
   * @retval ::SHELL_STATUS_OK on success
@@ -238,18 +227,7 @@ void task_perf_out_hook(void)
 void task_perf_start(void)
 {
 #if (TASK_PERF_ENABLE == 1)
-  /* Reset the counter value */
-  DWT->CYCCNT = 0x0;
-
-  /* Global enable of DWT and ITM block. Required if the debugger is not connected */
-#if (__CORTEX_M <= 7)
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-#else
-  DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
-#endif /* (__CORTEX_M <= 7) */
-
-  /* Start it */
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  util_task_port_reset();
 
   /* Initialize the task_perf structure */
   (void)memset(&task_perf, 0, sizeof(task_perf));
@@ -262,8 +240,7 @@ void task_perf_start(void)
 void task_perf_resume(void)
 {
 #if (TASK_PERF_ENABLE == 1)
-  /* Resume DWT counter to continue the next in/out hook acquisition */
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  util_task_port_resume();
   task_perf.state = PERF_TASK_STATE_RUNNING;
 #endif /* TASK_PERF_ENABLE */
 }
@@ -271,8 +248,7 @@ void task_perf_resume(void)
 void task_perf_stop(void)
 {
 #if (TASK_PERF_ENABLE == 1)
-  /* Stop DWT counter to freeze all next in/out hook acquisition */
-  DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+  util_task_port_stop();
   task_perf.task_current_cycle = get_cycle();
   task_perf.state = PERF_TASK_STATE_STOPPED;
 #endif /* TASK_PERF_ENABLE */
@@ -377,7 +353,7 @@ uint32_t get_cycle(void)
 #if (TASK_PERF_ENABLE == 1)
   if (task_perf.state == PERF_TASK_STATE_RUNNING)
   {
-    return DWT->CYCCNT;
+    return util_task_port_get_cycle();
   }
   else
   {

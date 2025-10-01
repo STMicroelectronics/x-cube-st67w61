@@ -11,7 +11,7 @@ Provided batch files automate the flashing process of the Network CoProcessor (N
 
 ## __Links and references__
 
-For further information, please visit the dedicated Wiki page [ST67W611M Hardware set-up](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wifi_MCU_Hardware_Setup).
+For further information, please visit the dedicated Wiki page [ST67W611M Hardware setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup).
 
 ## NCP_update_mfg.bat
 

@@ -40,7 +40,10 @@ extern "C" {
   */
 
 /** Maximum number of detected AP during the scan. Cannot be greater than 50 */
-#define W61_WIFI_MAX_DETECTED_AP                50
+#define W61_WIFI_MAX_DETECTED_AP                20
+
+/** Enable/Disable Wi-Fi module logging */
+#define WIFI_LOG_ENABLE                         1
 
 /** ============================
   * AT Net
@@ -49,14 +52,8 @@ extern "C" {
   * ============================
   */
 
-/** Number of ping repetition */
-#define W61_NET_PING_REPETITION                 4
-
-/** Default size of the ping sent */
-#define W61_NET_PING_PACKET_SIZE                64
-
-/** Interval between two sent of ping packets in ms */
-#define W61_NET_PING_INTERVAL                   1000
+/** Enable/Disable Network module logging */
+#define NET_LOG_ENABLE                          1
 
 /** ============================
   * AT Common
@@ -64,10 +61,15 @@ extern "C" {
   * Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_at_common.h
   * ============================
   */
+/** Maximum SPI buffer size */
+#define W61_MAX_SPI_XFER                        1520
 
 /** Debugging only: Enable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
 #define W61_AT_LOG_ENABLE                       0
 #include "logging.h"
+
+/** Enable/Disable System module logging */
+#define SYS_LOG_ENABLE                          1
 
 /* USER CODE BEGIN EC */
 

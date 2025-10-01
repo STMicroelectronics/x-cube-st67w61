@@ -35,8 +35,10 @@
   */
 static W61_Object_t *p_DrvObj = NULL; /*!< Global W61 context pointer */
 
+#if (W6X_ASSERT_ENABLE == 1)
 /** W6X OTA init error string */
 static const char W6X_OTA_Uninit_str[] = "W6X OTA module not initialized";
+#endif /* W6X_ASSERT_ENABLE */
 
 /** @} */
 
@@ -48,14 +50,13 @@ static const char W6X_OTA_Uninit_str[] = "W6X OTA module not initialized";
 
 W6X_Status_t W6X_OTA_Starts(uint32_t enable)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   p_DrvObj = W61_ObjGet();
   NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
 
   /* OTA start on W61 currently supports only value 1 or 0 as parameters, all other value will raise an error */
   if ((enable != 0) && (enable != 1))
   {
-    return ret;
+    return W6X_STATUS_ERROR;
   }
 
   return TranslateErrorStatus(W61_OTA_starts(p_DrvObj, enable));
@@ -63,7 +64,7 @@ W6X_Status_t W6X_OTA_Starts(uint32_t enable)
 
 W6X_Status_t W6X_OTA_Finish(void)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
+  W6X_Status_t ret;
   NULL_ASSERT(p_DrvObj, W6X_OTA_Uninit_str);
 
   ret = TranslateErrorStatus(W61_OTA_Finish(p_DrvObj));
@@ -74,7 +75,6 @@ W6X_Status_t W6X_OTA_Finish(void)
 
 W6X_Status_t W6X_OTA_Send(uint8_t *buff, uint32_t len)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_OTA_Uninit_str);
   NULL_ASSERT(buff, "buff not defined");
 

@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    shell_internal.h
   * @author  GPM Application Team
-  * @brief   This file is part of the shell module.
+  * @brief   This file is part of the shell module
   ******************************************************************************
   * @attention
   *

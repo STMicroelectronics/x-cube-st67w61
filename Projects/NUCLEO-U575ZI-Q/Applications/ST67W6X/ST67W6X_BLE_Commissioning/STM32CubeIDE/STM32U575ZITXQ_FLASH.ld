@@ -46,7 +46,7 @@ MEMORY
 {
   RAM	(xrw)	: ORIGIN = 0x20000000,	LENGTH = 768K
   SRAM4	(xrw)	: ORIGIN = 0x28000000,	LENGTH = 16K
-  FLASH	(rx)	: ORIGIN = 0x08000000,	LENGTH = 2048K
+  FLASH	(rx)	: ORIGIN = 0x08000000,	LENGTH = 1024k
 }
 
 /* Sections */
@@ -134,6 +134,14 @@ SECTIONS
 
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
+
+  /* Extra ROM section (last one) to make sure the binary size is a multiple of the AES block size (16 bytes) and F7 flash writing unit (4 bytes)*/
+  .align16 :
+  {
+    . = . + 1;         /* _edata=. is aligned on 8 bytes so could be aligned on 16 bytes: add 1 byte gap */
+    . = ALIGN(16) - 1; /* increment the location counter until next 16 bytes aligned address (-1 byte)   */
+    BYTE(0);           /* allocate 1 byte (value is 0) to be a multiple of 16 bytes                      */
+  } >FLASH
 
   /* Uninitialized data section into "RAM" Ram type memory */
   .bss :

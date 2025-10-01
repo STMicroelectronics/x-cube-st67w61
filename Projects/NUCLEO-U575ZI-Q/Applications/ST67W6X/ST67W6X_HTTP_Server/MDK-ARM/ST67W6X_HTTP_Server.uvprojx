@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>configTASK_NOTIFICATION_ARRAY_ENTRIES=8,USE_HAL_DRIVER,STM32U575xx</Define>
+              <Define>configTASK_NOTIFICATION_ARRAY_ENTRIES=8,ST67_ARCH=W6X_ARCH_T01,USE_HAL_DRIVER,STM32U575xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../App_HTTP_Server/App;../App_HTTP_Server/Target;../ST67W6X/Target;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Utilities/lpm/tiny_lpm;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core</IncludePath>
+              <IncludePath>../Core/Inc;../ST67W6X/App;../Appli/App;../Appli/Target;../ST67W6X/Target;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Utilities/lpm/tiny_lpm;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define>configTASK_NOTIFICATION_ARRAY_ENTRIES=8</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../App_HTTP_Server/App;../App_HTTP_Server/Target;../ST67W6X/Target;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Utilities/lpm/tiny_lpm;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core</IncludePath>
+              <IncludePath>../Core/Inc;../ST67W6X/App;../Appli/App;../Appli/Target;../ST67W6X/Target;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32U5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Utilities/lpm/tiny_lpm;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -422,37 +422,37 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Application/User/App_HTTP_Server/Target</GroupName>
-          <Files>
-            <File>
-              <FileName>logshell_ctrl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../App_HTTP_Server/Target/logshell_ctrl.c</FilePath>
-            </File>
-            <File>
-              <FileName>freertos_tickless.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../App_HTTP_Server/Target/freertos_tickless.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32_lpm_if.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../App_HTTP_Server/Target/stm32_lpm_if.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Application/User/App_HTTP_Server/App</GroupName>
+          <GroupName>Application/User/Appli/App</GroupName>
           <Files>
             <File>
               <FileName>main_app.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../App_HTTP_Server/App/main_app.c</FilePath>
+              <FilePath>../Appli/App/main_app.c</FilePath>
             </File>
             <File>
               <FileName>httpserver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../App_HTTP_Server/App/httpserver.c</FilePath>
+              <FilePath>../Appli/App/httpserver.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/User/Appli/Target</GroupName>
+          <Files>
+            <File>
+              <FileName>logshell_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Appli/Target/logshell_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>freertos_tickless.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Appli/Target/freertos_tickless.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32_lpm_if.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Appli/Target/stm32_lpm_if.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -463,6 +463,16 @@
               <FileName>spi_port.c</FileName>
               <FileType>1</FileType>
               <FilePath>../ST67W6X/Target/spi_port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/User/ST67W6X/App</GroupName>
+          <Files>
+            <File>
+              <FileName>app_st67w6x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../ST67W6X/App/app_st67w6x.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -672,61 +682,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares/ST67W6X_Network_Driver/Network/Driver/W61_at_and_bus</GroupName>
-          <Files>
-            <File>
-              <FileName>w61_at_ble.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_ble.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_at_common.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_common.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_at_mqtt.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_mqtt.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_at_net.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_net.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_at_rx_parser.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_rx_parser.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_at_sys.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_sys.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_at_wifi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_wifi.c</FilePath>
-            </File>
-            <File>
-              <FileName>spi_iface.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/spi_iface.c</FilePath>
-            </File>
-            <File>
-              <FileName>w61_io.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/w61_io.c</FilePath>
-            </File>
-            <File>
-              <FileName>common_parser.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI</GroupName>
           <Files>
             <File>
@@ -748,6 +703,11 @@
               <FileName>w6x_net.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_net.c</FilePath>
+            </File>
+            <File>
+              <FileName>w6x_netif.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</FilePath>
             </File>
             <File>
               <FileName>w6x_ota.c</FileName>
@@ -773,6 +733,61 @@
               <FileName>logging.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Logging/logging.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middlewares/ST67W6X_Network_Driver/Network/ATDriver</GroupName>
+          <Files>
+            <File>
+              <FileName>modem_cmd_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/modem_cmd_handler.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_at_ble.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_ble.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_at_common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_at_mqtt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_mqtt.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_at_net.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_net.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_at_sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_sys.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_at_wifi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at/w61_at_wifi.c</FilePath>
+            </File>
+            <File>
+              <FileName>spi_iface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/spi_iface.c</FilePath>
+            </File>
+            <File>
+              <FileName>w61_io.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus/w61_io.c</FilePath>
+            </File>
+            <File>
+              <FileName>common_parser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</FilePath>
             </File>
           </Files>
         </Group>

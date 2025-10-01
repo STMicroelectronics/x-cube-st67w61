@@ -8,7 +8,7 @@ ST67W6X_BLE_p2pServer application advertises and waits for a connection from eit
 
 It exercises the ST67W6X_Network_Driver capabilities. It relies on the FreeRTOS RealTime Operating System.
 
-> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.75.bin.
+> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.89.bin.
 >
 > Please follow the [NCP Binaries README.md](../../../../ST67W6X_Utilities/Binaries/README.md) instructions using the __NCP_update_mission_profile.bat__ script.
 
@@ -24,11 +24,12 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
 
 |Directory  |                                                                     |Description|
 |---   |:-:                                                                       |---        |
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/App/|                                    |Main application code directory|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/|                                 |Logging, Shell, Low-Power and SPI BSP interfaces|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Core/Src|                                |STM32CubeMX generated sources code|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Core/Inc|                                |STM32CubeMX generated header files|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/ST67W6X/Target|                          |Configuration and port files to manage the ST67W6X_Network_Driver Middleware|
+|ST67W6X_BLE_p2pServer/Appli/App/|                                                |Main application code directory|
+|ST67W6X_BLE_p2pServer/Appli/Target/|                                             |Logging, Shell, Low-Power and BSP interfaces|
+|ST67W6X_BLE_p2pServer/Core/Src|                                                  |STM32CubeMX generated sources code|
+|ST67W6X_BLE_p2pServer/Core/Inc|                                                  |STM32CubeMX generated header files|
+|ST67W6X_BLE_p2pServer/ST67W6X/App|                                               |Entry point to start the application associated to the ST67W6X_Network_Driver Middleware|
+|ST67W6X_BLE_p2pServer/ST67W6X/Target|                                            |Configuration and port files to manage the ST67W6X_Network_Driver Middleware|
 |ST67W6X_BLE_p2pServer/EWARM|                                                     |Project for the IAR Embedded workbench for Arm|
 |ST67W6X_BLE_p2pServer/MDK-ARM|                                                   |Project for the RealView Microcontroller Development Kit|
 |ST67W6X_BLE_p2pServer/STM32CubeIDE|                                              |Project for the STM32CubeIDE toolchain|
@@ -38,33 +39,35 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
 
 |File  |                                                                          |Description|
 |---   |:-:                                                                       |---        |
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/App/app_config.h|                        |Configuration for main application|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/App/main_app.h|                          |Header for main_app.c|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/freertos_tickless.h|              |Management of timers and ticks header file|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/logshell_ctrl.h|                  |Header for logshell_ctrl.h|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/spi_port_conf.h|                  |Interfaces/maps the SPI instance to be used for NCP communication|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/stm32_lpm_if.h|                   |Header for stm32_lpm_if.c module (device specific LP management)|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/utilities_conf.h|                 |Header for configuration file to utilities|
+|ST67W6X_BLE_p2pServer/Appli/App/app_config.h|                                    |Configuration for main application|
+|ST67W6X_BLE_p2pServer/Appli/App/main_app.h|                                      |Header for main_app.c|
+|ST67W6X_BLE_p2pServer/Appli/Target/freertos_tickless.h|                          |Management of timers and ticks header file|
+|ST67W6X_BLE_p2pServer/Appli/Target/logshell_ctrl.h|                              |Header for logshell_ctrl.h|
+|ST67W6X_BLE_p2pServer/Appli/Target/stm32_lpm_if.h|                               |Header for stm32_lpm_if.c module (device specific LP management)|
+|ST67W6X_BLE_p2pServer/Appli/Target/utilities_conf.h|                             |Header for configuration file to utilities|
 |ST67W6X_BLE_p2pServer/Core/Inc/app_freertos.h|                                   |FreeRTOS applicative header file|
 |ST67W6X_BLE_p2pServer/Core/Inc/FreeRTOSConfig.h|                                 |Header for FreeRTOS application specific definitions|
 |ST67W6X_BLE_p2pServer/Core/Inc/main.h|                                           |Header for main.c file.<br>This file contains the common defines of the application.|
 |ST67W6X_BLE_p2pServer/Core/Inc/stm32u5xx_hal_conf.h|                             |HAL configuration file.|
 |ST67W6X_BLE_p2pServer/Core/Inc/stm32u5xx_it.h|                                   |This file contains the headers of the interrupt handlers.|
+|ST67W6X_BLE_p2pServer/ST67W6X/App/app_st67w6x.h|                                 |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_BLE_p2pServer/ST67W6X/Target/bsp_conf.h|                                 |This file contains definitions for the BSP interface|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/logging_config.h|                           |Header file for the W6X Logging configuration module|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/shell_config.h|                             |Header file for the W6X Shell configuration module|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/w61_driver_config.h|                        |Header file for the W61 configuration module|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/w6x_config.h|                               |Header file for the W6X configuration module|
 |      |                                                                          |           |
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/App/main_app.c|                          |main_app program body|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/freertos_tickless.c|              |Management of timers and ticks|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/logshell_ctrl.c|                  |logshell_ctrl (uart interface)|
-|ST67W6X_BLE_p2pServer/App_BLE_p2pServer/Target/stm32_lpm_if.c|                   |Low layer function to enter/exit low power modes (stop, sleep)|
+|ST67W6X_BLE_p2pServer/Appli/App/main_app.c|                                      |main_app program body|
+|ST67W6X_BLE_p2pServer/Appli/Target/freertos_tickless.c|                          |Management of timers and ticks|
+|ST67W6X_BLE_p2pServer/Appli/Target/logshell_ctrl.c|                              |logshell_ctrl (uart interface)|
+|ST67W6X_BLE_p2pServer/Appli/Target/stm32_lpm_if.c|                               |Low layer function to enter/exit low power modes (stop, sleep)|
 |ST67W6X_BLE_p2pServer/Core/Src/app_freertos.c|                                   |Code for freertos applications|
 |ST67W6X_BLE_p2pServer/Core/Src/main.c|                                           |Main program body|
 |ST67W6X_BLE_p2pServer/Core/Src/stm32u5xx_hal_msp.c|                              |This file provides code for the MSP Initialization<br>and de-Initialization codes.|
 |ST67W6X_BLE_p2pServer/Core/Src/stm32u5xx_hal_timebase_tim.c|                     |HAL time base based on the hardware TIM.|
 |ST67W6X_BLE_p2pServer/Core/Src/stm32u5xx_it.c|                                   |Interrupt Service Routines.|
 |ST67W6X_BLE_p2pServer/Core/Src/system_stm32u5xx.c|                               |CMSIS Cortex-M33 Device Peripheral Access Layer System Source File|
+|ST67W6X_BLE_p2pServer/ST67W6X/App/app_st67w6x.c|                                 |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/spi_port.c|                                 |SPI bus interface porting layer implementation|
 |ST67W6X_BLE_p2pServer/STM32CubeIDE/Application/User/Core/syscalls.c|             |STM32CubeIDE Minimal System calls file|
 |ST67W6X_BLE_p2pServer/STM32CubeIDE/Application/User/Core/sysmem.c|               |STM32CubeIDE System Memory calls file|
@@ -81,7 +84,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
     Indeed, the user button on the STM32 Nucleo board is not used as external interrupt mode due to conflict with other EXTI pin requirement.
   - This example requires to have a green LED defined with the user label LED_GREEN on the host board.
 
-For further information, please visit the dedicated Wiki page [ST67W611M Hardware set-up](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wifi_MCU_Hardware_Setup).
+For further information, please visit the dedicated Wiki page [ST67W611M Hardware setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup).
 
 ## __How to use it?__
 
@@ -107,17 +110,13 @@ In order to make the program work, you must do the following :
 
 ###  __ST67W6X configuration__
 
-The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file.
+The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** NCP will go by default in low power mode when NCP is in idle mode
-  * Note: This define must be 0 if BLE is enabled */
-#define W6X_POWER_SAVE_AUTO                     0
-
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1
 ```
 
-The default BLE configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file.
+The default BLE configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
 /** String defining BLE hostname */
 #define W6X_BLE_HOSTNAME                        "p2pS"
@@ -131,21 +130,22 @@ Additionally, some others options can be modified in the _ST67W6X/Target_ direct
 
 ###  __Application configuration__
 
-The logging output mode can be modified in the _App_BLE_Commissioning/App/app_config.h_ file :
+The logging output mode can be modified in the _Appli/App/app_config.h_ file:
 ```
 /** Select output log mode [0: printf / 1: UART / 2: ITM] */
 #define LOG_OUTPUT_MODE             LOG_OUTPUT_UART
 ```
 
-The host low power mode can be modified in the _App_BLE_Commissioning/App/app_config.h_ file :
+The host low power mode can be modified in the _Appli/App/app_config.h_ file:
 ```
 /** Low power configuration [0: disable / 1: sleep / 2: stop / 3: standby] */
-#define LOW_POWER_MODE              LOW_POWER_DISABLE
+#define LOW_POWER_MODE              LOW_POWER_SLEEP_ENABLE
 ```
 
-The NCP low power mode can be modified in the _ST67W6X\Target\w6x_config.h_ file:
+The NCP low power mode can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP will go by default in low power mode when NCP is in idle mode
+  * Note: External clock oscillator must be used to support BLE in low power mode, if W6X_POWER_SAVE_AUTO is set to 1 but clock mode is not correct W6X_Ble_Init() API disable the low power */
 #define W6X_POWER_SAVE_AUTO                     0
 ```
 > [!IMPORTANT]
@@ -160,6 +160,8 @@ Install and launch ST BLE Toolbox application on android or iOS smartphone:
 Open ST BLE Toolbox application:
  - Select the p2pS_XX in the device list, where xx is the 2 last digits of the BD Address and connect with it.
 
+Press User Button while not connected to clear the bonded devices list.
+
 Once connected:
  - On p2pServer device, click on X-NUCLEO-67W61M1 User Button to send a notification message toward connected smartphone.
  - On smartphone interface, click on the LED icon to switch On/Off the green Led of the NUCLEO-U575ZI-Q board.
@@ -169,3 +171,4 @@ Once connected:
 
 ## __Known limitations__
 
+  - W6X_Ble_SetDeviceName API cannot use special characters [,"\\] in the device name. If needed, they must be preceded by a \\ to be interpreted correctly

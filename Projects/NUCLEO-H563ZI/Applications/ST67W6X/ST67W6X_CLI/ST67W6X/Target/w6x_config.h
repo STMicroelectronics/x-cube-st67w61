@@ -62,34 +62,8 @@ extern "C" {
 /** Boolean to enable/disable autoconnect functionality */
 #define W6X_WIFI_AUTOCONNECT                    1
 
-/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_WIFI_DHCP                           3
-
 /** Define the max number of stations that can connect to the Soft-AP */
 #define W6X_WIFI_SAP_MAX_CONNECTED_STATIONS     4
-
-/** String defining Soft-AP subnet to use.
-  *  Last digit of IP address automatically set to 1 */
-#define W6X_WIFI_SAP_IP_SUBNET                  {192, 168, 8}
-
-/** String defining Soft-AP subnet to use in case of conflict with the AP the STA is connected to.
-  *  Last digit of IP address automatically set to 1 */
-#define W6X_WIFI_SAP_IP_SUBNET_BACKUP           {192, 168, 9}
-
-/** Define if the DNS addresses are set manually or automatically */
-#define W6X_WIFI_DNS_MANUAL                     0
-
-/** String defining DNS IP 1 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_1                       {208, 67, 222, 222}
-
-/** String defining DNS IP 2 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_2                       {8, 8, 8, 8}
-
-/** String defining DNS IP 3 address to use
-  * @note: This address will be used only if W6X_WIFI_DNS_MANUAL equals 1 */
-#define W6X_WIFI_DNS_IP_3                       {0, 0, 0, 0}
 
 /** Define the region code, supported values : [CN, JP, US, EU, 00] */
 #define W6X_WIFI_COUNTRY_CODE                   "00"
@@ -99,8 +73,16 @@ extern "C" {
   * 1: static country code */
 #define W6X_WIFI_ADAPTIVE_COUNTRY_CODE          0
 
-/** String defining Wi-Fi hostname */
-#define W6X_WIFI_HOSTNAME                       "ST67W61_WiFi"
+/** ============================
+  * BLE
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_default_config.h
+  * ============================
+  */
+
+/** String defining BLE hostname */
+#define W6X_BLE_HOSTNAME                        "ST67W61_BLE"
 
 /** ============================
   * Net
@@ -110,11 +92,43 @@ extern "C" {
   * ============================
   */
 
+/** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
+#define W6X_NET_DHCP                            3
+
+/** String defining Soft-AP subnet to use.
+  *  Last digit of IP address automatically set to 1 */
+#define W6X_NET_SAP_IP_SUBNET                   {10, 19, 96}
+
+/** String defining Wi-Fi hostname */
+#define W6X_NET_HOSTNAME                        "ST67W61_WiFi"
+
 /** Timeout in ticks when calling W6X_Net_Recv() */
 #define W6X_NET_RECV_TIMEOUT                    10000
 
 /** Timeout in ticks when calling W6X_Net_Send() */
 #define W6X_NET_SEND_TIMEOUT                    10000
+
+/** ============================
+  * HTTP
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_default_config.h
+  * ============================
+  */
+/** HTTP Client thread stack size */
+#define W6X_HTTP_CLIENT_THREAD_STACK_SIZE       1536
+
+/** HTTP Client thread priority */
+#define W6X_HTTP_CLIENT_THREAD_PRIO             30
+
+/** Timeout value in millisecond for receiving data via TCP socket used by the HTTP client.
+  * This value is set to compensate for when the NCP get stuck for a long time (1 second or more)
+  * when retrieving data from an HTTP server for example */
+#define W6X_HTTP_CLIENT_TCP_SOCK_RECV_TIMEOUT   1000
+
+/** Size of the TCP socket used by the HTTP client, recommended to be at least 0x2000 when fetching lots of data.
+  * 0x2000 is the value used in the SPI host project for OTA update, which retrieves around 1 mega bytes of data. */
+#define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         12288
 
 /** ============================
   * Utility Performance Iperf
@@ -135,12 +149,14 @@ extern "C" {
   * @note: This feature requires to call the hook functions in the FreeRTOS.
   *        Add the following lines in the FreeRTOSConfig.h file:
   *
+  *        \code
   *        #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__)
   *        void mem_perf_malloc_hook(void *pvAddress, size_t uiSize);
   *        void mem_perf_free_hook(void *pvAddress, size_t uiSize);
   *        #endif
   *        #define traceMALLOC mem_perf_malloc_hook
   *        #define traceFREE mem_perf_free_hook
+  *        \endcode
   *
   * ============================
   */
@@ -156,12 +172,14 @@ extern "C" {
   * @note: This feature requires to call the hook functions in the FreeRTOS.
   *        Add the following lines in the FreeRTOSConfig.h file:
   *
+  *        \code
   *        #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__)
   *        void task_perf_in_hook(void);
   *        void task_perf_out_hook(void);
   *        #endif
   *        #define traceTASK_SWITCHED_IN task_perf_in_hook
   *        #define traceTASK_SWITCHED_OUT task_perf_out_hook
+  *        \endcode
   *
   * ============================
   */
@@ -185,7 +203,7 @@ extern "C" {
   * ============================
   */
 /** Enable LittleFS */
-#define LFS_ENABLE                              1
+#define LFS_ENABLE                              0
 
 #if (LFS_ENABLE == 1)
 #include "easyflash.h"

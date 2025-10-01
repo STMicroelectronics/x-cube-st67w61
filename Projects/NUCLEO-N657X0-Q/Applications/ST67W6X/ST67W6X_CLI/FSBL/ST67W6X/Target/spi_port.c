@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "spi_port_conf.h"
+#include "bsp_conf.h"
 #include "spi_port.h"
 #include "main.h"
 
@@ -40,6 +40,7 @@
 /* USER CODE END Includes */
 
 /* Global variables ----------------------------------------------------------*/
+/** SPI handle */
 extern SPI_HandleTypeDef NCP_SPI_HANDLE;
 
 /* USER CODE BEGIN GV */
@@ -57,11 +58,35 @@ extern SPI_HandleTypeDef NCP_SPI_HANDLE;
 /* USER CODE END PD */
 
 /* Private macros ------------------------------------------------------------*/
+/** SysTick Reload Value Register */
+#define SYSTICK_LOAD               ( * ( ( volatile uint32_t * ) 0xe000e014 ) )
+/** SysTick Current Value Register */
+#define SYSTICK_VALUE              ( * ( ( volatile uint32_t * ) 0xe000e018 ) )
+
+/**
+  * @brief  Wait function to ensure a minimum wait time (in CPU cycles)
+  * @param  _start_tick Tick value when the wait period started
+  * @param  _nb_tick Number of ticks to wait
+  * @retval None
+  */
+#define WAIT_FROM(_start_tick, _nb_tick) do         \
+  {\
+    int32_t _end_tick = (_start_tick) - (_nb_tick); \
+    if (_end_tick < 0) /* Wrap */                   \
+    {                                               \
+      _end_tick += SYSTICK_LOAD;                    \
+    }                                               \
+    while( SYSTICK_VALUE> _end_tick) {}             \
+  }while(0)
+
+/** Convert microseconds to ticks */
+#define MICROSECOND_TO_TICK( _us ) ( (_us) * (SystemCoreClock>>20) )
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+/** SPI transaction complete callback */
 static spi_transaction_complete_t spi_port_transaction_complete_cb = NULL;
 
 /* USER CODE BEGIN PV */
@@ -74,12 +99,7 @@ static spi_transaction_complete_t spi_port_transaction_complete_cb = NULL;
 /* USER CODE END PFP */
 
 /* Functions Definition ------------------------------------------------------*/
-#ifdef __ICCARM__
 void *spi_port_memcpy(void *dest, const void *src, unsigned int len)
-#endif /* __ICCARM__ */
-#ifdef __GNUC__
-void *memcpy(void *dest, const void *src, unsigned int len)
-#endif /* __ICCARM__ */
 {
   /* USER CODE BEGIN memcpy_1 */
 
@@ -111,6 +131,9 @@ void *memcpy(void *dest, const void *src, unsigned int len)
     *d++ = *s++;
     len--;
   }
+  /* USER CODE BEGIN memcpy_2 */
+
+  /* USER CODE END memcpy_2 */
 
   return dest;
   /* USER CODE BEGIN memcpy_End */
@@ -130,6 +153,9 @@ int32_t spi_port_init(spi_transaction_complete_t transaction_complete_cb)
   {
     spi_port_transaction_complete_cb = transaction_complete_cb;
   }
+  /* USER CODE BEGIN spi_port_init_2 */
+
+  /* USER CODE END spi_port_init_2 */
 
   return 0;
   /* USER CODE BEGIN spi_port_init_End */
@@ -146,6 +172,9 @@ int32_t spi_port_deinit(void)
   HAL_GPIO_WritePin(CHIP_EN_GPIO_Port, CHIP_EN_Pin, GPIO_PIN_RESET);
 
   spi_port_transaction_complete_cb = NULL;
+  /* USER CODE BEGIN spi_port_deinit_2 */
+
+  /* USER CODE END spi_port_deinit_2 */
 
   return 0;
   /* USER CODE BEGIN spi_port_deinit_End */
@@ -176,6 +205,9 @@ int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t tim
   {
     status = HAL_SPI_Receive(&NCP_SPI_HANDLE, rx_buf, len, timeout);
   }
+  /* USER CODE BEGIN spi_port_transfer_2 */
+
+  /* USER CODE END spi_port_transfer_2 */
 
   return (status == HAL_OK ? 0 : -1);
   /* USER CODE BEGIN spi_port_transfer_End */
@@ -206,6 +238,10 @@ int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len)
   {
     status = HAL_SPI_Receive_DMA(&NCP_SPI_HANDLE, rx_buf, len);
   }
+  /* USER CODE BEGIN spi_port_transfer_dma_2 */
+
+  /* USER CODE END spi_port_transfer_dma_2 */
+
   return (status == HAL_OK ? 0 : -1);
   /* USER CODE BEGIN spi_port_transfer_dma_End */
 
@@ -226,11 +262,13 @@ int32_t spi_port_is_ready(void)
 
 int32_t spi_port_set_cs(int32_t state)
 {
+  static int32_t last_falling_tick;
   /* USER CODE BEGIN spi_port_set_cs_1 */
 
   /* USER CODE END spi_port_set_cs_1 */
   if (state)
   {
+    WAIT_FROM(last_falling_tick, MICROSECOND_TO_TICK(2));
     /* Activate Chip Select before starting transfer */
     HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
   }
@@ -238,26 +276,16 @@ int32_t spi_port_set_cs(int32_t state)
   {
     /* Disable Chip Select when transfer is complete */
     HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
+    last_falling_tick = SYSTICK_VALUE;
   }
+  /* USER CODE BEGIN spi_port_set_cs_2 */
+
+  /* USER CODE END spi_port_set_cs_2 */
 
   return 0;
   /* USER CODE BEGIN spi_port_set_cs_End */
 
   /* USER CODE END spi_port_set_cs_End */
-}
-
-uint32_t spi_port_itm(uint32_t ch)
-{
-  /* USER CODE BEGIN spi_port_itm_1 */
-
-  /* USER CODE END spi_port_itm_1 */
-#if 0
-  return ITM_SendChar(ch);
-#endif /* 0 */
-  return 0;
-  /* USER CODE BEGIN spi_port_itm_End */
-
-  /* USER CODE END spi_port_itm_End */
 }
 
 /* USER CODE BEGIN FD */

@@ -1,4 +1,5 @@
 [Groups]
+Application/User/Appli/App=../Appli/App/fota_flash.c;
 Doc=../readme.md;
 [ProjectFiles]
 [Others]

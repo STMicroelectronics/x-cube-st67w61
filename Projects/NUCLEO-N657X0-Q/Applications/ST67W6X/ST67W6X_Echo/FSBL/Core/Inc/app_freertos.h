@@ -55,7 +55,7 @@ extern "C" {
 /* USER CODE BEGIN EM */
 
 /* USER CODE END EM */
-extern osThreadId_t defaultTskHandle;
+extern osThreadId_t defaultTaskHandle;
 
 /* Exported function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */

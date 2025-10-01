@@ -23,19 +23,18 @@
 #include <errno.h>
 
 #include "lfs.h"
+#include "lfs_port.h"
 
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#include "lfs_port.h"
-
 #include "logging.h"
-
-#define DBG_TAG "LFS"
+#include "w6x_config.h" /* LFS_ENABLE */
 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
+#if (LFS_ENABLE == 1)
 
 /* Global variables ----------------------------------------------------------*/
 /* USER CODE BEGIN GV */
@@ -287,3 +286,4 @@ static int32_t lfs_flash_sync(const struct lfs_config *c)
 /* USER CODE BEGIN PFD */
 
 /* USER CODE END PFD */
+#endif /* LFS_ENABLE */

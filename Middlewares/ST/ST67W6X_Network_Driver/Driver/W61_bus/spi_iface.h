@@ -89,21 +89,30 @@ struct spi_buffer
   unsigned char cb[16];
 };
 
+typedef void (*spi_rxd_notify_func_t)(void *arg);
+
+typedef enum
+{
+  SPI_MSG_CTRL_TRAFFIC_AT_CMD = 0,
+  SPI_MSG_CTRL_TRAFFIC_NETWORK_STA,
+  SPI_MSG_CTRL_TRAFFIC_NETWORK_AP,
+  SPI_MSG_CTRL_TRAFFIC_HCI,
+  SPI_MSG_CTRL_TRAFFIC_OT,
+  SPI_MSG_CTRL_TRAFFIC_TYPE_MAX,
+} spi_msg_ctrl_t;
+
 /* Exported constants --------------------------------------------------------*/
-#define SPI_MSG_F_TRUNCATED 0x1
+#define SPI_MSG_F_TRUNCATED            0x1
 
-#define SPI_MSG_CTRL_TRAFFIC_TYPE   0x1
-#define SPI_MSG_CTRL_TRAFFIC_TYPE_LEN 1
-#define SPI_MSG_CTRL_TRAFFIC_AT_CMD   0
-#define SPI_MSG_CTRL_TRAFFIC_NETWORK  1
-#define SPI_MSG_CTRL_TRAFFIC_TYPE_MAX   2
+#define SPI_MSG_CTRL_TRAFFIC_TYPE      0x1
+#define SPI_MSG_CTRL_TRAFFIC_TYPE_LEN  1
 
-#define SPI_MSG_OP_DATA        0
-#define SPI_MSG_OP_BUFFER      1
-#define SPI_MSG_OP_BUFFER_PTR  2
+#define SPI_MSG_OP_DATA                0
+#define SPI_MSG_OP_BUFFER              1
+#define SPI_MSG_OP_BUFFER_PTR          2
 
 /** Maximum SPI buffer size */
-#define SPI_XFER_MTU_BYTES        (6 * 1024)
+#define SPI_XFER_MTU_BYTES             W61_MAX_SPI_XFER
 
 /* Exported macro ------------------------------------------------------------*/
 #define SPI_MSG_CONTROL_INIT(c, t, l, v) do {                                    \
@@ -147,7 +156,7 @@ int32_t spi_read(struct spi_msg *msg, int32_t timeout_ms);
 
 int32_t spi_write(struct spi_msg *msg, int32_t timeout_ms);
 
-int32_t spi_wait_event(void *evnt_ctx, uint32_t event, int32_t timeout_ms);
+int32_t spi_rxd_callback_register(spi_msg_ctrl_t type, spi_rxd_notify_func_t cb, void *arg);
 
 void spi_show_throuput_enable(int32_t en);
 

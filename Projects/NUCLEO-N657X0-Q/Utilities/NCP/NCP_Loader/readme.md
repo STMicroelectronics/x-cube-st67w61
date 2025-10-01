@@ -6,7 +6,11 @@ For more details [NCP Binaries README.md](../../../../ST67W6X_Utilities/Binaries
 
 ## __Keywords__
 
+ST67W611M, UART
+
 ## __Links and references__
+
+For further information, please visit the dedicated Wiki page [How to flash the ST67W611M](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup#How_to_flash_the_ST67W611M1).
 
 ## __Directory contents__
 

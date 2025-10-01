@@ -27,7 +27,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32h7rsxx_hal.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -38,6 +37,7 @@ extern "C" {
  * Middlewares\ST\ST67W6X_Network_Driver\Conf\shell_config_template.h
  */
 
+/** Enable the shell component */
 #define SHELL_ENABLE                            0
 
 /* USER CODE BEGIN EC */

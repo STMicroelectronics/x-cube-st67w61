@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    logging.c
   * @author  GPM Application Team
-  * @brief   This file is part of the FreeRTOS logging interface.
+  * @brief   This file is part of the FreeRTOS logging interface
   ******************************************************************************
   * @attention
   *
@@ -72,45 +72,45 @@
   * @ingroup  ST67W6X_Utilities_Logging
   * @{
   */
-/* can be configured in #include "logging_config.h" */
+/* Can be configured in #include "logging_config.h" */
 
-/** Enable 'task name' metadata in the log */
 #ifndef LOG_INCLUDE_TASKNAME
+/** Enable 'task name' metadata in the log */
 #define LOG_INCLUDE_TASKNAME                    1
 #endif /* LOG_INCLUDE_TASKNAME */
 
-/** Enable 'file name' + 'line number' metadata in the log */
 #ifndef LOG_INCLUDE_FILENAME
+/** Enable 'file name' + 'line number' metadata in the log */
 #define LOG_INCLUDE_FILENAME                    1
 #endif /* LOG_INCLUDE_FILENAME */
 
-/** Enable 'timestamp' metadata in the log */
 #ifndef LOG_INCLUDE_TIMESTAMP
+/** Enable 'timestamp' metadata in the log */
 #define LOG_INCLUDE_TIMESTAMP                   1
 #endif /* LOG_INCLUDE_TIMESTAMP */
 
-/** Max metadata length */
 #ifndef LOG_INCLUDE_MAX_LENGTH
+/** Max metadata length */
 #define LOG_INCLUDE_MAX_LENGTH                  100
 #endif /* LOG_INCLUDE_MAX_LENGTH */
 
-/** Max message length */
 #ifndef MAX_LOG_MESSAGE_LENGTH
+/** Max message length */
 #define MAX_LOG_MESSAGE_LENGTH                  2000
 #endif /* MAX_LOG_MESSAGE_LENGTH */
 
-/** Max queue length */
 #ifndef MAX_LOG_QUEUE_LENGTH
+/** Max queue length */
 #define MAX_LOG_QUEUE_LENGTH                    200
 #endif /* MAX_LOG_QUEUE_LENGTH */
 
-/** Max log level */
 #ifndef MAX_LOG_LEVEL
+/** Max log level */
 #define MAX_LOG_LEVEL                           LOG_DEBUG
 #endif /* MAX_LOG_LEVEL */
 
-/** Max log level */
 #ifndef MAX_LOG_MEMORY
+/** Max log level */
 #define MAX_LOG_MEMORY                          4096
 #endif /* MAX_LOG_MEMORY */
 
@@ -129,13 +129,13 @@
 #define LOG_THREAD_PRIO                         25
 #endif /* LOG_THREAD_PRIO */
 
-/** Log memory allocator */
 #ifndef LOG_MALLOC
+/** Log memory allocator */
 #define LOG_MALLOC                              pvPortMalloc
 #endif /* LOG_MALLOC */
 
-/** Log memory deallocator */
 #ifndef LOG_FREE
+/** Log memory deallocator */
 #define LOG_FREE                                vPortFree
 #endif /* LOG_FREE */
 
@@ -216,7 +216,7 @@ static LoggingConfig_t LoggingConfig =
   */
 
 /**
-  * @brief  Logging print task pushing the log message in the queue to the output callback.
+  * @brief  Logging print task pushing the log message in the queue to the output callback
   * @param  pvParameters: Task parameter
   */
 static void OutputTask(void *pvParameters);
@@ -225,7 +225,7 @@ static void OutputTask(void *pvParameters);
 void *vLoggingInit(void (*LogOutput)(const char *message))
 {
   BaseType_t status;
-  /* default setting */
+  /* Default setting */
   LoggingConfig.VerboseLogLevel = LOG_DEBUG;
   LoggingConfig.allocated_log_mem = 0;
 
@@ -267,7 +267,7 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
   int32_t offset = 0;
   va_list args;
   char log_include_str[LOG_INCLUDE_MAX_LENGTH] = {0};
-  char dummy_str[2]; /* dummy string for format length calculation */
+  char dummy_str[2]; /* Dummy string for format length calculation */
 
   if ((log_level > LoggingConfig.VerboseLogLevel) || (log_level > MAX_LOG_LEVEL))
   {
@@ -336,11 +336,11 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
 
   configASSERT(offset < LOG_INCLUDE_MAX_LENGTH)
 
-  /* calculate the log message size */
+  /* Calculate the log message size */
   int32_t alloc_len = vsnprintf(dummy_str, sizeof(dummy_str), p_format, args); /*Get format length */
   alloc_len += offset + 1; /*offset for log include string + 1 for \0 */
 
-  /* max alloc_len is MAX_LOG_MESSAGE_LENGTH */
+  /* Max alloc_len is MAX_LOG_MESSAGE_LENGTH */
   if (alloc_len > MAX_LOG_MESSAGE_LENGTH)
   {
     alloc_len = MAX_LOG_MESSAGE_LENGTH;
@@ -356,7 +356,7 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
     return 0;
   }
 
-  /* track log memory allocation */
+  /* Track log memory allocation */
   LoggingConfig.allocated_log_mem += alloc_len;
   newLog->message_len = alloc_len;
 

@@ -223,6 +223,7 @@
                 <option>
                     <name>CCDefines</name>
                     <state>configTASK_NOTIFICATION_ARRAY_ENTRIES=8</state>
+                    <state>ST67_ARCH=W6X_ARCH_T01</state>
                     <state>LFS_CONFIG=lfs_util_config.h</state>
                     <state>USE_HAL_DRIVER</state>
                     <state>STM32U575xx</state>
@@ -347,8 +348,9 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/../Core/Inc</state>
-                    <state>$PROJ_DIR$/../App_HTTPS_Client/App</state>
-                    <state>$PROJ_DIR$/../App_HTTPS_Client/Target</state>
+                    <state>$PROJ_DIR$/../ST67W6X/App</state>
+                    <state>$PROJ_DIR$/../Appli/App</state>
+                    <state>$PROJ_DIR$/../Appli/Target</state>
                     <state>$PROJ_DIR$/../ST67W6X/Target</state>
                     <state>$PROJ_DIR$/../littlefs/Target</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc</state>
@@ -361,11 +363,11 @@
                     <state>$PROJ_DIR$/../../../../../../Drivers/CMSIS/RTOS2/Include/</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/cJSON</state>
                     <state>$PROJ_DIR$/../../../../../../Utilities/lpm/tiny_lpm</state>
-                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at</state>
-                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/littlefs</state>
                 </option>
                 <option>
@@ -631,8 +633,9 @@
                 <option>
                     <name>AUserIncludes</name>
                     <state>$PROJ_DIR$/../Core/Inc</state>
-                    <state>$PROJ_DIR$/../App_HTTPS_Client/App</state>
-                    <state>$PROJ_DIR$/../App_HTTPS_Client/Target</state>
+                    <state>$PROJ_DIR$/../ST67W6X/App</state>
+                    <state>$PROJ_DIR$/../Appli/App</state>
+                    <state>$PROJ_DIR$/../Appli/Target</state>
                     <state>$PROJ_DIR$/../ST67W6X/Target</state>
                     <state>$PROJ_DIR$/../littlefs/Target</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/STM32U5xx_HAL_Driver/Inc</state>
@@ -645,11 +648,11 @@
                     <state>$PROJ_DIR$/../../../../../../Drivers/CMSIS/RTOS2/Include/</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/cJSON</state>
                     <state>$PROJ_DIR$/../../../../../../Utilities/lpm/tiny_lpm</state>
-                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at</state>
-                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Shell</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/littlefs</state>
                 </option>
                 <option>
@@ -1032,7 +1035,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>ST67W6X_HTTPS_Client_import_lib.o</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
@@ -1130,26 +1133,26 @@
         <group>
             <name>User</name>
             <group>
-                <name>App_HTTPS_Client</name>
+                <name>Appli</name>
                 <group>
                     <name>App</name>
                     <file>
-                        <name>$PROJ_DIR$\..\App_HTTPS_Client\App\https_client.c</name>
+                        <name>$PROJ_DIR$\..\Appli\App\https_client.c</name>
                     </file>
                     <file>
-                        <name>$PROJ_DIR$\..\App_HTTPS_Client\App\main_app.c</name>
+                        <name>$PROJ_DIR$\..\Appli\App\main_app.c</name>
                     </file>
                 </group>
                 <group>
                     <name>Target</name>
                     <file>
-                        <name>$PROJ_DIR$\..\App_HTTPS_Client\Target\freertos_tickless.c</name>
+                        <name>$PROJ_DIR$\..\Appli\Target\freertos_tickless.c</name>
                     </file>
                     <file>
-                        <name>$PROJ_DIR$\..\App_HTTPS_Client\Target\logshell_ctrl.c</name>
+                        <name>$PROJ_DIR$\..\Appli\Target\logshell_ctrl.c</name>
                     </file>
                     <file>
-                        <name>$PROJ_DIR$\..\App_HTTPS_Client\Target\stm32_lpm_if.c</name>
+                        <name>$PROJ_DIR$\..\Appli\Target\stm32_lpm_if.c</name>
                     </file>
                 </group>
             </group>
@@ -1185,6 +1188,12 @@
             </group>
             <group>
                 <name>ST67W6X</name>
+                <group>
+                    <name>App</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\ST67W6X\App\app_st67w6x.c</name>
+                    </file>
+                </group>
                 <group>
                     <name>Target</name>
                     <file>
@@ -1349,9 +1358,12 @@
         <group>
             <name>ST67W6X_Network_Driver</name>
             <group>
-                <name>Network/Driver/W61_at_and_bus</name>
+                <name>Network/ATDriver</name>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Misc\common_parser.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\modem_cmd_handler.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_bus\spi_iface.c</name>
@@ -1367,9 +1379,6 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_at_net.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_at_rx_parser.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_at_sys.c</name>
@@ -1394,6 +1403,9 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_net.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_netif.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_ota.c</name>

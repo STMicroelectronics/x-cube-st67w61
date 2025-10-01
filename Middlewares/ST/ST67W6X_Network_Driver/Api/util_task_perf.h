@@ -24,6 +24,22 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* Includes ------------------------------------------------------------------*/
+#include "w6x_config.h"
+
+/* Exported constants --------------------------------------------------------*/
+/** @defgroup ST67W6X_Utilities_Performance_Task_Perf_Constants ST67W6X Utility Performance Task Perf Constants
+  * @ingroup  ST67W6X_Utilities_Performance_Task_Perf
+  * @{
+  */
+
+#ifndef TASK_PERF_ENABLE
+/** Enable task performance measurement */
+#define TASK_PERF_ENABLE      0
+#endif /* TASK_PERF_ENABLE */
+
+/** @} */
+
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup ST67W6X_Utilities_Performance_Task_Perf_Functions ST67W6X Utility Performance Task Perf Functions
   * @ingroup  ST67W6X_Utilities_Performance_Task_Perf
@@ -64,6 +80,27 @@ void task_perf_report(void);
   * @brief  Task allocation report
   */
 void task_alloc_report(void);
+
+/**
+  * @brief  Task performance reset cortex counter
+  */
+void util_task_port_reset(void);
+
+/**
+  * @brief  Task performance resume cortex counter
+  */
+void util_task_port_resume(void);
+
+/**
+  * @brief  Task performance stop cortex counter
+  */
+void util_task_port_stop(void);
+
+/**
+  * @brief  Task performance get cortex counter cycle
+  * @return  Cortex counter cycle
+  */
+uint32_t util_task_port_get_cycle(void);
 
 /** @} */
 

@@ -26,6 +26,11 @@
 #include "w61_io.h"        /* Prototypes of the BUS functions to be registered */
 #include "common_parser.h" /* Common Parser functions */
 
+#if (!defined(ST67_ARCH) || ((ST67_ARCH != W6X_ARCH_T02) && (ST67_ARCH != W6X_ARCH_T01)))
+#error "ST67_ARCH not defined or invalid. Supported values are: W6X_ARCH_T01 or W6X_ARCH_T02"
+#error "Please define ST67_ARCH in the compiler preprocessor macros"
+#endif /* ST67_ARCH */
+
 /* Private defines -----------------------------------------------------------*/
 /** @defgroup ST67W6X_Private_System_Constants ST67W6X System Constants
   * @ingroup  ST67W6X_Private_System
@@ -33,6 +38,8 @@
   */
 
 #define W6X_FS_READ_BLOCK_SIZE  256 /*!< File system read block size */
+
+#define ANT_DIVERSITY_PIN       0   /*!< Antenna diversity GPIO pin number */
 
 #ifndef HAL_SYS_RESET
 /** HAL System software reset function */
@@ -52,8 +59,10 @@ extern void HAL_NVIC_SystemReset(void);
 
 static W61_Object_t *p_DrvObj = NULL;                 /*!< Global W61 context pointer */
 
+#if (W6X_ASSERT_ENABLE == 1)
 /** W6X System init error string */
 static const char W6X_Sys_Uninit_str[] = "W6X System module not initialized";
+#endif /* W6X_ASSERT_ENABLE */
 
 static W6X_App_Cb_t W6X_CbHandler;                    /*!< W6X Applicative Callbacks handler */
 
@@ -75,33 +84,55 @@ static W6X_ModuleInfo_t *p_module_info = NULL;        /*!< W61 module info */
 
 W6X_Status_t W6X_Init(void)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
+  W6X_Status_t ret;
   uint32_t clock_source = 0;
+  int32_t Netmode = -1;
 
   p_DrvObj = W61_ObjGet();
   NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
 
-  /* Register the Bus IO callbacks */
-  ret = TranslateErrorStatus(W61_RegisterBusIO(p_DrvObj,
-                                               BusIo_SPI_Init,
-                                               BusIo_SPI_DeInit,
-                                               BusIo_SPI_Delay,
-                                               BusIo_SPI_Send,
-                                               BusIo_SPI_Receive));
   /* Configure the default power save mode and WakeUp pin */
   W61_LowPowerConfig(p_DrvObj, 28, 2);
-
-  if (ret != W6X_STATUS_OK)
-  {
-    LogError("Register Bus IO failed\n");
-    goto _err;
-  }
 
   /* Initialize the W61 module */
   ret = TranslateErrorStatus(W61_Init(p_DrvObj));
   if (ret != W6X_STATUS_OK)
   {
-    LogError("W61 Init failed\n");
+    SYS_LOG_ERROR("W61 Init failed\n");
+    goto _err;
+  }
+
+  /* Get the current Network mode (0: on host, 1: on NCP) */
+  ret = TranslateErrorStatus(W61_GetNetMode(p_DrvObj, &Netmode));
+  if (ret != W6X_STATUS_OK)
+  {
+    SYS_LOG_ERROR("Get Net mode failed\n");
+    goto _err;
+  }
+
+  if (Netmode == 1)
+  {
+    p_DrvObj->NetCtx.Supported = 1; /* AT Network module supported */
+#if (ST67_ARCH == W6X_ARCH_T02)
+    LogError("SDK T02 variant is required for the ST67_ARCH selected\n");
+    ret = W6X_STATUS_ERROR;
+    goto _err;
+#endif /* ST67_ARCH */
+  }
+  else if (Netmode == 0)
+  {
+    /* AT Network module not supported. The network interface must be linked to the IP stack on host */
+    p_DrvObj->NetCtx.Supported = 0;
+#if (ST67_ARCH == W6X_ARCH_T01)
+    LogError("SDK T01 variant is required for the ST67_ARCH selected\n");
+    ret = W6X_STATUS_ERROR;
+    goto _err;
+#endif /* ST67_ARCH */
+  }
+  else
+  {
+    SYS_LOG_ERROR("Invalid Net mode %d\n", Netmode);
+    ret = W6X_STATUS_ERROR;
     goto _err;
   }
 
@@ -109,7 +140,7 @@ W6X_Status_t W6X_Init(void)
   ret = TranslateErrorStatus(W61_GetClockSource(p_DrvObj, &clock_source));
   if (ret != W6X_STATUS_OK)
   {
-    LogError("Get W61 clock source failed\n");
+    SYS_LOG_ERROR("Get W61 clock source failed\n");
     goto _err;
   }
 
@@ -119,38 +150,41 @@ W6X_Status_t W6X_Init(void)
     ret = TranslateErrorStatus(W61_SetClockSource(p_DrvObj, W6X_CLOCK_MODE));
     if (ret != W6X_STATUS_OK)
     {
-      LogError("Set W61 clock failed\n");
+      SYS_LOG_ERROR("Set W61 clock failed\n");
       goto _err;
     }
-    /* Reboot the host to apply the clock change */
-    HAL_SYS_RESET();
+    HAL_SYS_RESET(); /* Reboot the host to apply the clock change */
   }
 
   /* Get the W61 info */
   ret = TranslateErrorStatus(W61_GetModuleInfo(p_DrvObj));
   if (ret != W6X_STATUS_OK)
   {
-    LogError("Get W61 Info failed\n");
+    SYS_LOG_ERROR("Get W61 Info failed\n");
     goto _err;
   }
 
   /* Store the W61 information */
   p_module_info = (W6X_ModuleInfo_t *)&p_DrvObj->ModuleInfo;
 
-  /* Display the W61 information in banner */
-  (void)W6X_ModuleInfoDisplay();
+  (void)W6X_ModuleInfoDisplay(); /* Display the W61 information in banner */
 
 #if (LFS_ENABLE == 1)
-  /* Initialize the File system with user certificates */
-  easyflash_init();
+  easyflash_init(); /* Initialize the File system with user certificates */
 #endif /* LFS_ENABLE */
+  if (p_DrvObj->ModuleInfo.ModuleID.ModuleID == W61_MODULE_ID_B)
+  {
+    /* Restore the antenna diversity pin to floating input */
+    (void)W61_RestoreGPIO(p_DrvObj, ANT_DIVERSITY_PIN);
+  }
 
   /* Set the wake-up pin to the ST67W611M */
   (void)W61_SetWakeUpPin(p_DrvObj, p_DrvObj->LowPowerCfg.WakeUpPinIn);
 
 #if (W6X_POWER_SAVE_AUTO == 1)
-  /* Enable the power mode */
-  (void)W6X_SetPowerMode(1);
+  (void)W6X_SetPowerMode(1); /* Enable the power save mode */
+#else
+  (void)W6X_SetPowerMode(0); /* Disable the power save mode */
 #endif /* W6X_POWER_SAVE_AUTO */
 
   ret = W6X_STATUS_OK;
@@ -159,13 +193,16 @@ _err:
   return ret;
 }
 
-W6X_Status_t W6X_DeInit(void)
+void W6X_DeInit(void)
 {
-  W6X_Status_t ret;
-  /* Set to hibernate*/
+  if (p_DrvObj == NULL)
+  {
+    return; /* Nothing to do */
+  }
+  /* Set to hibernate */
   (void)W61_SetPowerMode(p_DrvObj, 1, 0);
   /* DeInit and power-off the ST67 by resetting the CHIP_EN pin */
-  ret = TranslateErrorStatus(W61_DeInit(p_DrvObj));
+  TranslateErrorStatus(W61_DeInit(p_DrvObj));
 
   if (W6X_FilesList != NULL)
   {
@@ -177,54 +214,78 @@ W6X_Status_t W6X_DeInit(void)
   p_module_info = NULL; /* Reset the module info */
   p_DrvObj = NULL; /* Reset the global pointer */
 
-  return ret;
 }
 
 W6X_Status_t W6X_ModuleInfoDisplay(void)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
   NULL_ASSERT(p_module_info, "Module info not available");
 
   /* Display the W61 information */
-  LogInfo("--------------- ST67W6X info ------------\n");
-  LogInfo("ST67W6X MW Version:       " W6X_VERSION_STR "\n");
-  LogInfo("AT Version:               %s\n", p_module_info->AT_Version);
-  LogInfo("SDK Version:              %s\n", p_module_info->SDK_Version);
-  LogInfo("MAC Version:              %s\n", p_module_info->MAC_Version);
-  LogInfo("Build Date:               %s\n", p_module_info->Build_Date);
-  LogInfo("Module ID:                %s\n", p_module_info->ModuleID);
-  LogInfo("BOM ID:                   %" PRIu16 "\n", p_module_info->BomID);
-  LogInfo("Manufacturing Year:       20%02" PRIu16 "\n", p_module_info->Manufacturing_Year);
-  LogInfo("Manufacturing Week:       %02" PRIu16 "\n", p_module_info->Manufacturing_Week);
-  LogInfo("Battery Voltage:          %" PRIu32 ".%" PRIu32 " V\n", p_module_info->BatteryVoltage / 1000,
-          p_module_info->BatteryVoltage % 1000);
-  LogInfo("Trim Wi-Fi hp:            %" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16
-          ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 "\n",
-          p_module_info->trim_wifi_hp[0], p_module_info->trim_wifi_hp[1],
-          p_module_info->trim_wifi_hp[2], p_module_info->trim_wifi_hp[3],
-          p_module_info->trim_wifi_hp[4], p_module_info->trim_wifi_hp[5],
-          p_module_info->trim_wifi_hp[6], p_module_info->trim_wifi_hp[7],
-          p_module_info->trim_wifi_hp[8], p_module_info->trim_wifi_hp[9],
-          p_module_info->trim_wifi_hp[10], p_module_info->trim_wifi_hp[11],
-          p_module_info->trim_wifi_hp[12], p_module_info->trim_wifi_hp[13]);
-  LogInfo("Trim Wi-Fi lp:            %" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16
-          ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 "\n",
-          p_module_info->trim_wifi_lp[0], p_module_info->trim_wifi_lp[1],
-          p_module_info->trim_wifi_lp[2], p_module_info->trim_wifi_lp[3],
-          p_module_info->trim_wifi_lp[4], p_module_info->trim_wifi_lp[5],
-          p_module_info->trim_wifi_lp[6], p_module_info->trim_wifi_lp[7],
-          p_module_info->trim_wifi_lp[8], p_module_info->trim_wifi_lp[9],
-          p_module_info->trim_wifi_lp[10], p_module_info->trim_wifi_lp[11],
-          p_module_info->trim_wifi_lp[12], p_module_info->trim_wifi_lp[13]);
-  LogInfo("Trim BLE:                 %" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 "\n",
-          p_module_info->trim_ble[0], p_module_info->trim_ble[1], p_module_info->trim_ble[2],
-          p_module_info->trim_ble[3], p_module_info->trim_ble[4]);
-  LogInfo("Trim XTAL:                %" PRIi16 "\n", p_module_info->trim_xtal);
-  LogInfo("MAC Address:              " MACSTR "\n", MAC2STR(p_module_info->Mac_Address));
-  LogInfo("Anti-rollback Bootloader: %" PRIu16 "\n", p_module_info->AntiRollbackBootloader);
-  LogInfo("Anti-rollback App:        %" PRIu16 "\n", p_module_info->AntiRollbackApp);
-  LogInfo("-----------------------------------------\n");
+  SYS_LOG_INFO("--------------- ST67W6X info ------------\n");
+  SYS_LOG_INFO("ST67W6X MW Version:       " W6X_VERSION_STR "\n");
+  SYS_LOG_INFO("AT Version:               %" PRIi16 ".%" PRIi16 ".%" PRIi16 "\n",
+               p_module_info->AT_Version.Major, p_module_info->AT_Version.Sub1, p_module_info->AT_Version.Sub2);
+  SYS_LOG_INFO("SDK Version:              %" PRIi16 ".%" PRIi16 ".%" PRIi16,
+               p_module_info->SDK_Version.Major, p_module_info->SDK_Version.Sub1, p_module_info->SDK_Version.Sub2);
+  if (p_module_info->SDK_Version.Patch != 0)
+  {
+    SYS_LOG_INFO(".%" PRIi16, p_module_info->SDK_Version.Patch);
+  }
+  SYS_LOG_INFO("\n");
+  SYS_LOG_INFO("Wi-Fi MAC Version:        %" PRIi16 ".%" PRIi16 ".%" PRIi16 "\n",
+               p_module_info->WiFi_MAC_Version.Major, p_module_info->WiFi_MAC_Version.Sub1,
+               p_module_info->WiFi_MAC_Version.Sub2);
+  SYS_LOG_INFO("BT Controller Version:    %" PRIi16 ".%" PRIi16 ".%" PRIi16 "\n",
+               p_module_info->BT_Controller_Version.Major, p_module_info->BT_Controller_Version.Sub1,
+               p_module_info->BT_Controller_Version.Sub2);
+  SYS_LOG_INFO("BT Stack Version:         %" PRIi16 ".%" PRIi16 ".%" PRIi16 "\n",
+               p_module_info->BT_Stack_Version.Major, p_module_info->BT_Stack_Version.Sub1,
+               p_module_info->BT_Stack_Version.Sub2);
+  SYS_LOG_INFO("Build Date:               %s\n", p_module_info->Build_Date);
+  SYS_LOG_INFO("Module ID:                ");
+  if (p_module_info->ModuleID.ModuleName[0] == '\0')
+  {
+    SYS_LOG_INFO("Undefined");
+  }
+  else
+  {
+    SYS_LOG_INFO("%s (%s)", p_module_info->ModuleID.ModuleName, W6X_ModelToStr(p_module_info->ModuleID.ModuleID));
+  }
+  SYS_LOG_INFO("\n");
+  SYS_LOG_INFO("BOM ID:                   %" PRIu16 "\n", p_module_info->BomID);
+  SYS_LOG_INFO("Manufacturing Year:       20%02" PRIu16 "\n", p_module_info->Manufacturing_Year);
+  SYS_LOG_INFO("Manufacturing Week:       %02" PRIu16 "\n", p_module_info->Manufacturing_Week);
+  SYS_LOG_INFO("Battery Voltage:          %" PRIu32 ".%" PRIu32 " V\n", p_module_info->BatteryVoltage / 1000,
+               p_module_info->BatteryVoltage % 1000);
+  SYS_LOG_INFO("Trim Wi-Fi hp:            %" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%"
+               PRIi16
+               ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 "\n",
+               p_module_info->trim_wifi_hp[0], p_module_info->trim_wifi_hp[1],
+               p_module_info->trim_wifi_hp[2], p_module_info->trim_wifi_hp[3],
+               p_module_info->trim_wifi_hp[4], p_module_info->trim_wifi_hp[5],
+               p_module_info->trim_wifi_hp[6], p_module_info->trim_wifi_hp[7],
+               p_module_info->trim_wifi_hp[8], p_module_info->trim_wifi_hp[9],
+               p_module_info->trim_wifi_hp[10], p_module_info->trim_wifi_hp[11],
+               p_module_info->trim_wifi_hp[12], p_module_info->trim_wifi_hp[13]);
+  SYS_LOG_INFO("Trim Wi-Fi lp:            %" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%"
+               PRIi16
+               ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 "\n",
+               p_module_info->trim_wifi_lp[0], p_module_info->trim_wifi_lp[1],
+               p_module_info->trim_wifi_lp[2], p_module_info->trim_wifi_lp[3],
+               p_module_info->trim_wifi_lp[4], p_module_info->trim_wifi_lp[5],
+               p_module_info->trim_wifi_lp[6], p_module_info->trim_wifi_lp[7],
+               p_module_info->trim_wifi_lp[8], p_module_info->trim_wifi_lp[9],
+               p_module_info->trim_wifi_lp[10], p_module_info->trim_wifi_lp[11],
+               p_module_info->trim_wifi_lp[12], p_module_info->trim_wifi_lp[13]);
+  SYS_LOG_INFO("Trim BLE:                 %" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 ",%" PRIi16 "\n",
+               p_module_info->trim_ble[0], p_module_info->trim_ble[1], p_module_info->trim_ble[2],
+               p_module_info->trim_ble[3], p_module_info->trim_ble[4]);
+  SYS_LOG_INFO("Trim XTAL:                %" PRIi16 "\n", p_module_info->trim_xtal);
+  SYS_LOG_INFO("MAC Address:              " MACSTR "\n", MAC2STR(p_module_info->Mac_Address));
+  SYS_LOG_INFO("Anti-rollback Bootloader: %" PRIu16 "\n", p_module_info->AntiRollbackBootloader);
+  SYS_LOG_INFO("Anti-rollback App:        %" PRIu16 "\n", p_module_info->AntiRollbackApp);
+  SYS_LOG_INFO("-----------------------------------------\n");
 
   return W6X_STATUS_OK;
 }
@@ -243,7 +304,6 @@ W6X_ModuleInfo_t *W6X_GetModuleInfo(void)
 
 W6X_Status_t W6X_RegisterAppCb(W6X_App_Cb_t *App_cb)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(App_cb, W6X_Sys_Uninit_str);
 
   /* Register the application callback */
@@ -252,29 +312,62 @@ W6X_Status_t W6X_RegisterAppCb(W6X_App_Cb_t *App_cb)
   return W6X_STATUS_OK;
 }
 
-W6X_Status_t W6X_FS_WriteFile(char *filename)
+W6X_Status_t W6X_FS_WriteFileByName(char *filename)
 {
-#if (LFS_ENABLE == 1)
+  /* Write the file to the NCP. Requires the file to be present in the host filesystem */
+  return W6X_FS_WriteFileByContent(filename, NULL, 0);
+}
+
+W6X_Status_t W6X_FS_WriteFileByContent(char *filename, const char *file, uint32_t len)
+{
   W6X_FS_FilesListFull_t *files_list = NULL;
-  uint32_t file_lfs_index = 0;
   uint32_t file_ncp_index = 0;
-  uint8_t buf[W6X_FS_READ_BLOCK_SIZE + 1] = {0};
-  int32_t read_len = 0;
-  uint32_t offset = 0;
+  uint32_t read_offset = 0;
+  uint32_t part_len;
   uint32_t file_lfs_size = 0;
+#if (LFS_ENABLE == 1)
+  uint8_t *buf = NULL;
+  uint32_t file_lfs_index = 0;
+  int32_t read_len = 0;
+#endif /* LFS_ENABLE */
   W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
+  /* Allocate a buffer to read a block of the NCP file */
+  uint8_t *ncp_buf = pvPortMalloc(W6X_FS_READ_BLOCK_SIZE + 1);
+  if (ncp_buf == NULL)
+  {
+    goto _err;
+  }
+  memset(ncp_buf, 0, W6X_FS_READ_BLOCK_SIZE + 1);
+
+#if (LFS_ENABLE == 1)
+  /* Allocate a buffer to read a block of the Host lfs file */
+  buf = pvPortMalloc(W6X_FS_READ_BLOCK_SIZE + 1);
+  if (buf == NULL)
+  {
+    goto _err;
+  }
+  memset(buf, 0, W6X_FS_READ_BLOCK_SIZE + 1);
+#else
+  if (file == NULL)
+  {
+    SYS_LOG_ERROR("File content not available\n");
+    ret = W6X_STATUS_ERROR;
+    goto _err;
+  }
+#endif /* LFS_ENABLE */
 
   ret = W6X_FS_ListFiles(&files_list); /* Get the files list available in the NCP */
   if (ret != W6X_STATUS_OK)
   {
     if (ret == W6X_STATUS_ERROR)
     {
-      LogError("Unable to list files\n");
+      SYS_LOG_ERROR("Unable to list files\n");
     }
     goto _err;
   }
 
+#if (LFS_ENABLE == 1)
   /* Check if the file exists in the lfs_files_list to be copied in NCP */
   for (; file_lfs_index < files_list->nb_files; file_lfs_index++)
   {
@@ -286,18 +379,20 @@ W6X_Status_t W6X_FS_WriteFile(char *filename)
     }
   }
 
-  if (file_lfs_index == files_list->nb_files)
+  if ((file == NULL) && (file_lfs_index == files_list->nb_files))
   {
     /* File not found in the lfs_files_list */
-    LogError("File not found in the Host LFS. Verify the filename and littlefs.bin generation");
+    SYS_LOG_ERROR("File not found in the Host LFS. Verify the filename and littlefs.bin generation");
     goto _err;
   }
+#endif /* LFS_ENABLE */
 
   /* Check if the file exists in the NCP */
   for (; file_ncp_index < files_list->ncp_files_list.nb_files; file_ncp_index++)
   {
     if (strncmp(files_list->ncp_files_list.filename[file_ncp_index], filename, strlen(filename)) == 0)
     {
+      /* File found in the NCP. Must to check if the content is the same */
       uint32_t size = 0;
       /* Get the NCP file size */
       ret = TranslateErrorStatus(W61_FS_GetSizeFile(p_DrvObj, filename, &size));
@@ -307,13 +402,15 @@ W6X_Status_t W6X_FS_WriteFile(char *filename)
       }
 
       /* File found. Must to check if the size of Host lfs file and NCP file are equal */
-      if (files_list->lfs_files_list[file_lfs_index].size == size)
+#if (LFS_ENABLE == 1)
+      if (((file != NULL) && (len == size)) || (files_list->lfs_files_list[file_lfs_index].size == size))
+#else
+      if ((file != NULL) && (len == size))
+#endif /* LFS_ENABLE */
       {
-        uint8_t ncp_buf[W6X_FS_READ_BLOCK_SIZE + 1] = {0};
-        uint32_t read_offset = 0;
-        uint32_t part_len;
+        read_offset = 0;
 
-        while (read_offset < size) /* Read and compare the files by block */
+        while (read_offset < size) /* Size of files are equal. Read and compare the files by block */
         {
           part_len = (size - read_offset) < W6X_FS_READ_BLOCK_SIZE ? (size - read_offset) : W6X_FS_READ_BLOCK_SIZE;
           /* Read a part of the NCP file */
@@ -322,6 +419,8 @@ W6X_Status_t W6X_FS_WriteFile(char *filename)
           {
             goto _err;
           }
+
+#if (LFS_ENABLE == 1)
           /* Read a part of the Host file */
           read_len = ef_get_env_blob_offset(filename, buf, part_len, NULL, read_offset);
           if ((read_len <= 0) || (read_len != part_len))
@@ -333,25 +432,34 @@ W6X_Status_t W6X_FS_WriteFile(char *filename)
           if (memcmp(ncp_buf, buf, part_len) != 0)
           {
             /* File content is different: Delete operation requested */
-            LogDebug("File content is different: Delete operation requested\n");
+            SYS_LOG_DEBUG("File content is different: Delete operation requested\n");
             W61_FS_DeleteFile(p_DrvObj, filename);
             break;
           }
-
+#else
+          /* Compare the two buffers */
+          if (memcmp(ncp_buf, &file[read_offset], part_len) != 0)
+          {
+            /* File content is different: Delete operation requested */
+            SYS_LOG_DEBUG("File content is different: Delete operation requested\n");
+            W61_FS_DeleteFile(p_DrvObj, filename);
+            break;
+          }
+#endif /* LFS_ENABLE */
           if (size == read_offset + part_len)
           {
             /* File already exists in the NCP and the content is the same */
-            LogDebug("File already exists in the NCP and the content is the same\n");
+            SYS_LOG_DEBUG("File already exists in the NCP and the content is the same\n");
             return W6X_STATUS_OK;
           }
 
-          read_offset += W6X_FS_READ_BLOCK_SIZE;
+          read_offset += part_len;
         }
       }
       else
       {
         /* File already exists in the NCP but the size is different: Delete operation requested */
-        LogDebug("File size is different: Delete operation requested\n");
+        SYS_LOG_DEBUG("File size is different: Delete operation requested\n");
         W61_FS_DeleteFile(p_DrvObj, filename);
       }
       break;
@@ -364,50 +472,66 @@ W6X_Status_t W6X_FS_WriteFile(char *filename)
   {
     if (ret == W6X_STATUS_ERROR)
     {
-      LogError("Unable to create file in NCP\n");
+      SYS_LOG_ERROR("Unable to create file in NCP\n");
     }
     goto _err;
   }
 
   /* Copy the file content */
+  read_offset = 0;
+#if (LFS_ENABLE == 0)
+  file_lfs_size = len;
+#endif /* LFS_ENABLE */
   do
   {
+#if (LFS_ENABLE == 1)
     /* Read data in Host lfs */
-    read_len = ef_get_env_blob_offset(filename, buf, W6X_FS_READ_BLOCK_SIZE, NULL, offset);
+    read_len = ef_get_env_blob_offset(filename, buf, W6X_FS_READ_BLOCK_SIZE, NULL, read_offset);
 
     if (read_len <= 0)
     {
-      LogError("Unable to read file in Host LFS\n");
+      SYS_LOG_ERROR("Unable to read file in Host LFS\n");
       goto _err;
     }
 
     /* Write data to the file */
-    ret = TranslateErrorStatus(W61_FS_WriteFile(p_DrvObj, filename, offset, buf, read_len));
+    ret = TranslateErrorStatus(W61_FS_WriteFile(p_DrvObj, filename, read_offset, buf, read_len));
+    read_offset += read_len;
+#else
+    part_len = (len - read_offset) < W6X_FS_READ_BLOCK_SIZE ? (len - read_offset) : W6X_FS_READ_BLOCK_SIZE;
+    ret = TranslateErrorStatus(W61_FS_WriteFile(p_DrvObj, filename, read_offset,
+                                                (uint8_t *)&file[read_offset], part_len));
+    read_offset += part_len;
+#endif /* LFS_ENABLE */
+
     if (ret != W6X_STATUS_OK)
     {
       if (ret == W6X_STATUS_ERROR)
       {
-        LogError("Unable to write file in NCP\n");
+        SYS_LOG_ERROR("Unable to write file in NCP\n");
       }
       goto _err;
     }
-    offset += read_len;
-  } while (offset < file_lfs_size);
+  } while (read_offset < file_lfs_size);
 
-  LogDebug("File copied to NCP\n");
+  SYS_LOG_DEBUG("File copied to NCP\n");
 
 _err:
-  return ret;
-#else
-  /* Cannot write data to file if no LFS service is available */
-  LogError("Host LFS service is not available\n");
-  return W6X_STATUS_NOT_SUPPORTED;
+  if (ncp_buf != NULL)
+  {
+    vPortFree(ncp_buf);
+  }
+#if (LFS_ENABLE == 1)
+  if (buf != NULL)
+  {
+    vPortFree(buf);
+  }
 #endif /* LFS_ENABLE */
+  return ret;
 }
 
 W6X_Status_t W6X_FS_ReadFile(char *filename, uint32_t offset, uint8_t *data, uint32_t len)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
 
   /* Read data from the file */
@@ -416,7 +540,6 @@ W6X_Status_t W6X_FS_ReadFile(char *filename, uint32_t offset, uint8_t *data, uin
 
 W6X_Status_t W6X_FS_DeleteFile(char *filename)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
 
   /* Delete the file */
@@ -425,7 +548,6 @@ W6X_Status_t W6X_FS_DeleteFile(char *filename)
 
 W6X_Status_t W6X_FS_GetSizeFile(char *filename, uint32_t *size)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
 
   /* Get the size of the file */
@@ -439,10 +561,11 @@ W6X_Status_t W6X_FS_ListFiles(W6X_FS_FilesListFull_t **files_list)
 
   if (W6X_FilesList == NULL)
   {
+    /* Allocate the files list to store all filenames */
     W6X_FilesList = pvPortMalloc(sizeof(W6X_FS_FilesListFull_t));
     if (W6X_FilesList == NULL)
     {
-      LogError("Unable to allocate memory for files list\n");
+      SYS_LOG_ERROR("Unable to allocate memory for files list\n");
       goto _err;
     }
   }
@@ -469,7 +592,6 @@ _err:
 
 W6X_Status_t W6X_SetPowerMode(uint32_t ps_mode)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
 
   /* Set the power save mode */
@@ -478,7 +600,7 @@ W6X_Status_t W6X_SetPowerMode(uint32_t ps_mode)
 
 W6X_Status_t W6X_GetPowerMode(uint32_t *ps_mode)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
+  W6X_Status_t ret;
   uint32_t mode = 0;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
 
@@ -489,22 +611,25 @@ W6X_Status_t W6X_GetPowerMode(uint32_t *ps_mode)
   return ret;
 }
 
-W6X_Status_t W6X_RestoreDefaultConfig(void)
+W6X_Status_t W6X_Reset(uint8_t restore)
 {
-  W6X_Status_t ret = W6X_STATUS_ERROR;
   W61_Ble_Mode_e ble_mode;
   uint8_t *ble_BuffRecvData = NULL;
   int32_t ble_BuffRecvDataSize = 0;
   uint8_t isWiFiMode;
-  uint8_t isNetMode;
   uint8_t isBleMode;
+#if (ST67_ARCH == W6X_ARCH_T01)
+  uint8_t isNetMode;
+#endif /* ST67_ARCH */
   uint32_t ps_mode = 0;
   NULL_ASSERT(p_DrvObj, W6X_Sys_Uninit_str);
 
   /* Check if the modules are initialized */
-  isWiFiMode = p_DrvObj->WiFi_event_cb != NULL ? 1 : 0;
-  isNetMode = p_DrvObj->Net_event_cb != NULL ? 1 : 0;
-  isBleMode = p_DrvObj->Ble_event_cb != NULL ? 1 : 0;
+  isWiFiMode = p_DrvObj->Callbacks.WiFi_event_cb != NULL ? 1 : 0;
+  isBleMode = p_DrvObj->Callbacks.Ble_event_cb != NULL ? 1 : 0;
+#if (ST67_ARCH == W6X_ARCH_T01)
+  isNetMode = p_DrvObj->Callbacks.Net_event_cb != NULL ? 1 : 0;
+#endif /* ST67_ARCH */
 
   /* Save the current power save mode */
   if (W6X_GetPowerMode(&ps_mode) != W6X_STATUS_OK)
@@ -518,13 +643,16 @@ W6X_Status_t W6X_RestoreDefaultConfig(void)
     W6X_WiFi_DeInit();
   }
 
+#if (ST67_ARCH == W6X_ARCH_T01)
   if (isNetMode)
   {
     W6X_Net_DeInit();
   }
+#endif /* ST67_ARCH */
 
   if (isBleMode)
   {
+    /* Save BLE buffer and mode information */
     ble_BuffRecvData = p_DrvObj->BleCtx.AppBuffRecvData;
     ble_BuffRecvDataSize = p_DrvObj->BleCtx.AppBuffRecvDataSize;
     if (W61_Ble_GetInitMode(p_DrvObj, &ble_mode) != W61_STATUS_OK)
@@ -535,10 +663,21 @@ W6X_Status_t W6X_RestoreDefaultConfig(void)
     W6X_Ble_DeInit();
   }
 
-  /* Reset the W61 module to factory default */
-  if (W61_ResetToFactoryDefault(p_DrvObj) != W61_STATUS_OK)
+  if (restore == 1)
   {
-    goto _err;
+    /* Reset the W61 module to factory default. This will erase all user data and reboot the ST67W611M */
+    if (W61_ResetToFactoryDefault(p_DrvObj) != W61_STATUS_OK)
+    {
+      goto _err;
+    }
+  }
+  else
+  {
+    /* Reset the W61 module */
+    if (W61_Reset(p_DrvObj) != W61_STATUS_OK)
+    {
+      goto _err;
+    }
   }
 
   /* Set the wake-up pin to the ST67W611M */
@@ -553,17 +692,21 @@ W6X_Status_t W6X_RestoreDefaultConfig(void)
     goto _err;
   }
 
-  /* ReInit the modules used */
+  /* If Wi-Fi was started, initialize the Wi-Fi module */
   if ((isWiFiMode) && (W6X_WiFi_Init() != W6X_STATUS_OK))
   {
     goto _err;
   }
 
+#if (ST67_ARCH == W6X_ARCH_T01)
+  /* If Network was started, initialize the Network module */
   if ((isNetMode) && (W6X_Net_Init() != W6X_STATUS_OK))
   {
     goto _err;
   }
+#endif /* ST67_ARCH */
 
+  /* If BLE was started, initialize the BLE module with previous configuration */
   if ((isBleMode) && (W6X_Ble_Init((W6X_Ble_Mode_e)ble_mode, ble_BuffRecvData, ble_BuffRecvDataSize) != W6X_STATUS_OK))
   {
     goto _err;
@@ -571,8 +714,8 @@ W6X_Status_t W6X_RestoreDefaultConfig(void)
 
   return W6X_STATUS_OK;
 _err:
-  LogError("Restore default config failed.\n");
-  return ret;
+  SYS_LOG_ERROR("Restore default config failed.\n");
+  return W6X_STATUS_ERROR;
 }
 
 W6X_Status_t W6X_ExeATCommand(char *at_cmd)
@@ -596,6 +739,23 @@ const char *W6X_StatusToStr(W6X_Status_t status)
       return "ERROR";
     default:
       return "UNKNOWN";
+  }
+}
+
+const char *W6X_ModelToStr(W6X_ModuleID_e module_id)
+{
+  switch (module_id)
+  {
+    case W6X_MODULE_ID_UNDEF:
+      return "Undefined";
+    case W6X_MODULE_ID_B:
+      return "-B";
+    case W6X_MODULE_ID_U:
+      return "-U";
+    case W6X_MODULE_ID_P:
+      return "-P";
+    default:
+      return "Undefined";
   }
 }
 

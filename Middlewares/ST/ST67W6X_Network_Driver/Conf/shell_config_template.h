@@ -27,7 +27,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32u5xx_hal.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -40,6 +39,9 @@ extern "C" {
 
 /** Enable the shell component */
 #define SHELL_ENABLE                            1
+
+/** Default shell commands list level (0: Minimal, 1: Full) */
+#define SHELL_CMD_LEVEL                         0
 
 /** Default shell prompt string */
 #define SHELL_DEFAULT_NAME                      "w61"
@@ -69,7 +71,7 @@ extern "C" {
 #define SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH  2000
 
 /** Shell receive buffer size */
-#define SHELL_FREERTOS_RX_BUFF_SIZE             512
+#define SHELL_FREERTOS_RX_BUFF_SIZE             128
 
 /** Shell receive thread stack size */
 #define SHELL_FREERTOS_RX_THREAD_STACK_SIZE     3072
@@ -86,18 +88,15 @@ extern "C" {
 /** Maximum number of characters to compare in the help command */
 #define SHELL_HELP_MAX_COMPARED_NB_CHAR         10
 
+/** Print log message */
+#define SHELL_LOG                               SHELL_DBG
+
 /* Memory allocator */
 /** Shell memory allocator */
 #define SHELL_MALLOC                            pvPortMalloc
 
 /** Shell memory deallocator */
 #define SHELL_FREE                              vPortFree
-
-/* To remap the log message of the shell into the logging system uncomment the following lines */
-/*
- * #include "logging.h"
- * #define SHELL_LOG                               LogInfo
- */
 
 /* USER CODE BEGIN EC */
 

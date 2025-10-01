@@ -39,17 +39,11 @@ extern "C" {
   * ============================
   */
 
-/** Maximum number of BLE connections */
-#define W61_BLE_MAX_CONN_NBR                    1
-
-/** Maximum number of BLE services */
-#define W61_BLE_MAX_SERVICE_NBR                 5
-
-/** Maximum number of BLE characteristics per service */
-#define W61_BLE_MAX_CHAR_NBR                    5
-
 /** Maximum number of detected peripheral during the scan. Cannot be greater than 50 */
 #define W61_BLE_MAX_DETECTED_PERIPHERAL         10
+
+/** Enable/Disable BLE module logging */
+#define BLE_LOG_ENABLE                          1
 
 /** ============================
   * AT Common
@@ -57,10 +51,15 @@ extern "C" {
   * Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_at_common.h
   * ============================
   */
+/** Maximum SPI buffer size */
+#define W61_MAX_SPI_XFER                        1520
 
 /** Debugging only: Enable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
 #define W61_AT_LOG_ENABLE                       0
 #include "logging.h"
+
+/** Enable/Disable System module logging */
+#define SYS_LOG_ENABLE                          1
 
 /* USER CODE BEGIN EC */
 

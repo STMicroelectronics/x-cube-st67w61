@@ -1,7 +1,7 @@
 #!/bin/bash -
 #prebuild script
 echo prebuild.sh : FOTA header structure generation started
-command="python $1/../../../../../ST67W6X_Utilities/FOTA/fota_header_gen.py gen_header -o $1/../App_FOTA/App"
+command="python $1/../../../../../ST67W6X_Utilities/FOTA/fota_header_gen.py gen_header -o $1/../Appli/App"
 echo $command
 $command
 ret=$?

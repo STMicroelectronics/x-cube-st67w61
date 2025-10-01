@@ -59,13 +59,14 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include "w6x_types.h"     /* W6X_ARCH_** */
+#if (ST67_ARCH == W6X_ARCH_T01)
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "w6x_types.h"
 #include "w6x_api.h"       /* Prototypes of the functions implemented in this file */
 #include "w61_at_api.h"    /* Prototypes of the functions called by this file */
 #include "w6x_internal.h"
@@ -104,22 +105,34 @@ struct http_request_task_obj
 
 #ifndef W6X_HTTP_CLIENT_THREAD_STACK_SIZE
 /** HTTP Client thread stack size */
-#define W6X_HTTP_CLIENT_THREAD_STACK_SIZE   2048
+#define W6X_HTTP_CLIENT_THREAD_STACK_SIZE           1536
 #endif /* W6X_HTTP_CLIENT_THREAD_STACK_SIZE */
 
 #ifndef W6X_HTTP_CLIENT_THREAD_PRIO
 /** HTTP Client thread priority */
-#define W6X_HTTP_CLIENT_THREAD_PRIO         30
+#define W6X_HTTP_CLIENT_THREAD_PRIO                 30
 #endif /* W6X_HTTP_CLIENT_THREAD_PRIO */
 
+#ifndef W6X_HTTP_CLIENT_DATA_RECV_SIZE
+/** HTTP data maximum requested data size */
+#define W6X_HTTP_CLIENT_DATA_RECV_SIZE              2048U
+#endif /* W6X_HTTP_CLIENT_DATA_RECV_SIZE */
+
+/** Maximum size of data to be received in a single HTTP transaction */
+#if (W6X_HTTP_CLIENT_DATA_RECV_SIZE < 4096U)
+#define W6X_HTTP_CLIENT_MAX_DATA_SEND_BUFFER_SIZE   4096U
+#else
+#define W6X_HTTP_CLIENT_MAX_DATA_SEND_BUFFER_SIZE   W6X_HTTP_CLIENT_DATA_RECV_SIZE
+#endif /* W6X_HTTP_CLIENT_MAX_DATA_SEND_BUFFER_SIZE */
+
 /** Maximum size of accepted HTTP response buffer */
-#define W6X_HTTP_HEAD_MAX_RESP_BUFFER_SIZE  2048U
+#define W6X_HTTP_CLIENT_HEAD_MAX_RESP_BUFFER_SIZE   2048U
 
 /** HTTP Client custom version string */
-#define W6X_HTTP_CUSTOM_VERSION_STRING      "1.0"
+#define W6X_HTTP_CLIENT_CUSTOM_VERSION_STRING       "1.0"
 
 /** HTTP client agent string */
-#define W6X_HTTP_CLIENT_AGENT               "w6x/" W6X_HTTP_CUSTOM_VERSION_STRING
+#define W6X_HTTP_CLIENT_AGENT                       "w6x/" W6X_HTTP_CLIENT_CUSTOM_VERSION_STRING
 
 /** @} */
 
@@ -134,8 +147,8 @@ struct http_request_task_obj
   "HEAD %s HTTP/1.1\r\n"  /* URI */                                                    \
   "User-Agent: %s\r\n"    /* User-Agent */                                             \
   "Accept: */*\r\n"                                                                    \
-  "Host: %s\r\n"          /* server name */                                            \
-  "Connection: Close\r\n" /* we don't support persistent connections, yet */           \
+  "Host: %s\r\n"          /* Server name */                                            \
+  "Connection: close\r\n" /* Don't yet support persistent connections */               \
   "\r\n"
 
 /** HEAD request with host format */
@@ -147,8 +160,8 @@ struct http_request_task_obj
   "HEAD %s HTTP/1.1\r\n"  /* URI */                                                    \
   "User-Agent: %s\r\n"    /* User-Agent */                                             \
   "Accept: */*\r\n"                                                                    \
-  "Host: %s\r\n"          /* server name */                                            \
-  "Connection: Close\r\n" /* we don't support persistent connections, yet */           \
+  "Host: %s\r\n"          /* Server name */                                            \
+  "Connection: close\r\n" /* Don't yet support persistent connections */               \
   "\r\n"
 
 /** HEAD request basic format */
@@ -160,7 +173,7 @@ struct http_request_task_obj
   "GET %s HTTP/1.0\r\n"   /* URI */                                                    \
   "User-Agent: %s\r\n"    /* User-Agent */                                             \
   "Accept: */*\r\n"                                                                    \
-  "Connection: Close\r\n" /* we don't support persistent connections, yet */           \
+  "Connection: close\r\n" /* Don't yet support persistent connections */               \
   "\r\n"
 
 /** GET request basic format */
@@ -179,8 +192,8 @@ struct http_request_task_obj
   "GET %s HTTP/1.1\r\n"   /* URI */                                                    \
   "User-Agent: %s\r\n"    /* User-Agent */                                             \
   "Accept: */*\r\n"                                                                    \
-  "Host: %s\r\n"          /* server name */                                            \
-  "Connection: Close\r\n" /* we don't support persistent connections, yet */           \
+  "Host: %s\r\n"          /* Server name */                                            \
+  "Connection: close\r\n" /* Don't yet support persistent connections */               \
   "\r\n"
 
 /** GET request with host format */
@@ -192,8 +205,8 @@ struct http_request_task_obj
   "GET http://%s%s HTTP/1.1\r\n" /* HOST, URI */                                       \
   "User-Agent: %s\r\n"           /* User-Agent */                                      \
   "Accept: */*\r\n"                                                                    \
-  "Host: %s\r\n"                 /* server name */                                     \
-  "Connection: Close\r\n"        /* we don't support persistent connections, yet */    \
+  "Host: %s\r\n"                 /* Server name */                                     \
+  "Connection: close\r\n"        /* Don't yet support persistent connections */        \
   "\r\n"
 
 /** GET request with proxy format */
@@ -205,8 +218,8 @@ struct http_request_task_obj
   "GET http://%s:%d%s HTTP/1.1\r\n" /* HOST, host-port, URI */                         \
   "User-Agent: %s\r\n"              /* User-Agent */                                   \
   "Accept: */*\r\n"                                                                    \
-  "Host: %s\r\n"                    /* server name */                                  \
-  "Connection: Close\r\n"           /* we don't support persistent connections, yet */ \
+  "Host: %s\r\n"                    /* Server name */                                  \
+  "Connection: close\r\n"           /* Don't yet support persistent connections */     \
   "\r\n"
 
 /** GET request with proxy (non-default server port) format */
@@ -222,8 +235,8 @@ struct http_request_task_obj
   "Host: %s\r\n"                                                                       \
   "Content-Type: %s\r\n"                                                               \
   "Content-Length: %d\r\n"                                                             \
-  "Connection: keep-alive"          /* we don't support persistent connections, yet */ \
-  "\r\n\r\n%s"
+  "Connection: close\r\n"           /* Don't yet support persistent connections */     \
+  "\r\n%s"
 
 /** POST request with host */
 #define HTTPC_REQ_POST_11_FORMAT(uri, srv_name, content_type, length, data) \
@@ -236,6 +249,16 @@ struct http_request_task_obj
 /** @} */
 
 /* Private variables ---------------------------------------------------------*/
+
+/** Supported HTTP versions */
+const static char alpn_list[] = "http/1.1,http/1.2";
+
+/** HTTP client TCP socket size */
+const static int32_t optval = W6X_HTTP_CLIENT_TCP_SOCKET_SIZE;
+
+/** HTTP client TCP socket data receive timeout */
+const static int32_t timeout = W6X_HTTP_CLIENT_TCP_SOCK_RECV_TIMEOUT;
+
 /* Private function prototypes -----------------------------------------------*/
 /** @defgroup ST67W6X_Private_HTTP_Functions ST67W6X HTTP Functions
   * @ingroup  ST67W6X_Private_HTTP
@@ -296,19 +319,16 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
                                      W6X_HTTP_data_cb_t data_fn, const W6X_HTTP_connection_t *settings)
 {
   int32_t sock;
-  struct sockaddr_in addr_t = {0};
-  int32_t optval = W6X_HTTP_CLIENT_TCP_SOCKET_SIZE;
-  int32_t timeout = W6X_HTTP_CLIENT_TCP_SOCK_RECV_TIMEOUT;
+  struct sockaddr_in addr = {0};
   uint8_t sec_tag_list[] = { 0 };
-  char alpn_list[16] = "http1.1,http1.2";
   struct http_request_task_obj *Obj = NULL;
-  /* Create a TCP socket  if the port is not 443 which is used for https*/
+  /* Create a TCP socket  if the port is not 443 which is used for https */
   if (port != 443)
   {
     sock = W6X_Net_Socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock < 0)
     {
-      LogError("Socket creation failed\n");
+      NET_LOG_ERROR("Socket creation failed\n");
       return W6X_STATUS_ERROR;
     }
   }
@@ -317,79 +337,94 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
     sock = W6X_Net_Socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
     if (sock < 0)
     {
-      LogError("Socket creation failed\n");
+      NET_LOG_ERROR("Socket creation failed\n");
       return W6X_STATUS_ERROR;
     }
 
     /** Use a tag that has the value of the socket id to be able to run multiple
       * without waiting for the previous to end */
-    if ((settings->https_certificate != NULL) && (settings->https_certificate_len > 0))
+    if (settings->https_certificate.name != NULL)
     {
       sec_tag_list[0] = sock;
-      if (W6X_Net_Tls_Credential_Add(sec_tag_list[0], W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE,
-                                     (void *)settings->https_certificate, settings->https_certificate_len) != 0)
+      if (settings->https_certificate.content == NULL)
       {
-        LogError("Socket creation failed\n");
-        W6X_Net_Close(sock);
-        return W6X_STATUS_ERROR;
+        if (W6X_Net_TLS_Credential_AddByName(sec_tag_list[0], W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE,
+                                             settings->https_certificate.name) != 0)
+        {
+          NET_LOG_ERROR("Socket creation failed\n");
+          W6X_Net_Close(sock);
+          return W6X_STATUS_ERROR;
+        }
+      }
+      else
+      {
+        if (W6X_Net_TLS_Credential_AddByContent(sec_tag_list[0], W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE,
+                                                settings->https_certificate.name,
+                                                settings->https_certificate.content,
+                                                strlen(settings->https_certificate.content)) != 0)
+        {
+          NET_LOG_ERROR("Socket creation failed\n");
+          W6X_Net_Close(sock);
+          return W6X_STATUS_ERROR;
+        }
       }
 
       if (W6X_Net_Setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_list, sizeof(sec_tag_list)) != 0)
       {
-        LogError("Set socket option failed\n");
+        NET_LOG_ERROR("Set socket option failed\n");
         goto _err;
       }
     }
 
-    LogDebug("Socket option set\n");
+    NET_LOG_DEBUG("Socket option set\n");
 
     if (W6X_Net_Setsockopt(sock, SOL_TLS, TLS_ALPN_LIST, alpn_list, 2) != 0)
     {
-      LogError("Set ALPN failed\n");
+      NET_LOG_ERROR("Set ALPN failed\n");
       goto _err;
     }
 
-    LogDebug("ALPN set\n");
+    NET_LOG_DEBUG("ALPN set\n");
 
     if (W6X_Net_Setsockopt(sock, SOL_TLS, TLS_HOSTNAME, settings->server_name, strlen(settings->server_name)) != 0)
     {
-      LogError("Set SNI failed\n");
+      NET_LOG_ERROR("Set SNI failed\n");
       goto _err;
     }
 
-    LogDebug("SNI set\n");
+    NET_LOG_DEBUG("SNI set\n");
   }
 
-  LogDebug("Socket creation done\n");
+  NET_LOG_DEBUG("Socket creation done\n");
   /* Configure receive data timeout for the TCP socket */
   if (0 != W6X_Net_Setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)))
   {
-    LogError("Socket set timeout option failed\n");
+    NET_LOG_ERROR("Socket set timeout option failed\n");
     goto _err;
   }
 
   /* Configure the socket receive buffer size */
   if (0 != W6X_Net_Setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval)))
   {
-    LogError("Socket set receive buff option failed\n");
+    NET_LOG_ERROR("Socket set receive buff option failed\n");
     goto _err;
   }
 
-  /* supports only IPv4 without DNS */
-  addr_t.sin_family = AF_INET;
-  addr_t.sin_port = PP_HTONS(port);
-  addr_t.sin_addr_t.s_addr = server_addr->u_addr.ip4;
-  if (0 != W6X_Net_Connect(sock, (struct sockaddr *)&addr_t, sizeof(addr_t)))
+  /* Supports only IPv4 without DNS */
+  addr.sin_family = AF_INET;
+  addr.sin_port = PP_HTONS(port);
+  addr.sin_addr.s_addr = server_addr->u_addr.ip4.addr;
+  if (0 != W6X_Net_Connect(sock, (struct sockaddr *)&addr, sizeof(addr)))
   {
-    LogError("Socket connection failed\n");
+    NET_LOG_ERROR("Socket connection failed\n");
     goto _err;
   }
 
-  LogDebug("Socket %" PRIi32 " connected\n", sock);
+  NET_LOG_DEBUG("Socket %" PRIi32 " connected\n", sock);
   Obj = pvPortMalloc(sizeof(struct http_request_task_obj));
   if (Obj == NULL)
   {
-    LogError("Callback structure allocation failed\n");
+    NET_LOG_ERROR("Callback structure allocation failed\n");
     goto _err;
   }
   memset(Obj, 0, sizeof(struct http_request_task_obj));
@@ -402,7 +437,7 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
     if (Obj->post_data.data == NULL)
     {
       vPortFree(Obj);
-      LogError("Post data allocation failed\n");
+      NET_LOG_ERROR("Post data allocation failed\n");
       goto _err;
     }
     memcpy(Obj->post_data.data, ((W6X_HTTP_Post_Data_t *)post_data)->data, Obj->post_data_len);
@@ -415,7 +450,7 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
   {
     vPortFree(Obj->post_data.data);
     vPortFree(Obj);
-    LogError("Callback structure allocation failed\n");
+    NET_LOG_ERROR("Callback structure allocation failed\n");
     goto _err;
   }
   strncpy(Obj->uri, uri, strlen(uri));
@@ -424,7 +459,26 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
   memcpy(&Obj->server, server_addr, sizeof(ip_addr_t));
   memcpy(&Obj->settings, settings, sizeof(W6X_HTTP_connection_t));
 
-  /* Since callbacks info is duplicated, if the one we will use is not set, try using the other */
+  if (settings->server_name == NULL)
+  {
+    Obj->settings.server_name = NULL;
+  }
+  else
+  {
+    Obj->settings.server_name = pvPortMalloc(strlen(settings->server_name) + 1);
+    if (Obj->settings.server_name == NULL)
+    {
+      vPortFree(Obj->uri);
+      vPortFree(Obj->post_data.data);
+      vPortFree(Obj);
+      NET_LOG_ERROR("Callback structure allocation failed\n");
+      goto _err;
+    }
+    strncpy(Obj->settings.server_name, settings->server_name, strlen(settings->server_name));
+    Obj->settings.server_name[strlen(settings->server_name)] = 0;
+  }
+
+  /* Since callbacks info is duplicated, if the one is not set, try using the other */
   if (Obj->settings.headers_done_fn == NULL)
   {
     Obj->settings.headers_done_fn = headers_done_fn;
@@ -446,7 +500,7 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
       (Obj->settings.result_fn == NULL) &&
       (Obj->settings.recv_fn == NULL))
   {
-    LogWarn("No callback has been registered to the HTTP Client task, any error would not be reported\n");
+    NET_LOG_WARN("No callback has been registered to the HTTP Client task, any error would not be reported\n");
   }
   /*Run HTTP get and close socket in separate thread */
   if (pdPASS == xTaskCreate(W6X_HTTP_Client_task, "HTTP task", W6X_HTTP_CLIENT_THREAD_STACK_SIZE >> 2,
@@ -456,11 +510,15 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
   }
 
   /*Failed to start the task, need to free buffer and structures */
+  if (Obj->settings.server_name != NULL)
+  {
+    vPortFree(Obj->settings.server_name);
+  }
   vPortFree(Obj->post_data.data);
   vPortFree(Obj->uri);
   vPortFree(Obj);
 _err:
-  W6X_Net_Tls_Credential_Delete(sock, W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE);
+  W6X_Net_TLS_Credential_Delete(sock, W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE);
   W6X_Net_Close(sock);
   return W6X_STATUS_ERROR;
 }
@@ -478,17 +536,27 @@ static void W6X_HTTP_Client_task(void *arg)
   int32_t req_len2 = 0;
   int32_t total_recv_data = 0;
   uint8_t *req_buffer = NULL;
-  int32_t count_done;
+  int32_t bytes_sent;
   int32_t error = -1;
-  W6X_HTTP_buffer_t *buff_head;
+  W6X_HTTP_buffer_t http_buffer = {0};
   W6X_HTTP_Status_Code_e http_status = HTTP_VERSION_NOT_SUPPORTED;
   W6X_HTTP_Status_Category_e http_category = HTTP_CATEGORY_UNKNOWN;
   char *content_type = NULL;
   uint16_t http_version = 0;
   uint32_t offset = 0;
   int8_t method;
-  char host_name[INET_ADDRSTRLEN] = {0};
-  (void)W6X_Net_Inet_ntop(AF_INET, (void *) &Obj->server.u_addr.ip4, host_name, INET_ADDRSTRLEN);
+  /* SNI max size is used for hostname since it is the same information used
+   * in both instances and SNI is limited to 64 bytes on NCP */
+  char host_name[65] = {0};
+
+  if ((Obj->settings.server_name != NULL) && (strlen(Obj->settings.server_name) <= 64))
+  {
+    strncpy(host_name, Obj->settings.server_name, sizeof(host_name) - 1);
+  }
+  else
+  {
+    (void)W6X_Net_Inet_ntop(AF_INET, (void *) &Obj->server.u_addr.ip4, host_name, INET_ADDRSTRLEN);
+  }
 
   switch (Obj->post_data.type)
   {
@@ -575,7 +643,7 @@ static void W6X_HTTP_Client_task(void *arg)
   }
   else
   {
-    LogError("Unknown Request type\n");
+    NET_LOG_ERROR("Unknown Request type\n");
     goto _err;
   }
 
@@ -585,101 +653,115 @@ static void W6X_HTTP_Client_task(void *arg)
     goto _err;
   }
 
-  /* Send the HTTP request to the HTTP server via the TCP socket */
-  count_done = W6X_Net_Send(Obj->sock, req_buffer, req_len2, 0);
-  if (count_done < 0)
+  NET_LOG_DEBUG("Sending HTTP request, request size: (%" PRIi32 ")\n", req_len2);
+
+  /* We only use the variable for a pointer copy temporarily, limited to this scope*/
   {
-    LogError("Failed to send data to tcp server (%" PRIi32 "), try again\n", count_done);
+    /* Save the pointer of the request buffer for any free later on.
+     * Original request buffer pointer will be incremented possibly */
+    uint8_t *data = req_buffer;
+    do
+    {
+      /* Send the HTTP request to the HTTP server via the TCP socket */
+      bytes_sent = W6X_Net_Send(Obj->sock, data, req_len2, 0);
+      if (bytes_sent < 0)
+      {
+        NET_LOG_ERROR("Failed to send data to tcp server (%" PRIi32 "), try again\n", bytes_sent);
+        vPortFree(req_buffer);
+        goto _err;
+      }
+      req_len2 -= bytes_sent;
+      data += bytes_sent;
+    } while (req_len2 > 0);
+
     vPortFree(req_buffer);
-    goto _err;
   }
-
-  LogDebug("HTTP request send data success (%" PRIi32 ")\n", count_done);
-  vPortFree(req_buffer);
   vTaskDelay(100);
-  buff_head = pvPortMalloc(sizeof(W6X_HTTP_buffer_t));
-  if (buff_head == NULL)
+  http_buffer.data = pvPortMalloc(W6X_HTTP_CLIENT_MAX_DATA_SEND_BUFFER_SIZE + 1);
+  if (http_buffer.data == NULL)
   {
     goto _err;
   }
 
-  memset(buff_head, 0x00, sizeof(W6X_HTTP_buffer_t));
-  /* Wait to receive an answer to the HTTP request we sent */
-  if (W6X_STATUS_OK != W6X_HTTP_Client_Wait_For_Header(Obj->sock, buff_head, &offset))
+  memset(http_buffer.data, 0x00, W6X_HTTP_CLIENT_MAX_DATA_SEND_BUFFER_SIZE + 1);
+  /* Wait to receive an answer to the HTTP request sent */
+  if (W6X_STATUS_OK != W6X_HTTP_Client_Wait_For_Header(Obj->sock, &http_buffer, &offset))
   {
-    LogError("Get HTTP header failed\n");
-    vPortFree(buff_head);
+    NET_LOG_ERROR("Get HTTP header failed\n");
+    vPortFree(http_buffer.data);
     goto _err;
   }
 
   /* Parse the HTTP response status */
-  if (W6X_HTTP_Parse_Response_Status(&buff_head->data[0], &http_version, &http_status) != W6X_STATUS_OK)
+  if (W6X_HTTP_Parse_Response_Status(http_buffer.data, &http_version, &http_status) != W6X_STATUS_OK)
   {
-    LogError("Parse of HTTP response status failed\n");
-    vPortFree(buff_head);
+    NET_LOG_ERROR("Parse of HTTP response status failed\n");
+    vPortFree(http_buffer.data);
     goto _err;
   }
 
-  /* Get the returned status category and check if it is a success, we only support 200 OK currently */
+  /* Get the returned status category and check if it is a success. Only support 200 OK currently */
   (void)W6X_HTTP_Get_Status_Category(http_status, &http_category);
 
-  /* Parse the content length field of the HTTP response to know how much body content to expect,
-     if we don't expect a body we set the content length value to 0 */
+  /* Parse the content length field of the HTTP response to know how much body content to expect.
+     If a body is not expected, set the content length value to 0 */
   if (method == W6X_HTTP_REQ_TYPE_GET)
   {
-    if (W6X_HTTP_Parse_Content_Length(&buff_head->data[0], &content_length) != W6X_STATUS_OK)
+    if (W6X_HTTP_Parse_Content_Length(http_buffer.data, &content_length) != W6X_STATUS_OK)
     {
-      LogDebug("Content Length tag not found in header\n");
+      NET_LOG_DEBUG("Content Length tag not found in header\n");
     }
   }
 
   if (Obj->settings.headers_done_fn)
   {
-    (Obj->settings.headers_done_fn)(NULL, Obj->settings.callback_arg, &buff_head->data[0],
-                                    offset, content_length);
+    Obj->settings.headers_done_fn(NULL, Obj->settings.callback_arg, http_buffer.data,
+                                  offset, content_length);
   }
 
   if (Obj->settings.result_fn)
   {
-    (Obj->settings.result_fn)(Obj->settings.callback_arg, http_status, content_length, 0, 0);
+    Obj->settings.result_fn(Obj->settings.callback_arg, http_status, content_length, 0, 0);
   }
 
   /* If an error occurred, No need to read data, but status code must be returned */
   if (http_category >= HTTP_CATEGORY_CLIENT_ERROR)
   {
-    LogError("W6X_HTTP_Client_Get_Status_Category failed\n");
-    vPortFree(buff_head);
+    NET_LOG_ERROR("W6X_HTTP_Client_Get_Status_Category failed\n");
+    vPortFree(http_buffer.data);
     goto _err;
   }
 
   if (offset > 0)
   {
-    buff_head->length -= offset;
-    for (int32_t i = 0; i < buff_head->length; i++)
-    {
-      buff_head->data[i] = buff_head->data[i + offset];
-    }
-    buff_head->data[buff_head->length] = 0;
+    http_buffer.length -= offset;
+    memcpy(http_buffer.data, &http_buffer.data[offset], http_buffer.length);
+    http_buffer.data[http_buffer.length] = 0;
   }
 
-  while (buff_head->length > 0)
+  if (http_buffer.length == 0)
   {
-    total_recv_data += buff_head->length;
+    http_buffer.length = W6X_Net_Recv(Obj->sock, http_buffer.data, W6X_HTTP_CLIENT_DATA_RECV_SIZE, 0);
+  }
+
+  while (http_buffer.length > 0)
+  {
+    total_recv_data += http_buffer.length;
     /* Pass Data to callback if not NULL */
-    if ((Obj->settings.recv_fn) && ((Obj->settings.recv_fn)(Obj->settings.recv_fn_arg, buff_head, 0) < 0))
+    if ((Obj->settings.recv_fn) && (Obj->settings.recv_fn(Obj->settings.recv_fn_arg, &http_buffer, 0) < 0))
     {
-      LogError("User function for received data processing returned an error");
+      NET_LOG_ERROR("User function for received data processing returned an error");
       break;
     }
     if ((content_length > 0) && (total_recv_data >= content_length))
     {
       break;
     }
-    memset(buff_head, 0, sizeof(W6X_HTTP_buffer_t));
-    buff_head->length = W6X_Net_Recv(Obj->sock, &buff_head->data[0], W6X_HTTP_HEAD_MAX_RESP_BUFFER_SIZE, 0);
+    memset(http_buffer.data, 0, W6X_HTTP_CLIENT_DATA_RECV_SIZE);
+    http_buffer.length = W6X_Net_Recv(Obj->sock, http_buffer.data, W6X_HTTP_CLIENT_DATA_RECV_SIZE, 0);
   }
 
-  vPortFree(buff_head);
+  vPortFree(http_buffer.data);
   error = 0;
 
 _err:
@@ -687,37 +769,32 @@ _err:
   {
     if (Obj->settings.result_fn)
     {
-      (Obj->settings.result_fn)(Obj->settings.callback_arg, http_status, 0, 0, -1);
+      Obj->settings.result_fn(Obj->settings.callback_arg, http_status, 0, 0, -1);
     }
     if ((Obj->settings.recv_fn))
     {
-      (Obj->settings.recv_fn)(Obj->settings.callback_arg, NULL, -1);
+      Obj->settings.recv_fn(Obj->settings.callback_arg, NULL, -1);
     }
   }
-  W6X_Net_Tls_Credential_Delete(Obj->sock, W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE);
+  W6X_Net_TLS_Credential_Delete(Obj->sock, W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE);
   W6X_Net_Close(Obj->sock);
+  if (Obj->settings.server_name != NULL)
+  {
+    vPortFree(Obj->settings.server_name);
+  }
   vPortFree(Obj->post_data.data);
   vPortFree(Obj->uri);
   vPortFree(Obj);
   vTaskDelete(NULL);
 }
 
-W6X_Status_t W6X_HTTP_Parse_Content_Length(const uint8_t *buffer, uint32_t *content_length)
+static W6X_Status_t W6X_HTTP_Parse_Content_Length(const uint8_t *buffer, uint32_t *content_length)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
-  uint8_t *header_end;
   uint8_t *content_len_hdr;
-  uint8_t *content_len_line_end;
-  int32_t len = 0;
-  uint8_t content_len_num[16];
-  size_t content_len_num_len;
+  uint32_t rx_data_len;
+  uint8_t *endptr;
   NULL_ASSERT(buffer, W6X_Obj_Null_str);
-
-  header_end = (uint8_t *)strstr((char *)buffer, "\r\n\r\n");
-  if (header_end == NULL)
-  {
-    goto _err;
-  }
 
   /* Look for the Content-Length header field */
   content_len_hdr = (uint8_t *)strstr((const char *)buffer, "Content-Length: ");
@@ -725,79 +802,59 @@ W6X_Status_t W6X_HTTP_Parse_Content_Length(const uint8_t *buffer, uint32_t *cont
   {
     goto _err;
   }
+  content_len_hdr += 16; /* Move past "Content-Length: " */
 
   /* Parse content len value */
-  content_len_line_end = (uint8_t *)strstr((const char *)content_len_hdr, "\r\n");;
-  if (content_len_line_end == NULL)
+  rx_data_len = strtol((char *)content_len_hdr, (char **)&endptr, 10);
+  if ((endptr == content_len_hdr) || (*endptr != '\r'))
   {
     goto _err;
   }
-
-  content_len_num_len = (size_t)(content_len_line_end - content_len_hdr - 16);
-  memset(content_len_num, 0, sizeof(content_len_num));
-
-  if (strncpy((char *)content_len_num, (char *)(content_len_hdr + 16), content_len_num_len) != NULL)
-  {
-    Parser_StrToInt((char *)content_len_num, NULL, &len);
-    if (len >= 0)
-    {
-      *content_length = (uint32_t)len;
-      ret = W6X_STATUS_OK;
-    }
-  }
+  *content_length = rx_data_len;
+  ret = W6X_STATUS_OK;
 
 _err:
   return ret;
 }
 
-W6X_Status_t W6X_HTTP_Parse_Response_Status(const uint8_t *buffer, uint16_t *http_version,
-                                            W6X_HTTP_Status_Code_e *http_status)
+static W6X_Status_t W6X_HTTP_Parse_Response_Status(const uint8_t *buffer, uint16_t *http_version,
+                                                   W6X_HTTP_Status_Code_e *http_status)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
-  uint8_t *header_end;
   uint8_t *space1;
   NULL_ASSERT(buffer, W6X_Obj_Null_str);
 
   /* Look for the end of the header */
-  header_end = (uint8_t *)strstr((char *)buffer, "\r\n\r\n");
-  if (header_end == NULL)
+  if ((uint8_t *)strstr((char *)buffer, "\r\n\r\n") == NULL)
   {
     goto _err;
   }
 
-  header_end += 4; /* Move past the "\r\n\r\n" */
   space1 = (uint8_t *)strstr((char *)buffer, " ");
   if (space1 == NULL)
   {
     goto _err;
   }
+  space1++; /* Move past the first space */
 
   if ((strncmp((char *)buffer, "HTTP/", 5) == 0) && (buffer[6] == '.'))
   {
-    uint8_t status_num[10];
-    size_t status_num_len;
-    /* parse http version */
+    uint8_t *endptr;
+    uint32_t rx_data_len;
+    uint32_t status;
+    /* Parse http version */
     uint16_t version = buffer[5] - '0';
     version <<= 8;
     version |= buffer[7] - '0';
-    int32_t status = 0;
     *http_version = version;
-    /* parse HTTP status number */
-    const uint8_t *space2 = (uint8_t *) strstr((char *)space1 + 1, " ");
 
-    if (space2 != NULL)
+    /* Parse HTTP status number */
+    rx_data_len = strtol((char *)space1, (char **)&endptr, 10);
+    if ((endptr == space1) || (*endptr != ' '))
     {
-      status_num_len = space2 - space1 - 1;
+      goto _err;
     }
-    else
-    {
-      status_num_len = header_end - space1 - 1;
-    }
-
-    memset(status_num, 0, sizeof(status_num));
-    strncpy((char *)status_num, (char *)(space1 + 1), status_num_len);
-    Parser_StrToInt((char *)status_num, NULL, &status);
-
+    status = rx_data_len;
     if ((status > 0) && (status <= 0xFFFF))
     {
       *http_status = (W6X_HTTP_Status_Code_e)status;
@@ -809,7 +866,7 @@ _err:
   return ret;
 }
 
-W6X_Status_t W6X_HTTP_Get_Status_Category(W6X_HTTP_Status_Code_e status, W6X_HTTP_Status_Category_e *category)
+static W6X_Status_t W6X_HTTP_Get_Status_Category(W6X_HTTP_Status_Code_e status, W6X_HTTP_Status_Category_e *category)
 {
   switch (status / 100)
   {
@@ -835,7 +892,8 @@ W6X_Status_t W6X_HTTP_Get_Status_Category(W6X_HTTP_Status_Code_e status, W6X_HTT
   return W6X_STATUS_OK;
 }
 
-W6X_Status_t W6X_HTTP_Client_Wait_For_Header(int32_t sock, W6X_HTTP_buffer_t *buffer, uint32_t *body_start_offset)
+static W6X_Status_t W6X_HTTP_Client_Wait_For_Header(int32_t sock, W6X_HTTP_buffer_t *buffer,
+                                                    uint32_t *body_start_offset)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   uint8_t header_received = 0;
@@ -847,17 +905,17 @@ W6X_Status_t W6X_HTTP_Client_Wait_For_Header(int32_t sock, W6X_HTTP_buffer_t *bu
   do
   {
     data_received = W6X_Net_Recv(sock, &buffer->data[total_data_received],
-                                 W6X_HTTP_HEAD_MAX_RESP_BUFFER_SIZE - total_data_received, 0);
+                                 W6X_HTTP_CLIENT_HEAD_MAX_RESP_BUFFER_SIZE - total_data_received, 0);
     if (data_received < 0)
     {
-      LogError("Receive failed with %" PRIi32 "\n", data_received);
+      NET_LOG_ERROR("Receive failed with %" PRIi32 "\n", data_received);
       goto _err;
     }
 
     total_data_received += data_received;
 
     /* Look for the end of the headers */
-    header_end = (uint8_t *) strstr((char *)buffer, "\r\n\r\n");
+    header_end = (uint8_t *) strstr((char *)buffer->data, "\r\n\r\n");
     if (header_end != NULL)
     {
       header_received = 1;
@@ -867,11 +925,11 @@ W6X_Status_t W6X_HTTP_Client_Wait_For_Header(int32_t sock, W6X_HTTP_buffer_t *bu
       *body_start_offset = (uint32_t)(header_end - &buffer->data[0]);
       break;
     }
-  } while (!header_received && (total_data_received < W6X_HTTP_HEAD_MAX_RESP_BUFFER_SIZE));
+  } while (!header_received && (total_data_received < W6X_HTTP_CLIENT_HEAD_MAX_RESP_BUFFER_SIZE));
   buffer->length = total_data_received;
   if (!header_received)
   {
-    LogError("Failed to receive HTTP headers\n");
+    NET_LOG_ERROR("Failed to receive HTTP headers\n");
     goto _err;
   }
 
@@ -882,3 +940,5 @@ _err:
 }
 
 /** @} */
+
+#endif /* ST67_ARCH */

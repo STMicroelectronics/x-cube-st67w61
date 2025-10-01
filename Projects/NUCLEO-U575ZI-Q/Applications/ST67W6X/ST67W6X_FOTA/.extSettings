@@ -1,5 +1,5 @@
 [Groups]
-Application/User/App_FOTA/App=../App_FOTA/App/fota_flash.c;../App_FOTA/App/fota_header.c;../App_FOTA/App/sha256.c;
+Application/User/Appli/App=../Appli/App/fota_flash.c;../Appli/App/fota_header.c;../Appli/App/sha256.c;
 Doc=../readme.md;
 [ProjectFiles]
 [Others]

@@ -11,13 +11,15 @@
 # =====================================================
 # Imports
 # =====================================================
+import datetime
+import itertools
 import logging
+import mimetypes
 import threading
 import traceback
 import os
 import http.server
 import socketserver
-import json
 import sys
 import argparse
 import ssl
@@ -42,12 +44,6 @@ HTTPS_PORT = 8443
 
 # Directory where the firmware files are stored, those will be exposed by the server
 FIRMWARE_DIR = "../Binaries/NCP_Binaries"
-
-# Name of the file containing the firmware version information, it will be exposed by the server
-FIRMWARE_VERSION_FILE = "NCP.json"
-
-# Paths exposed by the server for the firmware version file (ex doing GET /check_update will return the file located at FIRMWARE_VERSION_FILE)
-HTTP_FIRMWARE_VERSION_FILE_PATH = "/check_update"
 
 # Paths exposed by the server for the firmware files (ex doing GET /download/firmware.bin will return the file located at FIRMWARE_DIR/firmware.bin)
 HTTP_FIRMWARE_DIR_PATH = "/download/"
@@ -91,9 +87,40 @@ try:
 except ImportError:
     warnings.warn('Unable to import ThreadingMixIn. Falling back to single-threaded server.', ImportWarning)
 
+    # Placeholder class for ThreadingMixIn to maintain compatibility when the import fails.
     class ThreadingMixIn:
         pass
     ThreadingHTTPServer = socketserver.TCPServer
+
+
+# Create a local logger for this module
+logger = logging.getLogger(__name__)
+
+
+# =====================================================
+# Configure logging level
+def configure_local_logging(log_level, log_file=None):
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f'Invalid log level: {log_level}')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    # Stream handler (console)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    # File handler (optional)
+    handlers: list[logging.Handler] = [stream_handler]
+    if log_file:
+        file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+        file_handler.setFormatter(formatter)
+        handlers.append(file_handler)
+
+    logger.setLevel(numeric_level)
+    # Remove old handlers to avoid duplicate logs
+    logger.handlers = []
+    for h in handlers:
+        logger.addHandler(h)
 
 
 # =====================================================
@@ -125,6 +152,34 @@ def generate_binary_file_list_page(bin_dir: str, http_firmware_dir_path: str, fi
 class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
     firmware_dir = FIRMWARE_DIR
 
+    # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
+    # Control characters table from the original HTTP server implementation
+    # Used to replace Unicode Control character with escaped hex
+    _control_char_table = str.maketrans(
+        {c: fr'\x{c:02x}' for c in itertools.chain(range(0x20), range(0x7f, 0xa0))})
+    _control_char_table[ord('\\')] = r'\\'
+
+    # =================================================
+    # Override HTTP server module logging message to redirect it to the local logger
+    def log_message(self, format, *args):
+        message = format % args
+        logger.info("%s - - [%s] %s" %
+                    (self.address_string(),
+                     self.log_date_time_string(),
+                     message.translate(self._control_char_table)))
+
+    # =================================================
+    # Override send_response to log HTTP header that will be sent to the HTTP client
+    def send_header(self, keyword, value):
+        logger.debug(f"Sending header: {keyword}: {value}")
+        super().send_header(keyword, value)
+
+    # =================================================
+    # Override end_headers to log when the HTTP header end is reached
+    def end_headers(self):
+        logger.debug("End of headers\n")
+        super().end_headers()
+
     # =================================================
     def set_firmware_dir(self, firmware_dir: str):
         """Set the firmware directory."""
@@ -132,13 +187,14 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
 
     # =================================================
     def do_GET(self):
+        """Handle GET requests."""
+        logger.debug(f"Received {self.command} request for {self.path}")
+        logger.debug(f"GET request headers:\n{self.headers}")
         try:
             if self.path == INDEX_PAGE:
                 self.serve_index_page()
             elif self.path == BINARIES:
                 self.serve_file_list_page()
-            elif self.path == HTTP_FIRMWARE_VERSION_FILE_PATH:
-                self.handle_check_update()
             elif self.path.startswith(HTTP_FIRMWARE_DIR_PATH):
                 self.handle_download()
             elif self.path == "/favicon.ico":
@@ -146,20 +202,21 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "File not found")
         except ConnectionResetError as e:
-            logging.warning("Connection reset by peer during GET request")
+            logger.warning("Connection reset by peer during GET request")
             self.log_exception(e)
         except Exception as e:
             self.log_exception(e)
 
     # =================================================
     def do_HEAD(self):
+        """Handle HEAD requests."""
+        logger.debug(f"Received {self.command} request for {self.path}")
+        logger.debug(f"HEAD request headers:\n{self.headers}")
         try:
             if self.path == INDEX_PAGE:
                 self.serve_index_page(head_only=True)
             elif self.path == BINARIES:
                 self.serve_file_list_page(head_only=True)
-            elif self.path == HTTP_FIRMWARE_VERSION_FILE_PATH:
-                self.handle_check_update(head_only=True)
             elif self.path.startswith(HTTP_FIRMWARE_DIR_PATH):
                 self.handle_download(head_only=True)
             elif self.path == "/favicon.ico":
@@ -167,25 +224,28 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "File not found")
         except ConnectionResetError as e:
-            logging.warning("Connection reset by peer during HEAD request")
+            logger.warning("Connection reset by peer during HEAD request")
             self.log_exception(e)
         except Exception as e:
             self.log_exception(e)
 
     # =================================================
     def do_POST(self):
+        """Handle POST requests."""
+        logger.debug(f"Received {self.command} request for {self.path}")
+        logger.debug(f"POST request headers:\n{self.headers}")
         try:
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             # Process the POST data here
-            logging.info(f"Received POST data: {post_data.decode('utf-8')}")
+            logger.info(f"Received POST data: {post_data.decode('utf-8')}")
 
             #  send a 303 redirect to the index page
             self.send_response(303)
             self.send_header("Location", "/")
             self.end_headers()
         except ConnectionResetError as e:
-            logging.warning("Connection reset by peer during POST request")
+            logger.warning("Connection reset by peer during POST request")
             self.log_exception(e)
         except Exception as e:
             self.log_exception(e)
@@ -242,26 +302,6 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, "Favicon not found")
 
     # =================================================
-    # Allows to server an .json file
-    def handle_check_update(self, head_only=False):
-        version_file_path = os.path.join(self.firmware_dir, FIRMWARE_VERSION_FILE)
-        version_file_path = os.path.abspath(version_file_path)
-        if os.path.exists(version_file_path):
-            with open(version_file_path, "r") as version_file:
-                version_info = json.load(version_file)
-                version_info_json = json.dumps(version_info)
-                file_size_js = len(version_info_json)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(file_size_js))
-                self.end_headers()
-                if not head_only:
-                    self.wfile.write(version_info_json.encode())
-                    self.wfile.flush()  # Ensure all data is sent
-        else:
-            self.send_error(404, "Version file not found")
-
-    # =================================================
     # Handles file downloads with support of content-range requests
     def handle_download(self, head_only=False):
         firmware_file = self.path[len(HTTP_FIRMWARE_DIR_PATH):]
@@ -278,7 +318,11 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response(206)
                 self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
                 self.send_header("Content-Length", str(length))
-                self.send_header("Content-Type", "application/octet-stream")
+                # Guess the MIME type based on the file extension
+                mime_type, _ = mimetypes.guess_type(firmware_file_path)
+                if not mime_type:
+                    mime_type = "application/octet-stream"
+                self.send_header("Content-Type", mime_type)
                 self.send_header("Accept-Ranges", "bytes")
                 self.end_headers()
 
@@ -290,7 +334,11 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_response(200)
                 self.send_header("Content-Length", str(file_size))
-                self.send_header("Content-Type", "application/octet-stream")
+                # Guess the MIME type based on the file extension
+                mime_type, _ = mimetypes.guess_type(firmware_file_path)
+                if not mime_type:
+                    mime_type = "application/octet-stream"
+                self.send_header("Content-Type", mime_type)
                 self.send_header("Accept-Ranges", "bytes")
                 self.end_headers()
 
@@ -304,40 +352,38 @@ class FOTARequestHandler(http.server.BaseHTTPRequestHandler):
     # =================================================
     # Exception logging
     def log_exception(self, e):
-        logging.error(f"Exception type: {type(e).__name__}")
-        logging.error(f"Exception message: {str(e)}")
-        logging.debug("Stack trace:")
-        logging.debug(traceback.format_exc())
-        logging.debug(f"Request method: {self.command}")
-        logging.debug(f"Request path: {self.path}")
-        logging.debug(f"Request headers: {self.headers}")
-        logging.debug(f"Client address: {self.client_address}")
-        logging.debug(f"Timestamp: {self.log_date_time_string()}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"Exception message: {str(e)}")
+        logger.debug("Stack trace:")
+        logger.debug(traceback.format_exc())
+        logger.debug(f"Request method: {self.command}")
+        logger.debug(f"Request path: {self.path}")
+        logger.debug(f"Request headers: {self.headers}")
+        logger.debug(f"Client address: {self.client_address}")
+        logger.debug(f"Timestamp: {self.log_date_time_string()}")
 
 
 # =====================================================
 # Log server information
 def print_info(httpd, http_request_handler):
-    logging.debug(f"FOTA updates directory exposed: {http_request_handler.firmware_dir}")
-    logging.debug(f"HTTP version: {http_request_handler.protocol_version}")
-    logging.debug(f"Server version: {http_request_handler.server_version}")
-    logging.debug(f"System version: {sys.version}")
-    logging.debug(f"Server address: {httpd.server_address}")
-    logging.debug(f"Server port: {httpd.server_port}")
-    logging.debug(f"Server socket: {httpd.socket}")
-    logging.debug(f"Server threading: {httpd.daemon_threads}")
-    logging.debug(f"Server timeout: {httpd.timeout}")
-    logging.debug(f"Server request handler: {httpd.RequestHandlerClass}")
-    logging.debug(f"Server request handler firmware version file: {FIRMWARE_VERSION_FILE}")
-    logging.debug(f"Server request handler firmware version file path: {HTTP_FIRMWARE_VERSION_FILE_PATH}")
-    logging.debug(f"Server request handler firmware directory path: {HTTP_FIRMWARE_DIR_PATH}")
-    logging.debug(f"Server request handler file extensions to show: {FILE_EXTENSIONS_TO_SHOW}")
+    logger.debug(f"FOTA updates directory exposed: {http_request_handler.firmware_dir}")
+    logger.debug(f"HTTP version: {http_request_handler.protocol_version}")
+    logger.debug(f"Server version: {http_request_handler.server_version}")
+    logger.debug(f"System version: {sys.version}")
+    logger.debug(f"Server address: {httpd.server_address}")
+    logger.debug(f"Server port: {httpd.server_port}")
+    logger.debug(f"Server socket: {httpd.socket}")
+    logger.debug(f"Server threading: {httpd.daemon_threads}")
+    logger.debug(f"Server timeout: {httpd.timeout}")
+    logger.debug(f"Server request handler: {httpd.RequestHandlerClass}")
+    logger.debug(f"Server request handler firmware directory path: {HTTP_FIRMWARE_DIR_PATH}")
+    logger.debug(f"Server request handler file extensions to show: {FILE_EXTENSIONS_TO_SHOW}")
 
 
 # =====================================================
 # Function to start the server and handle the start in a new thread
 def handle_http_start_server(httpd, executor):
-    logging.info("Starting server on %s:%s\n", *httpd.server_address)
+    logger.info("Starting server on %s:%s\n", *httpd.server_address)
 
     def run_server():
         try:
@@ -348,7 +394,7 @@ def handle_http_start_server(httpd, executor):
         finally:
             # Shutdown the server
             httpd.server_close()
-            logging.debug("Server stopped.")
+            logger.debug("Server stopped.")
 
     # Add the server to the queue
     server_queue.put(httpd)
@@ -360,28 +406,19 @@ def handle_http_start_server(httpd, executor):
 # =====================================================
 # Function to stop all servers
 def stop_all_servers():
-    logging.info("Stopping all servers...")
+    logger.info("Stopping all servers...")
     while not server_queue.empty():
         httpd = server_queue.get()
         httpd.shutdown()
-    logging.info("All servers stopped.")
+    logger.info("All servers stopped.")
 
 
 # =====================================================
 # Signal handler to stop all servers
 def signal_handler(sig, frame):
-    logging.debug("Signal %s received, stopping servers.", sig)
+    logger.debug("Signal %s received, stopping servers.", sig)
     stop_all_servers()
     stop_event.set()
-
-
-# =====================================================
-# Configure logging level
-def configure_logging(log_level):
-    numeric_level = getattr(logging, log_level.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError(f'Invalid log level: {log_level}')
-    logging.basicConfig(level=numeric_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 # =====================================================
@@ -391,20 +428,20 @@ def configure_logging(log_level):
 def parse_args():
     parser = argparse.ArgumentParser(description='Start the FOTA HTTP server.')
     # Global arguments
-    parser.add_argument('-l',  '--log-level',    type=str, default=DEFAULT_LOGGING_LEVEL,                         help='Logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)')
-    parser.add_argument('-f',  '--firmware-dir', type=str, default='',                                            help='Directory where the firmware files are stored')
-    parser.add_argument('-t',  '--threaded',               default=DEFAULT_THREADING_OPTION, action='store_true', help='Run the server in threaded mode')
+    parser.add_argument('-l', '--log-level', type=str, default=DEFAULT_LOGGING_LEVEL, help='Logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)')
+    parser.add_argument('-f', '--firmware-dir', type=str, default='', help='Directory where the firmware files are stored')
+    parser.add_argument('-t', '--threaded', default=DEFAULT_THREADING_OPTION, action='store_true', help='Run the server in threaded mode')
 
     # HTTP Server arguments
-    parser.add_argument('-p',  '--port',         type=int, default=PORT,                                          help='Port to run the server on')
-    parser.add_argument('-i',  '--ip',           type=str, default=IP,                                            help='IP address to run the server on')
-    parser.add_argument('-hv', '--http-version', type=str, default=HTTP_DEFAULT_VERSION,                          help='HTTP version to use (e.g., HTTP/1.1, HTTP/2)')
+    parser.add_argument('-p', '--port', type=int, default=PORT, help='Port to run the server on')
+    parser.add_argument('-i', '--ip', type=str, default=IP, help='IP address to run the server on')
+    parser.add_argument('-hv', '--http-version', type=str, default=HTTP_DEFAULT_VERSION, help='HTTP version to use (e.g., HTTP/1.1, HTTP/2)')
 
     # HTTPS Server arguments
-    parser.add_argument('-s',  '--enable_https', action='store_true',                                             help='Enable or disable HTTPS server')
-    parser.add_argument('-ps', '--https-port',   type=int, default=HTTPS_PORT,                                    help='Port to run the HTTPS server on')
-    parser.add_argument('-c',  '--certfile',     type=str, default=DEFAULT_SSL_CERTFILE,                          help='Path to the SSL certificate file')
-    parser.add_argument('-k',  '--keyfile',      type=str, default=DEFAULT_SSL_KEYFILE,                           help='Path to the SSL key file')
+    parser.add_argument('-s', '--enable_https', action='store_true', help='Enable or disable HTTPS server')
+    parser.add_argument('-ps', '--https-port', type=int, default=HTTPS_PORT, help='Port to run the HTTPS server on')
+    parser.add_argument('-c', '--certfile', type=str, default=DEFAULT_SSL_CERTFILE, help='Path to the SSL certificate file')
+    parser.add_argument('-k', '--keyfile', type=str, default=DEFAULT_SSL_KEYFILE, help='Path to the SSL key file')
 
     args = parser.parse_args()
 
@@ -419,6 +456,8 @@ def parse_args():
 # =====================================================
 # Check Python version compatibility
 def compatibility_check():
+    logger.debug(
+        "This script doesn't require external dependencies outside of Python builtins and the standard library.")
     # Check Python version
     if sys.version_info[0] < 3:
         raise Exception('Must be using Python 3')
@@ -452,7 +491,12 @@ def create_server(ip, port, http_version, threaded, firmware_dir, ssl_context=No
 def start_server():
     compatibility_check()
     args = parse_args()
-    configure_logging(args.log_level)
+    # Build a unique log file name using subparser and timestamp
+    now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_file_name = f"log_http_server_{now}.txt"
+    log_file_path = os.path.join(os.getcwd(), log_file_name)
+
+    configure_local_logging(getattr(args, "log_level", DEFAULT_LOGGING_LEVEL), log_file_path)
 
     # Register signal handlers for SIGINT and SIGTERM
     # SIGINT is sent by the user pressing Ctrl+C

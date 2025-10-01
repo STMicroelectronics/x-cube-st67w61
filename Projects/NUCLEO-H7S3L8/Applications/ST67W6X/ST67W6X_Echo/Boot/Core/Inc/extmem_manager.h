@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : extmem_manager.h
-  * @version        : 1.0.0
-  * @brief          : Header for secure_manager_api.c file.
+  * @file    extmem_manager.h
+  * @version 1.0.0
+  * @brief   Header for secure_manager_api.c file.
   ******************************************************************************
   * @attention
   *

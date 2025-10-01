@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US">
+
+<head>
+  <title>_htmresc\ReleaseNotes.html</title>
+</head>
+
+<body style="font-size: 10pt; font-family: Verdana;">
+  <h3 style="color: blue; text-decoration: underline;">X-CUBE-ST67W61 Software Expansion package V1.1.0 / 26-September-2025</h3>
+  <div style="margin-left: 18pt;">
+    <p><b><u>Main Changes</u></b></p>
+    <p>
+    <ul>
+      <li><strong>Projects</strong>
+        <ul>
+          <li><strong>Applications</strong>
+            <ul>
+              <li>ST67W6X_BLE_Commissioning
+                <ul>
+                  <li>ID 214212: Add BLE FUOTA support</li>
+                  <li>ID 216125: Clear security database on button push</li>
+                </ul>
+              </li>
+              <li>ST67W6X_BLE_p2pClient
+                <ul>
+                  <li>ID 213161: Improve services and characteristics discovery process to use service UUID to discover p2p service</li>
+                </ul>
+              </li>
+              <li>ST67W6X_BLE_p2pServer
+                <ul>
+                  <li>ID 216125: Clear security database on button push</li>
+                </ul>
+              </li>
+              <li>ST67W6X_CLI_LWIP
+                <ul>
+                  <li>ID 211434: Add CLI application based on LwIP on host and ST67 T02 architecture</li>
+                </ul>
+              </li>
+              <li>ST67W6X_FOTA
+                <ul>
+                  <li>ID 211255: ST67W6X_FOTA - Fix host rebooting even when no FOTA update was applied due to version check</li>
+                  <li>ID 214113: ST67W6X_FOTA - Remove modulo 4 constraints on buffer size when STM32 FLASH write</li>
+                </ul>
+              </li>
+              <li>ST67W6X_WiFi_Commissioning
+                <ul>
+                  <li>ID 211179: Fix incorrect variable declaration that leads to unexpected behaviors</li>
+                  <li>ID 216918: Fix credential parsing that corrupt the password</li>
+                </ul>
+              </li>
+              <li>All applications
+                <ul>
+                  <li>ID 214320: Move of API calls from W6X event callbacks to the default task due to the modem_handler task not being reentrant</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><strong>Demonstrations</strong>
+            <ul>
+              <li>ST67W6X_MQTT_LWIP
+                <ul>
+                  <li>ID 215693: Add MQTT demonstration based on LwIP on host, MQTT-C Third-Party Middleware and ST67 T02 architecture</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><strong>Host boards</strong>
+            <ul>
+              <li>NUCLEO-H563ZI and NUCLEO-N657X0-Q
+                <ul>
+                  <li>ID 212064: Keep SPI IO state configuration enabled to prevent MOSI floating line on SPI Bus</li>
+                </ul>
+              </li>
+              <li>NUCLEO-N657X0-Q
+                <ul>
+                  <li>ID 217411: Add minimal 2us delay in SPI port for N6 DCache enabled</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><strong>ST67W6X_Network_Driver</strong>
+        <ul>
+          <li><strong>Wi-Fi</strong>
+            <ul>
+              <li>ID 210980: Fix wrong status message returned by scan command when several scans are sent in a row</li>
+              <li>ID 212466: TWT frames sent only to APs with TWT support</li>
+              <li>ID 213724: Maximum of Wi-Fi scan results reduced to 20 devices</li>
+              <li>ID 214286: Remove the IP address compatibility check from WiFi cb to dissociate WiFi module from Net module</li>
+              <li>ID 216134: The DTIM parameter used on Station side is now a factor of the Access Point DTIM, to be in phase with Access Point DTIM beacons</li>
+              <li>ID 216480: The soft Access Point protocol configuration is now a parameter when starting a soft Access Point. Station protocol configuration has been removed</li>
+              <li>ID 216882: Add Wi-Fi antenna diversity automatic selection for -U and -P after Wi-Fi connection</li>
+            </ul>
+          </li>
+          <li><strong>BLE</strong>
+            <ul>
+              <li>ID 212742: Add BLE Shell commands to perform GATT and Security operations</li>
+              <li>ID 213724: Maximum of BLE scan results reduced to 20 devices</li>
+              <li>ID 215560: Add support of 2 BLE connections as Client</li>
+              <li>ID 215563: Report remote BD address type and Long Term Key (LTK) from BLE security events</li>
+              <li>ID 216043: BLE Init rework to ensure clock is correctly configured before entering in Low Power</li>
+            </ul>
+          </li>
+          <li><strong>Network</strong>
+            <ul>
+              <li>ID 210991: Improve Iperf RX throughput</li>
+              <li>ID 212413: Fix blocking state on reception when connecting multiple UDP sockets</li>
+              <li>ID 213424: Move IP/DNS/DHCP APIs from Wi-Fi to Net module to be compliant with LwIP on host structure project</li>
+              <li>ID 215289: Align the IP address format order in W6X_Net APIs on LwIP usage</li>
+              <li>ID 215983: Fix IPv6 and IPv4 string length being too small</li>
+            </ul>
+          </li>
+          <li><strong>HTTP</strong>
+            <ul>
+              <li>ID 211666: Increase SNI size for HTTP and choose server name as hostname when available</li>
+              <li>ID 216816: Added the ability to send HTTP requests larger than W61_MAX_SPI_XFER</li>
+              <li>ID 216997: Fix incorrect ALPN format for HTTPS API</li>
+              <li>ID 217079: Fix case sensitive connection: close value in preformatted HTTP client headers</li>
+            </ul>
+          </li>
+          <li><strong>MQTT</strong>
+            <ul>
+              <li>ID 212696: Add support of MQTT raw data format</li>
+              <li>ID 214875: Add support of empty MQTT message for retain feature</li>
+              <li>ID 216425: Add support of QoS, Retain and LWT options in MQTT APIs</li>
+            </ul>
+          </li>
+          <li><strong>Network interface</strong>
+            <ul>
+              <li>ID 211434: Add support of LwIP on host based on ST67W611M T02 architecture</li>
+            </ul>
+          </li>
+          <li><strong>AT Parser</strong>
+            <ul>
+              <li>ID 214401: Integration of AT parser based on Zephyr modem cmd handler</li>
+              <li>ID 215005: Remove maximum number of parameters limitation expected from NCP in AT parser to ensure backward compatibility even if another field is added</li>
+            </ul>
+          </li>
+          <li><strong>System</strong>
+            <ul>
+              <li>ID 214011: Offer capability to disable assert macros</li>
+              <li>ID 214447: Display Module ID in banner based on Part Number</li>
+              <li>ID 215588: Use the memcpy32 custom implementation only in spi_iface to prevent misalignment issue with limited cortex architectures</li>
+              <li>ID 215597: RAM usage optimization in ST67W6X_Network_Driver code</li>
+              <li>ID 216013: Modification of the W6X_FS_WriteFile API to use a certificate stored in the application or in the LFS Host</li>
+              <li>ID 217233: Change default MAX_SPI_XFER from 6000 to 1520</li>
+            </ul>
+          </li>
+          <li><strong>Utilities</strong>
+            <ul>
+              <li>ID 212675: Add the possibility to the user to disable the logs for each module of the Network Driver (Wi-Fi, NET, BLE, MQTT)</li>
+              <li>ID 214193: Addition of a define (SHELL_CMD_LEVEL) to activate all or a reduced list of shell commands</li>
+              <li>ID 216118: Remove HAL UART dependency of shell service</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><strong>ST67W6X Utilities</strong>
+        <ul>
+          <li>ST67W611M Binaries updated to version 2.0.89</li>
+          <li>Add of new ST67W611M binaries and scripts for T02 architecture (LwIP on host)</li>
+          <li>ID 211259: Add ST67W6X_FOTA binary and FOTA HTTP server example to exercise the feature</li>
+          <li>ID 211264: Replace WMIC by powershell command in NCP_update Windows scripts</li>
+          <li>ID 210737: Improve python scripts provided for FOTA</li>
+        </ul>
+      </li>
+    </ul>
+    </p>
+    <p><b><u>Content</u></b></p>
+    <p>
+    <ul>
+      <li>
+        <p><strong>Projects</strong> Ten applications and two demonstrations exercising the ST67W6X_Network_Driver capabilities, and one utility.</p>
+        <ul>
+          <li><strong>Applications</strong>
+            <ul>
+              <li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
+              <li>ST67W6X_BLE_p2pClient : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</li>
+              <li>ST67W6X_BLE_p2pServer : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).</li>
+              <li>ST67W6X_CLI : This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi and Bluetooth LE solution via command line interface (CLI).</li>
+              <li>ST67W6X_CLI_LWIP : This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi, Bluetooth LE and Network interface with LwIP solutions via command line interface (CLI).
+              </li>
+              <li>ST67W6X_Echo : This application demonstrates the TCP Echo feature over Wi-Fi.</li>
+              <li>ST67W6X_FOTA : This application aims to demonstrate the FOTA (Firmware update Over-The-Air) feature over Wi-Fi.</li>
+              <li>ST67W6X_HTTP_Server : This application aims to demonstrate an HTTP server over Network API, hosted by a device configured as a soft access point (soft-AP).</li>
+              <li>ST67W6X_HTTPS_Client : This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the
+                world.</li>
+              <li>ST67W6X_WiFi_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</li>
+            </ul>
+          </li>
+          <li><strong>Demonstrations</strong>
+            <ul>
+              <li>ST67W6X_MQTT : This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter
+                updates or commands from the cloud.</li>
+              <li>ST67W6X_MQTT_LWIP : This application aims to demonstrate an example of MQTT client over LwIP over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and
+                receive parameter updates or commands from the cloud.</li>
+            </ul>
+          </li>
+          <li><strong>Utilities</strong>
+            <ul>
+              <li>NCP_Loader: This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p><strong>Features</strong> supported</p>
+        <ul>
+          <li><strong>Wi-Fi</strong>
+            <ul>
+              <li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+              <li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+              <li>Station mode with WPS Push Button connection method</li>
+            </ul>
+          </li>
+          <li><strong>BLE</strong>
+            <ul>
+              <li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+              <li>Up to 5 services (including default services) and 5 characteristics by service</li>
+            </ul>
+          </li>
+          <li><strong>Network</strong>
+            <ul>
+              <li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+            </ul>
+          </li>
+          <li><strong>HTTP</strong>
+            <ul>
+              <li>HTTP/HTTPS Client over network sockets</li>
+              <li>GET/HEAD/POST/PUT support</li>
+            </ul>
+          </li>
+          <li><strong>MQTT</strong>
+            <ul>
+              <li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+            </ul>
+          </li>
+          <li><strong>FOTA</strong>
+            <ul>
+              <li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+              <li>Upgrade of Host Firmware Over-The-Air (STM32U5xx only supported)</li>
+            </ul>
+          </li>
+          <li><strong>Network interface</strong>
+            <ul>
+              <li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
+            </ul>
+          </li>
+          <li><strong>System</strong>
+            <ul>
+              <li>ST67W611M Power save (standby and shutdown modes)</li>
+            </ul>
+          </li>
+          <li><strong>Tools</strong>
+            <ul>
+              <li>FOTA header generation and HTTP server python scripts</li>
+              <li>ST67W611M binaries for Mission and Manufacturing modes with scripts to flash them over host board</li>
+              <li>LittleFS file system support with scripts to generate image of certificates</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    </p>
+  </div>
+</body>
+
+</html>
