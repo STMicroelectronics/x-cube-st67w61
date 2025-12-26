@@ -140,23 +140,31 @@ int32_t echo_sizes_loop(int32_t argc, char **argv)
   }
 
   LogInfo("\n\n***************ECHO TEST ***************\n");
-
   do /* Loop on the size of a group of packets */
   {
     /* Start the echo test */
     status = echo_process(iteration_count, packet_size);
     if (status != 0)
     {
-      return status;
+      break;
     }
     packet_size += ECHO_TRANSFER_SIZE_ITER; /* Increment the size of a group of packets */
   } while (packet_size <= ECHO_TRANSFER_SIZE_MAX);
+
+  if (status == 0)
+  {
+    LogInfo("Echo test successful\n");
+  }
+  else
+  {
+    LogError("Echo test in error %" PRIi32 "\n", status);
+  }
 
   /* USER CODE BEGIN echo_sizes_loop_last */
 
   /* USER CODE END echo_sizes_loop_last */
 
-  return 0;
+  return status;
 }
 
 SHELL_CMD_EXPORT_ALIAS(echo_sizes_loop, echo, echo [ iteration ]);
@@ -233,8 +241,9 @@ static uint32_t check_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 
 static int32_t echo_process(uint32_t send_loop, uint32_t len)
 {
-  uint8_t echo_server_addr[4] = {192, 168, 8, 1};
   struct sockaddr_in addr_t = {0};
+  uint8_t echo_server_addr[4] = {192, 168, 8, 1};
+
   uint32_t tstart;
   uint32_t tstop;
   uint32_t transferred_bytes;
@@ -244,11 +253,21 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
   char echo_server_url[] = ECHO_SERVER_URL;
   uint16_t echo_server_port = ECHO_SERVER_PORT;
   int32_t net_ret = 0;
+  int32_t ret_code = -1;
   int32_t sock;
 
   /* USER CODE BEGIN echo_process_1 */
 
   /* USER CODE END echo_process_1 */
+
+  /* Resolve IP Address from the input URL */
+  net_ret = W6X_Net_ResolveHostAddress(echo_server_url, echo_server_addr);
+  if (net_ret != W6X_STATUS_OK)
+  {
+    LogError("DNS resolution failed for %s\n", echo_server_url);
+    return ret_code; /* Socket not created yet: direct return avoids unnecessary cleanup jump */
+  }
+  LogInfo("IP Address from Hostname [%s]: " IPSTR "\n", echo_server_url, IP2STR(echo_server_addr));
 
   /* Prepare a TCP socket */
   LogInfo("\nCreate a new socket\n");
@@ -256,35 +275,21 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
   if (sock < 0)
   {
     LogInfo("Socket creation failed\n");
-    goto _err;
+    goto end;
   }
-  else
-  {
-    LogInfo("Socket creation done\n");
-  }
-
-  /* Resolve IP Address from the input URL */
-  net_ret = W6X_Net_ResolveHostAddress(echo_server_url, echo_server_addr);
-  if (net_ret == W6X_STATUS_OK)
-  {
-    LogInfo("IP Address from Hostname [%s]: " IPSTR "\n", echo_server_url, IP2STR(echo_server_addr));
-  }
-  else
-  {
-    LogError("IP Address identification failed\n");
-    goto _err;
-  }
+  LogInfo("Socket creation done\n");
 
   addr_t.sin_family = AF_INET;
   addr_t.sin_port = PP_HTONS(echo_server_port);
   addr_t.sin_addr.s_addr = ATON(echo_server_addr);
 
-  LogInfo("\nConnecting the socket to %s\n", ECHO_SERVER_URL);
+  LogInfo("Connecting the socket to %s\n", ECHO_SERVER_URL);
   net_ret = W6X_Net_Connect(sock, (struct sockaddr *)&addr_t, sizeof(addr_t));
   if (net_ret != 0)
   {
-    LogInfo("Socket connection failed\n");
-    goto _err;
+    LogError("Socket connection failed\n");
+    ret_code = net_ret;
+    goto end;
   }
   else
   {
@@ -304,8 +309,7 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
       transferred_bytes = 0;
       do
       {
-        int32_t count_done = W6X_Net_Send(sock, (struct sockaddr *)&buffer[transferred_bytes],
-                                          len - transferred_bytes, 0);
+        int32_t count_done = W6X_Net_Send(sock, &buffer[transferred_bytes], len - transferred_bytes, 0);
 
         if (count_done < 0)
         {
@@ -344,13 +348,16 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
 
   if (error_count == 0)
   {
-    LogInfo("\nSuccessful Echo Transfer and receive %" PRId32 " x %" PRId32 " with %" PRId32 " bytes"
+    uint32_t duration_ms = (tstop > tstart) ? (tstop - tstart) : 1U;
+    LogInfo("Successful Echo Transfer and receive %" PRId32 " x %" PRId32 " with %" PRId32 " bytes"
             " in %" PRId32 " ms, br = %" PRId32 " Kbit/sec\n",
-            send_loop, len, transferred_total, tstop - tstart, (transferred_total * 8) / (tstop - tstart));
+            send_loop, len, transferred_total, duration_ms, (transferred_total * 8) / duration_ms);
+    ret_code = 0;
   }
   else
   {
-    LogInfo("\nError: Echo transfer, find %" PRId32 " different bytes\n", error_count);
+    LogError("Error: Echo transfer, find %" PRId32 " different bytes\n", error_count);
+    ret_code = -2; /* Distinct code for data mismatch */
   }
 
   /* USER CODE BEGIN echo_process_last */
@@ -358,20 +365,19 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
   /* USER CODE END echo_process_last */
 
 end:
-
-  net_ret = W6X_Net_Close(sock); /* Close the TCP socket */
-  if (net_ret != 0)
+  if (sock >= 0)
   {
-    LogInfo("Socket close failed\n");
+    net_ret = W6X_Net_Close(sock); /* Close the TCP socket */
+    if (net_ret != 0)
+    {
+      LogError("Socket close failed\n");
+    }
+    else
+    {
+      LogInfo("Socket closed\n");
+    }
   }
-  else
-  {
-    LogInfo("Socket closed\n");
-  }
-
-_err:
-
-  return net_ret;
+  return ret_code;
 }
 
 /* USER CODE BEGIN PFD */

@@ -45,7 +45,7 @@ extern "C" {
   * ============================
   */
 
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP power save mode : 0: NCP stays always active / 1: NCP goes in low power mode when idle */
 #define W6X_POWER_SAVE_AUTO                     0
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
@@ -86,6 +86,65 @@ extern "C" {
 
 /** Timeout in ticks when calling W6X_Net_Send() */
 #define W6X_NET_SEND_TIMEOUT                    10000
+
+/** ============================
+  * Utility Performance Iperf
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\iperf.h
+  * ============================
+  */
+/** Enable Iperf feature */
+#define IPERF_ENABLE                            0
+
+/** Enable IPv6 for Iperf */
+#define IPERF_V6                                0
+
+/** ============================
+  * Utility Performance Memory usage
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\util_mem_perf.h
+  *
+  * @note: This feature requires to call the hook functions in the FreeRTOS.
+  *        Add the following lines in the FreeRTOSConfig.h file:
+  *
+  *        \code
+  *        #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__)
+  *        void mem_perf_malloc_hook(void *pvAddress, size_t uiSize);
+  *        void mem_perf_free_hook(void *pvAddress, size_t uiSize);
+  *        #endif
+  *        #define traceMALLOC mem_perf_malloc_hook
+  *        #define traceFREE mem_perf_free_hook
+  *        \endcode
+  *
+  * ============================
+  */
+/** Enable memory performance measurement */
+#define MEM_PERF_ENABLE                         0
+
+/** ============================
+  * Utility Performance Task usage
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\util_task_perf.h
+  *
+  * @note: This feature requires to call the hook functions in the FreeRTOS.
+  *        Add the following lines in the FreeRTOSConfig.h file:
+  *
+  *        \code
+  *        #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__)
+  *        void task_perf_in_hook(void);
+  *        void task_perf_out_hook(void);
+  *        #endif
+  *        #define traceTASK_SWITCHED_IN task_perf_in_hook
+  *        #define traceTASK_SWITCHED_OUT task_perf_out_hook
+  *        \endcode
+  *
+  * ============================
+  */
+/** Enable task performance measurement */
+#define TASK_PERF_ENABLE                        0
 
 /** ============================
   * External service littlefs usage

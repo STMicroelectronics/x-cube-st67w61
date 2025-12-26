@@ -157,7 +157,7 @@ typedef struct
   tg_send_done_cb_t finished_cb;  /*!< Send Done Callback function */
   tg_profile_t profile;           /*!< Profile */
   tg_stats_t stats;               /*!< Statistics */
-  char name[MAX_NAME];            /*!< Stream name */
+  char name[MAX_NAME + 1];        /*!< Stream name */
 } tg_stream_t;
 
 /**
@@ -656,7 +656,7 @@ static int32_t get_time(time_struct_t *pT)
   uint32_t system_tick = xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
 
   pT->sec = system_tick / configTICK_RATE_HZ;
-  pT->usec = (system_tick * portTICK_PERIOD_MS) * 1000 - (pT->sec * 1000000);
+  pT->usec = (system_tick % configTICK_RATE_HZ) * 1000;
 
   return 0;
 }
@@ -1070,6 +1070,7 @@ static void wfa_tg_echo_thread(void *arg)
   if (EchoSock >= 0)
   {
     (void) NET_SHUTDOWN(EchoSock, 1);
+    NET_CLOSE(EchoSock);
   }
   EchoSock = -1;
 

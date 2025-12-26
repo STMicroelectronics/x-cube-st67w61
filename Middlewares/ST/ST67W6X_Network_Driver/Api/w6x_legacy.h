@@ -49,6 +49,36 @@ static inline W6X_Status_t W6X_RestoreDefaultConfig(void)
 }
 
 /**
+  * @brief  Starts the NCP FWU process
+  * @param  enable: 0 Terminate the FWU transmission. 1 Start the FWU transmission
+  * @return Operation status
+  */
+static inline W6X_Status_t W6X_OTA_Starts(uint32_t enable)
+{
+  return W6X_FWU_Starts(enable);
+}
+
+/**
+  * @brief  Finish the NCP FWU process which reboot the module to apply the new firmware
+  * @return Operation status
+  */
+static inline W6X_Status_t W6X_OTA_Finish(void)
+{
+  return W6X_FWU_Finish();
+}
+
+/**
+  * @brief  Send the firmware binary to the module
+  * @param  buff: Buffer containing the firmware binary chunk
+  * @param  len: Length of the firmware binary chunk
+  * @return Operation status
+  */
+static inline W6X_Status_t W6X_OTA_Send(uint8_t *buff, uint32_t len)
+{
+  return W6X_FWU_Send(buff, len);
+}
+
+/**
   * @brief  Set the module in station mode
   * @return Operation status
   */
@@ -392,6 +422,44 @@ static inline int32_t W6X_Net_Tls_Credential_Add(uint32_t tag, W6X_Net_Tls_Crede
 static inline int32_t W6X_Net_Tls_Credential_Delete(uint32_t tag, W6X_Net_Tls_Credential_e type)
 {
   return W6X_Net_TLS_Credential_Delete(tag, type);
+}
+
+/**
+  * @brief  Indicate the Characteristic Value from the Server to a Client
+  * @param  service_index: index of the service containing characteristic to indicate
+  * @param  char_index: index of the characteristic to indicate
+  * @param  pdata: pointer to the data to indicate
+  * @param  req_len: length of the data to indicate
+  * @param  sent_data_len: length of the data sent
+  * @param  timeout: timeout in ms
+  * @return Operation status
+  */
+static inline W6X_Status_t W6X_Ble_ServerSendIndication(uint8_t service_index, uint8_t char_index,
+                                                        void *pdata, uint32_t req_len, uint32_t *sent_data_len,
+                                                        uint32_t timeout)
+{
+  uint8_t conn_handle = 0;
+  return W6X_Ble_ServerIndicate(conn_handle, service_index, char_index,
+                                pdata, req_len, sent_data_len, timeout);
+}
+
+/**
+  * @brief  Notify the Characteristic Value from the Server to a Client
+  * @param  service_index: index of the service containing characteristic to notify
+  * @param  char_index: index of the characteristic to notify
+  * @param  pdata: pointer to the data to notify
+  * @param  req_len: length of the data to notify
+  * @param  sent_data_len: length of the data sent
+  * @param  timeout: timeout in ms
+  * @return Operation status
+  */
+static inline W6X_Status_t W6X_Ble_ServerSendNotification(uint8_t service_index, uint8_t char_index,
+                                                          void *pdata, uint32_t req_len, uint32_t *sent_data_len,
+                                                          uint32_t timeout)
+{
+  uint8_t conn_handle = 0;
+  return W6X_Ble_ServerNotify(conn_handle, service_index, char_index,
+                              pdata, req_len, sent_data_len, timeout);
 }
 
 #ifdef __cplusplus

@@ -43,9 +43,10 @@
 #include <semphr.h>
 #include <timers.h>
 
-#include "w6x_api.h"
 #include "main.h"
 #include "lwip_netif.h"
+#include "dhcp_server.h"
+#include "app_config.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -59,6 +60,9 @@
 /* Private defines -----------------------------------------------------------*/
 /** Maximum transfer unit */
 #define LLC_ETHER_MTU           1500
+
+/** DHCP Timeout */
+#define DHCP_TIMEOUT            15000
 
 /* USER CODE BEGIN PD */
 
@@ -93,40 +97,40 @@ static TimerHandle_t dhcp6_timer = NULL;
 
 /* Private function prototypes -----------------------------------------------*/
 /**
-  * @brief  Callback to bring the network link up
+  * @brief  Callback to bring the network sta link up.
   * @return 0 on success, error code otherwise
   */
 static int32_t netif_link_sta_up_cb(void);
 
 /**
-  * @brief  Callback to bring the network link down
+  * @brief  Callback to bring the network sta link down.
   * @return 0 on success, error code otherwise
   */
 static int32_t netif_link_sta_down_cb(void);
+
+/**
+  * @brief  Callback function to handle status updates for WiFi AP interface.
+  * @param  netif: Pointer to the network interface structure.
+  */
+static void wifi_ap_status_callback(struct netif *netif);
+
+/**
+  * @brief  Callback to bring the network soft-ap link up.
+  * @return 0 on success, error code otherwise
+  */
+static int32_t netif_link_ap_up_cb(void);
+
+/**
+  * @brief  Callback to bring the network soft-ap link down.
+  * @return 0 on success, error code otherwise
+  */
+static int32_t netif_link_ap_down_cb(void);
 
 /**
   * @brief  Timer callback function
   * @param  handle: Timer handle
   */
 static void __timer_callback(TimerHandle_t handle);
-
-/**
-  * @brief  Starts the DHCP client
-  * @param  netif: Pointer to the network interface
-  * @param  timeout: Timeout duration
-  * @return 0 on success, error code otherwise
-  */
-static int32_t netif_dhcp_start(struct netif *netif, uint32_t timeout);
-
-#if (LWIP_IPV6 == 1)
-/**
-  * @brief  Starts the DHCPv6 client
-  * @param  netif: Pointer to the network interface
-  * @param  timeout: Timeout duration
-  * @return 0 on success, error code otherwise
-  */
-static int32_t netif_dhcp6_start(struct netif *netif, uint32_t timeout);
-#endif /* LWIP_IPV6 */
 
 /**
   * @brief  DHCP client callback when the DHCP process is done
@@ -162,6 +166,8 @@ int32_t MX_LWIP_Init(void)
   {
     .link_sta_up_fn = netif_link_sta_up_cb,
     .link_sta_down_fn = netif_link_sta_down_cb,
+    .link_ap_up_fn = netif_link_ap_up_cb,
+    .link_ap_down_fn = netif_link_ap_down_cb,
   };
   uint8_t mac[6] = {0};
   memset(last_ipv4_addr, 0, sizeof(last_ipv4_addr));
@@ -185,6 +191,13 @@ int32_t MX_LWIP_Init(void)
   }
   memset(netif[W6X_NET_IF_STA], 0, sizeof(struct netif));
 
+  netif[W6X_NET_IF_AP] = pvPortMalloc(sizeof(struct netif));
+  if (netif[W6X_NET_IF_AP] == NULL)
+  {
+    return -1;
+  }
+  memset(netif[W6X_NET_IF_AP], 0, sizeof(struct netif));
+
   /* Add netif for station interface */
   if (netifapi_netif_add(netif[W6X_NET_IF_STA], NULL, NULL, NULL, NULL, netif_net_init, tcpip_input) != ERR_OK)
   {
@@ -198,6 +211,17 @@ int32_t MX_LWIP_Init(void)
 
   /* Set callback to be called when interface is brought up/down or address is changed while up */
   netif_set_status_callback(netif[W6X_NET_IF_STA], netif_status_callback);
+
+  /* Add netif for access point interface */
+  if (netifapi_netif_add(netif[W6X_NET_IF_AP], NULL, NULL, NULL, NULL, netif_net_init, tcpip_input) != ERR_OK)
+  {
+    LogError("Failed to add netif\n");
+    return -1;
+  }
+  netif[W6X_NET_IF_AP]->hwaddr_len = ETHARP_HWADDR_LEN;
+  W6X_WiFi_AP_GetMACAddress(mac);
+  memcpy(netif[W6X_NET_IF_AP]->hwaddr, mac, ETHARP_HWADDR_LEN);
+  netif[W6X_NET_IF_AP]->hostname = "ST67W61_AP_WiFi";
 
   /* Registers the default network interface */
   netifapi_netif_set_default(netif[W6X_NET_IF_STA]);
@@ -241,11 +265,32 @@ static int32_t netif_link_sta_up_cb(void)
   }
 #endif /* LWIP_IPV6_MLD */
 
-  netif_dhcp6_start(netif[NETIF_STA], 15000);
+#if (LWIP_IPV6_DHCP6 == 1)
+  if (dhcp6_timer == NULL)
+  {
+    dhcp6_enable_stateless(netif[NETIF_STA]);
+    dhcp6_timer = xTimerCreate("dhcp6", pdMS_TO_TICKS(DHCP_TIMEOUT), pdFALSE, NULL, __timer_callback);
+    if (dhcp6_timer)
+    {
+      xTimerStart(dhcp6_timer, 0);
+    }
+  }
+#endif /* LWIP_IPV6_DHCP6 */
 #endif /* LWIP_IPV6 */
 
-  netif_dhcp_start(netif[NETIF_STA], 15000);
+#if ((LWIP_IPV4 == 1) && (LWIP_DHCP == 1))
+  if (dhcp_timer == NULL)
+  {
+    netifapi_dhcp_release(netif[NETIF_STA]);
+    netifapi_dhcp_start(netif[NETIF_STA]);
 
+    dhcp_timer = xTimerCreate("dhcp", pdMS_TO_TICKS(DHCP_TIMEOUT), pdFALSE, NULL, __timer_callback);
+    if (dhcp_timer)
+    {
+      xTimerStart(dhcp_timer, 0);
+    }
+  }
+#endif /* LWIP_IPV4 & LWIP_DHCP */
   return ret;
 }
 
@@ -257,44 +302,75 @@ static int32_t netif_link_sta_down_cb(void)
     return -1;
   }
 
+#if (LWIP_IPV4 == 1)
   netif_set_link_down(netif[NETIF_STA]);
+#if (LWIP_DHCP == 1)
+  netifapi_dhcp_release_and_stop(netif[NETIF_STA]);
+  netif_dhcp_done(&dhcp_timer);
+#else
+  /* remove IP address from interface */
+  netif_set_addr(netif[NETIF_STA], IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
+#endif /* LWIP_DHCP */
   ip4_addr_set_zero(&last_ipv4_addr[NETIF_STA]);
+#endif /* LWIP_IPV4 */
+
 #if (LWIP_IPV6 == 1)
   for (int32_t i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++)
   {
     ip6_addr_set_zero(&last_ipv6_addr[NETIF_STA][i]);
     netif_ip6_addr_set_state(netif[NETIF_STA], i, IP6_ADDR_INVALID);
   }
+#if (LWIP_IPV6_DHCP6 == 1)
+  netif_dhcp_done(&dhcp6_timer);
+#endif /* LWIP_IPV6_DHCP6 */
 #endif /* LWIP_IPV6 */
+
+  return 0;
+}
+
+static void wifi_ap_status_callback(struct netif *netif)
+{
+  uint8_t *mac = netif->hwaddr;
+
+  LogInfo("Station connected to soft-AP got an IP:\"%02x:%02x:%02x:%02x:%02x:%02x\",\"%s\"\r\n",
+          mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], ip4addr_ntoa(netif_ip4_addr(netif)));
+}
+
+static int32_t netif_link_ap_up_cb(void)
+{
+  LogInfo("\nNetif AP : Link is up\n");
+  if (netif[NETIF_AP] == NULL)
+  {
+    return -1;
+  }
+
+  netif_set_link_up(netif[NETIF_AP]);
+  dhcpd_start(netif[NETIF_AP], -1, -1);
+  vTaskDelay(pdMS_TO_TICKS(100));
+  dhcpd_status_callback_set(netif[NETIF_AP], wifi_ap_status_callback);
+
+  return 0;
+}
+
+static int32_t netif_link_ap_down_cb(void)
+{
+  char netif_name[3];
+  LogInfo("\nNetif AP : Link is down\n");
+  if (netif[NETIF_AP] == NULL)
+  {
+    return -1;
+  }
+
+  memcpy(netif_name, netif[NETIF_AP]->name, 2);
+  netif_name[2] = '\0';
+  dhcpd_stop_by_name(netif_name);
+  netif_set_link_down(netif[NETIF_AP]);
+
   return 0;
 }
 
 static void __timer_callback(TimerHandle_t handle)
 {
-}
-
-static int32_t netif_dhcp_start(struct netif *netif, uint32_t timeout)
-{
-#if ((LWIP_IPV4 == 1) && (LWIP_DHCP == 1))
-  if (netif == NULL)
-  {
-    return -1;
-  }
-  if (dhcp_timer)
-  {
-    return 0;
-  }
-
-  netifapi_dhcp_release(netif);
-  netifapi_dhcp_start(netif);
-
-  dhcp_timer = xTimerCreate("dhcp", timeout, pdFALSE, NULL, __timer_callback);
-  if (dhcp_timer)
-  {
-    xTimerStart(dhcp_timer, 0);
-  }
-#endif /* LWIP_IPV4 & LWIP_DHCP */
-  return 0;
 }
 
 static int32_t netif_dhcp_done(TimerHandle_t *dhcp_timer)
@@ -308,25 +384,30 @@ static int32_t netif_dhcp_done(TimerHandle_t *dhcp_timer)
   return 0;
 }
 
-#if (LWIP_IPV6 == 1)
-static int32_t netif_dhcp6_start(struct netif *netif, uint32_t timeout)
+int32_t aplist_sta(W6X_WiFi_Connected_Sta_t *ConnectedSta)
 {
-#if (LWIP_IPV6_DHCP6 == 1)
-  if (netif == NULL)
+  ip4_addr_t ipaddr;
+
+  /* GET Method */
+  if (W6X_WiFi_AP_ListConnectedStations(ConnectedSta) != W6X_STATUS_OK)
   {
     return -1;
   }
 
-  dhcp6_enable_stateless(netif);
-  dhcp6_timer = xTimerCreate("dhcp6", timeout, pdFALSE, NULL, __timer_callback);
-  if (dhcp6_timer)
+  for (int32_t i = 0; i < ConnectedSta->Count; i++)
   {
-    xTimerStart(dhcp6_timer, 0);
+    W6X_WiFi_Connected_Sta_Info_t *res = &ConnectedSta->STA[i];
+    if (ERR_OK == dhcpd_get_ip_by_mac(netif[NETIF_AP], res->MAC, &ipaddr))
+    {
+      res->IP[0] = ip4_addr_get_byte(&ipaddr, 0);
+      res->IP[1] = ip4_addr_get_byte(&ipaddr, 1);
+      res->IP[2] = ip4_addr_get_byte(&ipaddr, 2);
+      res->IP[3] = ip4_addr_get_byte(&ipaddr, 3);
+    }
   }
-#endif /* LWIP_IPV6_DHCP6 */
-  return 0;
+
+  return ERR_OK;
 }
-#endif /* LWIP_IPV6 */
 
 int32_t print_ipv4_addresses(struct netif *netif)
 {
@@ -339,9 +420,10 @@ int32_t print_ipv4_addresses(struct netif *netif)
   {
     if (!ip4_addr_isany(netif_ip4_addr(netif)))
     {
-      LogInfo("STA IP address : %s\n", ipaddr_ntoa(netif_ip_addr4(netif)));
-      LogInfo("Gateway :        %s\n", ipaddr_ntoa(netif_ip_gw4(netif)));
-      LogInfo("Netmask :        %s\n", ipaddr_ntoa(netif_ip_netmask4(netif)));
+      LogInfo("STA IP :\n");
+      LogInfo("IP :              %s\n", ipaddr_ntoa(netif_ip_addr4(netif)));
+      LogInfo("Gateway :         %s\n", ipaddr_ntoa(netif_ip_gw4(netif)));
+      LogInfo("Netmask :         %s\n", ipaddr_ntoa(netif_ip_netmask4(netif)));
     }
     else
     {
@@ -361,10 +443,9 @@ int32_t print_ipv6_addresses(struct netif *netif)
 #if (LWIP_IPV6 == 1)
   else
   {
-    for (int32_t i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++)
-    {
-      LogInfo("IPv6 address %d : %s\n", i, ip6addr_ntoa(netif_ip6_addr(netif, i)));
-    }
+    LogInfo("IPv6 link-local : %s\n", ip6addr_ntoa(netif_ip6_addr(netif, 0)));
+    LogInfo("IPv6 global 1   : %s\n", ip6addr_ntoa(netif_ip6_addr(netif, 1)));
+    LogInfo("IPv6 global 2   : %s\n", ip6addr_ntoa(netif_ip6_addr(netif, 2)));
   }
 #endif /* LWIP_IPV6 */
   return 0;
@@ -460,6 +541,15 @@ u32_t sys_now(void)
 /* Private Functions Definition ----------------------------------------------*/
 static void netif_status_callback(struct netif *netif)
 {
+#if (LWIP_IPV6 == 1)
+  static const char *ipv6_addr_labels[3] =
+  {
+    "link-local",
+    "global 1  ",
+    "global 2  "
+  };
+#endif /* LWIP_IPV6 */
+
   if (!netif_is_link_up(netif))
   {
     return;
@@ -479,8 +569,11 @@ static void netif_status_callback(struct netif *netif)
         !ip6_addr_cmp(netif_ip6_addr(netif, i), &last_ipv6_addr[NETIF_STA][i]))
     {
       /* print only the new/changed address */
-      LogInfo("IPv6 address %d : %s\n", i, ip6addr_ntoa(netif_ip6_addr(netif, i)));
+      LogInfo("IPv6 %s : %s\n", ipv6_addr_labels[i], ip6addr_ntoa(netif_ip6_addr(netif, i)));
       last_ipv6_addr[NETIF_STA][i] = *netif_ip6_addr(netif, i);
+#if (LWIP_IPV6_DHCP6 == 1)
+      netif_dhcp_done(&dhcp6_timer);
+#endif /* LWIP_IPV6_DHCP6 */
     }
   }
 #endif /* LWIP_IPV6 */

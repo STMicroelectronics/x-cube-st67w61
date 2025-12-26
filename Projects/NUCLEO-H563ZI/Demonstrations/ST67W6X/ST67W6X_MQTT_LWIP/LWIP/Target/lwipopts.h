@@ -53,7 +53,6 @@ extern "C" {
 #define DEFAULT_TCP_RECVMBOX_SIZE     64
 #define DEFAULT_ACCEPTMBOX_SIZE       32
 
-#define SNTP_SERVER_DNS               1
 #define LWIP_NETIF_LOOPBACK           1
 #define LWIP_HAVE_LOOPIF              1
 #define LWIP_LOOPBACK_MAX_PBUFS       0

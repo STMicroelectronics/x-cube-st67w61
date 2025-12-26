@@ -143,7 +143,8 @@ extern "C" {
 
 #ifndef W6X_HTTP_CLIENT_TCP_SOCKET_SIZE
 /** Size of the TCP socket used by the HTTP client, recommended to be at least 0x2000 when fetching lots of data.
-  * 0x2000 is the value used in the SPI host project for OTA update, which retrieves around 1 mega bytes of data. */
+  * 0x2000 is the value used in the SPI host project for firmware updates,
+  * which retrieves around 1 mega bytes of data. */
 #define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         0x3000
 #endif /* W6X_HTTP_CLIENT_TCP_SOCKET_SIZE */
 

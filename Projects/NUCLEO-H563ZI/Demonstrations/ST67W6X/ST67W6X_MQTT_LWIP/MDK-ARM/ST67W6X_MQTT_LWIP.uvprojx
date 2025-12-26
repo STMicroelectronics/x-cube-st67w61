@@ -16,7 +16,7 @@
         <TargetCommonOption>
           <Device>STM32H563ZITx</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32H5xx_DFP.2.0.0</PackID>
+          <PackID>Keil.STM32H5xx_DFP.2.1.1</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000-0x2009FFFF) IROM(0x08000000-0x81FFFFF) CLOCK(8000000) FPU3(SFPU) CPUTYPE("Cortex-M33") ELITTLE TZ DSP</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>configTASK_NOTIFICATION_ARRAY_ENTRIES=8,ST67_ARCH=W6X_ARCH_T02,LFS_CONFIG=lfs_util_config.h,USE_HAL_DRIVER,STM32H563xx</Define>
+              <Define>configTASK_NOTIFICATION_ARRAY_ENTRIES=8,ST67_ARCH=W6X_ARCH_T02,LFS_CONFIG=lfs_util_config.h,MBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;,USE_HAL_DRIVER,STM32H563xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../X-CUBE-MEMS1/Target;../ST67W6X/App;../Appli/App;../Appli/Target;../ST67W6X/Target;../littlefs/Target;../LWIP/App;../LWIP/Target;../LWIP/Target/arch;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32H5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Middlewares/Third_Party/cJSON;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core;../../../../../../Middlewares/Third_Party/LwIP/src/include/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus;../../../../../../Middlewares/Third_Party/MQTT-C/include;../../../../../../Middlewares/Third_Party/littlefs;../../../../../../Drivers/BSP/Components/lsm6dsv16x;../../../../../../Drivers/BSP/Components/lis2duxs12;../../../../../../Drivers/BSP/Components/lis2mdl;../../../../../../Drivers/BSP/Components/lsm6dso16is;../../../../../../Drivers/BSP/Components/sht40ad1b;../../../../../../Drivers/BSP/Components/lps22df;../../../../../../Drivers/BSP/Components/stts22h;../../../../../../Drivers/BSP/IKS4A1;../../../../../../Drivers/BSP/Components/Common;../X-CUBE-MEMS1/App</IncludePath>
+              <IncludePath>../Core/Inc;../X-CUBE-MEMS1/Target;../ST67W6X/App;../Appli/App;../Appli/Target;../ST67W6X/Target;../littlefs/Target;../LWIP/App;../LWIP/Target;../LWIP/Target/arch;../MBEDTLS/App;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32H5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Drivers/BSP/Components/lsm6dsv16x;../../../../../../Drivers/BSP/Components/lis2duxs12;../../../../../../Drivers/BSP/Components/lis2mdl;../../../../../../Drivers/BSP/Components/lsm6dso16is;../../../../../../Drivers/BSP/Components/sht40ad1b;../../../../../../Drivers/BSP/Components/lps22df;../../../../../../Drivers/BSP/Components/stts22h;../../../../../../Drivers/BSP/IKS4A1;../../../../../../Drivers/BSP/Components/Common;../../../../../../Middlewares/Third_Party/cJSON;../../../../../../Middlewares/Third_Party/mbedTLS/include/;../../../../../../Middlewares/Third_Party/mbedTLS/include/psa;../../../../../../Middlewares/Third_Party/mbedTLS/library;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core;../../../../../../Middlewares/Third_Party/LwIP/src/include/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus;../../../../../../Middlewares/Third_Party/MQTT-C/include;../../../../../../Middlewares/Third_Party/littlefs;../X-CUBE-MEMS1/App</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define>configTASK_NOTIFICATION_ARRAY_ENTRIES=8</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../X-CUBE-MEMS1/Target;../ST67W6X/App;../Appli/App;../Appli/Target;../ST67W6X/Target;../littlefs/Target;../LWIP/App;../LWIP/Target;../LWIP/Target/arch;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32H5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Middlewares/Third_Party/cJSON;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core;../../../../../../Middlewares/Third_Party/LwIP/src/include/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus;../../../../../../Middlewares/Third_Party/MQTT-C/include;../../../../../../Middlewares/Third_Party/littlefs;../../../../../../Drivers/BSP/Components/lsm6dsv16x;../../../../../../Drivers/BSP/Components/lis2duxs12;../../../../../../Drivers/BSP/Components/lis2mdl;../../../../../../Drivers/BSP/Components/lsm6dso16is;../../../../../../Drivers/BSP/Components/sht40ad1b;../../../../../../Drivers/BSP/Components/lps22df;../../../../../../Drivers/BSP/Components/stts22h;../../../../../../Drivers/BSP/IKS4A1;../../../../../../Drivers/BSP/Components/Common;../X-CUBE-MEMS1/App</IncludePath>
+              <IncludePath>../Core/Inc;../X-CUBE-MEMS1/Target;../ST67W6X/App;../Appli/App;../Appli/Target;../ST67W6X/Target;../littlefs/Target;../LWIP/App;../LWIP/Target;../LWIP/Target/arch;../MBEDTLS/App;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc;../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy;../../../../../../Drivers/CMSIS/Device/ST/STM32H5xx/Include;../../../../../../Drivers/CMSIS/Include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure/;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/;../../../../../../Drivers/CMSIS/RTOS2/Include/;../../../../../../Drivers/BSP/Components/lsm6dsv16x;../../../../../../Drivers/BSP/Components/lis2duxs12;../../../../../../Drivers/BSP/Components/lis2mdl;../../../../../../Drivers/BSP/Components/lsm6dso16is;../../../../../../Drivers/BSP/Components/sht40ad1b;../../../../../../Drivers/BSP/Components/lps22df;../../../../../../Drivers/BSP/Components/stts22h;../../../../../../Drivers/BSP/IKS4A1;../../../../../../Drivers/BSP/Components/Common;../../../../../../Middlewares/Third_Party/cJSON;../../../../../../Middlewares/Third_Party/mbedTLS/include/;../../../../../../Middlewares/Third_Party/mbedTLS/include/psa;../../../../../../Middlewares/Third_Party/mbedTLS/library;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core;../../../../../../Middlewares/Third_Party/LwIP/src/include/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/;../../../../../../Middlewares/Third_Party/LwIP/src/include/netif/ppp/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/priv/;../../../../../../Middlewares/Third_Party/LwIP/src/include/lwip/prot/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/stdc/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/net/;../../../../../../Middlewares/Third_Party/LwIP/src/include/compat/posix/arpa/;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_at;../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus;../../../../../../Middlewares/Third_Party/MQTT-C/include;../../../../../../Middlewares/Third_Party/littlefs;../X-CUBE-MEMS1/App</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -464,6 +464,11 @@
               <FileType>1</FileType>
               <FilePath>../ST67W6X/Target/spi_port.c</FilePath>
             </File>
+            <File>
+              <FileName>util_task_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../ST67W6X/Target/util_task_port.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -489,6 +494,41 @@
               <FileType>1</FileType>
               <FilePath>../LWIP/App/lwip_netif.c</FilePath>
             </File>
+            <File>
+              <FileName>dhcp_server_raw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../LWIP/App/dhcp_server_raw.c</FilePath>
+            </File>
+            <File>
+              <FileName>altcp_tls_mbedtls.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../LWIP/App/altcp_tls_mbedtls.c</FilePath>
+            </File>
+            <File>
+              <FileName>sntp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\LWIP\App\sntp.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/User/MBEDTLS/Target</GroupName>
+          <Files>
+            <File>
+              <FileName>hardware_rng.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../MBEDTLS/Target/hardware_rng.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/User/MBEDTLS/App</GroupName>
+          <Files>
+            <File>
+              <FileName>mbedtls.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../MBEDTLS/App/mbedtls.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -510,9 +550,9 @@
           <GroupName>Doc</GroupName>
           <Files>
             <File>
-              <FileName>readme.md</FileName>
+              <FileName>README.md</FileName>
               <FileType>5</FileType>
-              <FilePath>../readme.md</FilePath>
+              <FilePath>../README.md</FilePath>
             </File>
           </Files>
         </Group>
@@ -705,6 +745,21 @@
               <FilePath>../../../../../../Drivers/STM32H5xx_HAL_Driver/Src/stm32h5xx_hal_icache.c</FilePath>
             </File>
             <File>
+              <FileName>stm32h5xx_hal_rng.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/STM32H5xx_HAL_Driver/Src/stm32h5xx_hal_rng.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32h5xx_hal_rng_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/STM32H5xx_HAL_Driver/Src/stm32h5xx_hal_rng_ex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32h5xx_ll_rng.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/STM32H5xx_HAL_Driver/Src/stm32h5xx_ll_rng.c</FilePath>
+            </File>
+            <File>
               <FileName>stm32h5xx_hal_rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Drivers/STM32H5xx_HAL_Driver/Src/stm32h5xx_hal_rtc.c</FilePath>
@@ -822,6 +877,351 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Middlewares/mbedTLS/Security/mbedTLS</GroupName>
+          <Files>
+            <File>
+              <FileName>aes.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/aes.c</FilePath>
+            </File>
+            <File>
+              <FileName>asn1parse.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/asn1parse.c</FilePath>
+            </File>
+            <File>
+              <FileName>asn1write.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/asn1write.c</FilePath>
+            </File>
+            <File>
+              <FileName>base64.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/base64.c</FilePath>
+            </File>
+            <File>
+              <FileName>bignum.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/bignum.c</FilePath>
+            </File>
+            <File>
+              <FileName>bignum_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/bignum_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>bignum_mod.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/bignum_mod.c</FilePath>
+            </File>
+            <File>
+              <FileName>bignum_mod_raw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/bignum_mod_raw.c</FilePath>
+            </File>
+            <File>
+              <FileName>block_cipher.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/block_cipher.c</FilePath>
+            </File>
+            <File>
+              <FileName>cipher.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/cipher.c</FilePath>
+            </File>
+            <File>
+              <FileName>cipher_wrap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/cipher_wrap.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/cmac.c</FilePath>
+            </File>
+            <File>
+              <FileName>constant_time.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/constant_time.c</FilePath>
+            </File>
+            <File>
+              <FileName>ctr_drbg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ctr_drbg.c</FilePath>
+            </File>
+            <File>
+              <FileName>des.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/des.c</FilePath>
+            </File>
+            <File>
+              <FileName>dhm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/dhm.c</FilePath>
+            </File>
+            <File>
+              <FileName>ecdh.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ecdh.c</FilePath>
+            </File>
+            <File>
+              <FileName>ecdsa.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ecdsa.c</FilePath>
+            </File>
+            <File>
+              <FileName>ecp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ecp.c</FilePath>
+            </File>
+            <File>
+              <FileName>ecp_curves.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ecp_curves.c</FilePath>
+            </File>
+            <File>
+              <FileName>entropy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/entropy.c</FilePath>
+            </File>
+            <File>
+              <FileName>entropy_poll.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/entropy_poll.c</FilePath>
+            </File>
+            <File>
+              <FileName>gcm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/gcm.c</FilePath>
+            </File>
+            <File>
+              <FileName>hkdf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/hkdf.c</FilePath>
+            </File>
+            <File>
+              <FileName>md.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/md.c</FilePath>
+            </File>
+            <File>
+              <FileName>md5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/md5.c</FilePath>
+            </File>
+            <File>
+              <FileName>memory_buffer_alloc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/memory_buffer_alloc.c</FilePath>
+            </File>
+            <File>
+              <FileName>mps_reader.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/mps_reader.c</FilePath>
+            </File>
+            <File>
+              <FileName>mps_trace.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/mps_trace.c</FilePath>
+            </File>
+            <File>
+              <FileName>nist_kw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/nist_kw.c</FilePath>
+            </File>
+            <File>
+              <FileName>oid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/oid.c</FilePath>
+            </File>
+            <File>
+              <FileName>pem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pem.c</FilePath>
+            </File>
+            <File>
+              <FileName>pk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pk.c</FilePath>
+            </File>
+            <File>
+              <FileName>pk_ecc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pk_ecc.c</FilePath>
+            </File>
+            <File>
+              <FileName>pk_wrap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pk_wrap.c</FilePath>
+            </File>
+            <File>
+              <FileName>pkcs5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pkcs5.c</FilePath>
+            </File>
+            <File>
+              <FileName>pkparse.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pkparse.c</FilePath>
+            </File>
+            <File>
+              <FileName>pkwrite.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/pkwrite.c</FilePath>
+            </File>
+            <File>
+              <FileName>platform.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/platform.c</FilePath>
+            </File>
+            <File>
+              <FileName>platform_util.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/platform_util.c</FilePath>
+            </File>
+            <File>
+              <FileName>rsa.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/rsa.c</FilePath>
+            </File>
+            <File>
+              <FileName>rsa_alt_helpers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/rsa_alt_helpers.c</FilePath>
+            </File>
+            <File>
+              <FileName>sha1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/sha1.c</FilePath>
+            </File>
+            <File>
+              <FileName>sha3.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/sha3.c</FilePath>
+            </File>
+            <File>
+              <FileName>sha256.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/sha256.c</FilePath>
+            </File>
+            <File>
+              <FileName>sha512.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/sha512.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_cache.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_cache.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_ciphersuites.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_ciphersuites.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_cookie.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_cookie.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_ticket.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_ticket.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls12_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls12_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls12_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls12_server.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls13_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls13_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls13_generic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls13_generic.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls13_keys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls13_keys.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_tls13_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_tls13_server.c</FilePath>
+            </File>
+            <File>
+              <FileName>version_features.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/version_features.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509_create.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509_create.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509_crl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509_crl.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509_crt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509_crt.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509_csr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509_csr.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509write.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509write.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509write_crt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509write_crt.c</FilePath>
+            </File>
+            <File>
+              <FileName>x509write_csr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/x509write_csr.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI</GroupName>
           <Files>
             <File>
@@ -850,11 +1250,6 @@
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</FilePath>
             </File>
             <File>
-              <FileName>w6x_ota.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</FilePath>
-            </File>
-            <File>
               <FileName>w6x_sys.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_sys.c</FilePath>
@@ -873,6 +1268,36 @@
               <FileName>logging.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Logging/logging.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics</GroupName>
+          <Files>
+            <File>
+              <FileName>iperf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/iperf.c</FilePath>
+            </File>
+            <File>
+              <FileName>iperf_shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/iperf_shell.c</FilePath>
+            </File>
+            <File>
+              <FileName>util_mem_perf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/util_mem_perf.c</FilePath>
+            </File>
+            <File>
+              <FileName>util_task_perf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/util_task_perf.c</FilePath>
+            </File>
+            <File>
+              <FileName>wfa_tg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/wfa_tg.c</FilePath>
             </File>
           </Files>
         </Group>

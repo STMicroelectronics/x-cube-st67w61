@@ -56,7 +56,7 @@ typedef enum
   LD1 = 0U,
   LED_GREEN = LD1,
   LD2 = 1U,
-  LED_BLUE = LD2,
+  LED_YELLOW = LD2,
   LD3 = 2U,
   LED_RED = LD3,
   LEDn
@@ -148,13 +148,13 @@ typedef struct
 /**
   * @brief STM32H7RSxx NUCLEO BSP Driver version number
   */
-#define STM32H7RSxx_NUCLEO_BSP_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
-#define STM32H7RSxx_NUCLEO_BSP_VERSION_SUB1   (0x01U) /*!< [23:16] sub1 version */
-#define STM32H7RSxx_NUCLEO_BSP_VERSION_SUB2   (0x00U) /*!< [15:8]  sub2 version */
-#define STM32H7RSxx_NUCLEO_BSP_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */
+#define STM32H7RSxx_NUCLEO_BSP_VERSION_MAIN   (0x01UL) /*!< [31:24] main version */
+#define STM32H7RSxx_NUCLEO_BSP_VERSION_SUB1   (0x01UL) /*!< [23:16] sub1 version */
+#define STM32H7RSxx_NUCLEO_BSP_VERSION_SUB2   (0x01UL) /*!< [15:8]  sub2 version */
+#define STM32H7RSxx_NUCLEO_BSP_VERSION_RC     (0x00UL) /*!< [7:0]  release candidate */
 #define STM32H7RSxx_NUCLEO_BSP_VERSION       ((STM32H7RSxx_NUCLEO_BSP_VERSION_MAIN << 24U)\
                                               |(STM32H7RSxx_NUCLEO_BSP_VERSION_SUB1 << 16U)\
-                                              |(STM32H7RSxx_NUCLEO_BSP_VERSION_SUB2 << 8U )\
+                                              |(STM32H7RSxx_NUCLEO_BSP_VERSION_SUB2 << 8U)\
                                               |(STM32H7RSxx_NUCLEO_BSP_VERSION_RC))
 
 #define STM32H7RSXX_NUCLEO_BSP_BOARD_NAME  "NUCLEO-H7S3L8"

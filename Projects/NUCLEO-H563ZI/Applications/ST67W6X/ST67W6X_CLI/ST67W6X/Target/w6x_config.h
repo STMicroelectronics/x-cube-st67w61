@@ -45,7 +45,7 @@ extern "C" {
   * ============================
   */
 
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP power save mode : 0: NCP stays always active / 1: NCP goes in low power mode when idle */
 #define W6X_POWER_SAVE_AUTO                     1
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
@@ -139,6 +139,9 @@ extern "C" {
   */
 /** Enable Iperf feature */
 #define IPERF_ENABLE                            1
+
+/** Enable IPv6 for Iperf */
+#define IPERF_V6                                0
 
 /** ============================
   * Utility Performance Memory usage

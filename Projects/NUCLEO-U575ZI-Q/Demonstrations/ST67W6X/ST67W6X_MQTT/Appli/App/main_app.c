@@ -54,6 +54,11 @@
 #error "low power standby mode not supported"
 #endif /* LOW_POWER_MODE */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+#include "util_mem_perf.h"
+#include "util_task_perf.h"
+#endif /* TEST_AUTOMATION_ENABLE */
+
 /* USER CODE BEGIN Includes */
 #include "sys_sensors.h"
 #include "stm32u5xx_nucleo_errno.h"
@@ -448,6 +453,11 @@ void main_app(void)
 
   /* USER CODE END main_app_1 */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Start the task performance measurement */
+  task_perf_start();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   /* Wi-Fi variables */
   W6X_WiFi_Scan_Opts_t Opts = {0};
   W6X_WiFi_Connect_Opts_t ConnectOpts = {0};
@@ -498,7 +508,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -506,7 +516,7 @@ void main_app(void)
   ret = W6X_WiFi_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Wi-Fi init is done\n");
@@ -515,7 +525,7 @@ void main_app(void)
   ret = W6X_Net_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Net init is done\n");
@@ -526,7 +536,7 @@ void main_app(void)
   ret = W6X_MQTT_Init(&mqtt_recv_data);
   if (ret)
   {
-    LogError("failed to initialize ST67W6X MQTT component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X MQTT component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("MQTT init is done\n");
@@ -536,6 +546,7 @@ void main_app(void)
   /* USER CODE END main_app_4 */
   /* Run a Wi-Fi scan to retrieve the list of all nearby Access Points */
   scan_event_flags = xEventGroupCreate();
+
   W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
 
   /* Wait to receive the EVENT_FLAG_SCAN_DONE event. The scan is declared as failed after 'ScanTimeout' delay */
@@ -553,15 +564,15 @@ void main_app(void)
   ret = W6X_WiFi_Connect(&ConnectOpts);
   if (ret)
   {
-    LogError("failed to connect, %" PRIi32 "\n", ret);
+    LogError("Failed to connect, %" PRIi32 "\n", ret);
     goto _err;
   }
 
   LogInfo("App connected\n");
   if (W6X_WiFi_Station_GetState(&state, &connectData) != W6X_STATUS_OK)
   {
-    LogInfo("Connected to an Access Point\n");
-    return;
+    LogError("Failed to get Station state\n");
+    goto _err;
   }
 
   LogInfo("Connected to following Access Point :\n");
@@ -575,13 +586,14 @@ void main_app(void)
   ret = W6X_WiFi_SetDTIM(WIFI_DTIM);
   if (ret)
   {
-    LogError("failed to initialize the DTIM, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize the DTIM, %" PRIi32 "\n", ret);
+    goto _err;
   }
 
   ret = W6X_WiFi_Station_GetMACAddress(Mac);
   if (ret)
   {
-    LogError("failed to get the MAC Address, %" PRIi32 "\n", ret);
+    LogError("Failed to get the MAC Address, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -718,13 +730,13 @@ void main_app(void)
     W6X_WiFi_Station_GetState(&State, &ConnectData);
 
     /* Create the json string message with:
-      * - current date and time
-      * - mac address of device
-      * - current RSSI level of the Access Point
-      *
-      * Note: The state.reported object hierarchy is used to help the interoperability
-      *       with 1st tier cloud providers.
-      */
+     * - current date and time
+     * - mac address of device
+     * - current RSSI level of the Access Point
+     *
+     * Note: The state.reported object hierarchy is used to help the interoperability
+     *       with 1st tier cloud providers.
+     */
     len = snprintf((char *)mqtt_pubmsg, MQTT_MSG_BUFFER_SIZE, "{\n \"state\": {\n \"reported\": {\n "
                    "   \"time\": \"%02" PRIu16 "-%02" PRIu16 "-%02" PRIu16 " %02" PRIu16 ":%02" PRIu16 ":%02" PRIu16
                    "\", \"mac\": \"" MACSTR "\", \"rssi\": %" PRIi32 "\n",
@@ -819,6 +831,18 @@ _err:
   /* USER CODE BEGIN main_app_Err_2 */
 
   /* USER CODE END main_app_Err_2 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Stop the task perf execution */
+  task_perf_stop();
+
+  /* Report the task performance measurement */
+  task_perf_report();
+
+  /* Report the memory performance measurement */
+  mem_perf_report();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   LogInfo("##### Application end\n");
 }
 
@@ -913,9 +937,6 @@ static void Subscription_process_task(void *arg)
     if (ret)
     {
       LogInfo("MQTT Subscription Received on topic %s\n", (char *)mqtt_data.topic);
-#if (TEST_AUTOMATION_ENABLE == 1)
-      subscription_received = true;
-#endif /* TEST_AUTOMATION_ENABLE */
 
       /* Parse the string message into a JSON element */
       root = cJSON_Parse((const char *)mqtt_data.message);
@@ -1072,6 +1093,10 @@ _err:
       /* Free the topic and message allocated */
       vPortFree(mqtt_data.topic);
       vPortFree(mqtt_data.message);
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+      subscription_received = true;
+#endif /* TEST_AUTOMATION_ENABLE */
     }
   }
   /* USER CODE BEGIN Subscription_process_task_End */

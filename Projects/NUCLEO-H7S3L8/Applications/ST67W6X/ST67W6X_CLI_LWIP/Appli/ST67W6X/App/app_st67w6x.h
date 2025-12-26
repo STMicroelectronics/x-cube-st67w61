@@ -3,7 +3,7 @@
   ******************************************************************************
   * @file    app_st67w6x.h
   * @author  GPM Application Team
-  * @brief   This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.
+  * @brief   This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.
   ******************************************************************************
   * @attention
   *

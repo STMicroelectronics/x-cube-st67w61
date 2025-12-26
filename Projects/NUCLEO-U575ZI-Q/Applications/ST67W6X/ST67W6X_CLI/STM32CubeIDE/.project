@@ -39,9 +39,9 @@
 			<locationURI>PARENT-1-PROJECT_LOC/ST67W6X_CLI.ioc</locationURI>
 		</link>
 		<link>
-			<name>Doc/readme.md</name>
+			<name>Doc/README.md</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/readme.md</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/README.md</locationURI>
 		</link>
 		<link>
 			<name>Utilities/stm32_lpm.c</name>
@@ -347,11 +347,6 @@
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_netif.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_ota.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_sys.c</name>

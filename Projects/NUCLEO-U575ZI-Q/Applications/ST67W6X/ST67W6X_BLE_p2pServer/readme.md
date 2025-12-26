@@ -1,4 +1,4 @@
-# __ST67W6X_BLE_p2pServer Application Description__
+## __ST67W6X_BLE_p2pServer Application Description__
 
 This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).
 
@@ -8,19 +8,19 @@ ST67W6X_BLE_p2pServer application advertises and waits for a connection from eit
 
 It exercises the ST67W6X_Network_Driver capabilities. It relies on the FreeRTOS RealTime Operating System.
 
-> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.89.bin.
+> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.97.bin.
 >
-> Please follow the [NCP Binaries README.md](../../../../ST67W6X_Utilities/Binaries/README.md) instructions using the __NCP_update_mission_profile.bat__ script.
+> Please follow the [NCP Binaries README.md](../../../../ST67W6X_Scripts/Binaries/README.md) instructions using the __NCP_update_mission_profile_t01.bat__ script.
 
-## __Keywords__
+### __Keywords__
 
 Connectivity, BLE, ST67W6X_Network_Driver, FreeRTOS
 
-## __Links and references__
+### __Links and references__
 
 For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PServer](https://wiki.st.com/stm32mcu/wiki/Connectivity:ST67W6X_BLE_Peer_To_Peer).
 
-## __Directory structure__
+### __Directory structure__
 
 |Directory  |                                                                     |Description|
 |---   |:-:                                                                       |---        |
@@ -34,8 +34,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
 |ST67W6X_BLE_p2pServer/MDK-ARM|                                                   |Project for the RealView Microcontroller Development Kit|
 |ST67W6X_BLE_p2pServer/STM32CubeIDE|                                              |Project for the STM32CubeIDE toolchain|
 
-## __Directory contents__
-
+### __Directory contents__
 
 |File  |                                                                          |Description|
 |---   |:-:                                                                       |---        |
@@ -50,7 +49,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
 |ST67W6X_BLE_p2pServer/Core/Inc/main.h|                                           |Header for main.c file.<br>This file contains the common defines of the application.|
 |ST67W6X_BLE_p2pServer/Core/Inc/stm32u5xx_hal_conf.h|                             |HAL configuration file.|
 |ST67W6X_BLE_p2pServer/Core/Inc/stm32u5xx_it.h|                                   |This file contains the headers of the interrupt handlers.|
-|ST67W6X_BLE_p2pServer/ST67W6X/App/app_st67w6x.h|                                 |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_BLE_p2pServer/ST67W6X/App/app_st67w6x.h|                                 |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/bsp_conf.h|                                 |This file contains definitions for the BSP interface|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/logging_config.h|                           |Header file for the W6X Logging configuration module|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/shell_config.h|                             |Header file for the W6X Shell configuration module|
@@ -67,13 +66,13 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
 |ST67W6X_BLE_p2pServer/Core/Src/stm32u5xx_hal_timebase_tim.c|                     |HAL time base based on the hardware TIM.|
 |ST67W6X_BLE_p2pServer/Core/Src/stm32u5xx_it.c|                                   |Interrupt Service Routines.|
 |ST67W6X_BLE_p2pServer/Core/Src/system_stm32u5xx.c|                               |CMSIS Cortex-M33 Device Peripheral Access Layer System Source File|
-|ST67W6X_BLE_p2pServer/ST67W6X/App/app_st67w6x.c|                                 |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_BLE_p2pServer/ST67W6X/App/app_st67w6x.c|                                 |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.|
 |ST67W6X_BLE_p2pServer/ST67W6X/Target/spi_port.c|                                 |SPI bus interface porting layer implementation|
+|ST67W6X_BLE_p2pServer/ST67W6X/Target/util_task_port.c|                           |Task Performance porting layer implementation|
 |ST67W6X_BLE_p2pServer/STM32CubeIDE/Application/User/Core/syscalls.c|             |STM32CubeIDE Minimal System calls file|
 |ST67W6X_BLE_p2pServer/STM32CubeIDE/Application/User/Core/sysmem.c|               |STM32CubeIDE System Memory calls file|
 
-
-## __Hardware and Software environment__
+### __Hardware and Software environment__
 
   - This example runs on the NUCLEO-U575ZI-Q board combined with the X-NUCLEO-67W61M1 board
   - X-NUCLEO-67W61M1 board is plugged to the NUCLEO-U575ZI-Q board via the Arduino connectors:
@@ -86,9 +85,10 @@ For further information, please visit the dedicated Wiki page [ST67W6X_BLE_P2PSe
 
 For further information, please visit the dedicated Wiki page [ST67W611M Hardware setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup).
 
-## __How to use it?__
+### __How to use it?__
 
 In order to make the program work, you must do the following :
+
   - Build the chosen Host project
     - Open your preferred toolchain
     - Rebuild all files and load your image into Host target memory
@@ -106,15 +106,44 @@ In order to make the program work, you must do the following :
       - Local Echo: Off
   - Press Reset button of the Host board
 
-##  __User setup__
+Install and launch ST BLE Toolbox application on android or iOS smartphone:
 
-###  __ST67W6X configuration__
+  - <a href="https://play.google.com/store/apps/details?id=com.st.dit.stbletoolbox"> ST BLE Toolbox Android</a>
+  - <a href="https://apps.apple.com/us/app/st-ble-toolbox/id1531295550"> ST BLE Toolbox iOS</a>
+
+Open ST BLE Toolbox application:
+
+  - Select the p2pS_XX in the device list, where xx is the 2 last digits of the BD Address and connect with it.
+
+Press User Button while not connected to clear the bonded devices list.
+
+Once connected:
+
+  - On p2pServer device, click on X-NUCLEO-67W61M1 User Button to send a notification message toward connected smartphone.
+  - On smartphone interface, click on the LED icon to switch On/Off the green Led of the NUCLEO-U575ZI-Q board.
+
+ Another possibility is to connect to the p2pServer device using another device with ST67W6X_BLE_p2pClient application,
+ see readme of ST67W6X_BLE_p2pClient.
+
+### __User setup__
+
+#### __ST67W6X configuration__
 
 The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
+/** NCP will go by default in low power mode when NCP is in idle mode
+  * Note: External clock oscillator must be used to support BLE in low power mode, if W6X_POWER_SAVE_AUTO is set to 1 but clock mode is not correct W6X_Ble_Init() API disable the low power */
+#define W6X_POWER_SAVE_AUTO                     0
+
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1
 ```
+
+> __IMPORTANT__
+>
+> Bluetooth Low Energy connection with NCP in Power save mode requires accurate external low-frequency clock.
+> In order to setup and use external clock, SW and HW settings have to be modified.
+> Refer to [Wiki Bluetooth LE with low-power setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:How_to_measure_ST67W611M_current_consumption#Bluetooth-C2-AE_LE_with_low-power_setup) page in order to be informed about required changes.
 
 The default BLE configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
@@ -128,7 +157,7 @@ Additionally, some others options can be modified in the _ST67W6X/Target_ direct
 - _shell_config.h_ : This file provides configuration for Shell component.
 - _w61_driver_config.h_ : This file provides configuration for the W61 configuration module.
 
-###  __Application configuration__
+#### __Application configuration__
 
 The logging output mode can be modified in the _Appli/App/app_config.h_ file:
 ```
@@ -142,33 +171,4 @@ The host low power mode can be modified in the _Appli/App/app_config.h_ file:
 #define LOW_POWER_MODE              LOW_POWER_SLEEP_ENABLE
 ```
 
-The NCP low power mode can be modified in the _ST67W6X/Target/w6x_config.h_ file:
-```
-/** NCP will go by default in low power mode when NCP is in idle mode
-  * Note: External clock oscillator must be used to support BLE in low power mode, if W6X_POWER_SAVE_AUTO is set to 1 but clock mode is not correct W6X_Ble_Init() API disable the low power */
-#define W6X_POWER_SAVE_AUTO                     0
-```
-> [!IMPORTANT]
-> Bluetooth Low Energy connection with NCP in Power save mode requires accurate external low-frequency clock.
-> In order to setup and use external clock, SW and HW settings have to be modified.
-> Refer to [Wiki Bluetooth LE with low-power setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:How_to_measure_ST67W611M_current_consumption#Bluetooth-C2-AE_LE_with_low-power_setup) page in order to be informed about required changes.
-
-Install and launch ST BLE Toolbox application on android or iOS smartphone:
- - <a href="https://play.google.com/store/apps/details?id=com.st.dit.stbletoolbox"> ST BLE Toolbox Android</a>
- - <a href="https://apps.apple.com/us/app/st-ble-toolbox/id1531295550"> ST BLE Toolbox iOS</a>
-
-Open ST BLE Toolbox application:
- - Select the p2pS_XX in the device list, where xx is the 2 last digits of the BD Address and connect with it.
-
-Press User Button while not connected to clear the bonded devices list.
-
-Once connected:
- - On p2pServer device, click on X-NUCLEO-67W61M1 User Button to send a notification message toward connected smartphone.
- - On smartphone interface, click on the LED icon to switch On/Off the green Led of the NUCLEO-U575ZI-Q board.
-
- Another possibility is to connect to the p2pServer device using another device with ST67W6X_BLE_p2pClient application,
- see readme of ST67W6X_BLE_p2pClient.
-
-## __Known limitations__
-
-  - W6X_Ble_SetDeviceName API cannot use special characters [,"\\] in the device name. If needed, they must be preceded by a \\ to be interpreted correctly
+### __Known limitations__

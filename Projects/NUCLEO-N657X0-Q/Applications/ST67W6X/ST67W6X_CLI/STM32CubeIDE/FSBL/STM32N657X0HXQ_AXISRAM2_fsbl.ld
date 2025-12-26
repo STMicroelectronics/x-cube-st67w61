@@ -51,7 +51,7 @@ MEMORY
 /* Sections */
 SECTIONS
 {
-  /* The startup code into "RAM" Ram type memory */
+  /* The startup code into "ROM" Rom type memory */
   .isr_vector :
   {
     . = ALIGN(4);
@@ -59,7 +59,7 @@ SECTIONS
     . = ALIGN(4);
   } >ROM
 
-  /* The program code and other data into "RAM" Ram type memory */
+  /* The program code and other data into "ROM" Rom type memory */
   .text :
   {
     . = ALIGN(4);
@@ -84,7 +84,7 @@ SECTIONS
     _etext = .;        /* define a global symbols at end of code */
   } >ROM
 
-  /* Constant data into "RAM" Ram type memory */
+  /* Constant data into "ROM" Rom type memory */
   .rodata :
   {
     . = ALIGN(4);

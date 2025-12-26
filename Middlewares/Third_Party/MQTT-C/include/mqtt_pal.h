@@ -69,7 +69,9 @@ extern "C" {
 #ifndef REDEFINE_FREERTOS_INTERFACE
 #define CONFIG_FREERTOS
 #define MQTT_USE_CUSTOM_SOCKET_HANDLE
-/* #define MQTT_SECURE_SOCKET */
+#if defined(MBEDTLS_CONFIG_FILE)
+#define MQTT_SECURE_SOCKET
+#endif /* MBEDTLS_CONFIG_FILE */
 #endif /* REDEFINE_FREERTOS_INTERFACE */
 
 /* UNIX-like platform support */

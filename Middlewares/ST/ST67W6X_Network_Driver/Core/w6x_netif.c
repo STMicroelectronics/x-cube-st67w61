@@ -73,6 +73,8 @@ W6X_Status_t W6X_Netif_Init(W6X_Net_if_cb_t *net_if_cb)
 
   p_DrvObj->Callbacks.Netif_cb.link_sta_up_fn = net_if_cb->link_sta_up_fn;
   p_DrvObj->Callbacks.Netif_cb.link_sta_down_fn = net_if_cb->link_sta_down_fn;
+  p_DrvObj->Callbacks.Netif_cb.link_ap_up_fn = net_if_cb->link_ap_up_fn;
+  p_DrvObj->Callbacks.Netif_cb.link_ap_down_fn = net_if_cb->link_ap_down_fn;
 
   return W6X_STATUS_OK;
 }
@@ -85,6 +87,8 @@ void W6X_Netif_DeInit(void)
   }
   p_DrvObj->Callbacks.Netif_cb.link_sta_up_fn = NULL;
   p_DrvObj->Callbacks.Netif_cb.link_sta_down_fn = NULL;
+  p_DrvObj->Callbacks.Netif_cb.link_ap_up_fn = NULL;
+  p_DrvObj->Callbacks.Netif_cb.link_ap_down_fn = NULL;
 }
 
 int32_t W6X_Netif_output(uint32_t link_id, uint8_t *pBuf, uint32_t len)
@@ -122,7 +126,7 @@ int32_t W6X_Netif_input(uint32_t link_id, void **buffer, uint8_t **data)
       return -1;
   }
 
-  return BusIo_SPI_ReceivePtr(type, buffer, data, portMAX_DELAY);
+  return BusIo_SPI_ReceivePtr(type, buffer, data, 0);
 }
 
 int32_t W6X_Netif_free(void *buffer)

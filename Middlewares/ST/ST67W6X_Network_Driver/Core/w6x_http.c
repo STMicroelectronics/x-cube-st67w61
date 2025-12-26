@@ -320,12 +320,23 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
 {
   int32_t sock;
   struct sockaddr_in addr = {0};
+#if (W6X_NET_IPV6_ENABLE == 1)
+  struct sockaddr_in6 addr6 = {0};
+#endif /* W6X_NET_IPV6_ENABLE */
   uint8_t sec_tag_list[] = { 0 };
   struct http_request_task_obj *Obj = NULL;
+  int family = AF_INET;
+
+#if (W6X_NET_IPV6_ENABLE == 1)
+  if (server_addr->type == W6X_NET_IPV6)
+  {
+    family = AF_INET6;
+  }
+#endif /* W6X_NET_IPV6_ENABLE */
   /* Create a TCP socket  if the port is not 443 which is used for https */
   if (port != 443)
   {
-    sock = W6X_Net_Socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sock = W6X_Net_Socket(family, SOCK_STREAM, IPPROTO_TCP);
     if (sock < 0)
     {
       NET_LOG_ERROR("Socket creation failed\n");
@@ -334,7 +345,7 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
   }
   else
   {
-    sock = W6X_Net_Socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
+    sock = W6X_Net_Socket(family, SOCK_STREAM, IPPROTO_TLS_1_2);
     if (sock < 0)
     {
       NET_LOG_ERROR("Socket creation failed\n");
@@ -386,13 +397,16 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
 
     NET_LOG_DEBUG("ALPN set\n");
 
-    if (W6X_Net_Setsockopt(sock, SOL_TLS, TLS_HOSTNAME, settings->server_name, strlen(settings->server_name)) != 0)
+    if (settings->server_name != NULL)
     {
-      NET_LOG_ERROR("Set SNI failed\n");
-      goto _err;
-    }
+      if (W6X_Net_Setsockopt(sock, SOL_TLS, TLS_HOSTNAME, settings->server_name, strlen(settings->server_name)) != 0)
+      {
+        NET_LOG_ERROR("Set SNI failed\n");
+        goto _err;
+      }
 
-    NET_LOG_DEBUG("SNI set\n");
+      NET_LOG_DEBUG("SNI set\n");
+    }
   }
 
   NET_LOG_DEBUG("Socket creation done\n");
@@ -410,15 +424,32 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
     goto _err;
   }
 
-  /* Supports only IPv4 without DNS */
-  addr.sin_family = AF_INET;
-  addr.sin_port = PP_HTONS(port);
-  addr.sin_addr.s_addr = server_addr->u_addr.ip4.addr;
-  if (0 != W6X_Net_Connect(sock, (struct sockaddr *)&addr, sizeof(addr)))
+  /* Supports IPv4 and IPv6 without DNS */
+
+  if (family == AF_INET)
   {
-    NET_LOG_ERROR("Socket connection failed\n");
-    goto _err;
+    addr.sin_family = family;
+    addr.sin_port = PP_HTONS(port);
+    addr.sin_addr.s_addr = server_addr->u_addr.ip4.addr;
+    if (0 != W6X_Net_Connect(sock, (struct sockaddr *)&addr, sizeof(addr)))
+    {
+      NET_LOG_ERROR("Socket connection failed\n");
+      goto _err;
+    }
   }
+#if (W6X_NET_IPV6_ENABLE == 1)
+  else
+  {
+    addr6.sin6_family = family;
+    addr6.sin6_port = PP_HTONS(port);
+    memcpy(addr6.sin6_addr.un.u32_addr, server_addr->u_addr.ip6.addr, sizeof(addr6.sin6_addr.un.u32_addr));
+    if (0 != W6X_Net_Connect(sock, (struct sockaddr *)&addr6, sizeof(addr6)))
+    {
+      NET_LOG_ERROR("Socket connection failed\n");
+      goto _err;
+    }
+  }
+#endif /* W6X_NET_IPV6_ENABLE */
 
   NET_LOG_DEBUG("Socket %" PRIi32 " connected\n", sock);
   Obj = pvPortMalloc(sizeof(struct http_request_task_obj));
@@ -431,7 +462,7 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
   Obj->sock = sock;
   Obj->post_data_len = post_data_len;
 
-  if ((post_data != NULL) && (post_data_len > 0))
+  if ((post_data != NULL) && (((W6X_HTTP_Post_Data_t *)post_data)->data != NULL) && (post_data_len > 0))
   {
     Obj->post_data.data = pvPortMalloc(post_data_len + 1);
     if (Obj->post_data.data == NULL)
@@ -546,16 +577,31 @@ static void W6X_HTTP_Client_task(void *arg)
   uint32_t offset = 0;
   int8_t method;
   /* SNI max size is used for hostname since it is the same information used
-   * in both instances and SNI is limited to 64 bytes on NCP */
-  char host_name[65] = {0};
+   * in both instances and SNI is limited to W6X_NET_SNI_MAX_SIZE bytes on NCP */
+  char host_name[W6X_NET_SNI_MAX_SIZE + 1] = {0};
 
-  if ((Obj->settings.server_name != NULL) && (strlen(Obj->settings.server_name) <= 64))
+  if ((Obj == NULL) || (Obj->sock < 0) || (Obj->uri == NULL))
+  {
+    NET_LOG_ERROR("Invalid input parameters\n");
+    return;
+  }
+
+  if ((Obj->settings.server_name != NULL) && (strlen(Obj->settings.server_name) <= W6X_NET_SNI_MAX_SIZE))
   {
     strncpy(host_name, Obj->settings.server_name, sizeof(host_name) - 1);
   }
   else
   {
-    (void)W6X_Net_Inet_ntop(AF_INET, (void *) &Obj->server.u_addr.ip4, host_name, INET_ADDRSTRLEN);
+#if (W6X_NET_IPV6_ENABLE == 1)
+    if (Obj->server.type == W6X_NET_IPV6)
+    {
+      (void)W6X_Net_Inet_ntop(AF_INET6, (void *) &Obj->server.u_addr.ip6, host_name, INET6_ADDRSTRLEN);
+    }
+    else
+#endif /* W6X_NET_IPV6_ENABLE */
+    {
+      (void)W6X_Net_Inet_ntop(AF_INET, (void *) &Obj->server.u_addr.ip4, host_name, INET_ADDRSTRLEN);
+    }
   }
 
   switch (Obj->post_data.type)
@@ -901,6 +947,12 @@ static W6X_Status_t W6X_HTTP_Client_Wait_For_Header(int32_t sock, W6X_HTTP_buffe
   uint32_t total_data_received = 0;
   uint8_t *header_end;
   NULL_ASSERT(buffer, W6X_Obj_Null_str);
+
+  if (buffer->data == NULL)
+  {
+    goto _err;
+  }
+
   /* Read the headers */
   do
   {
@@ -919,9 +971,9 @@ static W6X_Status_t W6X_HTTP_Client_Wait_For_Header(int32_t sock, W6X_HTTP_buffe
     if (header_end != NULL)
     {
       header_received = 1;
-      header_end += 4U; /** + 4U to go past the "\r\n\r\n" termination */
+      header_end += 4U; /* + 4U to go past the "\r\n\r\n" termination */
 
-      /** Copy body content to the provided buffer */
+      /* Copy body content to the provided buffer */
       *body_start_offset = (uint32_t)(header_end - &buffer->data[0]);
       break;
     }

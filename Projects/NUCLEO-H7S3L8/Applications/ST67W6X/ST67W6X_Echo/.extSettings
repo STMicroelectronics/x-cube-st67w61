@@ -1,5 +1,5 @@
 [Appli:Groups]
-Doc=../readme.md;
+Doc=../README.md;
 [Appli:ProjectFiles]
 [Appli:Others]
 Define=;

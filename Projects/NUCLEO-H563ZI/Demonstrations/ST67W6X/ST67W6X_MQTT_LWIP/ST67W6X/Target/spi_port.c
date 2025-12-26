@@ -36,6 +36,7 @@
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
+#include "stm32h5xx_ll_dma.h"
 
 /* USER CODE END Includes */
 
@@ -180,7 +181,9 @@ int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t tim
   }
   else
   {
-    status = HAL_SPI_Receive(&NCP_SPI_HANDLE, rx_buf, len, timeout);
+    assert_param(len <= SPI_DMA_XFER_SIZE_THRESHOLD);
+    uint8_t tx_dummy[SPI_DMA_XFER_SIZE_THRESHOLD] = {0};
+    status = HAL_SPI_TransmitReceive(&NCP_SPI_HANDLE, tx_dummy, rx_buf, len, timeout);
   }
   /* USER CODE BEGIN spi_port_transfer_2 */
 
@@ -209,11 +212,24 @@ int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len)
 #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_CleanDCache_by_Addr(tx_buf, len);
 #endif /* __DCACHE_PRESENT */
+    /* USER CODE BEGIN spi_port_transfer_dma_trx */
+    /* set dmatx back to INCREMENT SrcIncMode */
+    LL_DMA_SetSrcIncMode(GET_DMA_INSTANCE(NCP_SPI_HANDLE.hdmatx), GET_DMA_CHANNEL(NCP_SPI_HANDLE.hdmatx),
+                         LL_DMA_SRC_INCREMENT);
     status = HAL_SPI_TransmitReceive_DMA(&NCP_SPI_HANDLE, tx_buf, rx_buf, len);
+    /* USER CODE END spi_port_transfer_dma_trx */
   }
   else
   {
-    status = HAL_SPI_Receive_DMA(&NCP_SPI_HANDLE, rx_buf, len);
+    /* USER CODE BEGIN spi_port_transfer_dma_rx */
+    uint8_t tx_dummy = 0;
+    /* set dmatx to FIXED SrcIncMode so tx_dummy=0 is sent on MOSI during the whole spi transfer.
+       This will ensure there is no floating MOSI in some STM32 family */
+    LL_DMA_SetSrcIncMode(GET_DMA_INSTANCE(NCP_SPI_HANDLE.hdmatx),
+                         GET_DMA_CHANNEL(NCP_SPI_HANDLE.hdmatx), LL_DMA_SRC_FIXED);
+
+    status = HAL_SPI_TransmitReceive_DMA(&NCP_SPI_HANDLE, &tx_dummy, rx_buf, len);
+    /* USER CODE END spi_port_transfer_dma_rx */
   }
   /* USER CODE BEGIN spi_port_transfer_dma_2 */
 
@@ -272,7 +288,10 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_TxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_TxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_TxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_TxCpltCallback_End */
@@ -283,7 +302,10 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_RxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_RxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_RxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_RxCpltCallback_End */
@@ -294,10 +316,27 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_TxRxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_TxRxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_TxRxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_TxRxCpltCallback_End */
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+  /* USER CODE BEGIN HAL_SPI_ErrorCallback_1 */
+
+  /* USER CODE END HAL_SPI_ErrorCallback_1 */
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN HAL_SPI_ErrorCallback_End */
+
+  /* USER CODE END HAL_SPI_ErrorCallback_End */
 }
 
 /* USER CODE BEGIN WFR */

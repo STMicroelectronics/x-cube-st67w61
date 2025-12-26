@@ -48,14 +48,9 @@
 #define FOTA_TIMEOUT                20000
 #endif /* FOTA_TIMEOUT */
 
-#ifndef FOTA_DELAY_BEFORE_REBOOT
-/** Delay to wait before rebooting the host device, waiting for NCP device to finish update */
-#define FOTA_DELAY_BEFORE_REBOOT    16000
-#endif /* FOTA_DELAY_BEFORE_REBOOT */
-
 #ifndef FOTA_TASK_STACK_SIZE
 /** Stack size of the FOTA application, this value needs to take into account the HTTP client
-  * and NCP OTA static data allocation */
+  * and NCP FWU static data allocation */
 #define FOTA_TASK_STACK_SIZE        1800
 #endif /* FOTA_TASK_STACK_SIZE */
 
@@ -67,7 +62,7 @@
 
 #ifndef FOTA_HTTP_URI
 /** Default URI for the ST67 binary, should be smaller in bytes size than the value defined by FOTA_URI_MAX_SIZE */
-#define FOTA_HTTP_URI               "/download/st67w611m_mission_t01_v2.0.89.bin.ota"
+#define FOTA_HTTP_URI               "/download/st67w611m_mission_t01_v2.0.97.bin.ota"
 #endif /* FOTA_HTTP_URI */
 
 #ifndef FOTA_HTTP_SERVER_ADDR
@@ -95,11 +90,11 @@
 /** Set the priority of the FOTA task using FreeRTOS priority evaluation system */
 #define FOTA_TASK_PRIORITY          24
 
-/** Size of the buffer used to transfer the OTA header to the ST67 in one shot (required by ST67) */
-#define OTA_HEADER_SIZE             512
+/** Size of the buffer used to transfer the FWU header to the ST67 in one shot (required by ST67) */
+#define FWU_HEADER_SIZE             512
 
 /** Multiple of data length that should be written in ST67, recommendation to ensure correct write into ST67 memory */
-#define OTA_SECTOR_ALIGNMENT        256
+#define FWU_SECTOR_ALIGNMENT        256
 
 /* USER CODE BEGIN PD */
 
@@ -136,13 +131,13 @@ typedef enum
 typedef struct
 {
   /** Buffer to accumulate data, needs to be allocate dynamically before use */
-  uint8_t *ota_buffer;
-  /** Current data length of the ota_buffer */
-  size_t ota_buffer_len;
+  uint8_t *fwu_buffer;
+  /** Current data length of the fwu_buffer */
+  size_t fwu_buffer_len;
   /** Size of the ST67 binary to receive */
-  size_t ota_total_to_receive;
+  size_t fwu_total_to_receive;
   /** Data length already accumulated */
-  size_t ota_data_accumulated;
+  size_t fwu_data_accumulated;
   /** Tells if the ST67 binary header already has been transferred */
   bool header_transferred;
   /** Return the code status of the HTTP data receive callback.
@@ -499,7 +494,7 @@ static void Fota_FotaTask(void *pvParameters)
 
       if (ret_fota != FOTA_SUCCESS)
       {
-        LogError("failed to FOTA update (error: %" PRIi32 ")\n", ret_fota);
+        LogError("Failed to FOTA update (error: %" PRIi32 ")\n", ret_fota);
         /* Notifying that an error occurred */
         (void)xEventGroupSetBits(fota_event_group_handle, FOTA_ERROR_BIT);
         (void)xEventGroupSetBits(fota_app_event_group_handle, FOTA_ERROR_BIT);
@@ -508,7 +503,7 @@ static void Fota_FotaTask(void *pvParameters)
       {
         /* FOTA transfer was completed successfully */
         LogInfo("FOTA transfer done\n");
-        (void)xEventGroupSetBits(fota_app_event_group_handle, FOTA_COMPLETE_USER_NOTIF_BIT);
+        (void)xEventGroupSetBits(fota_app_event_group_handle, FOTA_COMPLETE_XFER_USER_NOTIF_BIT);
         LogInfo("FOTA task waiting for application acknowledgment\n");
       }
       else
@@ -529,14 +524,19 @@ static void Fota_FotaTask(void *pvParameters)
 
       if (skip_st67_update == false)
       {
-        /* Finish OTA on NCP side */
-        ret = W6X_OTA_Finish();
+        LogInfo("Apply ST67 new binary...\n");
 
-        LogInfo("FOTA task waiting %" PRIu32 " ms before rebooting\n", (uint32_t)FOTA_DELAY_BEFORE_REBOOT);
+        /* Finish FWU on NCP side */
+        ret = W6X_FWU_Finish();
 
-        /* Wait a given amount of time in ms to let the ST67 finish its update process
-           and reboot on the new firmware */
-        vTaskDelay(pdMS_TO_TICKS(FOTA_DELAY_BEFORE_REBOOT));
+        if (ret == W6X_STATUS_OK)
+        {
+          LogInfo("ST67 binary installation completed\n");
+        }
+        else
+        {
+          LogError("ST67 binary installation failed\n");
+        }
       }
 
       /* USER CODE BEGIN fota_task_5 */
@@ -550,12 +550,9 @@ static void Fota_FotaTask(void *pvParameters)
         (void)xEventGroupSetBits(fota_event_group_handle, FOTA_ERROR_BIT);
         (void)xEventGroupSetBits(fota_app_event_group_handle, FOTA_ERROR_BIT);
       }
-      else if (fota_requested)
+      else
       {
-        LogInfo("Rebooting....\n");
-        /* Perform a system reset */
-        HAL_SYS_RESET();
-        /* Because of NVIC reset, any code beyond this point won't be executed */
+        (void)xEventGroupSetBits(fota_app_event_group_handle, FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT);
       }
     }
   }
@@ -572,10 +569,10 @@ static int32_t Fota_st67FotaTransfer(char *http_server_addr, uint16_t http_serve
   memset(&fota_args, 0, sizeof(fota_args));
   memset(&fota_settings, 0, sizeof(fota_settings));
 
-  fota_args.ota_buffer = NULL;
-  fota_args.ota_buffer_len = 0;
-  fota_args.ota_data_accumulated = 0;
-  fota_args.ota_total_to_receive = 0;
+  fota_args.fwu_buffer = NULL;
+  fota_args.fwu_buffer_len = 0;
+  fota_args.fwu_data_accumulated = 0;
+  fota_args.fwu_total_to_receive = 0;
   fota_args.header_transferred = false;
   fota_args.http_xfer_error_code = -1;
 
@@ -608,26 +605,26 @@ static int32_t Fota_st67FotaTransfer(char *http_server_addr, uint16_t http_serve
 
   fota_settings.server_name = http_server_addr;
 
-  fota_args.ota_buffer = pvPortMalloc(OTA_HEADER_SIZE);
-  if (fota_args.ota_buffer == NULL)
+  fota_args.fwu_buffer = pvPortMalloc(FWU_HEADER_SIZE);
+  if (fota_args.fwu_buffer == NULL)
   {
-    LogError("Failed to allocate buffer for OTA header transmission\n");
+    LogError("Failed to allocate buffer for FWU header transmission\n");
     goto _err1;
   }
 
-  /* Terminate OTA transmission on NCP side to ensure clear state */
-  ret_w6x = W6X_OTA_Starts(0);
+  /* Terminate FWU transmission on NCP side to ensure clear state */
+  ret_w6x = W6X_FWU_Starts(0);
   if (ret_w6x != W6X_STATUS_OK)
   {
-    LogError("Failed to terminate the NCP OTA transmission, %" PRIi32 "\n", ret_w6x);
+    LogError("Failed to terminate the NCP FWU transmission, %" PRIi32 "\n", ret_w6x);
     goto _err1;
   }
 
-  /* Starts OTA on NCP side */
-  ret_w6x = W6X_OTA_Starts(1);
+  /* Starts FWU on NCP side */
+  ret_w6x = W6X_FWU_Starts(1);
   if (ret_w6x != W6X_STATUS_OK)
   {
-    LogError("Failed to start the NCP OTA ,  %" PRIi32 "\n", ret_w6x);
+    LogError("Failed to start the NCP FWU ,  %" PRIi32 "\n", ret_w6x);
     goto _err1;
   }
 
@@ -654,9 +651,9 @@ static int32_t Fota_st67FotaTransfer(char *http_server_addr, uint16_t http_serve
 
   ret = FOTA_SUCCESS;
 _err1:
-  if (fota_args.ota_buffer != NULL)
+  if (fota_args.fwu_buffer != NULL)
   {
-    vPortFree(fota_args.ota_buffer);
+    vPortFree(fota_args.fwu_buffer);
   }
 
   return ret;
@@ -682,9 +679,9 @@ int32_t Fota_WaitForFOTACompletion(void)
 
   fota_state = FOTA_STATE_BUSY;
 
-  uxBits = xEventGroupWaitBits(fota_app_event_group_handle, FOTA_COMPLETE_USER_NOTIF_BIT | FOTA_ERROR_BIT,
+  uxBits = xEventGroupWaitBits(fota_app_event_group_handle, FOTA_COMPLETE_XFER_USER_NOTIF_BIT | FOTA_ERROR_BIT,
                                pdTRUE, pdFALSE, FOTA_ACK_TIME);
-  if ((uxBits & FOTA_COMPLETE_USER_NOTIF_BIT) != 0)
+  if ((uxBits & FOTA_COMPLETE_XFER_USER_NOTIF_BIT) != 0)
   {
     if (fota_success_cb != NULL)
     {
@@ -694,9 +691,6 @@ int32_t Fota_WaitForFOTACompletion(void)
     /* User tells that everything is done on it's side and that FOTA task can now proceed
        with the next steps (booting on the new software) */
     (void)xEventGroupSetBits(fota_event_group_handle, FOTA_WAIT_USER_ACK_BIT);
-    fota_state = FOTA_STATE_READY;
-    return FOTA_SUCCESS;
-
   }
   else
   {
@@ -705,6 +699,19 @@ int32_t Fota_WaitForFOTACompletion(void)
       fota_error_cb();
     }
 
+    fota_state = FOTA_STATE_READY;
+    return FOTA_ERR;
+  }
+
+  uxBits = xEventGroupWaitBits(fota_app_event_group_handle, FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT | FOTA_ERROR_BIT,
+                               pdTRUE, pdFALSE, FOTA_ACK_TIME);
+  if ((uxBits & FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT) != 0)
+  {
+    fota_state = FOTA_STATE_READY;
+    return FOTA_SUCCESS;
+  }
+  else
+  {
     fota_state = FOTA_STATE_READY;
     return FOTA_ERR;
   }
@@ -783,7 +790,7 @@ static void Fota_HttpResponseCb(void *arg, W6X_HTTP_Status_Code_e httpc_result, 
   }
   else
   {
-    args->ota_total_to_receive = rx_content_len;
+    args->fwu_total_to_receive = rx_content_len;
     LogDebug("total len %" PRIu32 "\n", rx_content_len);
     if (httpc_result != OK)
     {
@@ -806,28 +813,28 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
     return -1;
   }
 
-  if (p == NULL || p->length == 0 || args->ota_buffer == NULL)
+  if ((p == NULL) || (p->length == 0) || (p->data == NULL) || (args->fwu_buffer == NULL))
   {
     LogError("Invalid HTTP buffer received or buffer in arg\n");
     args->http_xfer_error_code = -1;
     xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
     return -1;
   }
-  /* If the OTA head has not been send out to the ST67 */
+  /* If the FWU head has not been send out to the ST67 */
   if (!(args->header_transferred))
   {
-    /* If the data received is greater than the OTA header size, we know that the header is in the first 512 bytes
+    /* If the data received is greater than the FWU header size, we know that the header is in the first 512 bytes
        and that we can send it to the ST67.*/
-    if (args->ota_buffer_len + p->length >= OTA_HEADER_SIZE)
+    if (args->fwu_buffer_len + p->length >= FWU_HEADER_SIZE)
     {
       /* Compute if there is remaining data to send to the ST67 */
-      size_t remaining_length = OTA_HEADER_SIZE - args->ota_buffer_len;
-      /* Copy any remaining data to the ota buffer and then send it */
-      memcpy(args->ota_buffer + args->ota_buffer_len, p->data, remaining_length);
-      ret = W6X_OTA_Send(args->ota_buffer, OTA_HEADER_SIZE);
+      size_t remaining_length = FWU_HEADER_SIZE - args->fwu_buffer_len;
+      /* Copy any remaining data to the FWU buffer and then send it */
+      memcpy(args->fwu_buffer + args->fwu_buffer_len, p->data, remaining_length);
+      ret = W6X_FWU_Send(args->fwu_buffer, FWU_HEADER_SIZE);
       if (ret != W6X_STATUS_OK)
       {
-        LogError("Failed to send remaining data in buffer to W6x via OTA send, error code : %" PRIu32 "\n", ret);
+        LogError("Failed to send remaining data in buffer to W6x via FWU send, error code : %" PRIu32 "\n", ret);
         args->http_xfer_error_code = -1;
         xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
         return -1;
@@ -835,16 +842,16 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
       }
       /* A this point we know that the header has been send with success */
       args->header_transferred = 1;
-      LogInfo("ST67 OTA header successfully transferred\n");
-      args->ota_buffer_len = 0;
+      LogInfo("ST67 FWU header successfully transferred\n");
+      args->fwu_buffer_len = 0;
 
       /* Send any remaining data to the ST67 */
       if (p->length > remaining_length)
       {
-        ret = W6X_OTA_Send(p->data + remaining_length, p->length - remaining_length);
+        ret = W6X_FWU_Send(p->data + remaining_length, p->length - remaining_length);
         if (ret != W6X_STATUS_OK)
         {
-          LogError("Failed to send remaining data in buffer to W6x via OTA send, error code : %" PRIu32 "\n", ret);
+          LogError("Failed to send remaining data in buffer to W6x via FWU send, error code : %" PRIu32 "\n", ret);
           args->http_xfer_error_code = -1;
           xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
           return -1;
@@ -854,23 +861,23 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
     }
     else
     {
-      /* Else we didn't receive all the OTA ST67 header so we store the data in a buffer */
-      memcpy(args->ota_buffer + args->ota_buffer_len, p->data, p->length);
-      args->ota_buffer_len += p->length;
+      /* Else we didn't receive all the FWU ST67 header so we store the data in a buffer */
+      memcpy(args->fwu_buffer + args->fwu_buffer_len, p->data, p->length);
+      args->fwu_buffer_len += p->length;
     }
   }
   else
   {
     /* Once the header ST67 has been received and send to the ST67, we can proceed to send data as-is */
-    ret = W6X_OTA_Send(p->data, p->length);
+    ret = W6X_FWU_Send(p->data, p->length);
     if (ret != W6X_STATUS_OK)
     {
-      LogError("Failed to send buffer to W6x via OTA send, error code : %" PRIu32 "\n", ret);
+      LogError("Failed to send buffer to W6x via FWU send, error code : %" PRIu32 "\n", ret);
       /* If the data length is not aligned with ST67 memory requirement,
          we log an info on the potential error source */
-      if (!(p->length % OTA_SECTOR_ALIGNMENT))
+      if (!(p->length % FWU_SECTOR_ALIGNMENT))
       {
-        LogError("Issue might be due to the received data length that is not inline with the OTA transfer buffer"
+        LogError("Issue might be due to the received data length that is not inline with the FWU transfer buffer"
                  "(not aligned with recommended xfer size), %" PRIi32 " bytes\n",
                  p->length);
       }
@@ -882,9 +889,9 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
 
   }
   /* Amount of data currently transferred */
-  args->ota_data_accumulated += p->length;
+  args->fwu_data_accumulated += p->length;
   /* If all data expected has been received, we can tell the FOTA task to proceed with execution flow */
-  if (args->ota_data_accumulated >= args->ota_total_to_receive)
+  if (args->fwu_data_accumulated >= args->fwu_total_to_receive)
   {
     args->http_xfer_error_code = 0;
     LogInfo("FOTA data transfer to ST67 finished\n");

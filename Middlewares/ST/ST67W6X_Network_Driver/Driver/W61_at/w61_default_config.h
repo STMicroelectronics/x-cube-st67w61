@@ -27,15 +27,6 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "w61_driver_config.h"
 
-#ifndef W61_MAX_SPI_XFER
-/** Maximum SPI buffer size */
-#define W61_MAX_SPI_XFER                        1520
-#endif /* W61_MAX_SPI_XFER */
-
-#if ((W61_MAX_SPI_XFER < 1520) || (W61_MAX_SPI_XFER > (6 * 1024)))
-#error "W6X_MAX_SPI_XFER must be between 1520 and (6*1024)"
-#endif /* W61_MAX_SPI_XFER */
-
 /* Exported constants --------------------------------------------------------*/
 /** @addtogroup ST67W61_AT_WiFi_Constants
   * @{
@@ -47,7 +38,7 @@ extern "C" {
 #endif /* W61_WIFI_MAX_DETECTED_AP */
 
 #ifndef WIFI_LOG_ENABLE
-/** Disable WiFi logging by default */
+/** Enable/Disable Wi-Fi module logging */
 #define WIFI_LOG_ENABLE                         0
 #endif /* WIFI_LOG_ENABLE */
 
@@ -57,8 +48,15 @@ extern "C" {
   * @{
   */
 
-/** Maximum number of BLE connections */
+#ifndef W61_BLE_MAX_CONN_NBR
+/** Maximum number of BLE connections. Must not be greater than 10.
+  * The maximum connections depend on the mode as follows:
+  * - Server mode (10 connection max)
+  * - Client mode (9 connection max)
+  * - Dual Mode (10 connections max with up to 9 as Client)
+  */
 #define W61_BLE_MAX_CONN_NBR                    2
+#endif /* W61_BLE_MAX_CONN_NBR */
 
 /** Maximum number of BLE application services that can be created */
 #define W61_BLE_MAX_CREATED_SERVICE_NBR         3
@@ -81,7 +79,7 @@ extern "C" {
 #define W61_BLE_MAX_BONDED_DEVICES              2
 
 #ifndef BLE_LOG_ENABLE
-/** Disable BLE logging by default */
+/** Enable/Disable BLE module logging */
 #define BLE_LOG_ENABLE                          0
 #endif /* BLE_LOG_ENABLE */
 
@@ -91,8 +89,13 @@ extern "C" {
   * @{
   */
 
+#ifndef W61_NET_IPV6_ENABLE
+/** Enable IPv6 support : 0: Disabled, 1: Enabled */
+#define W61_NET_IPV6_ENABLE                     0
+#endif /* W61_NET_IPV6_ENABLE */
+
 #ifndef NET_LOG_ENABLE
-/** Disable NET logging by default */
+/** Enable/Disable Network module logging */
 #define NET_LOG_ENABLE                          0
 #endif /* NET_LOG_ENABLE */
 
@@ -103,7 +106,7 @@ extern "C" {
   */
 
 #ifndef MQTT_LOG_ENABLE
-/** Disable MQTT logging by default */
+/** Enable/Disable MQTT module logging */
 #define MQTT_LOG_ENABLE                         0
 #endif /* MQTT_LOG_ENABLE */
 
@@ -113,18 +116,27 @@ extern "C" {
   * @{
   */
 
+#ifndef W61_MAX_SPI_XFER
+/** Maximum SPI buffer size */
+#define W61_MAX_SPI_XFER                        1520
+#endif /* W61_MAX_SPI_XFER */
+
+#if ((W61_MAX_SPI_XFER < 1520) || (W61_MAX_SPI_XFER > (6 * 1024)))
+#error "W6X_MAX_SPI_XFER must be between 1520 and (6*1024)"
+#endif /* W61_MAX_SPI_XFER */
+
 #ifndef SYS_LOG_ENABLE
-/** Disable SYS logging by default */
+/** Enable/Disable System module logging */
 #define SYS_LOG_ENABLE                          0
 #endif /* SYS_LOG_ENABLE */
 
 #ifndef W61_AT_LOG_ENABLE
-/** Enable AT log */
+/** Debugging only: Enable/Disable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
 #define W61_AT_LOG_ENABLE                       0
 #endif /* W61_AT_LOG_ENABLE */
 
 #ifndef MDM_CMD_LOG_ENABLE
-/** Enable Modem command log */
+/** Enable/Disable Modem command log */
 #define MDM_CMD_LOG_ENABLE                      W61_AT_LOG_ENABLE
 #endif /* MDM_CMD_LOG_ENABLE */
 

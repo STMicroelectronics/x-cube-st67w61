@@ -32,8 +32,10 @@
 #include "lwip.h"
 #include <lwip/errno.h>
 #include <netdb.h>
-
+#include "dns.h"
+#include "altcp_tls_mbedtls.h"
 #include "mqtt.h"
+#include "sntp.h"
 
 #if (LOW_POWER_MODE > LOW_POWER_DISABLE)
 #include "utilities_conf.h"
@@ -58,6 +60,11 @@
 #if (LOW_POWER_MODE == LOW_POWER_STDBY_ENABLE)
 #error "low power standby mode not supported"
 #endif /* LOW_POWER_MODE */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+#include "util_mem_perf.h"
+#include "util_task_perf.h"
+#endif /* TEST_AUTOMATION_ENABLE */
 
 /* USER CODE BEGIN Includes */
 #include "sys_sensors.h"
@@ -94,6 +101,15 @@ typedef struct
   char *name;                     /*!< Name of the application */
 } APP_Info_t;
 
+/**
+  * @brief  DNS resolution structure
+  */
+typedef struct
+{
+  int32_t res;                    /*!< Result of the resolution */
+  ip_addr_t ipaddr;               /*!< IP Address */
+} APP_DNS_res_t;
+
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -101,6 +117,12 @@ typedef struct
 /* Private defines -----------------------------------------------------------*/
 /** Scan done event bitmask */
 #define EVENT_FLAG_SCAN_DONE            (1<<1)
+
+/** DNS done event bitmask */
+#define EVENT_FLAG_DNS_DONE             (1<<1)
+
+/** DNS resolve timeout in milliseconds */
+#define DNS_RESOLVE_TIMEOUT_MS          5000
 
 /** Delay before to declare the scan in failure */
 #define WIFI_SCAN_TIMEOUT               10000
@@ -144,7 +166,10 @@ typedef struct
 #ifndef MQTT_SECURITY_LEVEL
 /** Security level
   * 0: No security (TCP connection)
-  * only non-secure is currently available */
+  * 1: SSL with Username/Password authentication
+  * 2: SSL with Server certificate (CACertificate)
+  * 3: SSL with Client certificate (Certificate and PrivateKey)
+  * 4: SSL with both certificates (CACertificate, Certificate, PrivateKey) */
 #define MQTT_SECURITY_LEVEL             0
 #endif /* MQTT_SECURITY_LEVEL */
 
@@ -236,6 +261,9 @@ static uint8_t recvbuf[1024];
 /** Event bitmask flag used when Wi-Fi scan done */
 static EventGroupHandle_t scan_event_flags = NULL;
 
+/** Event bitmask flag used when DNS done */
+static EventGroupHandle_t dns_event_flags = NULL;
+
 /** MQTT buffer used to define the topic string of the subscription or publish */
 static uint8_t mqtt_topic[MQTT_TOPIC_BUFFER_SIZE];
 
@@ -250,7 +278,10 @@ static W6X_MQTT_Connect_t mqtt_config =
   .MQClientId = MQTT_CLIENT_ID,       /*!< MQTT Client ID to be identified on MQTT Broker */
   /** Security level
     * 0: No security (TCP connection)
-    * only non-secure is currently available */
+    * 1: SSL with Username/Password authentication
+    * 2: SSL with Server certificate (CACertificate)
+    * 3: SSL with Client certificate (Certificate and PrivateKey)
+    * 4: SSL with both certificates (CACertificate, Certificate, PrivateKey) */
   .Scheme = MQTT_SECURITY_LEVEL,
   /** MQTT Username to be identified on MQTT Broker
     * Required when the scheme is greater or equal to 1 */
@@ -304,6 +335,81 @@ static const APP_Info_t app_info =
 };
 
 /* USER CODE BEGIN PV */
+#if (LFS_ENABLE == 0)
+/** Certificate Authority (CA) content */
+static const char ca_cert[] =
+  "-----BEGIN CERTIFICATE-----\r\n"
+  "MIIDBzCCAe+gAwIBAgIUC2PjWg8acdlkI8rQQfQ+lnYYehowDQYJKoZIhvcNAQEL\r\n"
+  "BQAwEjEQMA4GA1UEAwwHTVFUVCBDQTAgFw0yNTA1MjcxODE0NTFaGA8yMDU1MDcw\r\n"
+  "OTE4MTQ1MVowEjEQMA4GA1UEAwwHTVFUVCBDQTCCASIwDQYJKoZIhvcNAQEBBQAD\r\n"
+  "ggEPADCCAQoCggEBAMxnl/G5ANi2O7B4/NRkaJF7GC36IcUJSfhxujCe+9RqbS20\r\n"
+  "bgZyo3o4SDTr5oyEyRzW/xzdCHd2zDUcllRT6JbAsVMGl9q1LXdyVEcCoB3lAvSw\r\n"
+  "YKliUibpIG2gcBI7D/jz65RSSejRECy5jAhUCdcH37tQe9Tjsa7BZ4T9NpEguFny\r\n"
+  "hVWnN/SLytczRQoUROZDiZCzzTjaPwYgBXC6VQ8cCdF7SgIDZ9C+onRUE1MQE0iF\r\n"
+  "z5my4GzA/g+6q/PaW3b2RLEiTPduQhM6uRPhKrjw4V955CYjXf655aclEMVNR44/\r\n"
+  "ZOMavLzMxQUaFEYyK7aOx8jGiI61rTuiTqdmdmcCAwEAAaNTMFEwHQYDVR0OBBYE\r\n"
+  "FETlZW7jUwuflGlWgUyYPpP/hNbPMB8GA1UdIwQYMBaAFETlZW7jUwuflGlWgUyY\r\n"
+  "PpP/hNbPMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAGFG97Jt\r\n"
+  "tPlyAzYCdihtrXBIKx+05nwQubEkqudKWy5gCo9MTW95QS2D9FY7ebO/k1wuyH4v\r\n"
+  "PmlIxOZjNq52WFjCENOFB437WkDkjbeJ0z/qrjn2UwBG9nxw7nbyRiWV6BPJnNe7\r\n"
+  "UL1kRQE1NhPilbpFlUTIM3goUKU9eOTQux32ASZ6/9W8dYpVfZ/MS1ZTHc1K8RJt\r\n"
+  "wbiCpq5tLp3DP2JH8PJVS2FfK+6dEsHhcprbH+uajcTIWfcKzpzSc1UTzC1MGh/3\r\n"
+  "vNBgSgWv5f4DUKaUU1cGZt3BB2XjoBQbU3IirKMsmBEgB09IyotmGLgYv+zkDUkT\r\n"
+  "oW2t00Hmkrht79A=\r\n"
+  "-----END CERTIFICATE-----\r\n";
+
+/** Client Certificate content */
+static const char client_cert[] =
+  "-----BEGIN CERTIFICATE-----\r\n"
+  "MIIC+jCCAeKgAwIBAgIUVBRdwX5w4KcUgUhfKE9m+ySVxg0wDQYJKoZIhvcNAQEL\r\n"
+  "BQAwEjEQMA4GA1UEAwwHTVFUVCBDQTAgFw0yNTA1MjcxODE0NTFaGA8yMDU1MDcw\r\n"
+  "OTE4MTQ1MVowFjEUMBIGA1UEAwwLbXF0dF9jbGllbnQwggEiMA0GCSqGSIb3DQEB\r\n"
+  "AQUAA4IBDwAwggEKAoIBAQDEgwrvHPmin/tlSGwi5EtOrS+81/mnKWD4/7aU6VNB\r\n"
+  "NM2f6+B+gq70J2mbAJDQ5G/KiY7Gz6m2mjEmHsyoKrH5AFJ0L3WOlpCq1lhMr9bg\r\n"
+  "TgSfRhunDGEEGCulKD9IEN9E/mQfl1m1k8gwouT/PeXk9RRedog9tlLyY80zC4eB\r\n"
+  "mdGj0uGatZeqmtrgQSgYyXbx+6QOw5vtcKyX/UlwoP4ZaiziCG1V/YeolNNwrrnl\r\n"
+  "ZwvtLRopcvd326EjoQWo+qjkIzGKCXvp1l1Z/uy6YT8XO9Ps0WjeHjY9OzYev/8M\r\n"
+  "heu2QzoKH7aLvtUOzeUj8Ef71ZVkqI5D8FGZBxi+f0HbAgMBAAGjQjBAMB0GA1Ud\r\n"
+  "DgQWBBT89TXkrt2c0z+f6gZvjMf7DbzMeDAfBgNVHSMEGDAWgBRE5WVu41MLn5Rp\r\n"
+  "VoFMmD6T/4TWzzANBgkqhkiG9w0BAQsFAAOCAQEAgkxygTYDL1mIbGKLJEj49Nek\r\n"
+  "3TAuS4GXFIoWH7uzP6Tv09i5y3v/BmSXjS3sg2sKZ+vhVeQgAV3nM+IOkbcW7Jsa\r\n"
+  "3FZvVk47Sf0JPguKh1BWPeP0BxOf1zyjle+eUcc+9XUyw36/nKqx4ZXwwmQm6MbR\r\n"
+  "bZN366/+A1gbKotwAV6OBbc7R7zCsgA6hdbkI8W3Ff3lx3qwa0FcBBWrSeu3O3Qn\r\n"
+  "GPz/f52RzfjdIPlKJAN4dNb2Jb+LTbkFLaSyNR7SfEpI2eu/C6mXlVDOtv95MbR5\r\n"
+  "Y96dIFomgUWEXO6Tlz1QWHZRsuI3tGFMabEZ7gbsgo07j/Aus34Y3YAiziYH/w==\r\n"
+  "-----END CERTIFICATE-----\r\n";
+
+/** Client Private Key content */
+static const char client_key[] =
+  "-----BEGIN PRIVATE KEY-----\r\n"
+  "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDEgwrvHPmin/tl\r\n"
+  "SGwi5EtOrS+81/mnKWD4/7aU6VNBNM2f6+B+gq70J2mbAJDQ5G/KiY7Gz6m2mjEm\r\n"
+  "HsyoKrH5AFJ0L3WOlpCq1lhMr9bgTgSfRhunDGEEGCulKD9IEN9E/mQfl1m1k8gw\r\n"
+  "ouT/PeXk9RRedog9tlLyY80zC4eBmdGj0uGatZeqmtrgQSgYyXbx+6QOw5vtcKyX\r\n"
+  "/UlwoP4ZaiziCG1V/YeolNNwrrnlZwvtLRopcvd326EjoQWo+qjkIzGKCXvp1l1Z\r\n"
+  "/uy6YT8XO9Ps0WjeHjY9OzYev/8Mheu2QzoKH7aLvtUOzeUj8Ef71ZVkqI5D8FGZ\r\n"
+  "Bxi+f0HbAgMBAAECggEAJI8emyKgXL13tz2UhJ9FVWNJ9M+Xbh54IIruTGDmMMTi\r\n"
+  "lmR7NP4aD2k/r+sYhgxhseQKkHk04ThpeWaUe5rJ1oHVVTE5JShkzKuo7Mdv6fYJ\r\n"
+  "zRntbhQS/oCCqizFLSKabwsG1IvDUFEolsfPY57/5KsluXdC3HxNjTO9CsiT0qvY\r\n"
+  "Pi0jdVx8vvpdFuJfLq0c+5OBDRyKk0KnXFrhd8T9cGPh5dNaDApgR4axm/Bt2fDn\r\n"
+  "biQHDZt20QYBAKK2DHcXB0xzaRjzwnxgwnXDtlGfLJhTijqUZyf/adzDWucUeXvI\r\n"
+  "CMlJeVlkib87rm6E0IbWlr7fzXz8u/9aXlGOV68MfQKBgQDopD5VPlQdCNf99tlR\r\n"
+  "NB9QseUrQDxR0qKi4vlECPRhspFF1McXyfi9ZKORARX1e6nj5DealVcYmEesYTpf\r\n"
+  "uei/5mAs+FF2xPCp/Wbq/1iojFzExxuKjnOPzLW/bsNLgQgLzsDQAooueng/fySc\r\n"
+  "qQdElSPRek3tpPHUdYWhlKwkHwKBgQDYPiGhrB299TsDmmWElfwIUNqQ8Jfnf62D\r\n"
+  "A6cwUZY5aovhm/v5kEBJmc7oCFsoSSLt36uTeExymDbuNJ4V6kJD5eOhrLPFc9dd\r\n"
+  "iAZJjtQw/693vYNA5+dm8EKrTR2rH7tyT8V4uW1o171U3hGL8OLr/6+vhS0c4Pab\r\n"
+  "ga06tZnKxQKBgBmsBjTh6+ZIU41y8AhF+C6vctqS/BULaWcQJPGdC1q8mcta751w\r\n"
+  "bEJ6GJKnzASK4PSE+p3UXQgZxc7/67EkksqaYYKU5Gh20xfvHqxQATiYRKRyVFe1\r\n"
+  "4Iq9zFCTqHlsg7bJ2f0aSqVWXm6jWSbwgBzRWGKFXJQc35LSZSyve0+BAoGBAIUC\r\n"
+  "Gn+uNZEdIRKDSoQ2GRMoYHgcdOMhBqH6gkDXPjbM0YORBXkpAFIFOF5CnYd3DPQR\r\n"
+  "yyBnM2adN9RnKwHB2MaYxd4xM1Z1fXf7bhqaruwAqXZWbEBlJFGN4QQq59/VIeAb\r\n"
+  "LxSlwaVmZf+opFRWc83DtNWabfhAa4+VQO9GunUdAoGAB0KKhfO/oCnuukqo6A9K\r\n"
+  "a78NkT93ysS1CjlzWZrLM43BBJecEh0vgXJh7RWGUWgUGyThZis1SgYcio2dMSbJ\r\n"
+  "h+4WwztCwhXgpZQQ05aL6wZ0pA8k0WVLebtK6yaUo4rKhecsZC5giBlyDsqqTzJL\r\n"
+  "jwiT9Myy3iHKMHrIG95vODU=\r\n"
+  "-----END PRIVATE KEY-----\r\n";
+#endif /* LFS_ENABLE */
 
 /* USER CODE END PV */
 
@@ -369,6 +475,14 @@ static void publish_callback_1(void **unused, struct mqtt_response_publish *publ
   */
 static void client_refresher(void *client);
 
+/**
+  * @brief  DNS lookup callback
+  * @param  name: Hostname
+  * @param  ipaddr: Resolved IP address
+  * @param  arg: User argument
+  */
+static void dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -382,6 +496,11 @@ void main_app(void)
 
   /* USER CODE END main_app_1 */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Start the task performance measurement */
+  task_perf_start();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   /* Wi-Fi variables */
   W6X_WiFi_Scan_Opts_t Opts = {0};
   W6X_WiFi_Connect_Opts_t ConnectOpts = {0};
@@ -389,18 +508,14 @@ void main_app(void)
   W6X_WiFi_StaStateType_e state = W6X_WIFI_STATE_STA_OFF;
   uint8_t Mac[6] = {0};
   const char *hostname = MQTT_HOST_NAME;
-  const char *port = MSTR(MQTT_HOST_PORT);
-  struct addrinfo hints = {0};
+  int32_t port = MQTT_HOST_PORT;
   int32_t sockfd = -1;
-  int32_t rv;
-  struct addrinfo *p;
-  struct addrinfo *servinfo;
   struct custom_socket_handle handle;
-  struct mqtt_client client;
-  /* Create an identified session (not mandatory) */
-  const char *client_id = MQTT_CLIENT_ID;
+  struct mqtt_client client = {0};
   /* Ensure we have a clean session */
   uint8_t connect_flags = MQTT_CONNECT_CLEAN_SESSION;
+  ip_addr_t resolved_ip = {0};
+  ssl_param_t *g_ssl_param = NULL;
 
   /* USER CODE BEGIN main_app_2 */
   /* Sensor variables */
@@ -440,7 +555,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -448,7 +563,7 @@ void main_app(void)
   ret = W6X_WiFi_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Wi-Fi init is done\n");
@@ -457,7 +572,7 @@ void main_app(void)
   ret = MX_LWIP_Init();
   if (ret)
   {
-    LogError("failed to initialize LWIP stack %" PRIi32 "\n", ret);
+    LogError("Failed to initialize LWIP stack %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -466,6 +581,9 @@ void main_app(void)
   /* USER CODE END main_app_4 */
   /* Run a Wi-Fi scan to retrieve the list of all nearby Access Points */
   scan_event_flags = xEventGroupCreate();
+
+  dns_event_flags = xEventGroupCreate();
+
   W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
 
   /* Wait to receive the EVENT_FLAG_SCAN_DONE event. The scan is declared as failed after 'ScanTimeout' delay */
@@ -483,15 +601,15 @@ void main_app(void)
   ret = W6X_WiFi_Connect(&ConnectOpts);
   if (ret)
   {
-    LogError("failed to connect, %" PRIi32 "\n", ret);
+    LogError("Failed to connect, %" PRIi32 "\n", ret);
     goto _err;
   }
 
   LogInfo("App connected\n");
   if (W6X_WiFi_Station_GetState(&state, &connectData) != W6X_STATUS_OK)
   {
-    LogInfo("Connected to an Access Point\n");
-    return;
+    LogError("Failed to get Station state\n");
+    goto _err;
   }
 
   LogInfo("Connected to following Access Point :\n");
@@ -504,10 +622,16 @@ void main_app(void)
   /* Wait a moment to receive the IP Address from Access Point */
   vTaskDelay(5000);
 
+  if (sntp_init(SNTP_TIMEZONE) != 0)
+  {
+    LogError("SNTP Time Failure\n");
+    goto _err;
+  }
+
   ret = W6X_WiFi_Station_GetMACAddress(Mac);
   if (ret)
   {
-    LogError("failed to get the MAC Address, %" PRIi32 "\n", ret);
+    LogError("Failed to get the MAC Address, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -525,42 +649,75 @@ void main_app(void)
 
   /* USER CODE END main_app_5 */
 
-  hints.ai_family = AF_UNSPEC; /* IPv4 or IPv6 */
-  hints.ai_socktype = SOCK_STREAM; /* Must be TCP */
-
-  /* get address information */
-  rv = getaddrinfo(hostname, port, &hints, &servinfo);
-  if (rv != 0)
   {
-    LogError("Failed to open socket (getaddrinfo): %d\n", rv);
-    goto _err;
-  }
-
-  /* open the first possible socket */
-  for (p = servinfo; p != NULL; p = p->ai_next)
-  {
-    sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-    if (sockfd == -1) { continue; }
-
-    /* connect to server */
-    rv = connect(sockfd, p->ai_addr, p->ai_addrlen);
-    if (rv == -1)
+    /* get address information */
+    APP_DNS_res_t dns_res;
+    dns_res.res = -1;
+    int32_t err = dns_gethostbyname(hostname, &resolved_ip, dns_lookup_callback, &dns_res);
+    if (err == ERR_OK)
     {
-      close(sockfd);
-      sockfd = -1;
-      continue;
     }
-    break;
+    else if (err == ERR_INPROGRESS)
+    {
+      if ((int32_t)xEventGroupWaitBits(dns_event_flags, EVENT_FLAG_DNS_DONE, pdTRUE, pdFALSE,
+                                       pdMS_TO_TICKS(DNS_RESOLVE_TIMEOUT_MS)) != EVENT_FLAG_DNS_DONE)
+      {
+        LogError("DNS Lookup timed out\n");
+        goto _err;
+      }
+      else if (dns_res.res != 0)
+      {
+        LogError("DNS Lookup resolution failed\n");
+        goto _err;
+      }
+      resolved_ip = dns_res.ipaddr;
+    }
+    else
+    {
+      LogError("Failed to resolve hostname:%s", hostname);
+      goto _err;
+    }
   }
 
-  /* free servinfo */
-  freeaddrinfo(servinfo);
-
-  /* make non-blocking */
-  if (sockfd != -1)
+  if (mqtt_config.Scheme == 0)
   {
-    int32_t iMode = 1;
-    ioctlsocket(sockfd, FIONBIO, &iMode);
+    sockfd = tcp_client_connect(&(resolved_ip.u_addr.ip4), port);
+    handle.type = MQTTC_PAL_CONNTION_TYPE_TCP;
+    handle.ctx.fd = sockfd;
+  }
+  else
+  {
+    char *sni = NULL;
+    char *ca = NULL;
+    uint32_t ca_len = 0;
+    char *own_cert = NULL;
+    uint32_t own_cert_len = 0;
+    char *private_cert = NULL;
+    uint32_t private_cert_len = 0;
+    char *ssl_alpn[6] = {0};
+
+    if ((mqtt_config.Scheme == 2) || (mqtt_config.Scheme == 4))
+    {
+      ca = (char *)ca_cert;
+      ca_len = sizeof(ca_cert);
+    }
+    if (mqtt_config.Scheme >= 3)
+    {
+      own_cert = (char *)client_cert;
+      own_cert_len = sizeof(client_cert);
+      private_cert = (char *)client_key;
+      private_cert_len = sizeof(client_key);
+    }
+
+    if (mqtt_config.SNI_enabled)
+    {
+      sni = (char *)hostname;
+    }
+    sockfd = ssl_client_connect(&(resolved_ip.u_addr.ip4), port, sni,
+                                own_cert, own_cert_len, private_cert, private_cert_len, ca, ca_len,
+                                ssl_alpn, 0, &g_ssl_param);
+    handle.type = MQTTC_PAL_CONNTION_TYPE_TLS;
+    handle.ctx.ssl_ctx = &(g_ssl_param->ssl);
   }
 
   if (sockfd < 0)
@@ -569,28 +726,37 @@ void main_app(void)
     goto _err;
   }
 
-  handle.type = MQTTC_PAL_CONNTION_TYPE_TCP;
-  handle.ctx.fd = sockfd;
-
   /* setup a client */
   mqtt_init(&client, &handle, sendbuf, sizeof(sendbuf), recvbuf, sizeof(recvbuf), publish_callback_1);
 
-  /* Send connection request to the broker. */
-  if (MQTT_OK == mqtt_connect(&client, client_id, NULL, NULL, 0, NULL, NULL, connect_flags, 400))
   {
-    /* check that we don't have any errors */
-    if (client.error != MQTT_OK)
+    char *username = NULL;
+    char *password = NULL;
+
+    if (mqtt_config.Scheme >= 1)
     {
-      LogError("error: %s\r", mqtt_error_str(client.error));
-      goto _err;
+      username = (char *)mqtt_config.MQUserName;
+      password = (char *)mqtt_config.MQUserPwd;
     }
 
-    LogInfo("MQTT Connect successful\n");
-  }
-  else
-  {
-    LogError("MQTT Connect Failure\n");
-    goto _err;
+    /* Send connection request to the broker. */
+    if (MQTT_OK == mqtt_connect(&client, (char const *)mqtt_config.MQClientId, NULL, NULL, 0,
+                                username, password, connect_flags, 400))
+    {
+      /* check that we don't have any errors */
+      if (client.error != MQTT_OK)
+      {
+        LogError("Error: %s\r", mqtt_error_str(client.error));
+        goto _err;
+      }
+
+      LogInfo("MQTT Connect successful\n");
+    }
+    else
+    {
+      LogError("MQTT Connect Failure\n");
+      goto _err;
+    }
   }
 
   /* start a thread to refresh the client (handle egress and ingree client traffic) */
@@ -627,13 +793,13 @@ void main_app(void)
     W6X_WiFi_Station_GetState(&State, &ConnectData);
 
     /* Create the json string message with:
-      * - current date and time
-      * - mac address of device
-      * - current RSSI level of the Access Point
-      *
-      * Note: The state.reported object hierarchy is used to help the interoperability
-      *       with 1st tier cloud providers.
-      */
+     * - current date and time
+     * - mac address of device
+     * - current RSSI level of the Access Point
+     *
+     * Note: The state.reported object hierarchy is used to help the interoperability
+     *       with 1st tier cloud providers.
+     */
     len = snprintf((char *)mqtt_pubmsg, MQTT_MSG_BUFFER_SIZE, "{\n \"state\": {\n \"reported\": {\n "
                    "   \"time\": \"%02" PRIu16 "-%02" PRIu16 "-%02" PRIu16 " %02" PRIu16 ":%02" PRIu16 ":%02" PRIu16
                    "\", \"mac\": \"" MACSTR "\", \"rssi\": %" PRIi32 "\n",
@@ -682,6 +848,17 @@ void main_app(void)
     LogError("MQTT Failure\n");
   }
 
+  /* Close the MQTT connection */
+  ret = mqtt_disconnect(&client);
+  if (ret == MQTT_OK)
+  {
+    LogInfo("MQTT Disconnect success\n");
+  }
+  else
+  {
+    LogError("MQTT Disconnect failed\n");
+  }
+
   /* Disconnect the device from the Access Point */
   ret = W6X_WiFi_Disconnect(1);
   if (ret == W6X_STATUS_OK)
@@ -712,6 +889,18 @@ _err:
   /* USER CODE BEGIN main_app_Err_2 */
 
   /* USER CODE END main_app_Err_2 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Stop the task perf execution */
+  task_perf_stop();
+
+  /* Report the task performance measurement */
+  task_perf_report();
+
+  /* Report the memory performance measurement */
+  mem_perf_report();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   LogInfo("##### Application end\n");
 }
 
@@ -806,9 +995,6 @@ static void Subscription_process_task(void *arg)
     if (ret)
     {
       LogInfo("MQTT Subscription Received on topic %s\n", (char *)mqtt_data.topic);
-#if (TEST_AUTOMATION_ENABLE == 1)
-      subscription_received = true;
-#endif /* TEST_AUTOMATION_ENABLE */
 
       /* Parse the string message into a JSON element */
       root = cJSON_Parse((const char *)mqtt_data.message);
@@ -965,6 +1151,10 @@ _err:
       /* Free the topic and message allocated */
       vPortFree(mqtt_data.topic);
       vPortFree(mqtt_data.message);
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+      subscription_received = true;
+#endif /* TEST_AUTOMATION_ENABLE */
     }
   }
   /* USER CODE BEGIN Subscription_process_task_End */
@@ -1080,7 +1270,21 @@ static void client_refresher(void *client)
     mqtt_sync((struct mqtt_client *) client);
     vTaskDelay(100);
   }
+}
 
+static void dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
+{
+  APP_DNS_res_t *dns_res = (APP_DNS_res_t *)arg;
+  if (ipaddr)
+  {
+    dns_res->res = 0;
+    dns_res->ipaddr = *ipaddr;
+  }
+  else
+  {
+    dns_res->res = -1;
+  }
+  xEventGroupSetBits(dns_event_flags, EVENT_FLAG_DNS_DONE);
 }
 
 /* USER CODE BEGIN PFD */

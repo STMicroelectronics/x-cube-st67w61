@@ -16,7 +16,7 @@
         <TargetCommonOption>
           <Device>STM32H563ZITx</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32H5xx_DFP.2.0.0</PackID>
+          <PackID>Keil.STM32H5xx_DFP.2.1.1</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000-0x2009FFFF) IROM(0x08000000-0x81FFFFF) CLOCK(8000000) FPU3(SFPU) CPUTYPE("Cortex-M33") ELITTLE TZ DSP</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -454,6 +454,11 @@
               <FileType>1</FileType>
               <FilePath>../ST67W6X/Target/spi_port.c</FilePath>
             </File>
+            <File>
+              <FileName>util_task_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../ST67W6X/Target/util_task_port.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -470,9 +475,9 @@
           <GroupName>Doc</GroupName>
           <Files>
             <File>
-              <FileName>readme.md</FileName>
+              <FileName>README.md</FileName>
               <FileType>5</FileType>
-              <FilePath>../readme.md</FilePath>
+              <FilePath>../README.md</FilePath>
             </File>
           </Files>
         </Group>
@@ -680,11 +685,6 @@
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</FilePath>
             </File>
             <File>
-              <FileName>w6x_ota.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</FilePath>
-            </File>
-            <File>
               <FileName>w6x_sys.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_sys.c</FilePath>
@@ -703,6 +703,36 @@
               <FileName>logging.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Logging/logging.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics</GroupName>
+          <Files>
+            <File>
+              <FileName>iperf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/iperf.c</FilePath>
+            </File>
+            <File>
+              <FileName>iperf_shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/iperf_shell.c</FilePath>
+            </File>
+            <File>
+              <FileName>util_mem_perf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/util_mem_perf.c</FilePath>
+            </File>
+            <File>
+              <FileName>util_task_perf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/util_task_perf.c</FilePath>
+            </File>
+            <File>
+              <FileName>wfa_tg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/wfa_tg.c</FilePath>
             </File>
           </Files>
         </Group>

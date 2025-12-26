@@ -75,6 +75,9 @@ typedef struct
 /** Timeout for ping command */
 #define W61_NET_PING_TIMEOUT                      20000
 
+/** Timeout for DNS resolve command */
+#define W61_NET_DNS_RESOLVE_TIMEOUT               20000
+
 /** Timeout for start client command */
 #define W61_NET_START_CLIENT_TIMEOUT              5000
 
@@ -121,6 +124,28 @@ MODEM_CMD_DECLARE(on_cmd_sta_gateway);
   * @return 0 on success, negative value on error
  */
 MODEM_CMD_DECLARE(on_cmd_sta_netmask);
+
+/**
+  * @brief  AT response handler for Station link-local IPv6 address
+  * @param  data  Modem command handler context (provides user_data pointer)
+  * @param  len   Length of raw response buffer (unused here)
+  * @param  argv  Parsed argument array (argv[0] expected: textual IPv6 address)
+  * @param  argc  Number of arguments (expects >=1)
+  * @retval int   0 always
+  *
+  */
+MODEM_CMD_DECLARE(on_cmd_sta_ip6ll);
+
+/**
+  * @brief  AT response handler for Station global IPv6 address
+  * @param  data  Modem command handler context
+  * @param  len   Length of raw response buffer (unused)
+  * @param  argv  Parsed argument array (argv[0]: textual IPv6 address)
+  * @param  argc  Number of arguments (expects >=1)
+  * @retval int   0 on completion
+  *
+  */
+MODEM_CMD_DECLARE(on_cmd_sta_ip6gl);
 
 /**
   * @brief  Callback function to handle Net Access Point get IP address responses
@@ -186,7 +211,7 @@ static void W61_Net_AT_Event(void *hObj, uint16_t *argc, char **argv);
   * @param  argc: pointer to argument count
   * @param  argv: pointer to argument values
   */
-static void W61_Net_data_event(void *hObj, uint16_t *argc, char **argv);
+static void W61_Net_Data_Event(void *hObj, uint16_t *argc, char **argv);
 
 /**
   * @brief  Parses Net ping event and call related callback
@@ -194,7 +219,7 @@ static void W61_Net_data_event(void *hObj, uint16_t *argc, char **argv);
   * @param  argc: pointer to argument count
   * @param  argv: pointer to argument values
   */
-static void W61_Net_ping_event(void *hObj, uint16_t *argc, char **argv);
+static void W61_Net_Ping_Event(void *hObj, uint16_t *argc, char **argv);
 
 /**
   * @brief  Converts a string to a W61_Net_Protocol_e enum value
@@ -212,24 +237,38 @@ static W61_Status_t W61_Net_StrToProtocol(char *protocol_str, W61_Net_Protocol_e
   */
 static W61_Status_t W61_Net_ProtocolToStr(W61_Net_Protocol_e Protocol, char *protocol_str);
 
+/**
+  * @brief  Parse IPv6 string into 4 host-order 32-bit words (each word holds two 16-bit hex).
+  * @param  cp  Null-terminated IPv6 address string.
+  * @param  dst Destination array of 4 uint32_t host-order words.
+  * @retval 1 success, 0 failure.
+  * @note   Based on LWIP ip6addr_aton
+  */
+static int W61_ip6addr_aton(const char *cp, uint32_t dst[4]);
+
 /* Functions Definition ------------------------------------------------------*/
 W61_Status_t W61_Net_Init(W61_Object_t *Obj)
 {
   W61_Status_t ret = W61_STATUS_ERROR;
   W61_NULL_ASSERT(Obj);
 
-  char *cmd_lst[3] =
+  char *cmd_lst[] =
   {
+#if (W61_NET_IPV6_ENABLE == 1)
+    "AT+CIPV6=1\r\n",        /* Enable the IPv6  mode */
+#else
+    "AT+CIPV6=0\r\n",        /* Enable the IPv6  mode */
+#endif /* W61_NET_IPV6_ENABLE */
     "AT+CIPMUX=1\r\n",        /* Enable the multi socket mode */
     "AT+CIPRECVMODE=1\r\n",   /* Set PASSIVE receive mode */
     "AT+CIPDINFO=1\r\n"       /* Set IPD Verbose mode */
   };
 
   Obj->Callbacks.Net_event_cb = W61_Net_AT_Event;
-  Obj->Callbacks.Net_event_ping_cb = W61_Net_ping_event;
-  Obj->Callbacks.Net_event_data_cb = W61_Net_data_event;
+  Obj->Callbacks.Net_event_ping_cb = W61_Net_Ping_Event;
+  Obj->Callbacks.Net_event_data_cb = W61_Net_Data_Event;
 
-  for (uint8_t i = 0; i < 3; i++)
+  for (uint8_t i = 0; i < ARRAY_SIZE(cmd_lst); i++)
   {
 
     ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd_lst[i], W61_NCP_TIMEOUT);
@@ -361,6 +400,8 @@ W61_Status_t W61_Net_Station_GetIPAddress(W61_Object_t *Obj)
     MODEM_CMD("+CIPSTA:ip:", on_cmd_sta_ipaddress, 1U, ""),
     MODEM_CMD("+CIPSTA:gateway:", on_cmd_sta_gateway, 1U, ""),
     MODEM_CMD("+CIPSTA:netmask:", on_cmd_sta_netmask, 1U, ""),
+    MODEM_CMD("+CIPSTA:ip6ll:", on_cmd_sta_ip6ll, 1U, ""),
+    MODEM_CMD("+CIPSTA:ip6gl:", on_cmd_sta_ip6gl, 1U, ""),
   };
 
   return W61_Status(modem_cmd_send(&mdm->iface,
@@ -611,9 +652,10 @@ W61_Status_t W61_Net_SetDnsAddress(W61_Object_t *Obj, uint8_t Dns1_addr[4], uint
 }
 
 W61_Status_t W61_Net_Ping(W61_Object_t *Obj, char *location, uint16_t length, uint16_t count, uint16_t interval,
-                          W61_Net_PingResult_t *ping_result)
+                          uint16_t timeout, W61_Net_PingResult_t *ping_result)
 {
   W61_Status_t ret;
+  int32_t ret_len;
   struct modem *mdm = (struct modem *) &Obj->Modem;
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
@@ -646,12 +688,25 @@ W61_Status_t W61_Net_Ping(W61_Object_t *Obj, char *location, uint16_t length, ui
     interval = W61_NET_DEFAULT_PING_INTERVAL;
   }
 
+  if (timeout > W61_NET_MAX_PING_INTERNAL)
+  {
+    timeout = W61_NET_MAX_PING_INTERNAL;
+  }
+
   mdm->ping_msg = ping_result;
   memset(ping_result, 0, sizeof(W61_Net_PingResult_t));
   ping_result->sem_ping = xSemaphoreCreateBinary();
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+PING=\"%s\",%" PRIu16 ",%" PRIu16 ",%" PRIu16 "\r\n",
-           location, length, count, interval);
+  ret_len = snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+PING=\"%s\",%" PRIu16 ",%" PRIu16 ",%" PRIu16 "\r\n",
+                     location, length, count, interval);
+  if (W61_SdkMinVersion(Obj, 2, 0, 97) == W61_STATUS_OK)
+  {
+    snprintf(&cmd[ret_len], W61_CMDRSP_STRING_SIZE - ret_len, ",%" PRIu16 "\r\n", timeout);
+  }
+  else
+  {
+    snprintf(&cmd[ret_len], W61_CMDRSP_STRING_SIZE - ret_len, "\r\n");
+  }
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_PING_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
@@ -679,7 +734,8 @@ W61_Status_t W61_Net_Ping(W61_Object_t *Obj, char *location, uint16_t length, ui
   return W61_STATUS_OK;
 }
 
-W61_Status_t W61_Net_ResolveHostAddress(W61_Object_t *Obj, const char *url, uint8_t *ipaddress)
+W61_Status_t W61_Net_ResolveHostAddress(W61_Object_t *Obj, const char *url, W61_Net_Ip_addr_t *ip_address,
+                                        W61_Net_Dns_ResolveType_e *resolve_type)
 {
   char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
   char cmd[W61_CMD_MATCH_BUFF_SIZE];
@@ -687,16 +743,66 @@ W61_Status_t W61_Net_ResolveHostAddress(W61_Object_t *Obj, const char *url, uint
   W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(url);
-  W61_NULL_ASSERT(ipaddress);
+  W61_NULL_ASSERT(ip_address);
+  W61_NULL_ASSERT(resolve_type);
 
-  snprintf(cmd, W61_CMD_MATCH_BUFF_SIZE, "AT+CIPDOMAIN=\"%s\"\r\n", url);
-  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPDOMAIN:", &argc, argv, 5000);
+  snprintf(cmd, W61_CMD_MATCH_BUFF_SIZE, "AT+CIPDOMAIN=\"%s\",%d\r\n", url, *resolve_type);
+  ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPDOMAIN:", &argc, argv, W61_NET_DNS_RESOLVE_TIMEOUT);
   if (ret == W61_STATUS_OK)
   {
-    W61_AT_RemoveStrQuotes(argv[0]); /* Remove quotes from the string */
-    Parser_StrToIP(argv[0], ipaddress);
-  }
+    if (argc < 1)
+    {
+      return W61_STATUS_ERROR;
+    }
+    W61_AT_RemoveStrQuotes(argv[0]); /* Remove quotes from the returned address string */
 
+    /* Parse into caller buffer according to requested family. */
+    if (*resolve_type == W61_NET_DNS_IPV4_IPV6)
+    {
+      uint8_t tmp4[4] = {0};
+      Parser_StrToIP(argv[0], tmp4);
+      if (Parser_CheckValidAddress(tmp4, 4) == W61_STATUS_OK)
+      {
+        memcpy(&ip_address->u_addr.ip4.addr, tmp4, 4); /* Valid IPv4 */
+        *resolve_type = W61_NET_DNS_IPV4;
+      }
+      else
+      {
+#if (W61_NET_IPV6_ENABLE == 1)
+        uint32_t words[4] = {0};
+        if (W61_ip6addr_aton(argv[0], words) != 1)
+        {
+          return W61_STATUS_ERROR; /* Neither valid IPv4 nor IPv6 */
+        }
+        memcpy(ip_address->u_addr.ip6.addr, words, sizeof(words));
+        *resolve_type = W61_NET_DNS_IPV6;
+#else
+        return W61_STATUS_ERROR; /* Invalid IPv4  */
+#endif /* W61_NET_IPV6_ENABLE */
+      }
+    }
+    else if (*resolve_type == W61_NET_DNS_IPV4)
+    {
+      uint8_t tmp4[4] = {0};
+      Parser_StrToIP(argv[0], tmp4);
+      if (Parser_CheckValidAddress(tmp4, 4) != W61_STATUS_OK)
+      {
+        return W61_STATUS_ERROR; /* Invalid IPv4 */
+      }
+      memcpy(&ip_address->u_addr.ip4.addr, tmp4, 4);
+    }
+#if (W61_NET_IPV6_ENABLE == 1)
+    else /* resolve_type == W61_NET_DNS_IPV6 */
+    {
+      uint32_t words[4] = {0};
+      if (W61_ip6addr_aton(argv[0], words) != 1)
+      {
+        return W61_STATUS_ERROR;
+      }
+      memcpy(ip_address->u_addr.ip6.addr, words, sizeof(words));
+    }
+#endif /* W61_NET_IPV6_ENABLE */
+  }
   return ret;
 }
 
@@ -713,7 +819,11 @@ W61_Status_t W61_Net_StartClientConnection(W61_Object_t *Obj, W61_Net_Connection
     return W61_STATUS_ERROR;
   }
 
-  if ((conn->Protocol != W61_NET_TCP_CONNECTION) && (conn->Protocol != W61_NET_TCP_SSL_CONNECTION))
+  if ((conn->Protocol != W61_NET_TCP_CONNECTION) && (conn->Protocol != W61_NET_TCP_SSL_CONNECTION)
+#if (W61_NET_IPV6_ENABLE == 1)
+      && (conn->Protocol != W61_NET_TCPV6_CONNECTION) && (conn->Protocol != W61_NET_TCPV6_SSL_CONNECTION)
+#endif /* W61_NET_IPV6_ENABLE */
+     )
   {
     NET_LOG_ERROR("Only TCP and SSL protocols are supported for client connections\n");
     return W61_STATUS_ERROR;
@@ -886,7 +996,10 @@ W61_Status_t W61_Net_PullDataFromSocket(W61_Object_t *Obj, uint8_t Socket, uint3
   {
     Reqlen = W61_MAX_SPI_XFER - 64;
   }
-
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   *Receivedlen = 0;
@@ -1008,6 +1121,10 @@ W61_Status_t W61_Net_SNTP_GetTime(W61_Object_t *Obj, W61_Net_Time_t *Time)
     MODEM_CMD_ARGS_MAX("+CIPSNTPTIME:", on_cmd_time, 7, 8, " :"),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = Time;
@@ -1077,6 +1194,10 @@ W61_Status_t W61_Net_GetSocketInformation(W61_Object_t *Obj, uint8_t Socket, W61
     MODEM_CMD("+CIPSTATUS:", on_cmd_socket_info, 6U, ","),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   memset(conn, 0, sizeof(W61_Net_Connection_t));
@@ -1200,6 +1321,12 @@ W61_Status_t W61_Net_SSL_SetPSK(W61_Object_t *Obj, uint8_t Socket, uint8_t *Psk,
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
+/* Public IPv6 aton wrapper exposed to upper layer (W6X). */
+int32_t W61_Net_Inet6_aton(const char *src, uint32_t dst_words[4])
+{
+  return W61_ip6addr_aton(src, dst_words);
+}
+
 /* Private Functions Definition ----------------------------------------------*/
 MODEM_CMD_DEFINE(on_cmd_sta_ipaddress)
 {
@@ -1240,6 +1367,36 @@ MODEM_CMD_DEFINE(on_cmd_sta_netmask)
   return 0;
 }
 
+MODEM_CMD_DEFINE(on_cmd_sta_ip6ll)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]);
+    if (W61_ip6addr_aton((char *)argv[0], Obj->NetCtx.Net_sta_info.IP6_LinkLocal) != 1)
+    {
+      NET_LOG_WARN("Invalid IPv6 link-local format received: %s\n", argv[0]);
+    }
+  }
+  return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_sta_ip6gl)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
+  if (argc >= 1)
+  {
+    W61_AT_RemoveStrQuotes((char *)argv[0]);
+    if (W61_ip6addr_aton((char *)argv[0], Obj->NetCtx.Net_sta_info.IP6_Global) != 1)
+    {
+      NET_LOG_WARN("Invalid IPv6 global format received: %s\n", argv[0]);
+    }
+  }
+  return 0;
+}
+
 MODEM_CMD_DEFINE(on_cmd_ap_ipaddress)
 {
   struct modem *mdm = (struct modem *) data->user_data;
@@ -1270,15 +1427,20 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_pulldata)
 {
   struct modem *mdm = (struct modem *) data->user_data;
 
-  uint8_t *ptr = data->rx_buf + len;
+  uint8_t *ptr;
   uint32_t offset;
   uint8_t *endptr;
   uint16_t rx_data_len;
 
+  if (data->rx_buf == NULL)
+  {
+    return -EINVAL;
+  }
+  ptr = data->rx_buf + len;
   data->rx_buf[data->rx_buf_len] = 0;
 
   rx_data_len = strtol((char *)ptr, (char **)&endptr, 10);
-  if (endptr == ptr || *endptr != ',')
+  if ((endptr == ptr) || (*endptr != ','))
   {
     NET_LOG_ERROR("Invalid +CIPRECVDATA response format\n");
     return -EINVAL;
@@ -1372,7 +1534,7 @@ MODEM_CMD_DEFINE(on_cmd_socket_info)
 static void W61_Net_AT_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
-  W61_Net_CbParamData_t  cb_param_net_data;
+  W61_Net_CbParamData_t cb_param_net_data;
 
   if ((Obj == NULL) || (Obj->ulcbs.UL_net_cb == NULL) || (*argc < 2))
   {
@@ -1399,7 +1561,7 @@ static void W61_Net_AT_Event(void *hObj, uint16_t *argc, char **argv)
   }
 }
 
-static void W61_Net_ping_event(void *hObj, uint16_t *argc, char **argv)
+static void W61_Net_Ping_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
   W61_Net_PingResult_t *ping_result = (W61_Net_PingResult_t *)Obj->Modem.ping_msg;
@@ -1433,12 +1595,12 @@ static void W61_Net_ping_event(void *hObj, uint16_t *argc, char **argv)
   return;
 }
 
-static void W61_Net_data_event(void *hObj, uint16_t *argc, char **argv)
+static void W61_Net_Data_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
   W61_Net_CbParamData_t cb_param_net_data;
 
-  if (*argc < 4)
+  if ((Obj == NULL) || (Obj->ulcbs.UL_net_cb == NULL) || (*argc < 4))
   {
     return;
   }
@@ -1502,12 +1664,108 @@ static W61_Status_t W61_Net_ProtocolToStr(W61_Net_Protocol_e Protocol, char *pro
   {
     strncpy(protocol_str, "SSL", W61_PROTOCOL_STRING_SIZE - 1);
   }
+#if (W61_NET_IPV6_ENABLE == 1)
+  else if (Protocol == W61_NET_TCPV6_CONNECTION)
+  {
+    strncpy(protocol_str, "TCPv6", W61_PROTOCOL_STRING_SIZE - 1);
+  }
+  else if (Protocol == W61_NET_UDPV6_CONNECTION)
+  {
+    strncpy(protocol_str, "UDPv6", W61_PROTOCOL_STRING_SIZE - 1);
+  }
+  else if (Protocol == W61_NET_TCPV6_SSL_CONNECTION)
+  {
+    strncpy(protocol_str, "SSLv6", W61_PROTOCOL_STRING_SIZE - 1);
+  }
+#endif /* W61_NET_IPV6_ENABLE */
   else
   {
     strncpy(protocol_str, "UNDEF", W61_PROTOCOL_STRING_SIZE - 1);
     return W61_STATUS_ERROR; /* Unknown protocol */
   }
   return W61_STATUS_OK;
+}
+
+static int W61_ip6addr_aton(const char *cp, uint32_t dst[4])
+{
+  uint32_t zero_blocks = 8;
+  const char *s;
+  uint32_t current_block_index = 0;
+  uint32_t current_block_value = 0;
+  uint16_t hextets[8] = {0};
+
+  if (!cp || !dst)
+  {
+    return 0;
+  }
+
+  for (s = cp; *s != '\0'; s++)
+  {
+    if (*s == ':')
+    {
+      zero_blocks--;
+    }
+    else if (!((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F')))
+    {
+      break;
+    }
+  }
+
+  for (s = cp; *s != '\0'; s++)
+  {
+    if (*s == ':')
+    {
+      if (current_block_index > 7)
+      {
+        return 0;
+      }
+      hextets[current_block_index++] = (uint16_t)current_block_value;
+      current_block_value = 0;
+      if (s[1] == ':')
+      {
+        if (s[2] == ':')
+        {
+          return 0;
+        }
+        s++;
+        while (zero_blocks > 0)
+        {
+          zero_blocks--;
+          if (current_block_index > 7)
+          {
+            return 0;
+          }
+          hextets[current_block_index++] = 0;
+        }
+      }
+    }
+    else if ((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F'))
+    {
+      current_block_value = (current_block_value << 4) +
+                            ((*s >= '0' && *s <= '9') ? (uint32_t)(*s - '0') :
+                             (uint32_t)(10 + ((*s < 'a') ? *s - 'A' : *s - 'a')));
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  if (current_block_index <= 7)
+  {
+    hextets[current_block_index++] = (uint16_t)current_block_value;
+  }
+  if (current_block_index != 8)
+  {
+    return 0;
+  }
+
+  for (int i = 0; i < 4; ++i)
+  {
+    uint32_t net_word = ((uint32_t)hextets[2 * i] << 16) | (uint32_t)hextets[2 * i + 1];
+    dst[i] = net_word; /* host-order word: high 16 bits first hextet, low 16 bits second hextet */
+  }
+  return 1;
 }
 
 /** @} */

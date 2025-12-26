@@ -119,7 +119,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   union
   {
     struct sockaddr_in ipv4;
-#if (LWIP_IPV6 == 1)
+#if (IPERF_V6 == 1)
     struct sockaddr_in6 ipv6;
 #endif /* LWIP_IPV6 */
   } dest_addr = {0};
@@ -165,7 +165,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       if (NET_INET_PTON(AF_INET, argv[current_arg], &dest_addr.ipv4.sin_addr) == 1)
       {
       }
-#if (LWIP_IPV6 == 1)
+#if (IPERF_V6 == 1)
       else if (NET_INET_PTON(AF_INET6, argv[current_arg], &dest_addr.ipv6.sin6_addr) == 1)
       {
       }
@@ -306,7 +306,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   /* Client or Server mode */
   if (o_c)
   {
-#if (LWIP_IPV6 == 1)
+#if (IPERF_V6 == 1)
     if (cfg.type == IPERF_IP_TYPE_IPV6)
     {
       memcpy(cfg.destination_ip6, &dest_addr.ipv6.sin6_addr, sizeof(cfg.destination_ip6));

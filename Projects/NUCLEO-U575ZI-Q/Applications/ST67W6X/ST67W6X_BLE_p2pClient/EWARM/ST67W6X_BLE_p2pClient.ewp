@@ -1175,6 +1175,9 @@
                     <file>
                         <name>$PROJ_DIR$\..\ST67W6X\Target\spi_port.c</name>
                     </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\ST67W6X\Target\util_task_port.c</name>
+                    </file>
                 </group>
             </group>
         </group>
@@ -1182,7 +1185,7 @@
     <group>
         <name>Doc</name>
         <file>
-            <name>$PROJ_DIR$\..\readme.md</name>
+            <name>$PROJ_DIR$\..\README.md</name>
         </file>
     </group>
     <group>
@@ -1363,9 +1366,6 @@
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_netif.c</name>
                 </file>
                 <file>
-                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_ota.c</name>
-                </file>
-                <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_sys.c</name>
                 </file>
                 <file>
@@ -1376,6 +1376,24 @@
                 <name>Network/Utilities/Logging</name>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Logging\logging.c</name>
+                </file>
+            </group>
+            <group>
+                <name>Network/Utilities/Statistics</name>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\iperf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\iperf_shell.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\util_mem_perf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\util_task_perf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\wfa_tg.c</name>
                 </file>
             </group>
         </group>

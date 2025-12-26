@@ -1,4 +1,4 @@
-# __ST67W6X_MQTT_LWIP Application Description__
+## __ST67W6X_MQTT_LWIP Application Description__
 
 This application aims to demonstrate an example of MQTT client over LwIP over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.
 
@@ -11,19 +11,19 @@ In the opposite direction, from this same client you can also publish data on th
 
 It exercises the ST67W6X_Network_Driver capabilities. It relies on the FreeRTOS RealTime Operating System.
 
-> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t02_v2.0.89.bin.
+> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t02_v2.0.97.bin.
 >
-> Please follow the [NCP Binaries README.md](../../../../ST67W6X_Utilities/Binaries/README.md) instructions using the __NCP_update_mission_profile.bat__ script.
+> Please follow the [NCP Binaries README.md](../../../../ST67W6X_Scripts/Binaries/README.md) instructions using the __NCP_update_mission_profile_t02.bat__ script.
 
-## __Keywords__
+### __Keywords__
 
-Connectivity, WiFi, ST67W6X_Network_Driver, FreeRTOS, LwIP, Station mode, DHCP, MQTT, JSON, Scan, TCP, UDP, WPA2, WPA3, IKS
+Connectivity, WiFi, ST67W6X_Network_Driver, FreeRTOS, LwIP, Station mode, DHCP, MQTT, MQTTS, JSON, Scan, TCP, UDP, WPA2, WPA3, IKS
 
-## __Links and references__
+### __Links and references__
 
 For further information, please visit the dedicated Wiki page [ST67W6X_MQTT](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_ST67W6X_MQTT_Demonstration).
 
-## __Directory structure__
+### __Directory structure__
 
 |Directory  |                                                                     |Description|
 |---   |:-:                                                                       |---        |
@@ -43,8 +43,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_MQTT](htt
 |ST67W6X_MQTT_LWIP/MDK-ARM|                                                       |Project for the RealView Microcontroller Development Kit|
 |ST67W6X_MQTT_LWIP/STM32CubeIDE|                                                  |Project for the STM32CubeIDE toolchain|
 
-## __Directory contents__
-
+### __Directory contents__
 
 |File  |                                                                          |Description|
 |---   |:-:                                                                       |---        |
@@ -62,8 +61,11 @@ For further information, please visit the dedicated Wiki page [ST67W6X_MQTT](htt
 |ST67W6X_MQTT_LWIP/littlefs/Target/easyflash.h|                                   |Header file that adapts LittleFS to EasyFlash4|
 |ST67W6X_MQTT_LWIP/littlefs/Target/lfs_port.h|                                    |lfs flash port definition|
 |ST67W6X_MQTT_LWIP/littlefs/Target/lfs_util_config.h|                             |lfs utility user configuration|
+|ST67W6X_MQTT_LWIP/LWIP/App/altcp_tls_mbedtls.h|                                  |Application layered TCP/TLS connection API|
+|ST67W6X_MQTT_LWIP/LWIP/App/dhcp_server.h|                                        |DHCP Server definition|
 |ST67W6X_MQTT_LWIP/LWIP/App/lwip.h|                                               |This file provides code for the configuration of the LWIP.|
 |ST67W6X_MQTT_LWIP/LWIP/App/lwip_netif.h|                                         |This file provides code for the configuration of the ST67W6X Network interface over LwIP|
+|ST67W6X_MQTT_LWIP/LWIP/App/sntp.h|                                               |This is simple "SNTP" client definition|
 |ST67W6X_MQTT_LWIP/LWIP/Target/lwipopts.h|                                        |This file overrides LwIP stack default configuration|
 |ST67W6X_MQTT_LWIP/LWIP/Target/arch/bpstruct.h|                                   |Packed structs support<br>This file is part of the lwIP TCP/IP stack.|
 |ST67W6X_MQTT_LWIP/LWIP/Target/arch/cc.h|                                         |specific compiler functions support<br>This file is part of the lwIP TCP/IP stack.|
@@ -73,7 +75,9 @@ For further information, please visit the dedicated Wiki page [ST67W6X_MQTT](htt
 |ST67W6X_MQTT_LWIP/LWIP/Target/arch/lib.h|                                        |specific libraries support<br>This file is part of the lwIP TCP/IP stack.|
 |ST67W6X_MQTT_LWIP/LWIP/Target/arch/perf.h|                                       |perf measurement support<br>This file is part of the lwIP TCP/IP stack.|
 |ST67W6X_MQTT_LWIP/LWIP/Target/arch/sys_arch.h|                                   |specific os functions support<br>This file is part of the lwIP TCP/IP stack.|
-|ST67W6X_MQTT_LWIP/ST67W6X/App/app_st67w6x.h|                                     |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_MQTT_LWIP/MBEDTLS/App/mbedtls.h|                                         |This file provides code for the configuration of the mbedtls instances.|
+|ST67W6X_MQTT_LWIP/MBEDTLS/App/mbedtls_config.h|                                  |the mbedtls custom config header file.|
+|ST67W6X_MQTT_LWIP/ST67W6X/App/app_st67w6x.h|                                     |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.|
 |ST67W6X_MQTT_LWIP/ST67W6X/Target/bsp_conf.h|                                     |This file contains definitions for the BSP interface|
 |ST67W6X_MQTT_LWIP/ST67W6X/Target/logging_config.h|                               |Header file for the W6X Logging configuration module|
 |ST67W6X_MQTT_LWIP/ST67W6X/Target/shell_config.h|                                 |Header file for the W6X Shell configuration module|
@@ -93,16 +97,21 @@ For further information, please visit the dedicated Wiki page [ST67W6X_MQTT](htt
 |ST67W6X_MQTT_LWIP/Core/Src/system_stm32h5xx.c|                                   |CMSIS Cortex-M33 Device Peripheral Access Layer System Source File|
 |ST67W6X_MQTT_LWIP/littlefs/Target/lfs_easyflash.c|                               |Adapts LittleFS to EasyFlash4|
 |ST67W6X_MQTT_LWIP/littlefs/Target/lfs_flash.c|                                   |Host flash interface|
+|ST67W6X_MQTT_LWIP/LWIP/App/altcp_tls_mbedtls.c|                                  |Application layered TCP/TLS connection API|
+|ST67W6X_MQTT_LWIP/LWIP/App/dhcp_server_raw.c|                                    |A simple DHCP server implementation|
 |ST67W6X_MQTT_LWIP/LWIP/App/lwip.c|                                               |This file provides initialization code for LwIP middleware.|
 |ST67W6X_MQTT_LWIP/LWIP/App/lwip_netif.c|                                         |This file provides initialization code for ST67W6X Network interface over LwIP|
-|ST67W6X_MQTT_LWIP/ST67W6X/App/app_st67w6x.c|                                     |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_MQTT_LWIP/LWIP/App/sntp.c|                                               |This is simple "SNTP" client for the lwIP raw API.<br>It is a minimal implementation of SNTPv4 as specified in RFC 4330.|
+|ST67W6X_MQTT_LWIP/MBEDTLS/App/mbedtls.c|                                         |This file provides code for the configuration of the mbedtls instances.|
+|ST67W6X_MQTT_LWIP/MBEDTLS/Target/hardware_rng.c|                                 |mbedtls alternate entropy data function.<br>the mbedtls_hardware_poll() is customized to use the STM32 RNG<br>to generate random data, required for TLS encryption algorithms.|
+|ST67W6X_MQTT_LWIP/ST67W6X/App/app_st67w6x.c|                                     |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.|
 |ST67W6X_MQTT_LWIP/ST67W6X/Target/spi_port.c|                                     |SPI bus interface porting layer implementation|
+|ST67W6X_MQTT_LWIP/ST67W6X/Target/util_task_port.c|                               |Task Performance porting layer implementation|
 |ST67W6X_MQTT_LWIP/STM32CubeIDE/Application/User/Core/syscalls.c|                 |STM32CubeIDE Minimal System calls file|
 |ST67W6X_MQTT_LWIP/STM32CubeIDE/Application/User/Core/sysmem.c|                   |STM32CubeIDE System Memory calls file|
 |ST67W6X_MQTT_LWIP/X-CUBE-MEMS1/App/sys_sensors.c|                                |Manages the sensors on the application|
 
-
-## __Hardware and Software environment__
+### __Hardware and Software environment__
 
   - This example runs on the NUCLEO-H563ZI board combined with the X-NUCLEO-67W61M1 board
   - X-NUCLEO-67W61M1 board is plugged to the NUCLEO-H563ZI board via the Arduino connectors:
@@ -112,9 +121,10 @@ For further information, please visit the dedicated Wiki page [ST67W6X_MQTT](htt
 
 For further information, please visit the dedicated Wiki page [ST67W611M Hardware setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup).
 
-## __How to use it?__
+### __How to use it?__
 
 In order to make the program work, you must do the following :
+
   - Build the chosen Host project
     - Open your preferred toolchain
     - Rebuild all files and load your image into Host target memory
@@ -140,18 +150,23 @@ After installing the application, you can import the configuration file with the
 
 You can change the MQTT broker configuration to be aligned with application setup. Additionally, you can change the MQTT topic to subscribe to the topic used by the device.
 
-##  __User setup__
+### __User setup__
 
-###  __ST67W6X configuration__
+#### __ST67W6X configuration__
 
 The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP power save mode : 0: NCP stays always active / 1: NCP goes in low power mode when idle */
 #define W6X_POWER_SAVE_AUTO                     0
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1
 ```
+
+> __IMPORTANT__
+>
+> In order to setup and use external clock, SW and HW settings have to be modified.
+> Refer to [Wiki ST67W611M1 32.768 kHz and low power operation](https://wiki.st.com/stm32mcu/wiki/Connectivity:ST67W611M1_32KHz_management) page in order to be informed about required changes.
 
 The default Wi-Fi configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
@@ -179,7 +194,7 @@ Additionally, some others options can be modified in the _ST67W6X/Target_ direct
 - _shell_config.h_ : This file provides configuration for Shell component.
 - _w61_driver_config.h_ : This file provides configuration for the W61 configuration module.
 
-###  __Application configuration__
+#### __Application configuration__
 
 The Wi-Fi configuration used in this application is define in the _Appli/App/app_config.h_ file:
 ```
@@ -203,7 +218,7 @@ The default DTIM Wi-Fi power mode can be modified in the _Appli/App/app_config.h
 The host low power mode can be modified in the _Appli/App/app_config.h_ file:
 ```
 /** Low power configuration [0: disable / 1: sleep / 2: stop / 3: standby] */
-#define LOW_POWER_MODE              LOW_POWER_SLEEP_ENABLE
+#define LOW_POWER_MODE              LOW_POWER_DISABLE
 ```
 
 The MQTT client configuration can be modified in the _Appli/App/app_config.h_ file:
@@ -285,9 +300,4 @@ Else, the application will send the following data format:
 Each time the device receives a message on a subscribed topic, the message is displayed on the UART console.
 Additionally, the device can receive a command to change the LED state or to reboot the device.
 
-## __Known limitations__
-
-  - W6X_WiFi_Connect API cannot use special characters [,"\\] in the SSID and password. If needed, they must be preceded by a \\ to be interpreted correctly
-  - By default the country code / region configured in the device is World with 1 to 13 active channels
-  - Enabling Wi-Fi DTIM can generates some failure during Network transaction
-  - Static IP addressing is not compatible with power save mode (ARP broadcast issue)
+### __Known limitations__

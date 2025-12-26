@@ -369,8 +369,8 @@ int32_t W61_AT_ModemInit(W61_Object_t *Obj)
     goto __err;
   }
 
-  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
-  if (xReturned != pdPASS)
+  /* Wait for the module to be ready */
+  if (W61_WaitForReady(Obj, W61_READY_DEFAULT_TIMEOUT_MS) != W61_STATUS_OK)
   {
     SYS_LOG_ERROR("sem_if_ready not received\n");
     ret = -1;
@@ -459,7 +459,7 @@ W61_Status_t W61_Status(int32_t ret)
       status = W61_STATUS_ERROR;
       break;
   }
-  return  status;
+  return status;
 }
 
 W61_Status_t W61_AT_Common_SetExecute(W61_Object_t *Obj, uint8_t *p_cmd, uint32_t timeout_ms)
@@ -479,8 +479,12 @@ W61_Status_t W61_AT_Common_Query_Parse(W61_Object_t *Obj, char *p_cmd, char *p_r
 {
   struct modem *mdm = (struct modem *) &Obj->Modem;
   struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
-  W61_Status_t ret = W61_STATUS_ERROR;
+  W61_Status_t ret;
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
   /* **argv reference p_cmd to ensure re-entrance */
   mdm->rx_data = p_cmd;
@@ -618,8 +622,8 @@ void W61_AT_Logger(uint8_t *pBuf, uint32_t len, char *inOut)
 #if defined(__ICCARM__) || defined(__ICCRX__) || defined(__ARMCC_VERSION) /* For IAR/MDK Compiler */
 char *strnstr(const char *big, const char *little, size_t len)
 {
-  size_t  i;
-  size_t  j;
+  size_t i;
+  size_t j;
 
   if (little[0] == '\0')
   {

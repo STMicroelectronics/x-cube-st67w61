@@ -35,9 +35,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Doc/readme.md</name>
+			<name>Doc/README.md</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/readme.md</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/README.md</locationURI>
 		</link>
 		<link>
 			<name>Drivers/CMSIS/system_stm32h7rsxx.c</name>
@@ -230,6 +230,21 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Appli/Appli/Target/logshell_ctrl.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/LWIP/App/altcp_tls_mbedtls.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Appli/LWIP/App/altcp_tls_mbedtls.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/LWIP/App/dhcp_server_raw.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Appli/LWIP/App/dhcp_server_raw.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/LWIP/App/echo.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Appli/LWIP/App/echo.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/LWIP/App/lwip.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Appli/LWIP/App/lwip.c</locationURI>
@@ -248,6 +263,11 @@
 			<name>Application/User/LWIP/App/ping.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Appli/LWIP/App/ping.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/LWIP/App/sntp.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Appli/LWIP/App/sntp.c</locationURI>
 		</link>
 		<link>
 			<name>Application/User/ST67W6X/App/app_st67w6x.c</name>
@@ -738,11 +758,6 @@
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_netif.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</locationURI>
-		</link>
-		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_ota.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_sys.c</name>

@@ -1216,6 +1216,15 @@
                 <group>
                     <name>App</name>
                     <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\altcp_tls_mbedtls.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\dhcp_server_raw.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\echo.c</name>
+                    </file>
+                    <file>
                         <name>$PROJ_DIR$\..\LWIP\App\lwip.c</name>
                     </file>
                     <file>
@@ -1226,6 +1235,9 @@
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\ping.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\sntp.c</name>
                     </file>
                 </group>
             </group>
@@ -1252,7 +1264,7 @@
     <group>
         <name>Doc</name>
         <file>
-            <name>$PROJ_DIR$\..\readme.md</name>
+            <name>$PROJ_DIR$\..\README.md</name>
         </file>
     </group>
     <group>
@@ -1689,9 +1701,6 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_netif.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_ota.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_sys.c</name>

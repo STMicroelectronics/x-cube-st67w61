@@ -1,6 +1,6 @@
 [Groups]
 Application/User/Appli/App=../Appli/App/fota_flash.c;../Appli/App/fota_header.c;../Appli/App/sha256.c;
-Doc=../readme.md;
+Doc=../README.md;
 [ProjectFiles]
 [Others]
 Define=;

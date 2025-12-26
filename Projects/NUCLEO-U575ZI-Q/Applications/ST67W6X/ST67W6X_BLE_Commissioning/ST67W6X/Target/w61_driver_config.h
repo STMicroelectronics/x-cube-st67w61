@@ -46,27 +46,38 @@ extern "C" {
 #define WIFI_LOG_ENABLE                         1
 
 /** ============================
-  * AT Net
-  * All available configuration defines in
-  * Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_default_config.h
-  * ============================
-  */
-
-/** Enable/Disable Network module logging */
-#define NET_LOG_ENABLE                          1
-
-/** ============================
   * AT BLE
   * All available configuration defines in
   * Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_default_config.h
   * ============================
   */
 
+/** Maximum number of BLE connections. Must not be greater than 10.
+  * The maximum connections depend on the mode as follows:
+  * - Server mode (10 connection max)
+  * - Client mode (9 connection max)
+  * - Dual Mode (10 connections max with up to 9 as Client)
+  */
+#define W61_BLE_MAX_CONN_NBR                    2
+
 /** Maximum number of detected peripheral during the scan. Cannot be greater than 50 */
 #define W61_BLE_MAX_DETECTED_PERIPHERAL         10
 
 /** Enable/Disable BLE module logging */
 #define BLE_LOG_ENABLE                          1
+
+/** ============================
+  * AT Net
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Driver\W61_at\w61_default_config.h
+  * ============================
+  */
+
+/** Enable IPv6 support : 0: Disabled, 1: Enabled */
+#define W61_NET_IPV6_ENABLE                     0
+
+/** Enable/Disable Network module logging */
+#define NET_LOG_ENABLE                          1
 
 /** ============================
   * AT Common
@@ -77,12 +88,15 @@ extern "C" {
 /** Maximum SPI buffer size */
 #define W61_MAX_SPI_XFER                        1520
 
-/** Debugging only: Enable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
+/** Enable/Disable System module logging */
+#define SYS_LOG_ENABLE                          1
+
+/** Debugging only: Enable/Disable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
 #define W61_AT_LOG_ENABLE                       0
 #include "logging.h"
 
-/** Enable/Disable System module logging */
-#define SYS_LOG_ENABLE                          1
+/** Enable/Disable Modem command log */
+#define MDM_CMD_LOG_ENABLE                      0
 
 /* USER CODE BEGIN EC */
 

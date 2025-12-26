@@ -53,6 +53,11 @@
 #error "low power standby mode not supported"
 #endif /* LOW_POWER_MODE */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+#include "util_mem_perf.h"
+#include "util_task_perf.h"
+#endif /* TEST_AUTOMATION_ENABLE */
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -189,6 +194,11 @@ void main_app(void)
 
   /* USER CODE END main_app_1 */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Start the task performance measurement */
+  task_perf_start();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   /* Wi-Fi variables */
   W6X_WiFi_Scan_Opts_t Opts = {0};
   W6X_WiFi_Connect_Opts_t ConnectOpts = {0};
@@ -227,7 +237,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -235,7 +245,7 @@ void main_app(void)
   ret = W6X_WiFi_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Wi-Fi init is done\n");
@@ -244,7 +254,7 @@ void main_app(void)
   ret = W6X_Net_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Net init is done\n");
@@ -271,15 +281,15 @@ void main_app(void)
   ret = W6X_WiFi_Connect(&ConnectOpts);
   if (ret)
   {
-    LogError("failed to connect, %" PRIi32 "\n", ret);
+    LogError("Failed to connect, %" PRIi32 "\n", ret);
     goto _err;
   }
 
   LogInfo("App connected\n");
   if (W6X_WiFi_Station_GetState(&state, &connectData) != W6X_STATUS_OK)
   {
-    LogInfo("Connected to an Access Point\n");
-    return;
+    LogError("Failed to get Station state\n");
+    goto _err;
   }
 
   LogInfo("Connected to following Access Point :\n");
@@ -293,12 +303,13 @@ void main_app(void)
   ret = W6X_WiFi_SetDTIM(WIFI_DTIM);
   if (ret)
   {
-    LogError("failed to initialize the DTIM, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize the DTIM, %" PRIi32 "\n", ret);
+    goto _err;
   }
 
   /* Execute a ICMP request (ping) on remote url */
   LogInfo("\nPinging Google\n");
-  ret = W6X_Net_Ping((uint8_t *)"www.google.com", 64, ping_count, 1000, &average_ping, &ping_received_response);
+  ret = W6X_Net_Ping((uint8_t *)"www.google.com", 64, ping_count, 1000, 1500, &average_ping, &ping_received_response);
   if (ret == W6X_STATUS_OK)
   {
     if (ping_received_response == 0)
@@ -375,6 +386,18 @@ _err:
   /* USER CODE BEGIN main_app_Err_2 */
 
   /* USER CODE END main_app_Err_2 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Stop the task perf execution */
+  task_perf_stop();
+
+  /* Report the task performance measurement */
+  task_perf_report();
+
+  /* Report the memory performance measurement */
+  mem_perf_report();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   LogInfo("##### Application end\n");
 }
 

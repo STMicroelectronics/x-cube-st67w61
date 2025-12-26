@@ -41,7 +41,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 #define HOST_APP_VERSION_MAIN   1   /*!< [31:24] main version */
-#define HOST_APP_VERSION_SUB1   1   /*!< [23:16] sub1 version */
+#define HOST_APP_VERSION_SUB1   2   /*!< [23:16] sub1 version */
 #define HOST_APP_VERSION_SUB2   0   /*!< [15:8]  sub2 version */
 
 #define HOST_APP_MAIN_SHIFT     24  /*!< main version shift */
@@ -75,13 +75,15 @@ void main_app(void);
 
 /**
   * @brief  Send BLE notification for Wi-Fi scan characteristic
+  * @param  conn_handle: Connection handle
   */
-void BLE_Send_Wifi_Scan_Report_Notification(void);
+void BLE_Send_Wifi_Scan_Report_Notification(uint8_t conn_handle);
 
 /**
   * @brief  Send BLE notification for Wi-Fi monitoring characteristic
+  * @param  conn_handle: Connection handle
   */
-void BLE_Send_Wifi_Monitoring_Notification(void);
+void BLE_Send_Wifi_Monitoring_Notification(uint8_t conn_handle);
 
 /* USER CODE BEGIN EF */
 

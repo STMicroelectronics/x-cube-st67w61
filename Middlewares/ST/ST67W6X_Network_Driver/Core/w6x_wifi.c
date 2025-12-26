@@ -65,6 +65,9 @@ typedef struct
 /** Delay before to declare the connect in failure */
 #define W6X_WIFI_CONNECT_TIMEOUT_MS        10000
 
+/** Delay before to declare the WPS connect in failure */
+#define W6X_WIFI_CONNECT_WPS_TIMEOUT_MS    130000
+
 /** Delay before to declare the IP acquisition in failure */
 #define W6X_WIFI_GOT_IP_TIMEOUT_MS         15000
 
@@ -303,7 +306,7 @@ W6X_Status_t W6X_WiFi_Init(void)
   if (W61_WiFi_SetDTIM(p_DrvObj, 1) == W61_STATUS_OK)
   {
     p_DrvObj->LowPowerCfg.WiFi_DTIM_Factor = 1;
-    p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval = 1;
+    p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval = 0;
   }
 
 _err:
@@ -398,7 +401,9 @@ W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts)
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W61_WiFi_Connect_Opts_t *connect_opts = (W61_WiFi_Connect_Opts_t *)ConnectOpts;
   EventBits_t eventBits;
-  EventBits_t eventMask;
+  EventBits_t eventMask = W6X_WIFI_EVENT_FLAG_CONNECT | W6X_WIFI_EVENT_FLAG_REASON;
+  uint32_t connect_timeout = W6X_WIFI_CONNECT_TIMEOUT_MS;
+  uint32_t ps_mode;
 
   W6X_App_Cb_t *p_cb_handler = W6X_GetCbHandler();
   NULL_ASSERT(p_DrvObj, W6X_WiFi_Uninit_str);
@@ -425,6 +430,14 @@ W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts)
     p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval = 1;
   }
 
+  if (ConnectOpts->WPS)
+  {
+    /* Disable power save during WPS */
+    if ((W6X_GetPowerMode(&ps_mode) != W6X_STATUS_OK) || (W6X_SetPowerMode(0) != W6X_STATUS_OK))
+    {
+      return ret;
+    }
+  }
   /* Start the Wi-Fi connection to the Access Point */
   ret = TranslateErrorStatus(W61_WiFi_Connect(p_DrvObj, connect_opts));
   if (ret == W6X_STATUS_OK)
@@ -443,17 +456,12 @@ W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts)
     /* If WPS, don't check the reason due to PSK Failure unexpected event. No impact on connection */
     if (ConnectOpts->WPS)
     {
-      WIFI_LOG_DEBUG("WPS Enabled\n");
-      eventMask = W6X_WIFI_EVENT_FLAG_CONNECT;
+      WIFI_LOG_DEBUG("WPS enabled, listening for 2 minutes ...\n");
+      connect_timeout = W6X_WIFI_CONNECT_WPS_TIMEOUT_MS;
     }
-    else
-    {
-      eventMask = W6X_WIFI_EVENT_FLAG_CONNECT | W6X_WIFI_EVENT_FLAG_REASON;
-    }
-
     /* Wait for the connection to be done */
     eventBits = xEventGroupWaitBits(p_wifi_ctx->Wifi_event, eventMask, pdTRUE,
-                                    pdFALSE, pdMS_TO_TICKS(W6X_WIFI_CONNECT_TIMEOUT_MS));
+                                    pdFALSE, pdMS_TO_TICKS(connect_timeout));
 
     p_wifi_ctx->Expected_event_connect = 0; /* Disable the expected event for connection */
 
@@ -475,12 +483,6 @@ W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts)
       WIFI_LOG_ERROR("Wi-Fi connect timeouted\n");
       /* Reset the station state */
       p_wifi_ctx->StaState = W6X_WIFI_STATE_STA_DISCONNECTED;
-      if (ConnectOpts->WPS)
-      {
-        /* Reset the WPS state by calling disconnect even if not connected */
-        (void)W61_WiFi_Disconnect(p_DrvObj, 0);
-        WIFI_LOG_DEBUG("WPS Disabled\n");
-      }
       ret = W6X_STATUS_ERROR;
       goto _err;
     }
@@ -510,6 +512,15 @@ W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts)
 #endif /* ST67_ARCH */
   }
 _err:
+
+  if (ConnectOpts->WPS)
+  {
+    /* Reset the power save mode*/
+    if (W6X_SetPowerMode(ps_mode) != W6X_STATUS_OK)
+    {
+      WIFI_LOG_WARN("Failed to set back the power save mode after WPS session\n");
+    }
+  }
 
   return ret;
 }
@@ -613,6 +624,8 @@ W6X_Status_t W6X_WiFi_Station_GetState(W6X_WiFi_StaStateType_e *State, W6X_WiFi_
 {
   W6X_Status_t ret;
   int32_t rssi = 0;
+  W61_WiFi_SecurityType_e security = W61_WIFI_SECURITY_UNKNOWN;
+  W61_WiFi_Protocol_e protocol = W61_WIFI_PROTOCOL_UNKNOWN;
   NULL_ASSERT(p_DrvObj, W6X_WiFi_Uninit_str);
   NULL_ASSERT(p_wifi_ctx, W6X_WiFi_Ctx_Null_str);
 
@@ -622,7 +635,7 @@ W6X_Status_t W6X_WiFi_Station_GetState(W6X_WiFi_StaStateType_e *State, W6X_WiFi_
       ((p_wifi_ctx->StaState == W6X_WIFI_STATE_STA_GOT_IP) || (p_wifi_ctx->StaState == W6X_WIFI_STATE_STA_CONNECTED)))
   {
     /* Get the connection information if the Wi-Fi station is connected */
-    ret = TranslateErrorStatus(W61_WiFi_GetConnectInfo(p_DrvObj, &rssi));
+    ret = TranslateErrorStatus(W61_WiFi_GetConnectInfo(p_DrvObj, &rssi, &security, &protocol));
     if (ret == W6X_STATUS_OK)
     {
       memcpy(ConnectData->SSID, p_DrvObj->WifiCtx.SSID, W6X_WIFI_MAX_SSID_SIZE + 1);
@@ -630,6 +643,8 @@ W6X_Status_t W6X_WiFi_Station_GetState(W6X_WiFi_StaStateType_e *State, W6X_WiFi_
       ConnectData->Rssi = rssi;
       ConnectData->Channel = p_DrvObj->WifiCtx.STASettings.Channel;
       ConnectData->Reconnection_interval = p_DrvObj->WifiCtx.STASettings.ReconnInterval;
+      ConnectData->Security = (W6X_WiFi_SecurityType_e)security;
+      ConnectData->Protocol = (W6X_WiFi_Protocol_e)protocol;
     }
     else
     {
@@ -651,7 +666,6 @@ W6X_Status_t W6X_WiFi_Station_GetMACAddress(uint8_t Mac[6])
   return TranslateErrorStatus(W61_WiFi_Station_GetMACAddress(p_DrvObj, Mac));
 }
 
-#if (ST67_ARCH == W6X_ARCH_T01)
 /* ============================================================
  * =============== Soft-AP specific APIs ======================
  * ============================================================ */
@@ -679,6 +693,13 @@ W6X_Status_t W6X_WiFi_AP_Start(W6X_WiFi_ApConfig_t *ap_config)
       if (W6X_WiFi_AP_Stop() != W6X_STATUS_OK)
       {
         WIFI_LOG_WARN("Failed to switch to STA mode only, default soft-AP still started\n");
+      }
+    }
+    else
+    {
+      if ((p_DrvObj->NetCtx.Supported == 0) && (p_DrvObj->Callbacks.Netif_cb.link_ap_up_fn != NULL))
+      {
+        p_DrvObj->Callbacks.Netif_cb.link_ap_up_fn();
       }
     }
   }
@@ -715,6 +736,10 @@ W6X_Status_t W6X_WiFi_AP_Stop(void)
 
   /* Deactivate the Soft-AP */
   ret = TranslateErrorStatus(W61_WiFi_AP_Stop(p_DrvObj, Reconnect));
+  if ((p_DrvObj->NetCtx.Supported == 0) && (p_DrvObj->Callbacks.Netif_cb.link_ap_down_fn != NULL))
+  {
+    p_DrvObj->Callbacks.Netif_cb.link_ap_down_fn();
+  }
 
 _err:
   return ret;
@@ -791,16 +816,12 @@ W6X_Status_t W6X_WiFi_AP_GetMACAddress(uint8_t Mac[6])
  * ============================================================ */
 W6X_Status_t W6X_WiFi_SetDTIM(uint32_t dtim_factor)
 {
-  uint32_t dtim_ap = 1;
+  uint32_t dtim_ap = 0;
+  uint32_t current_dtim = dtim_factor;
   uint32_t ps_mode = 0;
-  int32_t try = 5;
+  int32_t try = 30; /* Try up to 3 seconds to get the DTIM from the Soft-AP */
   W61_Status_t ret;
   NULL_ASSERT(p_DrvObj, W6X_WiFi_Uninit_str);
-
-  if (dtim_factor == 0)
-  {
-    return W6X_STATUS_ERROR;
-  }
 
   if ((p_DrvObj->WifiCtx.StaState != W61_WIFI_STATE_STA_CONNECTED) &&
       (p_DrvObj->WifiCtx.StaState != W61_WIFI_STATE_STA_GOT_IP))
@@ -814,34 +835,29 @@ W6X_Status_t W6X_WiFi_SetDTIM(uint32_t dtim_factor)
     return W6X_STATUS_ERROR;
   }
 
-  /* Get the current DTIM period for Soft-AP */
-  do
+  if (W61_SdkMinVersion(p_DrvObj, 2, 0, 97) != W61_STATUS_OK)
   {
-    vTaskDelay(pdMS_TO_TICKS(100));
-    if (W61_WiFi_GetDTIM_AP(p_DrvObj, &dtim_ap) != W61_STATUS_OK)
+    /* Get the current DTIM period for Soft-AP */
+    do
+    {
+      vTaskDelay(pdMS_TO_TICKS(100));
+      (void)W61_WiFi_GetDTIM_AP(p_DrvObj, &dtim_ap);
+    } while ((try--) && (dtim_ap == 0));
+
+    if (dtim_ap == 0)
     {
       return W6X_STATUS_ERROR;
     }
-  } while ((try--) && (dtim_ap == 0));
 
-  if (dtim_ap == 0)
-  {
-    return W6X_STATUS_ERROR;
+    current_dtim = dtim_factor * dtim_ap;
   }
 
-  /* Verify the DTIM to configure does not exceed 25 */
-  if (dtim_factor * dtim_ap > 25)
-  {
-    WIFI_LOG_ERROR("DTIM value exceeds maximum value : 25\n");
-    return W6X_STATUS_ERROR;
-  }
-
-  /* Set the DTIM */
-  ret = W61_WiFi_SetDTIM(p_DrvObj, dtim_factor * dtim_ap);
+  ret = W61_WiFi_SetDTIM(p_DrvObj, current_dtim);
   if (ret == W61_STATUS_OK)
   {
     p_DrvObj->LowPowerCfg.WiFi_DTIM_Factor = dtim_factor;
-    p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval = dtim_factor * dtim_ap;
+    /* Below code is only valid for SDK 2.0.89 */
+    p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval = current_dtim;
     if (ps_mode == 0)
     {
       WIFI_LOG_WARN("Device is not in power save mode, DTIM configuration"
@@ -855,9 +871,47 @@ W6X_Status_t W6X_WiFi_GetDTIM(uint32_t *dtim_factor, uint32_t *dtim_interval)
 {
   NULL_ASSERT(p_DrvObj, W6X_WiFi_Uninit_str);
 
-  /* Get the DTIM */
   *dtim_factor = p_DrvObj->LowPowerCfg.WiFi_DTIM_Factor;
-  *dtim_interval = p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval;
+
+  if ((p_DrvObj->WifiCtx.StaState != W61_WIFI_STATE_STA_CONNECTED) &&
+      (p_DrvObj->WifiCtx.StaState != W61_WIFI_STATE_STA_GOT_IP))
+  {
+    *dtim_interval = 0;
+    return W6X_STATUS_OK;
+  }
+
+  if (W61_SdkMinVersion(p_DrvObj, 2, 0, 97) == W61_STATUS_OK)
+  {
+    uint32_t dtim_ap = 0;
+    int32_t try = 30; /* Try up to 3 seconds to get the DTIM from the Soft-AP */
+    W61_Status_t ret;
+
+    do
+    {
+      vTaskDelay(pdMS_TO_TICKS(100));
+      ret = W61_WiFi_GetDTIM_AP(p_DrvObj, &dtim_ap);
+    } while ((try--) && (ret == W61_STATUS_ERROR));
+
+    if (dtim_ap == 0)
+    {
+      return W6X_STATUS_ERROR;
+    }
+
+    /* In the case the dtim_factor is null, the device will wake up every beacon */
+    if (*dtim_factor == 0)
+    {
+      *dtim_interval = 1;
+    }
+    else
+    {
+      *dtim_interval = dtim_ap * (*dtim_factor);
+    }
+  }
+  else
+  {
+    *dtim_interval = p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval;
+  }
+
   return W6X_STATUS_OK;
 }
 
@@ -865,6 +919,12 @@ W6X_Status_t W6X_WiFi_GetDTIM_AP(uint32_t *dtim)
 {
   NULL_ASSERT(p_DrvObj, W6X_WiFi_Uninit_str);
 
+  if ((p_DrvObj->WifiCtx.StaState != W61_WIFI_STATE_STA_CONNECTED) &&
+      (p_DrvObj->WifiCtx.StaState != W61_WIFI_STATE_STA_GOT_IP))
+  {
+    *dtim = 0;
+    return W6X_STATUS_ERROR;
+  }
   /* Get the DTIM */
   return TranslateErrorStatus(W61_WiFi_GetDTIM_AP(p_DrvObj, dtim));
 }
@@ -941,7 +1001,6 @@ W6X_Status_t W6X_WiFi_TWT_Teardown(W6X_WiFi_TWT_Teardown_Params_t *twt_params)
   /* Teardown TWT */
   return TranslateErrorStatus(W61_WiFi_TWT_Teardown(p_DrvObj, (W61_WiFi_TWT_Teardown_Params_t *)twt_params));
 }
-#endif /* ST67_ARCH */
 
 W6X_Status_t W6X_WiFi_GetAntennaDiversity(W6X_WiFi_AntennaInfo_t *antenna_info)
 {
@@ -968,18 +1027,6 @@ W6X_Status_t W6X_WiFi_SetAntennaDiversity(W6X_WiFi_AntennaMode_e mode)
 {
   W6X_Status_t ret;
   NULL_ASSERT(p_DrvObj, W6X_WiFi_Uninit_str);
-
-  if (p_DrvObj->ModuleInfo.ModuleID.ModuleID == W61_MODULE_ID_B)
-  {
-    SYS_LOG_ERROR("Antenna configuration not supported by the module\n");
-    return W6X_STATUS_ERROR;
-  }
-
-  if (mode == W6X_WIFI_ANTENNA_DYNAMIC)
-  {
-    SYS_LOG_ERROR("Dynamic antenna mode not supported\n");
-    return W6X_STATUS_ERROR;
-  }
 
   /* Set the antenna configuration */
   ret = TranslateErrorStatus(W61_WiFi_SetAntennaEnable(p_DrvObj, (W61_WiFi_AntennaMode_e)mode));
@@ -1125,6 +1172,8 @@ static void W6X_WiFi_Station_cb(W61_event_id_t event_id, void *event_args)
       /* Set the station state */
       p_wifi_ctx->StaState = W6X_WIFI_STATE_STA_DISCONNECTED;
       p_DrvObj->WifiCtx.StaState = W61_WIFI_STATE_STA_DISCONNECTED;
+      p_DrvObj->LowPowerCfg.WiFi_DTIM_Interval = 0;
+      p_DrvObj->LowPowerCfg.WiFi_DTIM_Factor = 1;
 
       if (p_wifi_ctx->Expected_event_disconnect == 1)
       {
@@ -1189,8 +1238,8 @@ static void W6X_WiFi_AP_cb(W61_event_id_t event_id, void *event_args)
 
     case W61_WIFI_EVT_STA_DISCONNECTED_ID:
       if ((p_wifi_ctx->evt_sta_disconnect.Expected_event_sta_disconnect == 1) &&
-          (strncmp((char *)p_wifi_ctx->evt_sta_disconnect.MAC,
-                   (char *)((W61_WiFi_CbParamData_t *)event_args)->MAC, 6) == 0))
+          (memcmp(p_wifi_ctx->evt_sta_disconnect.MAC,
+                  ((W61_WiFi_CbParamData_t *)event_args)->MAC, 6) == 0))
       {
         /* If the disconnected event was expected, set the event bit to release the wait */
         xEventGroupSetBits(p_wifi_ctx->Wifi_event, W6X_WIFI_EVENT_FLAG_STA_DISCONNECT);

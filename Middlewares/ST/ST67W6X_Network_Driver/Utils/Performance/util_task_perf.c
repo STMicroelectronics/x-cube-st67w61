@@ -23,17 +23,26 @@
 #include <string.h>
 
 #include "util_task_perf.h"
-#include "w6x_config.h"
 #include "shell.h"
 #include "logging.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
 /* Private defines -----------------------------------------------------------*/
-/** @defgroup ST67W6X_Utilities_Performance_Task_Perf_Constants ST67W6X Utility Performance Task Perf Constants
-  * @ingroup  ST67W6X_Utilities_Performance_Task_Perf
+/** @addtogroup ST67W6X_Utilities_Performance_Task_Perf_Constants
   * @{
   */
+
+#if (TASK_PERF_ENABLE == 1)
+/*
+  TASK_PERF_ENABLE requires FreeRTOS function vTaskGetInfo
+  which is only enabled if configUSE_TRACE_FACILITY == 1.
+  Set #define configUSE_TRACE_FACILITY 1 to fix this error. (in FreeRTOSConfig.h)
+*/
+#if (configUSE_TRACE_FACILITY == 0)
+#error "Definition configUSE_TRACE_FACILITY must equal 1 to enable TASK_PERF_ENABLE."
+#endif /* configUSE_TRACE_FACILITY */
+#endif /* TASK_PERF_ENABLE */
 
 #ifndef PERF_MAXTHREAD
 /** Maximum number of thread to monitor */

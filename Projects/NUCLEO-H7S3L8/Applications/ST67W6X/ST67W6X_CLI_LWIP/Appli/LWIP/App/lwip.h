@@ -34,6 +34,7 @@ extern "C" {
 #include "lwip/timeouts.h"
 #include "lwip/netif.h"
 #include "lwip/tcpip.h"
+#include "w6x_api.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -81,6 +82,13 @@ int32_t print_ipv4_addresses(struct netif *netif);
   * @return Operation status
   */
 int32_t print_ipv6_addresses(struct netif *netif);
+
+/**
+  * @brief  Get the list of connected stations in AP mode.
+  * @param  ConnectedSta: Pointer to store the list of connected stations.
+  * @return Operation status
+  */
+int32_t aplist_sta(W6X_WiFi_Connected_Sta_t *ConnectedSta);
 
 /* USER CODE BEGIN EF */
 

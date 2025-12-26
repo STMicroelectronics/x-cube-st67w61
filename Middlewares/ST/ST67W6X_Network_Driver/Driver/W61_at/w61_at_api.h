@@ -248,6 +248,18 @@ typedef enum
 #define W61_NET_MAX_CONNECTIONS                 5     /*!< Maximum number of Network connections */
 
 /**
+  * @brief  DNS resolved type
+  */
+typedef enum
+{
+  W61_NET_DNS_IPV4_IPV6 = 0x01,                /*!< Try to resolve IPv4 first, try IPv6 if IPv4 fails only */
+  W61_NET_DNS_IPV4 = 0x02,                     /*!< Resolve IPv4 only */
+#if (W61_NET_IPV6_ENABLE == 1)
+  W61_NET_DNS_IPV6 = 0x03,                     /*!< Resolve IPv6 only */
+#endif /* W61_NET_IPV6_ENABLE */
+} W61_Net_Dns_ResolveType_e;
+
+/**
   * @brief  Net protocol enumeration
   */
 typedef enum
@@ -256,7 +268,12 @@ typedef enum
   W61_NET_UDP_CONNECTION        = 1,            /*!< UDP connection */
   W61_NET_UDP_LITE_CONNECTION   = 2,            /*!< UDP Lite connection */
   W61_NET_TCP_SSL_CONNECTION    = 3,            /*!< TCP SSL connection */
-  W61_NET_UNKNOWN_CONNECTION    = 4,            /*!< Unknown connection */
+#if (W61_NET_IPV6_ENABLE == 1)
+  W61_NET_TCPV6_CONNECTION      = 4,            /*!< IPv6 TCP connection */
+  W61_NET_UDPV6_CONNECTION      = 5,            /*!< IPv6 UDP connection */
+  W61_NET_TCPV6_SSL_CONNECTION  = 6,            /*!< IPv6 TCP SSL connection */
+#endif /* W61_NET_IPV6_ENABLE */
+  W61_NET_UNKNOWN_CONNECTION    = 7,            /*!< Unknown connection */
 } W61_Net_Protocol_e;
 
 /**
@@ -332,8 +349,10 @@ typedef enum
   */
 typedef enum
 {
+  W61_BLE_MODE_DEINIT = 0,
   W61_BLE_MODE_CLIENT = 1,
-  W61_BLE_MODE_SERVER = 2
+  W61_BLE_MODE_SERVER = 2,
+  W61_BLE_MODE_DUAL = 3
 } W61_Ble_Mode_e;
 
 /**
@@ -773,7 +792,7 @@ typedef struct
 {
   uint32_t socket_id;                     /*!< Socket ID */
   uint32_t available_data_length;         /*!< Available data length */
-  char remote_ip[16];                     /*!< Remote IP address */
+  char remote_ip[46];                     /*!< Remote IP address */
   uint16_t remote_port;                   /*!< Remote port */
 } W61_Net_CbParamData_t;
 
@@ -786,7 +805,7 @@ typedef struct
   uint8_t Number;                         /*!< Connection number */
   uint16_t RemotePort;                    /*!< Remote port */
   uint16_t LocalPort;                     /*!< Local port */
-  char RemoteIP[16];                      /*!< Remote IP address */
+  char RemoteIP[46];                      /*!< Remote IP address */
   uint8_t TeType;                         /*!< Connection type (0: runs as client, 1: runs as server) */
   char *Name;                             /*!< Connection name */
   uint16_t KeepAlive;                     /*!< Keep Alive */
@@ -822,6 +841,43 @@ typedef struct
 } W61_Net_Time_t;
 
 /**
+  * @brief IP address structure for W61 layer
+  * */
+
+/**
+  * @brief  IPv4 local address structure aligned version of ip4_addr_t
+  */
+struct W61_Net_ip4_addr
+{
+  uint32_t addr;              /*!< IPv4 address */
+};
+
+/**
+  * @brief  IPv4 address structure
+  */
+typedef struct W61_Net_ip4_addr W61_Net_Ip4_Addr_t;
+
+/**
+  * @brief  IPv6 address structure
+  */
+typedef struct W61_Net_ip6_addr
+{
+  uint32_t addr[4];           /*!< IPv6 address */
+} W61_Net_Ip6_Addr_t;
+
+/**
+  * @brief  IP address structure
+  */
+typedef struct
+{
+  union
+  {
+    W61_Net_Ip6_Addr_t ip6;           /*!< IPv6 address */
+    W61_Net_Ip4_Addr_t ip4;           /*!< IPv4 address */
+  } u_addr;                           /*!< IP address union */
+  uint8_t type;                       /*!< IP address type */
+} W61_Net_Ip_addr_t;
+/**
   * @brief  Net internal context
   */
 typedef struct
@@ -836,6 +892,8 @@ typedef struct
     uint8_t DNS1[4];                      /*!< IP Address of First DNS */
     uint8_t DNS2[4];                      /*!< IP Address of Second DNS */
     uint8_t DNS3[4];                      /*!< IP Address of Third DNS */
+    uint32_t IP6_LinkLocal[4];            /*!< IPv6 linklocal (binary, network order) */
+    uint32_t IP6_Global[4];               /*!< IPv6 global/unicast (binary, network order) */
   } Net_sta_info;                         /*!< Network Wi-Fi station information */
   struct
   {
@@ -931,6 +989,7 @@ typedef struct
   int16_t RSSI;                                         /*!< Signal strength of BLE connection */
   uint8_t IsConnected;                                  /*!< Connection status */
   uint8_t conn_handle;                                  /*!< Connection handle */
+  uint8_t conn_role;                                    /*!< Connection role: 0: connected as a master, 1: connected as a slave */
   uint8_t DeviceName[W61_BLE_DEVICE_NAME_SIZE];         /*!< BLE device name */
   uint8_t ManufacturerData[W61_BLE_MANUF_DATA_SIZE];    /*!< Device manufacturer data */
   uint8_t BDAddr[W61_BLE_BD_ADDR_SIZE];                 /*!< BD address of BLE Device */
@@ -973,6 +1032,7 @@ typedef struct
   uint8_t DeviceConnectedNb;                            /*!< Connection status */
   W61_Ble_Device_t RemoteDevice[W61_BLE_MAX_CONN_NBR];  /*!< BLE remote device in network */
   uint8_t BLE_Mask[4];                                  /*!< BLE mask */
+  W61_Ble_Mode_e Mode;                                  /*!< BLE mode */
 } W61_Ble_Network_t;
 
 /**
@@ -1072,6 +1132,8 @@ typedef struct
 {
   W61_Net_if_link_t link_sta_up_fn;     /*!< Function to handle link up events */
   W61_Net_if_link_t link_sta_down_fn;   /*!< Function to handle link down events */
+  W61_Net_if_link_t link_ap_up_fn;      /*!< Function to handle link up events */
+  W61_Net_if_link_t link_ap_down_fn;    /*!< Function to handle link down events */
 } W61_Net_if_cb_t;
 
 /** @} */
@@ -1156,6 +1218,9 @@ typedef struct
 
 /* Exported variables --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
+
+/** Default timeout (ms) for module readiness */
+#define W61_READY_DEFAULT_TIMEOUT_MS  (4000U)
 
 /* ===================================================================== */
 /** @defgroup ST67W61_AT_System_Macros ST67W61 AT Driver System Macros
@@ -1415,6 +1480,16 @@ W61_Status_t W61_Init(W61_Object_t *Obj);
 W61_Status_t W61_DeInit(W61_Object_t *Obj);
 
 /**
+  * @brief  Wait for the WIFI module interface to be ready
+  * @param  Obj: pointer to module handle
+  * @param  time_ms: timeout in milliseconds
+  * @return Operation status
+  * @retval W61_STATUS_OK Ready signal received
+  * @retval W61_STATUS_ERROR Timeout or invalid parameters
+  */
+W61_Status_t W61_WaitForReady(W61_Object_t *Obj, uint32_t time_ms);
+
+/**
   * @brief  Reset To factory defaults
   * @param  Obj: pointer to module handle
   * @return Operation status
@@ -1541,28 +1616,28 @@ W61_Status_t W61_FS_GetSizeFile(W61_Object_t *Obj, char *filename, uint32_t *siz
 W61_Status_t W61_FS_ListFiles(W61_Object_t *Obj, W61_FS_FilesList_t *files_list);
 
 /**
-  * @brief  Send AT command to start the OTA process
+  * @brief  Send AT command to start the FWU process
   * @param  Obj: pointer to module handle
-  * @param  enable: 0 Terminate the OTA transmission. 1 Start the OTA transmission
+  * @param  enable: 0 Terminate the FWU transmission. 1 Start the FWU transmission
   * @return Operation status
   */
-W61_Status_t W61_OTA_starts(W61_Object_t *Obj, uint32_t enable);
+W61_Status_t W61_FWU_starts(W61_Object_t *Obj, uint32_t enable);
 
 /**
-  * @brief  Send AT command to stop OTA process and reboot the module using the new firmware
+  * @brief  Send AT command to stop FWU process and reboot the module using the new firmware
   * @param  Obj: pointer to module handle
   * @return Operation status
   */
-W61_Status_t W61_OTA_Finish(W61_Object_t *Obj);
+W61_Status_t W61_FWU_Finish(W61_Object_t *Obj);
 
 /**
-  * @brief  Send AT command to send OTA data buf of size len
+  * @brief  Send AT command to send FWU data buf of size len
   * @param  Obj: pointer to module handle
-  * @param  buff: pointer to the OTA data to send
-  * @param  len: length of the OTA data to send
+  * @param  buff: pointer to the FWU data to send
+  * @param  len: length of the FWU data to send
   * @return Operation status
   */
-W61_Status_t W61_OTA_Send(W61_Object_t *Obj, uint8_t *buff, uint32_t len);
+W61_Status_t W61_FWU_Send(W61_Object_t *Obj, uint8_t *buff, uint32_t len);
 
 /**
   * @brief  Get the module information
@@ -1630,6 +1705,16 @@ W61_Status_t W61_ExeATCommand(W61_Object_t *Obj, char *at_cmd);
   */
 W61_Status_t W61_GetNetMode(W61_Object_t *Obj, int32_t *Netmode);
 
+/**
+  * @brief  Check if the SDK version is at least the specified version
+  * @param  Obj: pointer to module handle
+  * @param  major: major version number
+  * @param  sub1: first sub-version number
+  * @param  sub2: second sub-version number
+  * @return Operation status
+  */
+W61_Status_t W61_SdkMinVersion(W61_Object_t *Obj, uint32_t major, uint32_t sub1, uint32_t sub2);
+
 /** @} */
 
 /* ===================================================================== */
@@ -1694,9 +1779,12 @@ W61_Status_t W61_WiFi_Connect(W61_Object_t *Obj, W61_WiFi_Connect_Opts_t *Connec
   * @brief  Get the information of the Access Point where the station is connected
   * @param  Obj: pointer to module handle
   * @param  Rssi: Pointer to RSSI value
+  * @param  Security: Pointer to security type
+  * @param  Protocol: Pointer to protocol type
   * @return Operation status
   */
-W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi);
+W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi, W61_WiFi_SecurityType_e *Security,
+                                     W61_WiFi_Protocol_e *Protocol);
 
 /**
   * @brief  Disconnect from a network
@@ -1729,16 +1817,6 @@ W61_Status_t W61_WiFi_GetAutoConnect(W61_Object_t *Obj, uint32_t *OnOff);
   * @return Operation status
   */
 W61_Status_t W61_WiFi_Station_GetMACAddress(W61_Object_t *Obj, uint8_t *Mac);
-
-/**
-  * @brief  Get the State of the station,
-  *         if connected and/or got ip, return also the ssid of the AP.
-  * @param  Obj: pointer to module handle
-  * @param  State: pointer to the state enum
-  * @param  Ssid: pointer to the ssid string
-  * @return Operation status
-  */
-W61_Status_t W61_WiFi_Station_GetState(W61_Object_t *Obj, W61_WiFi_StaStateType_e *State, char *Ssid);
 
 /**
   * @brief  Get the country code information
@@ -2035,20 +2113,32 @@ W61_Status_t W61_Net_SetDnsAddress(W61_Object_t *Obj, uint8_t Dns1_addr[4], uint
   * @param  length: length of the remote host address
   * @param  count: number of ping requests to send
   * @param  interval: time interval between each ping request : [100, 3500] (in ms)
+  * @param  timeout: maximum time to wait for a ping response : [100, 3500] (in ms)
   * @param  ping_result: pointer to the ping result structure
   * @return Operation status
   */
 W61_Status_t W61_Net_Ping(W61_Object_t *Obj, char *location, uint16_t length, uint16_t count, uint16_t interval,
-                          W61_Net_PingResult_t *ping_result);
+                          uint16_t timeout, W61_Net_PingResult_t *ping_result);
 
 /**
   * @brief  DNS Lookup to get IP address
   * @param  Obj: pointer to module handle
-  * @param  url: Domain Name
-  * @param  ipaddress: IP address
+  * @param  url: Domain Name to be resolved
+  * @param  ip_address: IP address structure with the result address
+  * @param  resolve_type: Address type to resolve.
+  *         When resolve succeed, it is update with the effective address type obtained.
   * @return Operation status
   */
-W61_Status_t W61_Net_ResolveHostAddress(W61_Object_t *Obj, const char *url, uint8_t *ipaddress);
+W61_Status_t W61_Net_ResolveHostAddress(W61_Object_t *Obj, const char *url, W61_Net_Ip_addr_t *ip_address,
+                                        W61_Net_Dns_ResolveType_e *resolve_type);
+
+/**
+  * @brief  Convert an IPv6 address string to four host-order 32-bit words
+  * @param  src: textual IPv6 address (compressed or full)
+  * @param  dst: uint32_t[4] destination array
+  * @return 1 success, 0 failure.
+  */
+int32_t W61_Net_Inet6_aton(const char *src, uint32_t dst[4]);
 
 /**
   * @brief  Configure and Start a Client connection
@@ -2456,7 +2546,7 @@ W61_Status_t W61_MQTT_Publish(W61_Object_t *Obj, uint8_t *Topic, uint8_t *Messag
 /**
   * @brief  Initialize BLE device as Client/Server or de-initialize
   * @param  Obj: pointer to module handle
-  * @param  mode: BLE mode to initialize (1: Client, 2: Server, 0: De-init)
+  * @param  mode: BLE mode to initialize (1: Client, 2: Server, 3: Dual, 0: De-init)
   * @param  p_recv_data: pointer to received data buffer
   * @param  req_len: length of the received data buffer
   * @return Operation status
@@ -2776,6 +2866,7 @@ W61_Status_t W61_Ble_RemoteCharDiscovery(W61_Object_t *Obj, uint8_t conn_handle,
 /**
   * @brief  Notify the Characteristic Value from the Server to a Client
   * @param  Obj: pointer to module handle
+  * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to notify
   * @param  char_index: index of the characteristic to notify
   * @param  pdata: pointer to the indication data
@@ -2784,12 +2875,14 @@ W61_Status_t W61_Ble_RemoteCharDiscovery(W61_Object_t *Obj, uint8_t conn_handle,
   * @param  Timeout: timeout in ms
   * @return Operation status
   */
-W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t service_index, uint8_t char_index,
-                                            uint8_t *pdata, uint32_t req_len, uint32_t *SentLen, uint32_t Timeout);
+W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t conn_handle, uint8_t service_index,
+                                            uint8_t char_index, uint8_t *pdata, uint32_t req_len, uint32_t *SentLen,
+                                            uint32_t Timeout);
 
 /**
   * @brief  Indicate the Characteristic Value from the Server to a Client
   * @param  Obj: pointer to module handle
+  * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to indicate
   * @param  char_index: index of the characteristic to indicate
   * @param  pdata: pointer to the notification data
@@ -2798,8 +2891,9 @@ W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t service_i
   * @param  Timeout: timeout in ms
   * @return Operation status
   */
-W61_Status_t W61_Ble_ServerSendIndication(W61_Object_t *Obj, uint8_t service_index, uint8_t char_index,
-                                          uint8_t *pdata, uint32_t req_len, uint32_t *SentLen, uint32_t Timeout);
+W61_Status_t W61_Ble_ServerSendIndication(W61_Object_t *Obj, uint8_t conn_handle, uint8_t service_index,
+                                          uint8_t char_index, uint8_t *pdata, uint32_t req_len, uint32_t *SentLen,
+                                          uint32_t Timeout);
 
 /**
   * @brief  Set the data when Client read characteristic from the Server

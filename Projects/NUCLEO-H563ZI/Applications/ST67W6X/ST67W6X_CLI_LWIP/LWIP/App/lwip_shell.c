@@ -45,6 +45,7 @@
 #include "common_parser.h" /* Common Parser functions */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "dhcp_server.h"
 
 /* Private function prototypes -----------------------------------------------*/
 /**
@@ -75,7 +76,7 @@ int32_t lwip_shell_sta_ip6(int32_t argc, char **argv);
   * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
   * @retval ::SHELL_STATUS_ERROR otherwise
   */
-int32_t W6X_Shell_Net_Hostname(int32_t argc, char **argv);
+int32_t lwip_shell_Hostname(int32_t argc, char **argv);
 
 /**
   * @brief  Wi-Fi resolve host address shell function
@@ -85,7 +86,15 @@ int32_t W6X_Shell_Net_Hostname(int32_t argc, char **argv);
   * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
   * @retval ::SHELL_STATUS_ERROR otherwise
   */
-int32_t W6X_Shell_Net_ResolveHostAddress(int32_t argc, char **argv);
+int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv);
+
+/**
+  * @brief  Wi-Fi Get list of station connected on Soft-AP shell function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval ::SHELL_STATUS_OK on success
+  */
+static int32_t lwip_shell_aplist_sta(int32_t argc, char **argv);
 
 /**
   * @brief  DNS lookup callback function for lwIP
@@ -111,6 +120,13 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
       SHELL_E("Get STA IP error\n");
       return SHELL_STATUS_ERROR;
     }
+#if (LWIP_IPV6 == 1)
+    if (print_ipv6_addresses(netif) != 0)
+    {
+      SHELL_E("Get STA IP error\n");
+      return SHELL_STATUS_ERROR;
+    }
+#endif /* LWIP_IPV6 */
   }
   else if (argc > 4)
   {
@@ -119,10 +135,18 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
   else
   {
     ip4_addr_t ipaddr;
+    uint8_t ip_addr[4] = {0};
 
     /* Set the STA IP configuration in IP, Gateway, Netmask fixed order. Gateway and Netmask are optional */
     if (argc > 1)
     {
+      Parser_StrToIP(argv[1], ip_addr);
+      if (Parser_CheckValidAddress(ip_addr, 4) != 0)
+      {
+        SHELL_E("IP address invalid\n");
+        return SHELL_STATUS_ERROR;
+      }
+
       if (lwip_inet_pton(AF_INET, argv[1], &ipaddr) != 1)
       {
         SHELL_E("IP address invalid\n");
@@ -133,6 +157,13 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
 
     if (argc > 2)
     {
+      Parser_StrToIP(argv[2], ip_addr);
+      if (Parser_CheckValidAddress(ip_addr, 4) != 0)
+      {
+        SHELL_E("Gateway IP address invalid\n");
+        return SHELL_STATUS_ERROR;
+      }
+
       if (lwip_inet_pton(AF_INET, argv[2], &ipaddr) != 1)
       {
         SHELL_E("Gateway IP address invalid\n");
@@ -143,6 +174,13 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
 
     if (argc > 3)
     {
+      Parser_StrToIP(argv[3], ip_addr);
+      if (Parser_CheckValidAddress(ip_addr, 4) != 0)
+      {
+        SHELL_E("Netmask IP address invalid\n");
+        return SHELL_STATUS_ERROR;
+      }
+
       if (lwip_inet_pton(AF_INET, argv[3], &ipaddr) != 1)
       {
         SHELL_E("Netmask IP address invalid\n");
@@ -164,39 +202,7 @@ SHELL_CMD_EXPORT_ALIAS(lwip_shell_sta_ip, net_sta_ip,
                        net_sta_ip [ IP addr ] [ Gateway addr ] [ Netmask addr ].
                        Display or set the IPv4 Address);
 
-int32_t lwip_shell_sta_ip6(int32_t argc, char **argv)
-{
-#if (LWIP_IPV6 == 1)
-  struct netif *netif = netif_get_interface(NETIF_STA);
-  if (netif == NULL)
-  {
-    return SHELL_STATUS_ERROR;
-  }
-
-  if (argc == 1)
-  {
-    if (print_ipv6_addresses(netif) != 0)
-    {
-      SHELL_E("Get STA IP error\n");
-      return SHELL_STATUS_ERROR;
-    }
-  }
-  else
-  {
-    return SHELL_STATUS_UNKNOWN_ARGS;
-  }
-
-  return SHELL_STATUS_OK;
-#else
-  SHELL_E("IPv6 not supported\n");
-  return SHELL_STATUS_ERROR;
-#endif /* LWIP_IPV6 */
-}
-
-/** Shell command to get the STA IPv6 configuration */
-SHELL_CMD_EXPORT_ALIAS(lwip_shell_sta_ip6, net_sta_ip6, net_sta_ip6. Display the IPv6 Addresses);
-
-int32_t W6X_Shell_Net_Hostname(int32_t argc, char **argv)
+int32_t lwip_shell_Hostname(int32_t argc, char **argv)
 {
   struct netif *netif = netif_get_interface(NETIF_STA);
   static char hostname[34] = {0};
@@ -244,7 +250,7 @@ int32_t W6X_Shell_Net_Hostname(int32_t argc, char **argv)
 
 #if (SHELL_CMD_LEVEL >= 1)
 /** Shell command to get/set the hostname */
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_Hostname, net_hostname, net_hostname [ hostname ]);
+SHELL_CMD_EXPORT_ALIAS(lwip_shell_Hostname, net_hostname, net_hostname [ hostname ]);
 #endif /* SHELL_CMD_LEVEL */
 
 void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
@@ -259,7 +265,7 @@ void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *a
   }
 }
 
-int32_t W6X_Shell_Net_ResolveHostAddress(int32_t argc, char **argv)
+int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv)
 {
   int32_t err = 0;
   ip_addr_t resolved_ip;
@@ -291,5 +297,31 @@ int32_t W6X_Shell_Net_ResolveHostAddress(int32_t argc, char **argv)
 
 #if (SHELL_CMD_LEVEL >= 1)
 /** Shell command to get the IP address from the host name */
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_ResolveHostAddress, dnslookup, dnslookup <hostname>);
+SHELL_CMD_EXPORT_ALIAS(lwip_shell_ResolveHostAddress, dnslookup, dnslookup <hostname>);
 #endif /* SHELL_CMD_LEVEL */
+
+static int32_t lwip_shell_aplist_sta(int32_t argc, char **argv)
+{
+  ip4_addr_t ipaddr;
+  W6X_WiFi_Connected_Sta_t ConnectedSta;
+
+  LogInfo("Connected Stations :\n");
+  if (aplist_sta(&ConnectedSta) == ERR_OK)
+  {
+    for (int32_t i = 0; i < ConnectedSta.Count; i++)
+    {
+      W6X_WiFi_Connected_Sta_Info_t *res = &ConnectedSta.STA[i];
+      IP4_ADDR(&ipaddr, res->IP[0], res->IP[1], res->IP[2], res->IP[3]);
+      LogInfo("MAC : %02x:%02x:%02x:%02x:%02x:%02x | IP : %s\n",
+              res->MAC[0], res->MAC[1], res->MAC[2], res->MAC[3], res->MAC[4], res->MAC[5], ip4addr_ntoa(&ipaddr));
+    }
+    return SHELL_STATUS_OK;
+  }
+  else
+  {
+    SHELL_E("Get connected stations failed\n");
+    return SHELL_STATUS_ERROR;
+  }
+}
+
+SHELL_CMD_EXPORT_ALIAS(lwip_shell_aplist_sta, wifi_ap_list_sta, List connected stations to the AP);

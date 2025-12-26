@@ -190,7 +190,7 @@ void shell_freertos_rx_task(void *p_params)
 
   while (1)
   {
-    if (xSemaphoreTake(p_shell->rx_sem, portMAX_DELAY) == pdTRUE)
+    if ((p_shell->rx_sem != NULL) && (xSemaphoreTake(p_shell->rx_sem, portMAX_DELAY) == pdTRUE))
     {
       for (uint32_t i = 0; i < p_shell->rx_buffer_idx; i++)
       {
@@ -223,6 +223,12 @@ void shell_freertos_printf(const char *const p_format, ...)
   va_list args;
   char dummy_str[2];/* Dummy string for format length calculation */
   shell_free_rtos_t *p_shell = shell_freertos_get_instance();
+
+  if (p_shell->OutputQueue == NULL)
+  {
+    return;
+  }
+
   ShellMessage_t *newShell = (ShellMessage_t *)pvPortMalloc(sizeof(ShellMessage_t));
 
   if (newShell == NULL)
@@ -274,16 +280,19 @@ static inline void shell_freertos_release_sem(void)
   shell_free_rtos_t *p_shell = shell_freertos_get_instance();
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  if (xPortIsInsideInterrupt())
+  if (p_shell->rx_sem != NULL)
   {
-    if (xSemaphoreGiveFromISR(p_shell->rx_sem, &xHigherPriorityTaskWoken) == pdPASS)
+    if (xPortIsInsideInterrupt())
     {
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      if (xSemaphoreGiveFromISR(p_shell->rx_sem, &xHigherPriorityTaskWoken) == pdPASS)
+      {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
     }
-  }
-  else
-  {
-    (void)xSemaphoreGive(p_shell->rx_sem);
+    else
+    {
+      (void)xSemaphoreGive(p_shell->rx_sem);
+    }
   }
 }
 

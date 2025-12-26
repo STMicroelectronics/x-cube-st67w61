@@ -81,7 +81,7 @@ static void W61_MQTT_AT_Event(void *hObj, uint16_t *argc, char **argv);
   * @param  len: length of the data
   * @return data length on success, negative value on error
   */
-static int32_t W61_MQTT_data_event(uint32_t event_id, struct modem_cmd_handler_data *data, uint16_t len);
+static int32_t W61_MQTT_Data_Event(uint32_t event_id, struct modem_cmd_handler_data *data, uint16_t len);
 
 /* Functions Definition ------------------------------------------------------*/
 W61_Status_t W61_MQTT_Init(W61_Object_t *Obj, uint8_t *p_recv_data, uint32_t recv_data_buf_len)
@@ -95,7 +95,7 @@ W61_Status_t W61_MQTT_Init(W61_Object_t *Obj, uint8_t *p_recv_data, uint32_t rec
 
   /* Register the MQTT event callbacks */
   Obj->Callbacks.MQTT_event_cb = W61_MQTT_AT_Event;
-  Obj->Callbacks.MQTT_event_data_cb = W61_MQTT_data_event;
+  Obj->Callbacks.MQTT_event_data_cb = W61_MQTT_Data_Event;
 
   return W61_STATUS_OK;
 }
@@ -469,18 +469,24 @@ static void W61_MQTT_AT_Event(void *hObj, uint16_t *argc, char **argv)
   }
 }
 
-static int32_t W61_MQTT_data_event(uint32_t event_id, struct modem_cmd_handler_data *data, uint16_t len)
+static int32_t W61_MQTT_Data_Event(uint32_t event_id, struct modem_cmd_handler_data *data, uint16_t len)
 {
   struct modem *mdm = (struct modem *)data->user_data;
   W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
   W61_MQTT_CbParamData_t cb_param_mqtt_data;
-  uint8_t *ptr = &data->rx_buf[len + 2]; /* Skip the link id and the comma */
+  uint8_t *ptr;
   uint8_t *endptr;
   uint32_t header_len;
   uint32_t topic_len;
   uint32_t message_len;
   uint16_t rx_data_len;
 
+  if ((data->rx_buf == NULL) || (Obj->MQTTCtx.AppBuffRecvData == NULL))
+  {
+    return -EINVAL;
+  }
+
+  ptr = &data->rx_buf[len + 2]; /* Skip the link id and the comma */
   data->rx_buf[data->rx_buf_len] = 0;
 
   /* Get the topic length */

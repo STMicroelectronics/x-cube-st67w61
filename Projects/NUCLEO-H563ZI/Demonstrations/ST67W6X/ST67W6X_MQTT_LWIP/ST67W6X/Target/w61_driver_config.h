@@ -54,12 +54,15 @@ extern "C" {
 /** Maximum SPI buffer size */
 #define W61_MAX_SPI_XFER                        1520
 
-/** Debugging only: Enable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
+/** Enable/Disable System module logging */
+#define SYS_LOG_ENABLE                          1
+
+/** Debugging only: Enable/Disable AT log, i.e. logs the AT commands incoming/outcoming from/to the NCP */
 #define W61_AT_LOG_ENABLE                       0
 #include "logging.h"
 
-/** Enable/Disable System module logging */
-#define SYS_LOG_ENABLE                          1
+/** Enable/Disable Modem command log */
+#define MDM_CMD_LOG_ENABLE                      0
 
 /* USER CODE BEGIN EC */
 

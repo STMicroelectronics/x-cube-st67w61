@@ -88,6 +88,7 @@ void Error_Handler(void);
 #define UART_TX_GPIO_Port GPIOD
 #define USER_BUTTON_Pin GPIO_PIN_13
 #define USER_BUTTON_GPIO_Port GPIOC
+#define USER_BUTTON_EXTI_IRQn EXTI13_IRQn
 #define UART_RX_Pin GPIO_PIN_9
 #define UART_RX_GPIO_Port GPIOD
 #define LED_GREEN_Pin GPIO_PIN_0

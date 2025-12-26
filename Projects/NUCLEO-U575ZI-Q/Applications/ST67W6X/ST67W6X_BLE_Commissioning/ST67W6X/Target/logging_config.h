@@ -40,7 +40,7 @@ extern "C" {
  */
 
 /** Global verbosity level (LOG_NONE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG) */
-#define LOG_LEVEL                               LOG_DEBUG
+#define LOG_LEVEL                               LOG_INFO
 
 /* USER CODE BEGIN EC */
 

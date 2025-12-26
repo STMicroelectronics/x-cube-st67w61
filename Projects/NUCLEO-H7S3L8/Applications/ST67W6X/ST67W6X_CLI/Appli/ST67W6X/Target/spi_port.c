@@ -81,6 +81,7 @@ extern SPI_HandleTypeDef NCP_SPI_HANDLE;
 
 /** Convert microseconds to ticks */
 #define MICROSECOND_TO_TICK( _us ) ( (_us) * (SystemCoreClock>>20) )
+
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
@@ -203,7 +204,9 @@ int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t tim
   }
   else
   {
-    status = HAL_SPI_Receive(&NCP_SPI_HANDLE, rx_buf, len, timeout);
+    assert_param(len <= SPI_DMA_XFER_SIZE_THRESHOLD);
+    uint8_t tx_dummy[SPI_DMA_XFER_SIZE_THRESHOLD] = {0};
+    status = HAL_SPI_TransmitReceive(&NCP_SPI_HANDLE, tx_dummy, rx_buf, len, timeout);
   }
   /* USER CODE BEGIN spi_port_transfer_2 */
 
@@ -232,11 +235,15 @@ int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len)
 #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_CleanDCache_by_Addr(tx_buf, len);
 #endif /* __DCACHE_PRESENT */
+    /* USER CODE BEGIN spi_port_transfer_dma_trx */
     status = HAL_SPI_TransmitReceive_DMA(&NCP_SPI_HANDLE, tx_buf, rx_buf, len);
+    /* USER CODE END spi_port_transfer_dma_trx */
   }
   else
   {
+    /* USER CODE BEGIN spi_port_transfer_dma_rx */
     status = HAL_SPI_Receive_DMA(&NCP_SPI_HANDLE, rx_buf, len);
+    /* USER CODE END spi_port_transfer_dma_rx */
   }
   /* USER CODE BEGIN spi_port_transfer_dma_2 */
 
@@ -298,7 +305,10 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_TxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_TxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_TxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_TxCpltCallback_End */
@@ -309,7 +319,10 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_RxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_RxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_RxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_RxCpltCallback_End */
@@ -320,10 +333,27 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_TxRxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_TxRxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_TxRxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_TxRxCpltCallback_End */
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+  /* USER CODE BEGIN HAL_SPI_ErrorCallback_1 */
+
+  /* USER CODE END HAL_SPI_ErrorCallback_1 */
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN HAL_SPI_ErrorCallback_End */
+
+  /* USER CODE END HAL_SPI_ErrorCallback_End */
 }
 
 /* USER CODE BEGIN WFR */

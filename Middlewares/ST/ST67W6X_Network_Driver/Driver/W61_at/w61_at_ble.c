@@ -148,13 +148,17 @@ W61_Status_t W61_Ble_Init(W61_Object_t *Obj, uint8_t mode, uint8_t *p_recv_data,
   Obj->BleCtx.ScanResults.Count = 0; /* Reset the count of detected peripherals */
   Obj->BleCtx.ScanComplete = 0;      /* Initialize the scan complete indicator */
 
+  /* Default De-init BLE mode */
+  Obj->BleCtx.NetSettings.Mode = W61_BLE_MODE_DEINIT;
+
   Obj->Callbacks.Ble_event_cb = W61_Ble_AT_Event; /* Set the event callback function */
   Obj->Callbacks.Ble_event_data_cb = W61_Ble_Data_Event; /* Set the data event callback function */
 
   /* Set the BLE Server or Client mode
      0: BLE off
      1: Client mode
-     2: Server mode */
+     2: Server mode
+     3: Dual mode */
   snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLEINIT=%" PRIu16 "\r\n", mode);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_BLE_TIMEOUT);
 }
@@ -174,6 +178,9 @@ W61_Status_t W61_Ble_DeInit(W61_Object_t *Obj)
   /* Remove the data buffer pointer */
   Obj->BleCtx.AppBuffRecvData = NULL;
   Obj->BleCtx.AppBuffRecvDataSize = 0;
+
+  /* Default De-init BLE mode */
+  Obj->BleCtx.NetSettings.Mode = W61_BLE_MODE_DEINIT;
 
   Obj->Callbacks.Ble_event_cb = NULL; /* Reset the event callback function */
   Obj->Callbacks.Ble_event_data_cb = NULL; /* Reset the data event callback function */
@@ -214,6 +221,7 @@ W61_Status_t W61_Ble_GetInitMode(W61_Object_t *Obj, W61_Ble_Mode_e *Mode)
   }
 
   *Mode = (W61_Ble_Mode_e)atoi(argv[0]);
+  Obj->BleCtx.NetSettings.Mode = *Mode;
 
   return ret;
 }
@@ -654,13 +662,14 @@ W61_Status_t W61_Ble_GetConn(W61_Object_t *Obj, uint32_t *ConnHandle, uint8_t *R
   }
   if (argc < 2)
   {
-    return W61_STATUS_ERROR;
+    *ConnHandle = 0xFF; /* No connection detected, return invalid connection handle */
   }
-
-  *ConnHandle = (uint32_t)atoi(argv[0]);
-  W61_AT_RemoveStrQuotes((char *)argv[1]); /* Remove quotes from the string */
-  Parser_StrToMAC(argv[1], RemoteBDAddr);
-
+  else
+  {
+    *ConnHandle = (uint32_t)atoi(argv[0]);
+    W61_AT_RemoveStrQuotes((char *)argv[1]); /* Remove quotes from the string */
+    Parser_StrToMAC(argv[1], RemoteBDAddr);
+  }
   return ret;
 }
 
@@ -736,12 +745,15 @@ W61_Status_t W61_Ble_GetService(W61_Object_t *Obj, W61_Ble_Service_t *ServiceInf
     .service_index = service_index,
     .ServiceInfo = ServiceInfo,
   };
-
   struct modem_cmd handlers[] =
   {
     MODEM_CMD("+BLEGATTSSRV:", on_cmd_service, 4U, ","),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = &service_info;
@@ -808,6 +820,10 @@ W61_Status_t W61_Ble_GetCharacteristic(W61_Object_t *Obj, W61_Ble_Characteristic
     MODEM_CMD("+BLEGATTSCHAR:", on_cmd_charac, 6U, ","),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = &charac_info;
@@ -832,10 +848,12 @@ W61_Status_t W61_Ble_RegisterCharacteristics(W61_Object_t *Obj)
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+BLEGATTSREGISTER=1\r\n", W61_BLE_TIMEOUT);
 }
 
-W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t service_index, uint8_t char_index,
-                                            uint8_t *pdata, uint32_t req_len, uint32_t *SentLen, uint32_t Timeout)
+W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t conn_handle, uint8_t service_index,
+                                            uint8_t char_index, uint8_t *pdata, uint32_t req_len, uint32_t *SentLen,
+                                            uint32_t Timeout)
 {
   W61_Status_t ret;
+  int32_t ret_len;
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(pdata);
@@ -858,9 +876,19 @@ W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t service_i
      - <service_index>:  Service index
      - <char_index>:     Characteristic index
      - <req_len>:        Length of the data to be sent.
-                         Maximum data length is 244. */
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLEGATTSNTFY=%" PRIu16 ",%" PRIu16 ",%" PRIu32 "\r\n",
-           service_index, char_index, req_len);
+                         Maximum data length is 244.
+     - <conn_index>:     BLE Connection index */
+  ret_len = snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLEGATTSNTFY=%" PRIu16 ",%" PRIu16 ",%" PRIu32,
+                     service_index, char_index, req_len);
+
+  if (W61_SdkMinVersion(Obj, 2, 0, 97) == W61_STATUS_OK)
+  {
+    snprintf(&cmd[ret_len], W61_CMDRSP_STRING_SIZE - ret_len, ",%" PRIu16 "\r\n", conn_handle);
+  }
+  else
+  {
+    snprintf(&cmd[ret_len], W61_CMDRSP_STRING_SIZE - ret_len, "\r\n");
+  }
   ret = W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, pdata, req_len, Timeout, true);
 
   if (ret != W61_STATUS_OK)
@@ -870,10 +898,12 @@ W61_Status_t W61_Ble_ServerSendNotification(W61_Object_t *Obj, uint8_t service_i
   return ret;
 }
 
-W61_Status_t W61_Ble_ServerSendIndication(W61_Object_t *Obj, uint8_t service_index, uint8_t char_index,
-                                          uint8_t *pdata, uint32_t req_len, uint32_t *SentLen, uint32_t Timeout)
+W61_Status_t W61_Ble_ServerSendIndication(W61_Object_t *Obj, uint8_t conn_handle, uint8_t service_index,
+                                          uint8_t char_index, uint8_t *pdata, uint32_t req_len, uint32_t *SentLen,
+                                          uint32_t Timeout)
 {
   W61_Status_t ret;
+  int32_t ret_len;
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(pdata);
@@ -896,9 +926,19 @@ W61_Status_t W61_Ble_ServerSendIndication(W61_Object_t *Obj, uint8_t service_ind
       - <service_index>:  Service index
       - <char_index>:     Characteristic index
       - <req_len>:        Length of the data to be sent.
-                          Maximum data length is 244. */
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLEGATTSIND=%" PRIu16 ",%" PRIu16 ",%" PRIu32 "\r\n",
-           service_index, char_index, req_len);
+                          Maximum data length is 244.
+      - <conn_index>:     BLE Connection index */
+  ret_len = snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLEGATTSIND=%" PRIu16 ",%" PRIu16 ",%" PRIu32 "\r\n",
+                     service_index, char_index, req_len);
+
+  if (W61_SdkMinVersion(Obj, 2, 0, 97) == W61_STATUS_OK)
+  {
+    snprintf(&cmd[ret_len], W61_CMDRSP_STRING_SIZE - ret_len, ",%" PRIu16 "\r\n", conn_handle);
+  }
+  else
+  {
+    snprintf(&cmd[ret_len], W61_CMDRSP_STRING_SIZE - ret_len, "\r\n");
+  }
   ret = W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, pdata, req_len, Timeout, false);
 
   if (ret != W61_STATUS_OK)
@@ -1166,7 +1206,7 @@ W61_Status_t W61_Ble_SecurityPairingCancel(W61_Object_t *Obj, uint8_t conn_handl
 
   /* Cancel the pairing. The parameters are:
      - <conn_handle>:     Connection handle */
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLESECCANCEL=%" PRIu16 "\r\n", conn_handle);
+  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+BLESECCANNEL=%" PRIu16 "\r\n", conn_handle);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_BLE_TIMEOUT);
 }
 
@@ -1203,6 +1243,10 @@ W61_Status_t W61_Ble_SecurityGetBondedDeviceList(W61_Object_t *Obj,
     MODEM_CMD_ARGS_MAX("+BLESECGETLTKLIST: BONDADDR ", on_cmd_bonded, 1U, 10U, "()"),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = RemoteBondedDevices;
@@ -1320,7 +1364,8 @@ static void W61_Ble_AT_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
   W61_Ble_CbParamData_t cb_param_ble_data = {0};
-  uint8_t conn_handle;
+  uint8_t conn_handle = 0;
+  uint8_t conn_role = 0xff;
   char tmp_hex_table[33] = {0};
 
   uint32_t j = 0;
@@ -1340,8 +1385,8 @@ static void W61_Ble_AT_Event(void *hObj, uint16_t *argc, char **argv)
 
   if ((strcmp(argv[0], "CONNECTED") == 0) && (*argc >= 3))
   {
+    /* Parse the connection handle */
     conn_handle = (uint8_t)atoi(argv[1]);
-    cb_param_ble_data.remote_ble_device.conn_handle = conn_handle;
 
     /* Parse the BD address */
     W61_AT_RemoveStrQuotes(argv[2]);
@@ -1352,8 +1397,16 @@ static void W61_Ble_AT_Event(void *hObj, uint16_t *argc, char **argv)
     {
       return;
     }
+
+    if (*argc == 4)
+    {
+      /* Parse the connection mode */
+      conn_role = (uint8_t)atoi(argv[3]);
+    }
+
     Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].IsConnected = 1;
     Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].conn_handle = conn_handle;
+    Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].conn_role = conn_role;
     Obj->BleCtx.NetSettings.DeviceConnectedNb++;
 
     cb_param_ble_data.remote_ble_device = Obj->BleCtx.NetSettings.RemoteDevice[conn_handle];
@@ -1365,8 +1418,20 @@ static void W61_Ble_AT_Event(void *hObj, uint16_t *argc, char **argv)
   if ((strcmp(argv[0], "DISCONNECTED") == 0) && (*argc >= 3))
   {
     conn_handle = (uint8_t)atoi(argv[1]);
-    /* Keep connection handle for upper layer event management */
-    cb_param_ble_data.remote_ble_device.conn_handle = conn_handle;
+
+    if (*argc == 4)
+    {
+      conn_role = (uint8_t)atoi(argv[3]);
+    }
+    else
+    {
+      conn_role = 0xff; /* Default value */
+    }
+
+    /* Keep connection handle and connection role for upper layer event management */
+    Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].conn_handle = conn_handle;
+    Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].conn_role = conn_role;
+    /* Re-initialize all other attributes */
     Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].IsConnected = 0;
     memset(Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].BDAddr, 0x0, W61_BLE_BD_ADDR_SIZE);
     memset(Obj->BleCtx.NetSettings.RemoteDevice[conn_handle].DeviceName, 0x0, W61_BLE_DEVICE_NAME_SIZE);
@@ -1956,11 +2021,17 @@ static int32_t W61_Ble_Data_Event(uint32_t event_id, struct modem_cmd_handler_da
   struct modem *mdm = (struct modem *)data->user_data;
   W61_Object_t *Obj = CONTAINER_OF(mdm, W61_Object_t, Modem);
   W61_Ble_CbParamData_t cb_param_ble_data = {0};
-  uint8_t *ptr = &data->rx_buf[len];
+  uint8_t *ptr;
   uint8_t *endptr;
   uint32_t data_len;
   uint16_t rx_data_len;
 
+  if ((data->rx_buf == NULL) || (data->rx_buf_len == 0) || (len == 0) ||
+      (len >= data->rx_buf_len) || (Obj->BleCtx.AppBuffRecvData == NULL))
+  {
+    return -EINVAL;
+  }
+  ptr = &data->rx_buf[len];
   data->rx_buf[data->rx_buf_len] = 0;
 
   /* Connection handle */
@@ -2014,6 +2085,12 @@ static int32_t W61_Ble_Data_Event(uint32_t event_id, struct modem_cmd_handler_da
   }
   endptr++; /* Skip the comma */
 
+  /* Check if the buffer is large enough to hold the data */
+  if (data_len > Obj->BleCtx.AppBuffRecvDataSize)
+  {
+    return -ENOMEM;
+  }
+
   rx_data_len = endptr - data->rx_buf + data_len;
   if (data->rx_buf_len >= rx_data_len)
   {
@@ -2064,16 +2141,22 @@ static void W61_Ble_AnalyzeAdvData(char *ptr, W61_Ble_Scan_Result_t *Peripherals
           break;
         case W61_BLE_AD_TYPE_MANUFACTURER_SPECIFIC_DATA:
         {
-          hexStringToByteArray(p_adv_data + 2 * i + 4,
-                               (char *) Peripherals->Detected_Peripheral[index].ManufacturerData,
-                               adv_data_size - 1);
+          if (Peripherals->Detected_Peripheral != NULL)
+          {
+            hexStringToByteArray(p_adv_data + 2 * i + 4,
+                                 (char *) Peripherals->Detected_Peripheral[index].ManufacturerData,
+                                 adv_data_size - 1);
+          }
           break;
         }
         case W61_BLE_AD_TYPE_COMPLETE_LOCAL_NAME:
         {
-          hexStringToByteArray(p_adv_data + 2 * i + 4,
-                               (char *) Peripherals->Detected_Peripheral[index].DeviceName,
-                               adv_data_size - 1);
+          if (Peripherals->Detected_Peripheral != NULL)
+          {
+            hexStringToByteArray(p_adv_data + 2 * i + 4,
+                                 (char *) Peripherals->Detected_Peripheral[index].DeviceName,
+                                 adv_data_size - 1);
+          }
           break;
         }
         default:

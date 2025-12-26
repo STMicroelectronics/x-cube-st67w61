@@ -225,6 +225,7 @@
                     <state>configTASK_NOTIFICATION_ARRAY_ENTRIES=8</state>
                     <state>ST67_ARCH=W6X_ARCH_T02</state>
                     <state>LFS_CONFIG=lfs_util_config.h</state>
+                    <state>MBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;</state>
                     <state>USE_HAL_DRIVER</state>
                     <state>STM32H563xx</state>
                 </option>
@@ -357,6 +358,7 @@
                     <state>$PROJ_DIR$/../LWIP/App</state>
                     <state>$PROJ_DIR$/../LWIP/Target</state>
                     <state>$PROJ_DIR$/../LWIP/Target/arch</state>
+                    <state>$PROJ_DIR$/../MBEDTLS/App</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/CMSIS/Device/ST/STM32H5xx/Include</state>
@@ -365,7 +367,19 @@
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/IAR/ARM_CM33_NTZ/non_secure/</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/CMSIS/RTOS2/Include/</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dsv16x</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2duxs12</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2mdl</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dso16is</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/sht40ad1b</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lps22df</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/stts22h</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/IKS4A1</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/Common</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/cJSON</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/mbedTLS/include/</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/mbedTLS/include/psa</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/mbedTLS/library</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/LwIP/src/include/</state>
@@ -383,15 +397,6 @@
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/MQTT-C/include</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/littlefs</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dsv16x</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2duxs12</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2mdl</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dso16is</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/sht40ad1b</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lps22df</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/stts22h</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/IKS4A1</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/Common</state>
                     <state>$PROJ_DIR$/../X-CUBE-MEMS1/App</state>
                 </option>
                 <option>
@@ -666,6 +671,7 @@
                     <state>$PROJ_DIR$/../LWIP/App</state>
                     <state>$PROJ_DIR$/../LWIP/Target</state>
                     <state>$PROJ_DIR$/../LWIP/Target/arch</state>
+                    <state>$PROJ_DIR$/../MBEDTLS/App</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/CMSIS/Device/ST/STM32H5xx/Include</state>
@@ -674,7 +680,19 @@
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/IAR/ARM_CM33_NTZ/non_secure/</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/</state>
                     <state>$PROJ_DIR$/../../../../../../Drivers/CMSIS/RTOS2/Include/</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dsv16x</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2duxs12</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2mdl</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dso16is</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/sht40ad1b</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lps22df</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/stts22h</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/IKS4A1</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/Common</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/cJSON</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/mbedTLS/include/</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/mbedTLS/include/psa</state>
+                    <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/mbedTLS/library</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Api</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/LwIP/src/include/</state>
@@ -692,15 +710,6 @@
                     <state>$PROJ_DIR$/../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Driver/W61_bus</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/MQTT-C/include</state>
                     <state>$PROJ_DIR$/../../../../../../Middlewares/Third_Party/littlefs</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dsv16x</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2duxs12</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lis2mdl</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lsm6dso16is</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/sht40ad1b</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lps22df</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/stts22h</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/IKS4A1</state>
-                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/Common</state>
                     <state>$PROJ_DIR$/../X-CUBE-MEMS1/App</state>
                 </option>
                 <option>
@@ -1233,10 +1242,34 @@
                 <group>
                     <name>App</name>
                     <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\altcp_tls_mbedtls.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\dhcp_server_raw.c</name>
+                    </file>
+                    <file>
                         <name>$PROJ_DIR$\..\LWIP\App\lwip.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\lwip_netif.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\sntp.c</name>
+                    </file>
+                </group>
+            </group>
+            <group>
+                <name>MBEDTLS</name>
+                <group>
+                    <name>App</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\MBEDTLS\App\mbedtls.c</name>
+                    </file>
+                </group>
+                <group>
+                    <name>Target</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\MBEDTLS\Target\hardware_rng.c</name>
                     </file>
                 </group>
             </group>
@@ -1252,6 +1285,9 @@
                     <name>Target</name>
                     <file>
                         <name>$PROJ_DIR$\..\ST67W6X\Target\spi_port.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\ST67W6X\Target\util_task_port.c</name>
                     </file>
                 </group>
             </group>
@@ -1269,7 +1305,7 @@
     <group>
         <name>Doc</name>
         <file>
-            <name>$PROJ_DIR$\..\readme.md</name>
+            <name>$PROJ_DIR$\..\README.md</name>
         </file>
     </group>
     <group>
@@ -1391,6 +1427,12 @@
                 <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_hal_rcc_ex.c</name>
             </file>
             <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_hal_rng.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_hal_rng_ex.c</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_hal_rtc.c</name>
             </file>
             <file>
@@ -1413,6 +1455,9 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_hal_uart_ex.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_ll_rng.c</name>
             </file>
         </group>
     </group>
@@ -1674,6 +1719,216 @@
             </group>
         </group>
         <group>
+            <name>mbedTLS</name>
+            <group>
+                <name>Security/mbedTLS</name>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\aes.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\asn1parse.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\asn1write.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\base64.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\bignum.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\bignum_core.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\bignum_mod.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\bignum_mod_raw.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\block_cipher.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\cipher.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\cipher_wrap.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\cmac.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\constant_time.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ctr_drbg.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\des.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\dhm.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ecdh.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ecdsa.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ecp.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ecp_curves.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\entropy.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\entropy_poll.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\gcm.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\hkdf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\md.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\md5.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\memory_buffer_alloc.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\mps_reader.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\mps_trace.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\nist_kw.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\oid.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pem.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pk.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pk_ecc.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pk_wrap.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pkcs5.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pkparse.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\pkwrite.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\platform.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\platform_util.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\rsa.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\rsa_alt_helpers.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\sha1.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\sha256.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\sha3.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\sha512.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_cache.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_ciphersuites.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_client.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_cookie.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_msg.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_ticket.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls12_client.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls12_server.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls13_client.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls13_generic.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls13_keys.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_tls13_server.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\version_features.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509_create.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509_crl.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509_crt.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509_csr.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509write.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509write_crt.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\x509write_csr.c</name>
+                </file>
+            </group>
+        </group>
+        <group>
             <name>MQTT-C</name>
             <group>
                 <name>Data Exchange/MQTT-C</name>
@@ -1780,9 +2035,6 @@
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_netif.c</name>
                 </file>
                 <file>
-                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_ota.c</name>
-                </file>
-                <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_sys.c</name>
                 </file>
                 <file>
@@ -1793,6 +2045,24 @@
                 <name>Network/Utilities/Logging</name>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Logging\logging.c</name>
+                </file>
+            </group>
+            <group>
+                <name>Network/Utilities/Statistics</name>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\iperf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\iperf_shell.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\util_mem_perf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\util_task_perf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\ST\ST67W6X_Network_Driver\Utils\Performance\wfa_tg.c</name>
                 </file>
             </group>
         </group>

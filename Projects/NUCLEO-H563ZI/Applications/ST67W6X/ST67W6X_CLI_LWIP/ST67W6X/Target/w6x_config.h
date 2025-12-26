@@ -45,8 +45,8 @@ extern "C" {
   * ============================
   */
 
-/** NCP will go by default in low power mode when NCP is in idle mode */
-#define W6X_POWER_SAVE_AUTO                     0
+/** NCP power save mode : 0: NCP stays always active / 1: NCP goes in low power mode when idle */
+#define W6X_POWER_SAVE_AUTO                     1
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1

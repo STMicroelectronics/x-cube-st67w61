@@ -612,6 +612,7 @@ static void http_process_response(int32_t client, char *recv_buffer)
     ping_infos.count = PING_COUNT;
     uint32_t ping_size = PING_SIZE;
     uint32_t ping_interval = PING_INTERVAL;
+    uint32_t ping_timeout = PING_INTERVAL;
     uint32_t average_ping = 0;
     uint16_t ping_received_response = 0;
 
@@ -629,7 +630,7 @@ static void http_process_response(int32_t client, char *recv_buffer)
 
       /* Run the ping */
       if (W6X_STATUS_OK == W6X_Net_Ping((uint8_t *)gw_str, ping_size, ping_infos.count, ping_interval,
-                                        &average_ping, &ping_received_response))
+                                        ping_timeout, &average_ping, &ping_received_response))
       {
         if (ping_received_response == 0)
         {

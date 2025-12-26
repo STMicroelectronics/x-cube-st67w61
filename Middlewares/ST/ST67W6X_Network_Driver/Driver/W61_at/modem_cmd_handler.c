@@ -217,7 +217,7 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler, struct mo
 /* Private Functions Definition ----------------------------------------------*/
 static bool is_crlf(uint8_t c)
 {
-  if (c == '\n' || c == '\r')
+  if ((c == '\n') || (c == '\r'))
   {
     return true;
   }
@@ -230,7 +230,11 @@ static bool is_crlf(uint8_t c)
 static void skipcrlf(struct modem_cmd_handler_data *data)
 {
   size_t skip_count = 0;
-  while (skip_count < data->rx_buf_len && is_crlf(data->rx_buf[skip_count]))
+  if ((data == NULL) || (data->rx_buf == NULL) || (data->rx_buf_len == 0))
+  {
+    return;
+  }
+  while ((skip_count < data->rx_buf_len) && is_crlf(data->rx_buf[skip_count]))
   {
     skip_count++;
   }
@@ -242,6 +246,10 @@ static void skipcrlf(struct modem_cmd_handler_data *data)
 
 static uint16_t findcrlf(struct modem_cmd_handler_data *data, uint16_t *offset)
 {
+  if ((data == NULL) || (data->rx_buf == NULL) || (data->rx_buf_len == 0) || (offset == NULL))
+  {
+    return 0;
+  }
   for (uint16_t i = 0; i < data->rx_buf_len; ++i)
   {
     if (is_crlf(data->rx_buf[i]))
@@ -291,7 +299,8 @@ static int32_t parse_params(struct modem_cmd_handler_data *data, size_t match_le
   size_t delim_len, begin, end, i;
   bool quoted = false;
 
-  if (!data || !data->match_buf || !match_len || !cmd || !argv || !argc)
+  if ((data == NULL) || (data->match_buf == NULL) || (match_len == 0) || (cmd == NULL) ||
+      (argv == NULL) || (argc == NULL))
   {
     return -EINVAL;
   }
@@ -404,7 +413,7 @@ static int32_t process_cmd(const struct modem_cmd *cmd, size_t match_len, struct
   uint8_t *orig_rx_buf = data->rx_buf;
   size_t orig_rx_buf_len = data->rx_buf_len;
 
-  if (skip_len > 0 && skip_len <= data->rx_buf_len)
+  if ((skip_len > 0) && (skip_len <= data->rx_buf_len))
   {
     data->rx_buf += skip_len;
     data->rx_buf_len -= skip_len;
@@ -419,7 +428,7 @@ static int32_t process_cmd(const struct modem_cmd *cmd, size_t match_len, struct
   /* Restore rx_buf */
   data->rx_buf = orig_rx_buf;
   data->rx_buf_len = orig_rx_buf_len;
-  if (ret != -EAGAIN)
+  if ((ret != -EAGAIN) && (data->rx_buf != NULL))
   {
     /* Skip in case consumed */
     linear_buf_skip(data->rx_buf, &data->rx_buf_len, skip_len);
@@ -435,7 +444,7 @@ static const struct modem_cmd *find_cmd_match(struct modem_cmd_handler_data *dat
 
   for (j = 0; j < ARRAY_SIZE(data->cmds); j++)
   {
-    if (!data->cmds[j] || data->cmds_len[j] == 0U)
+    if ((data->cmds[j] == NULL) || (data->cmds_len[j] == 0U))
     {
       continue;
     }
@@ -443,9 +452,9 @@ static const struct modem_cmd *find_cmd_match(struct modem_cmd_handler_data *dat
     for (i = 0; i < data->cmds_len[j]; i++)
     {
       /* Match on "empty" cmd */
-      if (strlen(data->cmds[j][i].cmd) == 0 ||
-          strncmp(data->match_buf, data->cmds[j][i].cmd,
-                  data->cmds[j][i].cmd_len) == 0)
+      if (((data->cmds[j][i].cmd != NULL) && (data->match_buf != NULL)) &&
+          ((strlen(data->cmds[j][i].cmd) == 0) ||
+           (strncmp(data->match_buf, data->cmds[j][i].cmd, data->cmds[j][i].cmd_len) == 0)))
       {
         return &data->cmds[j][i];
       }
@@ -459,9 +468,14 @@ static const struct modem_cmd *find_cmd_direct_match(struct modem_cmd_handler_da
 {
   size_t j, i;
 
+  if (data->rx_buf == NULL)
+  {
+    return NULL;
+  }
+
   for (j = 0; j < ARRAY_SIZE(data->cmds); j++)
   {
-    if (!data->cmds[j] || data->cmds_len[j] == 0U)
+    if ((data->cmds[j] == NULL) || (data->cmds_len[j] == 0U))
     {
       continue;
     }
@@ -469,8 +483,9 @@ static const struct modem_cmd *find_cmd_direct_match(struct modem_cmd_handler_da
     for (i = 0; i < data->cmds_len[j]; i++)
     {
       /* Match start of cmd */
-      if (data->cmds[j][i].direct &&
-          (data->cmds[j][i].cmd[0] == '\0' ||
+      if ((data->cmds[j][i].cmd != NULL) &&
+          data->cmds[j][i].direct &&
+          ((data->cmds[j][i].cmd[0] == '\0') ||
            starts_with(data->rx_buf, data->rx_buf_len, data->cmds[j][i].cmd)))
       {
         return &data->cmds[j][i];
@@ -486,15 +501,18 @@ static int32_t cmd_handler_process_iface_data(struct modem_cmd_handler_data *dat
   size_t bytes_read = 0;
   int32_t ret;
 
+  if ((data->rx_buf == NULL) || (iface == NULL) || (iface->read == NULL))
+  {
+    return -EINVAL;
+  }
   /* Read as much as possible into the linear buffer */
-
   size_t room = RX_BUF_SIZE - data->rx_buf_len;
   if (room == 0)
   {
     return -ENOMEM;
   }
   ret = iface->read(iface, data->rx_buf + data->rx_buf_len, room, &bytes_read);
-  if (ret < 0 || bytes_read == 0)
+  if ((ret < 0) || (bytes_read == 0))
   {
     return 0;
   }
@@ -510,6 +528,11 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
   int32_t ret;
   uint16_t offset;
   uint16_t len;
+
+  if ((data->rx_buf == NULL) || (data->match_buf == NULL))
+  {
+    return;
+  }
 
   while (data->rx_buf_len)
   {
@@ -582,7 +605,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 
     (void)xSemaphoreGive(data->sem_parse_lock);
 
-    if (data->rx_buf_len)
+    if ((data->rx_buf != NULL) && (data->rx_buf_len != 0))
     {
       linear_buf_skip(data->rx_buf, &data->rx_buf_len, offset + 1);
     }
@@ -594,8 +617,8 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler, struct mo
   struct modem_cmd_handler_data *data;
   int32_t err;
 
-  if (!cmd_handler || !cmd_handler->cmd_handler_data ||
-      !iface || !iface->read)
+  if ((cmd_handler == NULL) || (cmd_handler->cmd_handler_data == NULL) ||
+      (iface == NULL) || (iface->read == NULL))
   {
     return;
   }
@@ -694,7 +717,7 @@ int32_t modem_cmd_send_ext(struct modem_iface *iface,
   struct modem_cmd_handler_data *data;
   int32_t ret = 0;
 
-  if (!iface || !handler || !handler->cmd_handler_data || !buf)
+  if ((iface == NULL) || (handler == NULL) || (handler->cmd_handler_data == NULL) || (buf == NULL))
   {
     return -EINVAL;
   }
@@ -704,7 +727,7 @@ int32_t modem_cmd_send_ext(struct modem_iface *iface,
     /* Semaphore is not needed if there is no timeout */
     sem = NULL;
   }
-  else if (!sem)
+  else if (sem == NULL)
   {
     /* Cannot respect timeout without semaphore */
     return -EINVAL;
@@ -851,6 +874,10 @@ int32_t modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
   struct modem_cmd_handler_data *data;
   data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
 
+  if (data == NULL)
+  {
+    return -EINVAL;
+  }
   return xSemaphoreTake(data->sem_tx_lock, timeout) == pdTRUE ? 0 : -ETIMEDOUT;
 }
 
@@ -859,6 +886,10 @@ void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler)
   struct modem_cmd_handler_data *data;
   data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
 
+  if (data == NULL)
+  {
+    return;
+  }
   (void)xSemaphoreGive(data->sem_tx_lock);
 }
 
@@ -867,7 +898,7 @@ int32_t modem_cmd_handler_init(struct modem_cmd_handler *handler,
                                const struct modem_cmd_handler_config *config)
 {
   /* Verify arguments */
-  if (handler == NULL || data == NULL || config == NULL)
+  if ((handler == NULL) || (data == NULL) || (config == NULL))
   {
     return -EINVAL;
   }
@@ -876,8 +907,8 @@ int32_t modem_cmd_handler_init(struct modem_cmd_handler *handler,
   if ((config->match_buf == NULL) ||
       (config->match_buf_len == 0) ||
       /*(config->buf_pool == NULL) ||*/
-      (NULL != config->response_cmds && 0 == config->response_cmds_len) ||
-      (NULL != config->unsol_cmds && 0 == config->unsol_cmds_len))
+      ((NULL != config->response_cmds) && (0 == config->response_cmds_len)) ||
+      ((NULL != config->unsol_cmds) && (0 == config->unsol_cmds_len)))
   {
     return -EINVAL;
   }

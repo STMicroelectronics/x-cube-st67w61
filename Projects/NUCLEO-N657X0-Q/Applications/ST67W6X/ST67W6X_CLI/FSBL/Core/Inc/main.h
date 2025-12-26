@@ -80,10 +80,12 @@ void Error_Handler(void);
 #define SPI_CLK_GPIO_Port GPIOE
 #define SPI_RDY_Pin GPIO_PIN_9
 #define SPI_RDY_GPIO_Port GPIOE
+#define SPI_RDY_EXTI_IRQn EXTI9_IRQn
 #define CHIP_EN_Pin GPIO_PIN_10
 #define CHIP_EN_GPIO_Port GPIOE
 #define USER_BUTTON_Pin GPIO_PIN_12
 #define USER_BUTTON_GPIO_Port GPIOD
+#define USER_BUTTON_EXTI_IRQn EXTI12_IRQn
 #define BOOT_Pin GPIO_PIN_5
 #define BOOT_GPIO_Port GPIOD
 #define SPI_MISO_Pin GPIO_PIN_1

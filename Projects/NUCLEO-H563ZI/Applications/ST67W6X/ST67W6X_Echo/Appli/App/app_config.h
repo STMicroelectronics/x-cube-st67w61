@@ -79,6 +79,10 @@ typedef enum
 /** Low power configuration [0: disable / 1: sleep / 2: stop / 3: standby] */
 #define LOW_POWER_MODE              LOW_POWER_DISABLE
 
+/* Automation usage */
+/** Enable/Disable the test automation */
+#define TEST_AUTOMATION_ENABLE      0
+
 /* USER CODE BEGIN EC */
 
 /* USER CODE END EC */

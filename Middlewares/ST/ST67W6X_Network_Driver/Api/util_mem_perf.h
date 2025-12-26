@@ -25,6 +25,21 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+#include "w6x_config.h"
+
+/* Exported constants --------------------------------------------------------*/
+/** @defgroup ST67W6X_Utilities_Performance_Mem_Perf_Constants ST67W6X Utility Performance Mem Perf Constants
+  * @ingroup  ST67W6X_Utilities_Performance_Mem_Perf
+  * @{
+  */
+
+#ifndef MEM_PERF_ENABLE
+/** Enable memory performance measurement */
+#define MEM_PERF_ENABLE       0
+#endif /* MEM_PERF_ENABLE */
+
+/** @} */
+
 /* Exported macros -----------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup ST67W6X_Utilities_Performance_Mem_Perf_Functions ST67W6X Utility Performance Mem Perf Functions

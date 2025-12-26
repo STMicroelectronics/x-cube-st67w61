@@ -137,9 +137,639 @@
 <section id="update-history" class="col-sm-12 col-lg-8">
 <h1>Update History</h1>
 <div class="collapse">
-<input type="checkbox" id="collapse-section2" checked aria-hidden="true"> <label for="collapse-section2" aria-hidden="false"><strong>V1.1.0 / 26-September-2025</strong></label>
+<input type="checkbox" id="collapse-section3" checked aria-hidden="true"> <label for="collapse-section3" aria-hidden="false"><strong>V1.2.0 / 19-December-2025</strong></label>
 <div>
 <h2 id="main-changes">Main Changes</h2>
+<ul>
+<li><strong>Package</strong>
+<ul>
+<li>SLA0048 Legal terms updated to latest revision (Rev 5 / October 2025)</li>
+<li>Upgrade FreeRTOS Kernel to version 11.2.0 based on X-CUBE-FREERTOS V1.4.0</li>
+<li>Add mbedTLS V3.6.4 component for secure network over LwIP projects</li>
+</ul></li>
+<li><strong>Projects</strong>
+<ul>
+<li>SLA0044 Legal terms updated to latest revision (Rev 6 / October 2025)</li>
+<li>All FreeRTOS application files regenerated using STM32CubeMX V6.16.0 and FreeRTOS pack V1.4.0</li>
+<li><strong>Applications</strong>
+<ul>
+<li>ST67W6X_CLI_LWIP
+<ul>
+<li>ID 220325: Enable power save capability</li>
+<li>ID 220926: Add echo feature over LwIP with IPv6 connection</li>
+<li>ID 215902: Add soft-AP support over LwIP (LwIP soft-AP capability, DHCP server, Stations management)</li>
+<li>ID 222687: Add example of ping IPv6 over LwIP</li>
+</ul></li>
+<li>ST67W6X_CLI_LWIP and ST67W6X_MQTT_LWIP
+<ul>
+<li>ID 223459: Add SNTP feature over LwIP</li>
+</ul></li>
+<li>ST67W6X_FOTA
+<ul>
+<li>ID 218296: Wait ST67 ready event after FOTA update</li>
+<li>ID 221622: Fix FOTA success message not displaying and not catching the module ready event</li>
+</ul></li>
+<li>ST67W6X_HTTP_Client
+<ul>
+<li>ID 222160: Update of HTTPS Client weather certificate from R13 to R12</li>
+</ul></li>
+<li>All applications
+<ul>
+<li>ID 212841: Manage SPI only in full duplex TX/RX to prevent MOSI floating line</li>
+<li>ID 220984: Add SPI handle condition in spi_port callbacks + add error callback</li>
+</ul></li>
+</ul></li>
+<li><strong>Demonstrations</strong>
+<ul>
+<li>ST67W6X_MQTT_LWIP
+<ul>
+<li>ID 221361: Add support of MQTT TLS with mbedTLS over LwIP</li>
+</ul></li>
+</ul></li>
+<li><strong>Host boards</strong>
+<ul>
+<li>NUCLEO-N657X0-Q
+<ul>
+<li>ID 222817: Option --align needed with STM32CubeProgrammer SigningTool v2.21.0 to sign N6 binaries</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><strong>ST67W6X_Network_Driver</strong>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>ID 214298: Add security and Wi-Fi protocol used during connection in W6X_WiFi_Station_GetState function</li>
+<li>ID 217813: Add Wi-Fi antenna diversity automatic selection for -U and -P after Wi-Fi connection</li>
+<li>ID 222980: Fix too restrictive timeout for WPS and disable powersave during connection</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>ID 219085: Fix security cancel AT command</li>
+<li>ID 221641: Add BLE Dual (Client and Server) Mode, and up to 10 connections max support</li>
+<li>ID 223088: Fix Get BLE Connection API error returned when no connection detected</li>
+</ul></li>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
+<ul>
+<li>ID 219808: Fix wfa tg echo command to be able to reuse port</li>
+<li>ID 200391: Add IPv6 support and new IPv6 API while keeping IPv4 as the default solution</li>
+<li>ID 214727: SSL client socket support timeout parameter when establishing a connection</li>
+<li>ID 217059: Add timeout parameter on ping API and shell commands</li>
+<li>ID 217197: Fix unexpected closing of new socket connection</li>
+<li>ID 222582: Fix Iperf closing early and throughput degradation in UDPv6 server mode</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>None</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>ID 215159: Fix large MQTT messages restriction</li>
+<li>ID 218963: Fix of QoS flags not taken into account in MQTT messages sent</li>
+</ul></li>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
+<ul>
+<li>ID 215902: Add soft-AP support over LwIP (link capability)</li>
+</ul></li>
+<li><strong>AT Parser</strong>
+<ul>
+<li>None</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ID 219266: Rename OTA API to FWU (FirmWare Update) to clarify usage</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>None</li>
+</ul></li>
+</ul></li>
+<li><strong>ST67W6X Scripts</strong>
+<ul>
+<li>ST67W611M Binaries updated to version 2.0.97</li>
+</ul></li>
+</ul>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><strong>Projects</strong> Ten applications and two demonstrations exercising the ST67W6X_Network_Driver capabilities, and one utility. These projects are developed using the following STM32Cube and X-CUBE packages:
+<ul>
+<li><p>STM32CubeH5 V1.5.0</p></li>
+<li><p>STM32CubeH7RS V1.3.0<span class="icon-st-update"></span></p></li>
+<li><p>STM32CubeN6 V1.3.0<span class="icon-st-update"></span></p></li>
+<li><p>STM32CubeU5 V1.8.0<span class="icon-st-update"></span></p></li>
+<li><p>X-CUBE-FREERTOS V1.4.0<span class="icon-st-update"></span></p></li>
+<li><p>X-CUBE-MEMS1 V12.0.0<span class="icon-st-update"></span></p></li>
+<li><p><strong>Applications</strong></p>
+<ul>
+<li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
+<li>ST67W6X_BLE_p2pClient : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</li>
+<li>ST67W6X_BLE_p2pServer : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).</li>
+<li>ST67W6X_CLI : This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi and Bluetooth LE solution via command line interface (CLI).</li>
+<li>ST67W6X_CLI_LWIP : This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi, Bluetooth LE and Network interface with LwIP solutions via command line interface (CLI).</li>
+<li>ST67W6X_Echo : This application demonstrates the TCP Echo feature over Wi-Fi.</li>
+<li>ST67W6X_FOTA : This application aims to demonstrate the FOTA (Firmware update Over-The-Air) feature over Wi-Fi.</li>
+<li>ST67W6X_HTTP_Server : This application aims to demonstrate an HTTP server over Network API, hosted by a device configured as a soft access point (soft-AP).</li>
+<li>ST67W6X_HTTPS_Client : This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</li>
+<li>ST67W6X_WiFi_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</li>
+</ul></li>
+<li><p><strong>Demonstrations</strong></p>
+<ul>
+<li>ST67W6X_MQTT : This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
+<li>ST67W6X_MQTT_LWIP : This application aims to demonstrate an example of MQTT client over LwIP over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
+</ul></li>
+<li><p><strong>Utilities</strong></p>
+<ul>
+<li>NCP_Loader: This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</li>
+</ul></li>
+</ul></li>
+<li><strong>Features</strong> supported
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (10 connections max), Client mode (9 connections max) and Dual Mode (10 connections max with up to 9 as Client)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
+<li>IPv4 and IPv6 support</li>
+</ul></li>
+<li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>FOTA</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+<li>Upgrade of Host Firmware Over-The-Air (STM32U5xx only supported)</li>
+</ul></li>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
+<ul>
+<li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+<li><strong>Tools</strong>
+<ul>
+<li>FOTA header generation and HTTP server python scripts</li>
+<li>ST67W611M binaries for Mission and Manufacturing modes with scripts to flash them over host board</li>
+<li>LittleFS file system support with scripts to generate image of certificates</li>
+</ul></li>
+</ul></li>
+</ul>
+<p><small>The components flagged by “<span class="icon-st-update"></span>” have changed since the previous release. “<span class="icon-st-add"></span>” are new.</small></p>
+<p>The X-CUBE-ST67W61 Expansion Software package comes with a set of examples running on STMicroelectronics host boards (which drive the X-NUCLEO-67W61M1 expansion board). It is organized by board and it is provided with preconfigured projects for the main supported toolchains.</p>
+<p>The exhaustive list of projects is provided in this table (<a href="Projects/X-CUBE-ST67W61_ProjectsList.html">X-CUBE-ST67W61_ProjectsList.html</a>).</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th>Release notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ST67W61 NUCLEO-H7S3L8</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ST67W61 NUCLEO-H563ZI</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ST67W61 NUCLEO-N657X0-Q</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ST67W61 NUCLEO-U575ZI-Q</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td><a href="Projects/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ST67W6X Scripts</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="components">Components</h2>
+<p><strong>ST67W611M Coprocessor Wireless Binaries</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th style="text-align: left;">Version</th>
+<th>Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">st67w611m_mfg_v2.0.89.bin</td>
+<td style="text-align: left;">V2.0.89</td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">st67w611m_mfg_v2.0.97.bin</td>
+<td style="text-align: left;">V2.0.97<span class="icon-st-add"></span></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">st67w611m_mission_t01_v2.0.89.bin</td>
+<td style="text-align: left;">V2.0.89</td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">st67w611m_mission_t01_v2.0.97.bin</td>
+<td style="text-align: left;">V2.0.97<span class="icon-st-add"></span></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">st67w611m_mission_t02_v2.0.89.bin</td>
+<td style="text-align: left;">V2.0.89</td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">st67w611m_mission_t02_v2.0.97.bin</td>
+<td style="text-align: left;">V2.0.97<span class="icon-st-add"></span></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Drivers</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th>Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Cortex-M CMSIS</td>
+<td>V5.9.0</td>
+<td><a href="Drivers/CMSIS/Documentation/index.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32H7RS CMSIS</td>
+<td>V1.2.1<span class="icon-st-update"></span></td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32H7RSxx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32H5 CMSIS</td>
+<td>V1.4.0</td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32H5xx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32N6 CMSIS</td>
+<td>V1.3.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32N6xx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32U5 CMSIS</td>
+<td>V1.4.2<span class="icon-st-update"></span></td>
+<td><a href="Drivers/CMSIS/Device/ST/STM32U5xx/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32H7RSxx_HAL_Driver</td>
+<td>V1.2.1<span class="icon-st-update"></span></td>
+<td><a href="Drivers/STM32H7RSxx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32H5xx_HAL_Driver</td>
+<td>V1.5.0</td>
+<td><a href="Drivers/STM32H5xx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">STM32N6xx_HAL_Driver</td>
+<td>V1.3.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/STM32N6xx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32U5xx_HAL_Driver</td>
+<td>V1.6.2<span class="icon-st-update"></span></td>
+<td><a href="Drivers/STM32U5xx_HAL_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP STM32H7RSxx_Nucleo</td>
+<td>V1.1.1<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/STM32H7RSxx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP STM32H5xx_Nucleo</td>
+<td>V1.1.1</td>
+<td><a href="Drivers/BSP/STM32H5xx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP STM32N6xx_Nucleo</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/STM32N6xx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP STM32U5xx_Nucleo</td>
+<td>V1.2.3<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/STM32U5xx_Nucleo/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Components</td>
+<td>V7.3.0</td>
+<td><a href="Drivers/BSP/Components/Common/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LIS2DUXS12</td>
+<td>V1.6.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/lis2duxs12/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component LIS2MDL</td>
+<td>V1.8.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/lis2mdl/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LPS22DF</td>
+<td>V1.5.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/lps22df/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component LSM6DSO16IS</td>
+<td>V1.6.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/lsm6dso16is/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component LSM6DSV16X</td>
+<td>V1.8.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/lsm6dsv16x/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP Component SHT40AD1B</td>
+<td>V1.4.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/sht40ad1b/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BSP Component STTS22H</td>
+<td>V1.8.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/Components/stts22h/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BSP X-NUCLEO-IKS4A1</td>
+<td>V1.3.0<span class="icon-st-update"></span></td>
+<td><a href="Drivers/BSP/IKS4A1/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Middlewares</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th style="text-align: left;">Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">FreeRTOS</td>
+<td>V11.2.0<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/FreeRTOS/Source/readme.txt">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td>ST modified 20250620<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/FreeRTOS/Source/st_readme.txt">ST release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LwIP</td>
+<td>V2.2.1<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/LwIP/README">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td>ST modified 20250804<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/LwIP/st_readme.txt">ST release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">mbedTLS</td>
+<td>V3.6.4<span class="icon-st-add"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/mbedTLS/README.md">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td>ST modified 20250701<span class="icon-st-add"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/mbedTLS/st_readme.txt">ST release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">cJSON</td>
+<td>V1.7.19<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/cJSON/README.md">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MQTT-C</td>
+<td>V1.1.6</td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/MQTT-C/README.md">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Percepio TraceRecorder</td>
+<td>V4.10.3<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/TraceRecorder/README.md">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">littlefs</td>
+<td>V2.11.1<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/Third_Party/littlefs/README.md">release notes</a></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">STM32_ExtMem_Manager</td>
+<td>V1.5.0<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/ST/STM32_ExtMem_Manager/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ST67W6X_Network_Driver</td>
+<td>V1.2.0<span class="icon-st-update"></span></td>
+<td style="text-align: left;"><a href="Middlewares/ST/ST67W6X_Network_Driver/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Utilities</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Name</th>
+<th>Version</th>
+<th style="text-align: left;">Release note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">conf</td>
+<td>V1.6.1</td>
+<td style="text-align: left;"><a href="Utilities/conf/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">tiny_lpm</td>
+<td>V1.4.2</td>
+<td style="text-align: left;"><a href="Utilities/lpm/tiny_lpm/Release_Notes.html">release notes</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations">Known Limitations</h2>
+<ul>
+<li>Common architectures
+<ul>
+<li>W6X_WiFi_Connect API cannot use special characters [,“\] in the SSID and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>Wi-Fi connection to an AP may fail if the previous connection to the same AP has not been ended by a disconnect</li>
+<li>W6X_Ble_SetDeviceName API cannot use special characters [,“\] in the device name. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>W6X_Ble_SetBdAddress API doesn’t support random BLE BD address</li>
+<li>Limited to 4 BLE connections in dual mode (2 central + 2 peripheral combination) at 7.5 ms connection interval</li>
+<li>BLE Advertising relaunched automatically by network co-processor after BLE disconnection event</li>
+<li>No API to modify BLE GAP appearance value</li>
+<li>BLE notifications enabled by default at initialization</li>
+<li>The Host STOP Power mode is not supported in some applications</li>
+</ul></li>
+<li>T01 architecture
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>Wi-Fi station may not receive an IP address after the DHCP sequence</li>
+<li>Ping may fail after a while when Wi-Fi station is connected in WPA3</li>
+<li>Once the DNS IP is set manually, those values will be hardcoded until the device is reset to its default configuration</li>
+<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
+<li>SSL sockets has specific internal buffer configurations, this might result in failure when server doesn’t acknowledge those changes</li>
+<li>Unable to send data to a client in UDPv6 server mode</li>
+<li>Performance Rx throughput with Soft-AP shows high variance</li>
+<li>W6X_MQTT_Configure API cannot use special characters [,“\] in the username and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>W6X_MQTT_Publish cannot send message larger than 1470 bytes</li>
+</ul></li>
+<li>T02 architecture
+<ul>
+<li>Wi-Fi WPS connection is not working properly</li>
+<li>After a long run of iperf as client, in TCP ipv4 mode, throughpout decreases to 0 Mbps</li>
+</ul></li>
+</ul>
+<h2 id="development-toolchains-and-compilers">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for Arm (EWARM) toolchain <strong>V9.30.1</strong></li>
+<li>RealView Microcontroller Development Kit (MDK-ARM) toolchain <strong>V5.39</strong></li>
+<li>STM32CubeIDE (Default GCC13 toolchain supported) <strong>V2.0.0</strong></li>
+</ul>
+<h2 id="supported-devices-and-boards">Supported Devices and Boards</h2>
+<ul>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html">NUCLEO-H7S3L8</a> <em>(MB1737)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-h563zi.html">NUCLEO-H563ZI</a> <em>(MB1404)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-n657x0-q.html">NUCLEO-N657X0-Q</a> <em>(MB1940)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230)</em></li>
+<li><a href="https://www.st.com/en/evaluation-tools/nucleo-u575zi-q.html">NUCLEO-U575ZI-Q</a> <em>(MB1549)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230)</em></li>
+</ul>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Pin function</th>
+<th style="text-align: left;">NUCLEO pin name</th>
+<th style="text-align: left;">NUCLEO-H7S3L8 STM32 pin name</th>
+<th style="text-align: left;">NUCLEO-H563ZI STM32 pin name</th>
+<th style="text-align: left;">NUCLEO-N657X0-Q STM32 pin name</th>
+<th style="text-align: left;">NUCLEO-U575ZI-Q STM32 pin name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">SPI_CLK</td>
+<td style="text-align: left;">D13</td>
+<td style="text-align: left;">PA5</td>
+<td style="text-align: left;">PA5</td>
+<td style="text-align: left;">PE15</td>
+<td style="text-align: left;">PA5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_MISO</td>
+<td style="text-align: left;">D12</td>
+<td style="text-align: left;">PA6</td>
+<td style="text-align: left;">PG9</td>
+<td style="text-align: left;">PG1</td>
+<td style="text-align: left;">PA6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SPI_MOSI</td>
+<td style="text-align: left;">D11</td>
+<td style="text-align: left;">PB5</td>
+<td style="text-align: left;">PB5</td>
+<td style="text-align: left;">PG2</td>
+<td style="text-align: left;">PA7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_CS</td>
+<td style="text-align: left;">D10</td>
+<td style="text-align: left;">PD14</td>
+<td style="text-align: left;">PD14</td>
+<td style="text-align: left;">PA3</td>
+<td style="text-align: left;">PD14</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">USER_BUTTON (*)</td>
+<td style="text-align: left;">D8</td>
+<td style="text-align: left;">PF5</td>
+<td style="text-align: left;">PF3</td>
+<td style="text-align: left;">PD12</td>
+<td style="text-align: left;">PF12</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHIP_EN</td>
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">PE11</td>
+<td style="text-align: left;">PE11</td>
+<td style="text-align: left;">PE10</td>
+<td style="text-align: left;">PE11</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BOOT</td>
+<td style="text-align: left;">D6</td>
+<td style="text-align: left;">PE9</td>
+<td style="text-align: left;">PE9</td>
+<td style="text-align: left;">PD5</td>
+<td style="text-align: left;">PE9</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPI_RDY</td>
+<td style="text-align: left;">D3</td>
+<td style="text-align: left;">PE13</td>
+<td style="text-align: left;">PE13</td>
+<td style="text-align: left;">PE9</td>
+<td style="text-align: left;">PE13</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>(*) USER_BUTTON refers to the blue button mounted on the <strong>X-NUCLEO-67W61M1</strong>.<br/> The user button on the STM32 Nucleo board is not used as external interrupt mode due to conflict with other EXTI pin requirement.</p>
+</blockquote>
+<p><strong>Important</strong>: The minimal memory requirements for the host device are 48kB RAM and 256kB Flash.</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section2" aria-hidden="true"> <label for="collapse-section2" aria-hidden="false"><strong>V1.1.0 / 26-September-2025</strong></label>
+<div>
+<h2 id="main-changes-1">Main Changes</h2>
 <ul>
 <li><strong>Projects</strong>
 <ul>
@@ -216,7 +846,7 @@
 <li>ID 215563: Report remote BD address type and Long Term Key (LTK) from BLE security events</li>
 <li>ID 216043: BLE Init rework to ensure clock is correctly configured before entering in Low Power</li>
 </ul></li>
-<li><strong>Network</strong>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
 <ul>
 <li>ID 210991: Improve Iperf RX throughput</li>
 <li>ID 212413: Fix blocking state on reception when connecting multiple UDP sockets</li>
@@ -224,7 +854,7 @@
 <li>ID 215289: Align the IP address format order in W6X_Net APIs on LwIP usage</li>
 <li>ID 215983: Fix IPv6 and IPv4 string length being too small</li>
 </ul></li>
-<li><strong>HTTP</strong>
+<li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
 <ul>
 <li>ID 211666: Increase SNI size for HTTP and choose server name as hostname when available</li>
 <li>ID 216816: Added the ability to send HTTP requests larger than W61_MAX_SPI_XFER</li>
@@ -237,7 +867,7 @@
 <li>ID 214875: Add support of empty MQTT message for retain feature</li>
 <li>ID 216425: Add support of QoS, Retain and LWT options in MQTT APIs</li>
 </ul></li>
-<li><strong>Network interface</strong>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
 <ul>
 <li>ID 211434: Add support of LwIP on host based on ST67W611M T02 architecture</li>
 </ul></li>
@@ -262,7 +892,7 @@
 <li>ID 216118: Remove HAL UART dependency of shell service</li>
 </ul></li>
 </ul></li>
-<li><strong>ST67W6X Utilities</strong>
+<li><strong>ST67W6X Scripts</strong>
 <ul>
 <li>ST67W611M Binaries updated to version 2.0.89</li>
 <li>Add of new ST67W611M binaries and scripts for T02 architecture (LwIP on host)</li>
@@ -271,11 +901,17 @@
 <li>ID 210737: Improve python scripts provided for FOTA</li>
 </ul></li>
 </ul>
-<h2 id="contents">Contents</h2>
+<h2 id="contents-1">Contents</h2>
 <ul>
-<li><p><strong>Projects</strong> Ten applications and two demonstrations exercising the ST67W6X_Network_Driver capabilities, and one utility.</p>
+<li><strong>Projects</strong> Ten applications and two demonstrations exercising the ST67W6X_Network_Driver capabilities, and one utility. These projects are developed using the following STM32Cube and X-CUBE packages:
 <ul>
-<li><strong>Applications</strong>
+<li><p>STM32CubeH5 V1.5.0</p></li>
+<li><p>STM32CubeH7RS V1.2.0</p></li>
+<li><p>STM32CubeN6 V1.1.1</p></li>
+<li><p>STM32CubeU5 V1.7.0</p></li>
+<li><p>X-CUBE-FREERTOS V1.3.1</p></li>
+<li><p>X-CUBE-MEMS1 V11.2.0</p></li>
+<li><p><strong>Applications</strong></p>
 <ul>
 <li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
 <li>ST67W6X_BLE_p2pClient : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</li>
@@ -288,17 +924,17 @@
 <li>ST67W6X_HTTPS_Client : This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</li>
 <li>ST67W6X_WiFi_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</li>
 </ul></li>
-<li><strong>Demonstrations</strong>
+<li><p><strong>Demonstrations</strong></p>
 <ul>
 <li>ST67W6X_MQTT : This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
 <li>ST67W6X_MQTT_LWIP : This application aims to demonstrate an example of MQTT client over LwIP over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
 </ul></li>
-<li><strong>Utilities</strong>
+<li><p><strong>Utilities</strong></p>
 <ul>
 <li>NCP_Loader: This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</li>
 </ul></li>
 </ul></li>
-<li><p><strong>Features</strong> supported</p>
+<li><strong>Features</strong> supported
 <ul>
 <li><strong>Wi-Fi</strong>
 <ul>
@@ -308,14 +944,14 @@
 </ul></li>
 <li><strong>BLE</strong>
 <ul>
-<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Server mode (1 connection max) and Client mode (2 connections max)</li>
 <li>Up to 5 services (including default services) and 5 characteristics by service</li>
 </ul></li>
-<li><strong>Network</strong>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
 <ul>
-<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
 </ul></li>
-<li><strong>HTTP</strong>
+<li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
 <ul>
 <li>HTTP/HTTPS Client over network sockets</li>
 <li>GET/HEAD/POST/PUT support</li>
@@ -329,7 +965,7 @@
 <li>Upgrade of ST67W611M Firmware Over-The-Air</li>
 <li>Upgrade of Host Firmware Over-The-Air (STM32U5xx only supported)</li>
 </ul></li>
-<li><strong>Network interface</strong>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
 <ul>
 <li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
 </ul></li>
@@ -378,13 +1014,13 @@
 <td><a href="Projects/Release_Notes.html">release notes</a></td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">ST67W6X Utilities</td>
+<td style="text-align: left;">ST67W6X Scripts</td>
 <td>V1.1.0<span class="icon-st-update"></span></td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 </tbody>
 </table>
-<h2 id="components">Components</h2>
+<h2 id="components-1">Components</h2>
 <p><strong>ST67W611M Coprocessor Wireless Binaries</strong></p>
 <table>
 <thead>
@@ -398,17 +1034,17 @@
 <tr class="odd">
 <td style="text-align: left;">st67w611m_mission_t01_v2.0.89.bin</td>
 <td style="text-align: left;">V2.0.89<span class="icon-st-update"></span></td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">st67w611m_mission_t02_v2.0.89.bin</td>
 <td style="text-align: left;">V2.0.89<span class="icon-st-add"></span></td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">st67w611m_mfg_v2.0.89.bin</td>
 <td style="text-align: left;">V2.0.89<span class="icon-st-update"></span></td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 </tbody>
 </table>
@@ -630,6 +1266,11 @@
 <td style="text-align: left;"><a href="Middlewares/Third_Party/littlefs/README.md">release notes</a></td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">STM32_ExtMem_Manager</td>
+<td>V1.3.0</td>
+<td style="text-align: left;"><a href="Middlewares/ST/STM32_ExtMem_Manager/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">ST67W6X_Network_Driver</td>
 <td>V1.1.1<span class="icon-st-update"></span></td>
 <td style="text-align: left;"><a href="Middlewares/ST/ST67W6X_Network_Driver/Release_Notes.html">release notes</a></td>
@@ -658,7 +1299,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="known-limitations">Known Limitations</h2>
+<h2 id="known-limitations-1">Known Limitations</h2>
 <ul>
 <li>Wi-Fi communication in static IP does not work when power save is activated</li>
 <li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
@@ -671,15 +1312,15 @@
 <li>W6X_MQTT_Configure API cannot use special characters [,“\] in the username and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
 <li>W6X_MQTT_Publish cannot send message larger than 1470 bytes</li>
 <li>The Host STOP Power mode is not supported in some applications</li>
-<li>STM32W6X_CLI_LWIP: Ping not working with WPS enabled Access point</li>
+<li>ST67W6X_CLI_LWIP: WPS connection is not working properly</li>
 </ul>
-<h2 id="development-toolchains-and-compilers">Development Toolchains and Compilers</h2>
+<h2 id="development-toolchains-and-compilers-1">Development Toolchains and Compilers</h2>
 <ul>
 <li>IAR Embedded Workbench for Arm (EWARM) toolchain <strong>V9.30.1</strong></li>
 <li>RealView Microcontroller Development Kit (MDK-ARM) toolchain <strong>V5.39</strong></li>
 <li>STM32CubeIDE (Default GCC13 toolchain supported) <strong>V1.19.0</strong></li>
 </ul>
-<h2 id="supported-devices-and-boards">Supported Devices and Boards</h2>
+<h2 id="supported-devices-and-boards-1">Supported Devices and Boards</h2>
 <ul>
 <li><a href="https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html">NUCLEO-H7S3L8</a> <em>(MB1737)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230)</em></li>
 <li><a href="https://www.st.com/en/evaluation-tools/nucleo-h563zi.html">NUCLEO-H563ZI</a> <em>(MB1404)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230)</em></li>
@@ -781,15 +1422,21 @@
 <div class="collapse">
 <input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="false"><strong>V1.0.0 / 28-May-2025</strong></label>
 <div>
-<h2 id="main-changes-1">Main Changes</h2>
+<h2 id="main-changes-2">Main Changes</h2>
 <ul>
 <li><strong>First official release</strong></li>
 </ul>
-<h2 id="contents-1">Contents</h2>
+<h2 id="contents-2">Contents</h2>
 <ul>
-<li><p><strong>Projects</strong> Nine applications and one demonstration exercising the ST67W6X_Network_Driver capabilities, and one utility.</p>
+<li><strong>Projects</strong> Nine applications and one demonstration exercising the ST67W6X_Network_Driver capabilities, and one utility. These projects are developed using the following STM32Cube and X-CUBE packages:
 <ul>
-<li><strong>Applications</strong>
+<li><p>STM32CubeH5 V1.5.0</p></li>
+<li><p>STM32CubeH7RS V1.2.0</p></li>
+<li><p>STM32CubeN6 V1.1.1</p></li>
+<li><p>STM32CubeU5 V1.7.0</p></li>
+<li><p>X-CUBE-FREERTOS V1.3.1</p></li>
+<li><p>X-CUBE-MEMS1 V11.2.0</p></li>
+<li><p><strong>Applications</strong></p>
 <ul>
 <li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
 <li>ST67W6X_BLE_p2pClient : This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</li>
@@ -801,16 +1448,16 @@
 <li>ST67W6X_HTTPS_Client : This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</li>
 <li>ST67W6X_WiFi_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</li>
 </ul></li>
-<li><strong>Demonstrations</strong>
+<li><p><strong>Demonstrations</strong></p>
 <ul>
 <li>ST67W6X_MQTT : This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</li>
 </ul></li>
-<li><strong>Utilities</strong>
+<li><p><strong>Utilities</strong></p>
 <ul>
 <li>NCP_Loader: This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</li>
 </ul></li>
 </ul></li>
-<li><p><strong>Features</strong> supported</p>
+<li><strong>Features</strong> supported
 <ul>
 <li><strong>Wi-Fi</strong>
 <ul>
@@ -820,12 +1467,12 @@
 </ul></li>
 <li><strong>BLE</strong>
 <ul>
-<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Server mode (1 connection max) and Client mode (2 connections max)</li>
 <li>Up to 5 services (including default services) and 5 characteristics by service</li>
 </ul></li>
 <li><strong>Network</strong>
 <ul>
-<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
 </ul></li>
 <li><strong>HTTP</strong>
 <ul>
@@ -886,13 +1533,13 @@
 <td><a href="Projects/Release_Notes.html">release notes</a></td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">ST67W6X Utilities</td>
+<td style="text-align: left;">ST67W6X Scripts</td>
 <td>V1.0.0</td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 </tbody>
 </table>
-<h2 id="components-1">Components</h2>
+<h2 id="components-2">Components</h2>
 <p><strong>ST67W611M Coprocessor Wireless Binaries</strong></p>
 <table>
 <thead>
@@ -906,12 +1553,12 @@
 <tr class="odd">
 <td style="text-align: left;">st67w611m_mission_t01_v2.0.75.bin</td>
 <td style="text-align: left;">V2.0.75</td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">st67w611m_mfg_v2.0.75.bin</td>
 <td style="text-align: left;">V2.0.75</td>
-<td><a href="Projects/ST67W6X_Utilities/Release_Notes.html">release notes</a></td>
+<td><a href="Projects/ST67W6X_Scripts/Release_Notes.html">release notes</a></td>
 </tr>
 </tbody>
 </table>
@@ -1118,6 +1765,11 @@
 <td style="text-align: left;"><a href="Middlewares/Third_Party/littlefs/README.md">release notes</a></td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">STM32_ExtMem_Manager</td>
+<td>V1.3.0</td>
+<td style="text-align: left;"><a href="Middlewares/ST/STM32_ExtMem_Manager/Release_Notes.html">release notes</a></td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">ST67W6X_Network_Driver</td>
 <td>V1.0.0</td>
 <td style="text-align: left;"><a href="Middlewares/ST/ST67W6X_Network_Driver/Release_Notes.html">release notes</a></td>
@@ -1146,7 +1798,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="known-limitations-1">Known Limitations</h2>
+<h2 id="known-limitations-2">Known Limitations</h2>
 <ul>
 <li>Wi-Fi communication in static IP does not work when power save is activated</li>
 <li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
@@ -1155,13 +1807,13 @@
 <li>Performance Rx throughput with Soft-AP is instable</li>
 <li>Performance UDP Rx throughput is below expectation (expected 14 Mbps, actual 12 Mbps)</li>
 </ul>
-<h2 id="development-toolchains-and-compilers-1">Development Toolchains and Compilers</h2>
+<h2 id="development-toolchains-and-compilers-2">Development Toolchains and Compilers</h2>
 <ul>
 <li>IAR Embedded Workbench for Arm (EWARM) toolchain <strong>V9.30.1</strong></li>
 <li>RealView Microcontroller Development Kit (MDK-ARM) toolchain <strong>V5.39</strong></li>
 <li>STM32CubeIDE (Default GCC13 toolchain supported) <strong>V1.18.1</strong></li>
 </ul>
-<h2 id="supported-devices-and-boards-1">Supported Devices and Boards</h2>
+<h2 id="supported-devices-and-boards-2">Supported Devices and Boards</h2>
 <ul>
 <li><a href="https://www.st.com/en/evaluation-tools/nucleo-h7s3l8.html">NUCLEO-H7S3L8</a> <em>(MB1737)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230-A03)</em></li>
 <li><a href="https://www.st.com/en/evaluation-tools/nucleo-h563zi.html">NUCLEO-H563ZI</a> <em>(MB1404)</em> + <a href="https://www.st.com/en/evaluation-tools/x-nucleo-67w61m1.html">X-NUCLEO-67W61M1</a> <em>(MB2230-A03)</em></li>

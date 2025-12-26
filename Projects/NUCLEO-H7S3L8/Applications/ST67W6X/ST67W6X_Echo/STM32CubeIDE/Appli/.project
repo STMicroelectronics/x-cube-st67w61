@@ -35,9 +35,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Doc/readme.md</name>
+			<name>Doc/README.md</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/readme.md</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/README.md</locationURI>
 		</link>
 		<link>
 			<name>Drivers/CMSIS/system_stm32h7rsxx.c</name>
@@ -245,6 +245,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Appli/ST67W6X/Target/spi_port.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/ST67W6X/Target/util_task_port.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Appli/ST67W6X/Target/util_task_port.c</locationURI>
+		</link>
+		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ATDriver/common_parser.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Misc/common_parser.c</locationURI>
@@ -320,11 +325,6 @@
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_ota.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</locationURI>
-		</link>
-		<link>
 			<name>Middlewares/ST67W6X_Network_Driver/Network/ServiceAPI/w6x_sys.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_sys.c</locationURI>
@@ -338,6 +338,31 @@
 			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Logging/logging.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Logging/logging.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics/iperf.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/iperf.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics/iperf_shell.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/iperf_shell.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics/util_mem_perf.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/util_mem_perf.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics/util_task_perf.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/util_task_perf.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ST67W6X_Network_Driver/Network/Utilities/Statistics/wfa_tg.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/ST67W6X_Network_Driver/Utils/Performance/wfa_tg.c</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

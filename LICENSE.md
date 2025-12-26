@@ -1,18 +1,10 @@
 | Component                       | Copyright                                                                                                   | License
 | :------------------------------ | :---------------------------------------------------------------------------------------------------------- | :--------------
 | BSP Common                      | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP hts221                      | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP iis2dlpc                    | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP iis2mdc                     | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP IKS01A3                     | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP IKS4A1                      | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP ism330dhcx                  | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP lis2duxs12                  | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP lis2dw12                    | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP lis2mdl                     | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP lps22df                     | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP lps22hh                     | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP lsm6dso                     | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP lsm6dso16is                 | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP lsm6dsv16x                  | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP sht40ad1b                   | STMicroelectronics                                                                                          | BSD-3-Clause
@@ -21,7 +13,6 @@
 | BSP STM32N6xx Nucleo            | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP STM32U5xx Nucleo            | STMicroelectronics                                                                                          | BSD-3-Clause
 | BSP stts22h                     | STMicroelectronics                                                                                          | BSD-3-Clause
-| BSP stts751                     | STMicroelectronics                                                                                          | BSD-3-Clause
 | STM32H7RSxx HAL Driver          | STMicroelectronics                                                                                          | BSD-3-Clause
 | STM32H5xx HAL Driver            | STMicroelectronics                                                                                          | BSD-3-Clause
 | STM32N6xx HAL Driver            | STMicroelectronics                                                                                          | BSD-3-Clause
@@ -35,6 +26,7 @@
 | MQTT-C                          | Liam Bindle, Demilade Adeoye and MQTT-C contributors                                                        | MIT
 | FreeRTOS Real Time Kernel       | Amazon.com, Inc. or its affiliates                                                                          | MIT
 | LwIP                            | Swedish Institute of Computer Science                                                                       | BSD-3-Clause
+| mbedTLS                         | Arm Limited                                                                                                 | Apache-2.0
 | rt-thread                       | RT-Thread Development Team                                                                                  | Apache-2.0
 | zephyr                          | Zephyr Project                                                                                              | Apache-2.0
 | littlefs-project/littlefs       | Arm Limited, littlefs authors                                                                               | BSD-3-Clause

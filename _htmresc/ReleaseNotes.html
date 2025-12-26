@@ -6,51 +6,52 @@
 </head>
 
 <body style="font-size: 10pt; font-family: Verdana;">
-  <h3 style="color: blue; text-decoration: underline;">X-CUBE-ST67W61 Software Expansion package V1.1.0 / 26-September-2025</h3>
+  <h3 style="color: blue; text-decoration: underline;">X-CUBE-ST67W61 Software Expansion package V1.2.0 / 19-December-2025</h3>
   <div style="margin-left: 18pt;">
     <p><b><u>Main Changes</u></b></p>
     <p>
     <ul>
+      <li><strong>Package</strong>
+        <ul>
+          <li>SLA0048 Legal terms updated to latest revision (Rev 5 / October 2025)</li>
+          <li>Upgrade FreeRTOS Kernel to version 11.2.0 based on X-CUBE-FREERTOS V1.4.0</li>
+          <li>Add mbedTLS V3.6.4 component for secure network over LwIP projects</li>
+        </ul>
+      </li>
       <li><strong>Projects</strong>
         <ul>
+          <li>SLA0044 Legal terms updated to latest revision (Rev 6 / October 2025)</li>
+          <li>All FreeRTOS application files regenerated using STM32CubeMX V6.16.0 and FreeRTOS pack V1.4.0</li>
           <li><strong>Applications</strong>
             <ul>
-              <li>ST67W6X_BLE_Commissioning
-                <ul>
-                  <li>ID 214212: Add BLE FUOTA support</li>
-                  <li>ID 216125: Clear security database on button push</li>
-                </ul>
-              </li>
-              <li>ST67W6X_BLE_p2pClient
-                <ul>
-                  <li>ID 213161: Improve services and characteristics discovery process to use service UUID to discover p2p service</li>
-                </ul>
-              </li>
-              <li>ST67W6X_BLE_p2pServer
-                <ul>
-                  <li>ID 216125: Clear security database on button push</li>
-                </ul>
-              </li>
               <li>ST67W6X_CLI_LWIP
                 <ul>
-                  <li>ID 211434: Add CLI application based on LwIP on host and ST67 T02 architecture</li>
+                  <li>ID 220325: Enable power save capability</li>
+                  <li>ID 220926: Add echo feature over LwIP with IPv6 connection</li>
+                  <li>ID 215902: Add soft-AP support over LwIP (LwIP soft-AP capability, DHCP server, Stations management)</li>
+                  <li>ID 222687: Add example of ping IPv6 over LwIP</li>
+                </ul>
+              </li>
+              <li>ST67W6X_CLI_LWIP and ST67W6X_MQTT_LWIP
+                <ul>
+                  <li>ID 223459: Add SNTP feature over LwIP</li>
                 </ul>
               </li>
               <li>ST67W6X_FOTA
                 <ul>
-                  <li>ID 211255: ST67W6X_FOTA - Fix host rebooting even when no FOTA update was applied due to version check</li>
-                  <li>ID 214113: ST67W6X_FOTA - Remove modulo 4 constraints on buffer size when STM32 FLASH write</li>
+                  <li>ID 218296: Wait ST67 ready event after FOTA update</li>
+                  <li>ID 221622: Fix FOTA success message not displaying and not catching the module ready event</li>
                 </ul>
               </li>
-              <li>ST67W6X_WiFi_Commissioning
+              <li>ST67W6X_HTTP_Client
                 <ul>
-                  <li>ID 211179: Fix incorrect variable declaration that leads to unexpected behaviors</li>
-                  <li>ID 216918: Fix credential parsing that corrupt the password</li>
+                  <li>ID 222160: Update of HTTPS Client weather certificate from R13 to R12</li>
                 </ul>
               </li>
               <li>All applications
                 <ul>
-                  <li>ID 214320: Move of API calls from W6X event callbacks to the default task due to the modem_handler task not being reentrant</li>
+                  <li>ID 212841: Manage SPI only in full duplex TX/RX to prevent MOSI floating line</li>
+                  <li>ID 220984: Add SPI handle condition in spi_port callbacks + add error callback</li>
                 </ul>
               </li>
             </ul>
@@ -59,21 +60,16 @@
             <ul>
               <li>ST67W6X_MQTT_LWIP
                 <ul>
-                  <li>ID 215693: Add MQTT demonstration based on LwIP on host, MQTT-C Third-Party Middleware and ST67 T02 architecture</li>
+                  <li>ID 221361: Add support of MQTT TLS with mbedTLS over LwIP</li>
                 </ul>
               </li>
             </ul>
           </li>
           <li><strong>Host boards</strong>
             <ul>
-              <li>NUCLEO-H563ZI and NUCLEO-N657X0-Q
-                <ul>
-                  <li>ID 212064: Keep SPI IO state configuration enabled to prevent MOSI floating line on SPI Bus</li>
-                </ul>
-              </li>
               <li>NUCLEO-N657X0-Q
                 <ul>
-                  <li>ID 217411: Add minimal 2us delay in SPI port for N6 DCache enabled</li>
+                  <li>ID 222817: Option --align needed with STM32CubeProgrammer SigningTool v2.21.0 to sign N6 binaries</li>
                 </ul>
               </li>
             </ul>
@@ -84,85 +80,64 @@
         <ul>
           <li><strong>Wi-Fi</strong>
             <ul>
-              <li>ID 210980: Fix wrong status message returned by scan command when several scans are sent in a row</li>
-              <li>ID 212466: TWT frames sent only to APs with TWT support</li>
-              <li>ID 213724: Maximum of Wi-Fi scan results reduced to 20 devices</li>
-              <li>ID 214286: Remove the IP address compatibility check from WiFi cb to dissociate WiFi module from Net module</li>
-              <li>ID 216134: The DTIM parameter used on Station side is now a factor of the Access Point DTIM, to be in phase with Access Point DTIM beacons</li>
-              <li>ID 216480: The soft Access Point protocol configuration is now a parameter when starting a soft Access Point. Station protocol configuration has been removed</li>
-              <li>ID 216882: Add Wi-Fi antenna diversity automatic selection for -U and -P after Wi-Fi connection</li>
+              <li>ID 214298: Add security and Wi-Fi protocol used during connection in W6X_WiFi_Station_GetState function</li>
+              <li>ID 217813: Add Wi-Fi antenna diversity automatic selection for -U and -P after Wi-Fi connection</li>
+              <li>ID 222980: Fix too restrictive timeout for WPS and disable powersave during connection</li>
             </ul>
           </li>
           <li><strong>BLE</strong>
             <ul>
-              <li>ID 212742: Add BLE Shell commands to perform GATT and Security operations</li>
-              <li>ID 213724: Maximum of BLE scan results reduced to 20 devices</li>
-              <li>ID 215560: Add support of 2 BLE connections as Client</li>
-              <li>ID 215563: Report remote BD address type and Long Term Key (LTK) from BLE security events</li>
-              <li>ID 216043: BLE Init rework to ensure clock is correctly configured before entering in Low Power</li>
+              <li>ID 219085: Fix security cancel AT command</li>
+              <li>ID 221641: Add BLE Dual (Client and Server) Mode, and up to 10 connections max support</li>
+              <li>ID 223088: Fix Get BLE Connection API error returned when no connection detected</li>
             </ul>
           </li>
-          <li><strong>Network</strong>
+          <li><strong>Network</strong> (ST67W611M T01 SW architecture only)
             <ul>
-              <li>ID 210991: Improve Iperf RX throughput</li>
-              <li>ID 212413: Fix blocking state on reception when connecting multiple UDP sockets</li>
-              <li>ID 213424: Move IP/DNS/DHCP APIs from Wi-Fi to Net module to be compliant with LwIP on host structure project</li>
-              <li>ID 215289: Align the IP address format order in W6X_Net APIs on LwIP usage</li>
-              <li>ID 215983: Fix IPv6 and IPv4 string length being too small</li>
+              <li>ID 219808: Fix wfa tg echo command to be able to reuse port</li>
+              <li>ID 200391: Add IPv6 support and new IPv6 API while keeping IPv4 as the default solution</li>
+              <li>ID 214727: SSL client socket support timeout parameter when establishing a connection</li>
+              <li>ID 217059: Add timeout parameter on ping API and shell commands</li>
+              <li>ID 217197: Fix unexpected closing of new socket connection</li>
+              <li>ID 222582: Fix Iperf closing early and throughput degradation in UDPv6 server mode</li>
             </ul>
           </li>
           <li><strong>HTTP</strong>
             <ul>
-              <li>ID 211666: Increase SNI size for HTTP and choose server name as hostname when available</li>
-              <li>ID 216816: Added the ability to send HTTP requests larger than W61_MAX_SPI_XFER</li>
-              <li>ID 216997: Fix incorrect ALPN format for HTTPS API</li>
-              <li>ID 217079: Fix case sensitive connection: close value in preformatted HTTP client headers</li>
+              <li>None</li>
             </ul>
           </li>
           <li><strong>MQTT</strong>
             <ul>
-              <li>ID 212696: Add support of MQTT raw data format</li>
-              <li>ID 214875: Add support of empty MQTT message for retain feature</li>
-              <li>ID 216425: Add support of QoS, Retain and LWT options in MQTT APIs</li>
+              <li>ID 215159: Fix large MQTT messages restriction</li>
+              <li>ID 218963: Fix of QoS flags not taken into account in MQTT messages sent</li>
             </ul>
           </li>
-          <li><strong>Network interface</strong>
+          <li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
             <ul>
-              <li>ID 211434: Add support of LwIP on host based on ST67W611M T02 architecture</li>
+              <li>ID 215902: Add soft-AP support over LwIP (link capability)</li>
             </ul>
           </li>
           <li><strong>AT Parser</strong>
             <ul>
-              <li>ID 214401: Integration of AT parser based on Zephyr modem cmd handler</li>
-              <li>ID 215005: Remove maximum number of parameters limitation expected from NCP in AT parser to ensure backward compatibility even if another field is added</li>
+              <li>None</li>
             </ul>
           </li>
           <li><strong>System</strong>
             <ul>
-              <li>ID 214011: Offer capability to disable assert macros</li>
-              <li>ID 214447: Display Module ID in banner based on Part Number</li>
-              <li>ID 215588: Use the memcpy32 custom implementation only in spi_iface to prevent misalignment issue with limited cortex architectures</li>
-              <li>ID 215597: RAM usage optimization in ST67W6X_Network_Driver code</li>
-              <li>ID 216013: Modification of the W6X_FS_WriteFile API to use a certificate stored in the application or in the LFS Host</li>
-              <li>ID 217233: Change default MAX_SPI_XFER from 6000 to 1520</li>
+              <li>ID 219266: Rename OTA API to FWU (FirmWare Update) to clarify usage</li>
             </ul>
           </li>
           <li><strong>Utilities</strong>
             <ul>
-              <li>ID 212675: Add the possibility to the user to disable the logs for each module of the Network Driver (Wi-Fi, NET, BLE, MQTT)</li>
-              <li>ID 214193: Addition of a define (SHELL_CMD_LEVEL) to activate all or a reduced list of shell commands</li>
-              <li>ID 216118: Remove HAL UART dependency of shell service</li>
+              <li>None</li>
             </ul>
           </li>
         </ul>
       </li>
-      <li><strong>ST67W6X Utilities</strong>
+      <li><strong>ST67W6X Scripts</strong>
         <ul>
-          <li>ST67W611M Binaries updated to version 2.0.89</li>
-          <li>Add of new ST67W611M binaries and scripts for T02 architecture (LwIP on host)</li>
-          <li>ID 211259: Add ST67W6X_FOTA binary and FOTA HTTP server example to exercise the feature</li>
-          <li>ID 211264: Replace WMIC by powershell command in NCP_update Windows scripts</li>
-          <li>ID 210737: Improve python scripts provided for FOTA</li>
+          <li>ST67W611M Binaries updated to version 2.0.97</li>
         </ul>
       </li>
     </ul>
@@ -171,8 +146,15 @@
     <p>
     <ul>
       <li>
-        <p><strong>Projects</strong> Ten applications and two demonstrations exercising the ST67W6X_Network_Driver capabilities, and one utility.</p>
+        <p><strong>Projects</strong> Ten applications and two demonstrations exercising the ST67W6X_Network_Driver capabilities, and one utility. These projects are developed using the following
+          STM32Cube and X-CUBE packages:</p>
         <ul>
+          <li>STM32CubeH5 V1.5.0</li>
+          <li>STM32CubeH7RS V1.3.0</li>
+          <li>STM32CubeN6 V1.3.0</li>
+          <li>STM32CubeU5 V1.8.0</li>
+          <li>X-CUBE-FREERTOS V1.4.0</li>
+          <li>X-CUBE-MEMS1 V12.0.0</li>
           <li><strong>Applications</strong>
             <ul>
               <li>ST67W6X_BLE_Commissioning : This application aims to demonstrate the Wi-Fi credentials commissioning over Bluetooth Low Energy.</li>
@@ -216,16 +198,17 @@
           </li>
           <li><strong>BLE</strong>
             <ul>
-              <li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+              <li>Server mode (10 connections max), Client mode (9 connections max) and Dual Mode (10 connections max with up to 9 as Client)</li>
               <li>Up to 5 services (including default services) and 5 characteristics by service</li>
             </ul>
           </li>
-          <li><strong>Network</strong>
+          <li><strong>Network</strong> (ST67W611M T01 SW architecture only)
             <ul>
-              <li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+              <li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
+              <li>IPv4 and IPv6 support</li>
             </ul>
           </li>
-          <li><strong>HTTP</strong>
+          <li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
             <ul>
               <li>HTTP/HTTPS Client over network sockets</li>
               <li>GET/HEAD/POST/PUT support</li>
@@ -242,7 +225,7 @@
               <li>Upgrade of Host Firmware Over-The-Air (STM32U5xx only supported)</li>
             </ul>
           </li>
-          <li><strong>Network interface</strong>
+          <li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
             <ul>
               <li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
             </ul>

@@ -224,7 +224,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -232,7 +232,7 @@ void main_app(void)
   ret = W6X_WiFi_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Wi-Fi init is done\n");
@@ -241,7 +241,7 @@ void main_app(void)
   ret = W6X_Net_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Net init is done\n");
@@ -261,7 +261,7 @@ void main_app(void)
 
   if (ret)
   {
-    LogError("failed to start soft-AP, %" PRIi32 "\n", ret);
+    LogError("Failed to start soft-AP, %" PRIi32 "\n", ret);
     goto _err;
   }
   else
@@ -282,8 +282,8 @@ void main_app(void)
       W6X_WiFi_StaStateType_e state = W6X_WIFI_STATE_STA_OFF;
       if (W6X_WiFi_Station_GetState(&state, &connectData) != W6X_STATUS_OK)
       {
-        LogInfo("Connected to an Access Point\n");
-        return;
+        LogError("Failed to get Station state\n");
+        goto _err;
       }
 
       LogInfo("Connected to following Access Point :\n");
@@ -297,7 +297,8 @@ void main_app(void)
       ret = W6X_WiFi_SetDTIM(WIFI_DTIM);
       if (ret)
       {
-        LogError("failed to initialize the DTIM, %" PRIi32 "\n", ret);
+        LogError("Failed to initialize the DTIM, %" PRIi32 "\n", ret);
+        goto _err;
       }
 
       station_status = 1;

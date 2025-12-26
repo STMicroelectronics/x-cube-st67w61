@@ -42,7 +42,7 @@
 <p>This Middleware is controlling the <strong>X-NUCLEO-67W61M1</strong> Expansion board. It exposes an API corresponding to the Network interface on Wi-Fi or BLE protocols.</p>
 <p>The ST67W6X Network Driver is responsible for:</p>
 <ul>
-<li>Providing API to manage Wi-Fi, BLE, Network sockets, Network direct link, MQTT, HTTP, FOTA or System features.</li>
+<li>Providing API to manage Wi-Fi, BLE, Network sockets, Network direct link, MQTT, HTTP, Firmware updates or System features.</li>
 <li>Transporting messages between the host and the ST67W611M over the underlying bus via AT command over SPI Interface.</li>
 </ul>
 <p>It is comprised of the following 8 folders :</p>
@@ -69,9 +69,137 @@
 <section id="update-history" class="col-sm-12 col-lg-8">
 <h1>Update History</h1>
 <div class="collapse">
-<input type="checkbox" id="collapse-section2" checked aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.1 / 26-Sep-2025</strong></label>
+<input type="checkbox" id="collapse-section4" checked aria-hidden="true"> <label for="collapse-section4" aria-hidden="true"><strong>V1.2.0 / 19-December-2025</strong></label>
 <div>
 <h2 id="main-changes">Main Changes</h2>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>ID 214298: Add security and Wi-Fi protocol used during connection in W6X_WiFi_Station_GetState function</li>
+<li>ID 217813: Add Wi-Fi antenna diversity automatic selection for -U and -P after Wi-Fi connection</li>
+<li>ID 222980: Fix too restrictive timeout for WPS and disable powersave during connection</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>ID 219085: Fix security cancel AT command</li>
+<li>ID 221641: Add BLE Dual (Client and Server) Mode, and up to 10 connections max support</li>
+<li>ID 223088: Fix Get BLE Connection API error returned when no connection detected</li>
+</ul></li>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
+<ul>
+<li>ID 219808: Fix wfa tg echo command to be able to reuse port</li>
+<li>ID 200391: Add IPv6 support and new IPv6 API while keeping IPv4 as the default solution</li>
+<li>ID 214727: SSL client socket support timeout parameter when establishing a connection</li>
+<li>ID 217059: Add timeout parameter on ping API and shell commands</li>
+<li>ID 217197: Fix unexpected closing of new socket connection</li>
+<li>ID 222582: Fix Iperf closing early and throughput degradation in UDPv6 server mode</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>None</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>ID 215159: Fix large MQTT messages restriction</li>
+<li>ID 218963: Fix of QoS flags not taken into account in MQTT messages sent</li>
+</ul></li>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
+<ul>
+<li>ID 215902: Add soft-AP support over LwIP (link capability)</li>
+</ul></li>
+<li><strong>AT Parser</strong>
+<ul>
+<li>None</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ID 219266: Rename OTA API to FWU (FirmWare Update) to clarify usage</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>None</li>
+</ul></li>
+</ul>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+<li>Static and Dynamic antenna diversity selection</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (10 connections max), Client mode (9 connections max) and Dual Mode (10 connections max with up to 9 as Client)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
+<li>IPv4 and IPv6 support</li>
+</ul></li>
+<li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>Firmware updates</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+</ul></li>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
+<ul>
+<li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>Shell service to call APIs as command line in UART terminal interface</li>
+<li>Logging service to redirect traces on UART or ITM</li>
+<li>Iperf service to evaluate network performances</li>
+</ul></li>
+</ul>
+<h2 id="known-limitations">Known limitations</h2>
+<ul>
+<li>Common architectures
+<ul>
+<li>W6X_WiFi_Connect API cannot use special characters [,“\] in the SSID and password. If needed, they must be preceded by a \ to be interpreted correctly Wi-Fi connection to an AP may fail if the previous connection to the same AP has not been ended by a disconnect</li>
+<li>W6X_Ble_SetDeviceName API cannot use special characters [,“\] in the device name. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>W6X_Ble_SetBdAddress API doesn’t support random BLE BD address</li>
+<li>No API to modify BLE GAP appearance value</li>
+</ul></li>
+<li>T01 architecture
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>Wi-Fi station may not receive an IP address after the DHCP sequence</li>
+<li>Ping may fail after a while when Wi-Fi station is connected in WPA3</li>
+<li>Once the DNS IP is set manually, those values will be hardcoded until the device is reset to its default configuration</li>
+<li>Unable to send data to a client in UDPv6 server mode</li>
+<li>Performance Rx throughput with Soft-AP shows high variance</li>
+<li>W6X_MQTT_Configure API cannot use special characters [,“\] in the username and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>W6X_MQTT_Publish cannot send message larger than 1470 bytes</li>
+</ul></li>
+<li>T02 architecture
+<ul>
+<li>Wi-Fi WPS connection is not working properly</li>
+<li>After a long run of iperf as client, in TCP ipv4 mode, throughpout decreases to 0 Mbps</li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section3" aria-hidden="true"> <label for="collapse-section3" aria-hidden="true"><strong>V1.1.1 / 26-Sep-2025</strong></label>
+<div>
+<h2 id="main-changes-1">Main Changes</h2>
 <ul>
 <li><strong>Wi-Fi</strong>
 <ul>
@@ -91,7 +219,7 @@
 <li>ID 215563: Report remote BD address type and Long Term Key (LTK) from BLE security events</li>
 <li>ID 216043: BLE Init rework to ensure clock is correctly configured before entering in Low Power</li>
 </ul></li>
-<li><strong>Network</strong>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
 <ul>
 <li>ID 210991: Improve Iperf RX throughput</li>
 <li>ID 212413: Fix blocking state on reception when connecting multiple UDP sockets</li>
@@ -99,7 +227,7 @@
 <li>ID 215289: Align the IP address format order in W6X_Net APIs on LwIP usage</li>
 <li>ID 215983: Fix IPv6 and IPv4 string length being too small</li>
 </ul></li>
-<li><strong>HTTP</strong>
+<li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
 <ul>
 <li>ID 211666: Increase SNI size for HTTP and choose server name as hostname when available</li>
 <li>ID 216816: Added the ability to send HTTP requests larger than W61_MAX_SPI_XFER</li>
@@ -112,7 +240,7 @@
 <li>ID 214875: Add support of empty MQTT message for retain feature</li>
 <li>ID 216425: Add support of QoS, Retain and LWT options in MQTT APIs</li>
 </ul></li>
-<li><strong>Network interface</strong>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
 <ul>
 <li>ID 211434: Add support of LwIP on host based on ST67W611M T02 architecture</li>
 </ul></li>
@@ -137,72 +265,6 @@
 <li>ID 216118: Remove HAL UART dependency of shell service</li>
 </ul></li>
 </ul>
-<h2 id="contents">Contents</h2>
-<ul>
-<li><strong>Wi-Fi</strong>
-<ul>
-<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
-<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
-<li>Station mode with WPS Push Button connection method</li>
-</ul></li>
-<li><strong>BLE</strong>
-<ul>
-<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
-<li>Up to 5 services (including default services) and 5 characteristics by service</li>
-</ul></li>
-<li><strong>Network</strong>
-<ul>
-<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
-</ul></li>
-<li><strong>HTTP</strong>
-<ul>
-<li>HTTP/HTTPS Client over network sockets</li>
-<li>GET/HEAD/POST/PUT support</li>
-</ul></li>
-<li><strong>MQTT</strong>
-<ul>
-<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
-</ul></li>
-<li><strong>FOTA</strong>
-<ul>
-<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
-</ul></li>
-<li><strong>Network interface</strong>
-<ul>
-<li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
-</ul></li>
-<li><strong>System</strong>
-<ul>
-<li>ST67W611M Power save (standby and shutdown modes)</li>
-</ul></li>
-<li><strong>Utilities</strong>
-<ul>
-<li>Shell service to call APIs as command line in UART terminal interface</li>
-<li>Logging service to redirect traces on UART or ITM</li>
-<li>Iperf service to evaluate network performances</li>
-</ul></li>
-</ul>
-<h2 id="known-limitations">Known limitations</h2>
-<ul>
-<li>Wi-Fi communication in static IP does not work when power save is activated</li>
-<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
-<li>W6X_WiFi_Connect API cannot use special characters [,“\] in the SSID and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
-<li>Dynamic mode of W6X_WiFi_SetAntennaDiversity API is not functional in current release</li>
-<li>W6X_Ble_SetDeviceName API cannot use special characters [,“\] in the device name. If needed, they must be preceded by a \ to be interpreted correctly</li>
-<li>Once the DNS IP is set manually, those values will be hardcoded until the device is reset to its default configuration</li>
-<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
-<li>W6X_MQTT_Configure API cannot use special characters [,“\] in the username and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
-<li>W6X_MQTT_Publish cannot send message larger than 1470 bytes</li>
-</ul>
-</div>
-</div>
-<div class="collapse">
-<input type="checkbox" id="collapse-section2" checked aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.0 / 05-Aug-2025</strong></label>
-<div>
-<h2 id="main-changes-1">Main Changes</h2>
-<ul>
-<li>None</li>
-</ul>
 <h2 id="contents-1">Contents</h2>
 <ul>
 <li><strong>Wi-Fi</strong>
@@ -213,14 +275,14 @@
 </ul></li>
 <li><strong>BLE</strong>
 <ul>
-<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Server mode (1 connection max) and Client mode (2 connections max)</li>
 <li>Up to 5 services (including default services) and 5 characteristics by service</li>
 </ul></li>
-<li><strong>Network</strong>
+<li><strong>Network</strong> (ST67W611M T01 SW architecture only)
 <ul>
-<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
 </ul></li>
-<li><strong>HTTP</strong>
+<li><strong>HTTP</strong> (ST67W611M T01 SW architecture only)
 <ul>
 <li>HTTP/HTTPS Client over network sockets</li>
 <li>GET/HEAD/POST/PUT support</li>
@@ -229,9 +291,13 @@
 <ul>
 <li>MQTT/MQTTS Client service with one MQTT broker connection</li>
 </ul></li>
-<li><strong>FOTA</strong>
+<li><strong>Firmware updates</strong>
 <ul>
 <li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+</ul></li>
+<li><strong>Network interface</strong> (ST67W611M T02 SW architecture only)
+<ul>
+<li>Network direct link to LwIP on Host with 2 link interfaces (Station and Soft-AP)</li>
 </ul></li>
 <li><strong>System</strong>
 <ul>
@@ -248,19 +314,22 @@
 <ul>
 <li>Wi-Fi communication in static IP does not work when power save is activated</li>
 <li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
-<li>Wi-Fi scan command is ignored immediately after a boot if auto-connect is enabled</li>
+<li>W6X_WiFi_Connect API cannot use special characters [,“\] in the SSID and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>Dynamic mode of W6X_WiFi_SetAntennaDiversity API is not functional in current release</li>
+<li>W6X_Ble_SetDeviceName API cannot use special characters [,“\] in the device name. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>Once the DNS IP is set manually, those values will be hardcoded until the device is reset to its default configuration</li>
 <li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
-<li>Performance Rx throughput with Soft-AP is instable</li>
-<li>Performance UDP Rx throughput is below expectation (expected 14 Mbps, actual 12 Mbps)</li>
+<li>W6X_MQTT_Configure API cannot use special characters [,“\] in the username and password. If needed, they must be preceded by a \ to be interpreted correctly</li>
+<li>W6X_MQTT_Publish cannot send message larger than 1470 bytes</li>
 </ul>
 </div>
 </div>
 <div class="collapse">
-<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-May-2025</strong></label>
+<input type="checkbox" id="collapse-section2" aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.0 / 05-Aug-2025</strong></label>
 <div>
 <h2 id="main-changes-2">Main Changes</h2>
 <ul>
-<li><strong>First official release</strong></li>
+<li>None</li>
 </ul>
 <h2 id="contents-2">Contents</h2>
 <ul>
@@ -272,12 +341,12 @@
 </ul></li>
 <li><strong>BLE</strong>
 <ul>
-<li>Server mode (1 connection max) and Client mode (2 connection max)</li>
+<li>Server mode (1 connection max) and Client mode (2 connections max)</li>
 <li>Up to 5 services (including default services) and 5 characteristics by service</li>
 </ul></li>
 <li><strong>Network</strong>
 <ul>
-<li>TCP/UDP/SSL socket service. 5 client connection max, 1 server connection max</li>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
 </ul></li>
 <li><strong>HTTP</strong>
 <ul>
@@ -288,7 +357,7 @@
 <ul>
 <li>MQTT/MQTTS Client service with one MQTT broker connection</li>
 </ul></li>
-<li><strong>FOTA</strong>
+<li><strong>Firmware updates</strong>
 <ul>
 <li>Upgrade of ST67W611M Firmware Over-The-Air</li>
 </ul></li>
@@ -304,6 +373,65 @@
 </ul></li>
 </ul>
 <h2 id="known-limitations-2">Known limitations</h2>
+<ul>
+<li>Wi-Fi communication in static IP does not work when power save is activated</li>
+<li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>
+<li>Wi-Fi scan command is ignored immediately after a boot if auto-connect is enabled</li>
+<li>SSL sockets support a limited amount of algorithms, handshake might fail if unsupported algorithm is used by the server</li>
+<li>Performance Rx throughput with Soft-AP is instable</li>
+<li>Performance UDP Rx throughput is below expectation (expected 14 Mbps, actual 12 Mbps)</li>
+</ul>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-May-2025</strong></label>
+<div>
+<h2 id="main-changes-3">Main Changes</h2>
+<ul>
+<li><strong>First official release</strong></li>
+</ul>
+<h2 id="contents-3">Contents</h2>
+<ul>
+<li><strong>Wi-Fi</strong>
+<ul>
+<li>Station mode in Open/WEP/WPA2/WPA3 encryption in personal mode</li>
+<li>Soft-AP mode in Open/WPA2/WPA3 encryption in personal mode</li>
+<li>Station mode with WPS Push Button connection method</li>
+</ul></li>
+<li><strong>BLE</strong>
+<ul>
+<li>Server mode (1 connection max) and Client mode (2 connections max)</li>
+<li>Up to 5 services (including default services) and 5 characteristics by service</li>
+</ul></li>
+<li><strong>Network</strong>
+<ul>
+<li>TCP/UDP/SSL socket service. 5 client connections max, 1 server connection max</li>
+</ul></li>
+<li><strong>HTTP</strong>
+<ul>
+<li>HTTP/HTTPS Client over network sockets</li>
+<li>GET/HEAD/POST/PUT support</li>
+</ul></li>
+<li><strong>MQTT</strong>
+<ul>
+<li>MQTT/MQTTS Client service with one MQTT broker connection</li>
+</ul></li>
+<li><strong>Firmware updates</strong>
+<ul>
+<li>Upgrade of ST67W611M Firmware Over-The-Air</li>
+</ul></li>
+<li><strong>System</strong>
+<ul>
+<li>ST67W611M Power save (standby and shutdown modes)</li>
+</ul></li>
+<li><strong>Utilities</strong>
+<ul>
+<li>Shell service to call APIs as command line in UART terminal interface</li>
+<li>Logging service to redirect traces on UART or ITM</li>
+<li>Iperf service to evaluate network performances</li>
+</ul></li>
+</ul>
+<h2 id="known-limitations-3">Known limitations</h2>
 <ul>
 <li>Wi-Fi communication in static IP does not work when power save is activated</li>
 <li>Wi-Fi station does not answer to ARP requests by Access Point when static IP is used</li>

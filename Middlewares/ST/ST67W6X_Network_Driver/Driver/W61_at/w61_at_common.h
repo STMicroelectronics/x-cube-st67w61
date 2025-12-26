@@ -66,7 +66,7 @@ extern "C" {
 #endif /* W61_NCP_TIMEOUT */
 
 #ifndef W61_SYS_TIMEOUT
-/** Timeout for special cases like flash write, OTA, etc */
+/** Timeout for special cases like flash write, firmware updates, etc */
 #define W61_SYS_TIMEOUT                         2000
 #endif /* W61_SYS_TIMEOUT */
 
@@ -119,13 +119,6 @@ extern "C" {
 #define AT_LOG_HOST_OUT(pBuf, len)
 #define AT_LOG_HOST_IN(pBuf, len)
 #endif /* W61_AT_LOG_ENABLE */
-
-/** Macro to check SDK version compatibility */
-#define SDK_MIN_VERSION(obj, maj, sub1, sub2) \
-  ((obj)->ModuleInfo.SDK_Version.Major > (maj) || \
-   ((obj)->ModuleInfo.SDK_Version.Major == (maj) && (obj)->ModuleInfo.SDK_Version.Sub1 > (sub1)) || \
-   ((obj)->ModuleInfo.SDK_Version.Major == (maj) && (obj)->ModuleInfo.SDK_Version.Sub1 == (sub1) && \
-    (obj)->ModuleInfo.SDK_Version.Sub2 >= (sub2)))
 
 /** @} */
 

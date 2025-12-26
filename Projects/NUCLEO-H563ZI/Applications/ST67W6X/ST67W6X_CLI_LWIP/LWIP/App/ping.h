@@ -31,6 +31,8 @@ extern "C" {
 #include "FreeRTOS.h"
 #include "task.h"
 #include "event_groups.h"
+#include "lwip.h"
+#include "lwip/opt.h"
 #include "lwip/inet.h"
 
 /* USER CODE BEGIN Includes */
@@ -42,7 +44,7 @@ extern "C" {
 /* USER CODE END EC */
 /* Exported types ------------------------------------------------------------*/
 /**
-  * @brief  ping IPv4 configuration structure
+  * @brief  ping configuration structure
   */
 typedef struct
 {
@@ -50,8 +52,14 @@ typedef struct
   int32_t count;                      /*!< Number of ping requests */
   int32_t interval_ms;                /*!< Interval between ping requests in milliseconds */
   int32_t size;                       /*!< Size of the ping payload */
-  char dst_addr[IP4ADDR_STRLEN_MAX];  /*!< Destination IPv4 address */
-} ping_ipv4_params_t;
+  int32_t timeout;                    /*!< Timeout for each ping request in milliseconds */
+#if (LWIP_IPV6 == 1)
+  uint32_t ipv6;                      /*!< false for IPv4, true for IPv6 */
+  char dst_addr[IP6ADDR_STRLEN_MAX];  /*!< Destination address (supports IPv6 and IPv4) */
+#else
+  char dst_addr[IPADDR_STRLEN_MAX];   /*!< Destination address (supports IPv4) */
+#endif /* LWIP_IPV6 */
+} ping_params_t;
 
 /* USER CODE BEGIN ET */
 
@@ -64,6 +72,14 @@ typedef struct
   * @retval 0 on success, -1 otherwise
   */
 int32_t ping_ipv4_cmd(int32_t argc, char **argv);
+
+/**
+  * Ping ipv6 function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval 0 on success, -1 otherwise
+  */
+int32_t ping_ipv6_cmd(int32_t argc, char **argv);
 
 #ifdef __cplusplus
 }

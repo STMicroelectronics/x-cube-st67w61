@@ -187,7 +187,7 @@ typedef enum
 {
   W6X_WIFI_ANTENNA_DISABLED,                      /*!< Antenna diversity disabled */
   W6X_WIFI_ANTENNA_STATIC,                        /*!< Static antenna selection */
-  W6X_WIFI_ANTENNA_DYNAMIC,                       /*!< Dynamic antenna selection. Not yet supported */
+  W6X_WIFI_ANTENNA_DYNAMIC,                       /*!< Dynamic antenna selection */
   W6X_WIFI_ANTENNA_UNKNOWN,                       /*!< Unknown antenna selection */
 } W6X_WiFi_AntennaMode_e;
 
@@ -203,7 +203,7 @@ typedef enum
 /** event_args parameter to be casted to W6X_Net_CbParamData_t */
 #define W6X_NET_EVT_SOCK_DATA_ID                       150
 
-#define NET_IPV6          0             /*!< IPv6 enabled */
+#define W6X_NET_IPV6_ENABLE     W61_NET_IPV6_ENABLE /*!< IPv6 enabled */
 
 #ifndef INET6_ADDRSTRLEN
 #define INET6_ADDRSTRLEN  46            /*!< IPv6 string length */
@@ -229,10 +229,10 @@ typedef enum
 #define IPPROTO_ICMP      1             /*!< ICMP protocol */
 #define IPPROTO_TCP       6             /*!< TCP protocol */
 #define IPPROTO_UDP       17            /*!< UDP protocol */
-#if NET_IPV6
+
 #define IPPROTO_IPV6      41            /*!< IPv6 protocol */
 #define IPPROTO_ICMPV6    58            /*!< ICMPv6 protocol */
-#endif /* NET_IPV6 */
+
 #endif /* ST67_ARCH */
 #define IPPROTO_UDPLITE   136           /*!< UDPLite protocol */
 #define IPPROTO_RAW       255           /*!< Raw protocol */
@@ -255,6 +255,16 @@ typedef enum
 #define TLS_HOSTNAME      2             /*!< Hostname for SNI */
 #define TLS_ALPN_LIST     7             /*!< ALPN list */
 
+/* DNS resolve types: */
+#define W6X_NET_DNS_ADDRTYPE_IPV4  0    /*!< Resolve IPv4 only */
+#if (W6X_NET_IPV6_ENABLE == 1)
+#define W6X_NET_DNS_ADDRTYPE_IPV6  1    /*!< Resolve IPv6 only */
+#endif /* W6X_NET_IPV6_ENABLE */
+#define W6X_NET_DNS_ADDRTYPE_IPV4_IPV6 2    /*!< Try to resolve IPv4 first, try IPv6 if IPv4 fails only */
+
+/** SNI maximum supported size in bytes */
+#define W6X_NET_SNI_MAX_SIZE   64
+
 /**
   * @brief  DHCP Client type enumeration
   */
@@ -275,6 +285,15 @@ typedef enum
   W6X_NET_UDP_PROTOCOL = 1,             /*!< UDP protocol */
   W6X_NET_SSL_PROTOCOL = 2              /*!< SSL protocol */
 } W6X_Net_Protocol_e;
+
+/**
+  * @brief  Ip address type
+  */
+typedef enum
+{
+  W6X_NET_IPV4 = 0,             /*!< IPv4 IP address */
+  W6X_NET_IPV6 = 1              /*!< IPv6 IP address */
+} W6X_Net_Family_e;
 
 /**
   * @brief  SSL socket credential type
@@ -421,13 +440,23 @@ typedef enum
 } W6X_Ble_Char_Permission_e;
 
 /**
-  * @brief  BLE mode enumeration
+  * @brief  BLE initialization mode enumeration
   */
 typedef enum
 {
   W6X_BLE_MODE_CLIENT = 1,
-  W6X_BLE_MODE_SERVER = 2
+  W6X_BLE_MODE_SERVER = 2,
+  W6X_BLE_MODE_DUAL = 3
 } W6X_Ble_Mode_e;
+
+/**
+  * @brief  BLE connection role enumeration
+  */
+typedef enum
+{
+  W6X_BLE_CONN_ROLE_CLIENT = 0,
+  W6X_BLE_CONN_ROLE_SERVER = 2,
+} W6X_Ble_Conn_Role_e;
 
 /**
   * @brief  BLE Advertising type enumeration
@@ -666,6 +695,11 @@ typedef enum
 /** @brief  Interface of convert an IP address from text to binary form */
 #define NET_INET_PTON           W6X_Net_Inet_pton
 #endif /* NET_INET_PTON */
+
+#ifndef NET_INET6_ATON
+/** @brief  Interface of convert an IPv6 address from text to binary form (struct in6_addr) */
+#define NET_INET6_ATON          W6X_Net_Inet6_aton
+#endif /* NET_INET6_ATON */
 
 #if (ST67_ARCH == W6X_ARCH_T02)
 #include "lwip/sockets.h"
@@ -912,6 +946,10 @@ typedef struct
   int32_t Rssi;
   /** Interval between Wi-Fi connection retries. Unit: second. Default: 0. Maximum: 7200 */
   uint32_t Reconnection_interval;
+  /** Security used during the connection process */
+  W6X_WiFi_SecurityType_e Security;
+  /** Wi-Fi protocol used for the connection */
+  W6X_WiFi_Protocol_e Protocol;
 } W6X_WiFi_Connect_t;
 
 /**
@@ -1132,10 +1170,45 @@ struct sockaddr_storage
   sa_family_t ss_family;                  /*!< Address family */
   char        s2_data1[2];                /*!< Transport layer port # as raw */
   uint32_t    s2_data2[3];                /*!< Reserved */
-#if NET_IPV6
+#if (W6X_NET_IPV6_ENABLE == 1)
   uint32_t    s2_data3[3];                /*!< Reserved */
-#endif /* NET_IPV6 */
+#endif /* W6X_NET_IPV6_ENABLE */
 };
+
+/**
+  * @brief  IPv4 local address structure aligned version of ip4_addr_t
+  */
+struct ip4_addr
+{
+  uint32_t addr;              /*!< IPv4 address */
+};
+
+/**
+  * @brief  IPv4 address structure
+  */
+typedef struct ip4_addr ip4_addr_t;
+
+/**
+  * @brief  IPv6 address structure
+  */
+typedef struct ip6_addr
+{
+  uint32_t addr[4];           /*!< IPv6 address */
+} ip6_addr_t;
+
+/**
+  * @brief IP address structure
+  */
+typedef struct ip_addr
+{
+  union
+  {
+    ip6_addr_t ip6;           /*!< IPv6 address */
+    ip4_addr_t ip4;           /*!< IPv4 address */
+  } u_addr;                   /*!< IP address union */
+  uint8_t type;               /*!< IP address type */
+} ip_addr_t;
+
 #endif /* ST67_ARCH */
 
 /** @} */
@@ -1255,6 +1328,7 @@ typedef struct
   int16_t RSSI;                                       /*!< Signal strength of BLE connection */
   uint8_t IsConnected;                                /*!< Connection status */
   uint8_t conn_handle;                                /*!< Connection handle */
+  uint8_t conn_role;                                  /*!< Connection role: 0: connected as a master, 1: connected as a slave */
   uint8_t DeviceName[W6X_BLE_DEVICE_NAME_SIZE];       /*!< BLE device name */
   uint8_t ManufacturerData[W6X_BLE_MANUF_DATA_SIZE];  /*!< Device manufacturer data */
   uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];               /*!< BD address of BLE Device */
@@ -1268,6 +1342,7 @@ typedef struct
 {
   uint8_t IsConnected;                                /*!< Connection status */
   uint8_t conn_handle;                                /*!< Connection handle */
+  uint8_t conn_role;                                  /*!< Connection role: 0: connected as a master, 1: connected as a slave */
   uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];               /*!< BD address of BLE Device */
   uint8_t bd_addr_type;                               /*!< Type of BD address */
   uint32_t PassKey;                                   /*!< BLE Security passkey */
@@ -1388,42 +1463,6 @@ typedef struct
   int32_t length;             /*!< Data length */
 } W6X_HTTP_buffer_t;
 
-#if (ST67_ARCH == W6X_ARCH_T01)
-/**
-  * @brief  HTTP IPv4 local address structure aligned version of ip4_addr_t
-  */
-struct ip4_addr
-{
-  uint32_t addr;              /*!< IPv4 address */
-};
-
-/**
-  * @brief  HTTP IPv4 address structure
-  */
-typedef struct ip4_addr ip4_addr_t;
-
-/**
-  * @brief  HTTP IPv6 address structure
-  */
-typedef struct ip6_addr
-{
-  uint32_t addr[4];           /*!< IPv6 address */
-} ip6_addr_t;
-
-/**
-  * @brief  HTTP IP address structure
-  */
-typedef struct ip_addr
-{
-  union
-  {
-    ip6_addr_t ip6;           /*!< IPv6 address */
-    ip4_addr_t ip4;           /*!< IPv4 address */
-  } u_addr;                   /*!< IP address union */
-  uint8_t type;               /*!< IP address type */
-} ip_addr_t;
-#endif /* ST67_ARCH */
-
 /**
   * @brief  HTTP connection state
   */
@@ -1515,8 +1554,10 @@ typedef void (*W6X_Net_if_rxd_notify_func_t)(void *arg);
   */
 typedef struct
 {
-  W6X_Net_if_link_t link_sta_up_fn;                 /*!< Function to handle link up events */
-  W6X_Net_if_link_t link_sta_down_fn;               /*!< Function to handle link down events */
+  W6X_Net_if_link_t link_sta_up_fn;                 /*!< Function to handle sta link up events */
+  W6X_Net_if_link_t link_sta_down_fn;               /*!< Function to handle sta link down events */
+  W6X_Net_if_link_t link_ap_up_fn;                  /*!< Function to handle ap link up events */
+  W6X_Net_if_link_t link_ap_down_fn;                /*!< Function to handle ap link down events */
   W6X_Net_if_rxd_notify_func_t rxd_sta_notify_fn;   /*!< Function to handle RX station notifications */
   W6X_Net_if_rxd_notify_func_t rxd_ap_notify_fn;    /*!< Function to handle RX AP notifications */
 } W6X_Net_if_cb_t;

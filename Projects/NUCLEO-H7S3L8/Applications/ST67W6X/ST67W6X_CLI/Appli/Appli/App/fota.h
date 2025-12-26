@@ -42,16 +42,19 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /** Event bits for FOTA update */
 /** Start the FOTA update procedure */
-#define FOTA_UPDATE_BIT               (1 << 0)
+#define FOTA_UPDATE_BIT                      (1 << 0)
 
 /** Error occurred */
-#define FOTA_ERROR_BIT                (1 << 1)
+#define FOTA_ERROR_BIT                       (1 << 1)
 
-/** Notice completion of FOTA to user */
-#define FOTA_COMPLETE_USER_NOTIF_BIT  (1 << 2)
+/** Notice completion of FOTA transfer to user */
+#define FOTA_COMPLETE_XFER_USER_NOTIF_BIT    (1 << 2)
 
 /** FOTA awaiting for user inputs before reboot */
-#define FOTA_WAIT_USER_ACK_BIT        (1 << 3)
+#define FOTA_WAIT_USER_ACK_BIT               (1 << 3)
+
+/** Notice completion of FOTA update to user */
+#define FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT  (1 << 4)
 
 /** Return Busy code */
 #define FOTA_BUSY                     -2

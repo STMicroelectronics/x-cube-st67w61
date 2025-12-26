@@ -79,8 +79,6 @@ typedef struct
   * @{
   */
 
-#define OTA_DATA_SEND_DELAY               (4U)        /*!< OTA Delay between the command send OTA data AT command and the effective data being sent */
-
 #define EFUSE_DEFAULT_MAC_ADDR_ADDR       (0x14)      /*!< EFUSE Address of default MAC address */
 #define EFUSE_DEFAULT_MAC_ADDR_LEN        (7)         /*!< EFUSE Length of default MAC address */
 
@@ -329,11 +327,30 @@ W61_Status_t W61_DeInit(W61_Object_t *Obj)
   return W61_STATUS_OK;
 }
 
+W61_Status_t W61_WaitForReady(W61_Object_t *Obj, uint32_t time_ms)
+{
+  BaseType_t xReturned;
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
+
+  /* Wait for the module to be ready */
+  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(time_ms));
+  if (xReturned != pdPASS)
+  {
+    SYS_LOG_ERROR("sem_if_ready not received\n");
+    return W61_STATUS_ERROR;
+  }
+  else
+  {
+    /** Need to wait after catching ready event to ensure module is fully operational .*/
+    vTaskDelay(pdMS_TO_TICKS(100));
+    return W61_STATUS_OK;
+  }
+}
+
 W61_Status_t W61_ResetToFactoryDefault(W61_Object_t *Obj)
 {
   W61_Status_t ret;
-  BaseType_t xReturned;
-  struct modem *mdm = (struct modem *) &Obj->Modem;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
   /* Send the factory reset command */
@@ -345,8 +362,8 @@ W61_Status_t W61_ResetToFactoryDefault(W61_Object_t *Obj)
   }
 
   /* Wait for the module to be ready */
-  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
-  if (xReturned != pdPASS)
+  ret = W61_WaitForReady(Obj, W61_READY_DEFAULT_TIMEOUT_MS);
+  if (ret != W61_STATUS_OK)
   {
     SYS_LOG_ERROR("sem_if_ready not received\n");
     goto __err;
@@ -368,8 +385,6 @@ __err:
 W61_Status_t W61_Reset(W61_Object_t *Obj)
 {
   W61_Status_t ret;
-  BaseType_t xReturned;
-  struct modem *mdm = (struct modem *) &Obj->Modem;
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+RST\r\n", 2000);
@@ -379,8 +394,9 @@ W61_Status_t W61_Reset(W61_Object_t *Obj)
     goto __err;
   }
 
-  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
-  if (xReturned != pdPASS)
+  /* Wait for the module to be ready */
+  ret = W61_WaitForReady(Obj, W61_READY_DEFAULT_TIMEOUT_MS);
+  if (ret != W61_STATUS_OK)
   {
     SYS_LOG_ERROR("sem_if_ready not received\n");
     goto __err;
@@ -467,6 +483,10 @@ W61_Status_t W61_ReadEFuse(W61_Object_t *Obj, uint32_t addr, uint32_t nbytes, ui
     MODEM_CMD_DIRECT("+EFUSE-R:", on_cmd_read_efuse),
   };
 
+  if (data_mdm == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data_mdm->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = data;
@@ -562,6 +582,10 @@ W61_Status_t W61_FS_ReadFile(W61_Object_t *Obj, char *filename, uint32_t offset,
     MODEM_CMD_DIRECT("+FS:READ,", on_cmd_fs_readfile),
   };
 
+  if (data_mdm == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data_mdm->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = (void *)data;
@@ -634,6 +658,10 @@ W61_Status_t W61_FS_ListFiles(W61_Object_t *Obj, W61_FS_FilesList_t *files_list)
     MODEM_CMD("", on_cmd_fs_listfiles, 1U, ""),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = (void *)files_list;
@@ -995,32 +1023,32 @@ _err:
   return ret;
 }
 
-W61_Status_t W61_OTA_starts(W61_Object_t *Obj, uint32_t enable)
+W61_Status_t W61_FWU_starts(W61_Object_t *Obj, uint32_t enable)
 {
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  /* Start or stop the OTA process. The parameter is:
-     - <enable>: 1 to start the OTA process, 0 to stop it */
+  /* Start or stop the firmware update process. The parameter is:
+     - <enable>: 1 to start the firmware update process, 0 to stop it */
   snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+OTASTART=%" PRIu32 "\r\n", enable);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_SYS_TIMEOUT);
 }
 
-W61_Status_t W61_OTA_Finish(W61_Object_t *Obj)
+W61_Status_t W61_FWU_Finish(W61_Object_t *Obj)
 {
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
-  /* Finish the OTA update and reboot the ST67W611M */
+  /* Finish the firmware update and reboot the ST67W611M */
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+OTAFIN\r\n", W61_SYS_TIMEOUT);
 }
 
-W61_Status_t W61_OTA_Send(W61_Object_t *Obj, uint8_t *buff, uint32_t len)
+W61_Status_t W61_FWU_Send(W61_Object_t *Obj, uint8_t *buff, uint32_t len)
 {
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
   W61_NULL_ASSERT(buff);
 
-  /* Send a chunk of data for the OTA update. The parameter is:
+  /* Send a chunk of data for the firmware update. The parameter is:
      - <len>: The length of data to send
      The data to send is sent in the next request part */
   snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+OTASEND=%" PRIu32 "\r\n", len);
@@ -1098,8 +1126,6 @@ W61_Status_t W61_SetClockSource(W61_Object_t *Obj, uint32_t source)
 {
   W61_Status_t ret = W61_STATUS_ERROR;
   uint32_t current_source;
-  BaseType_t xReturned;
-  struct modem *mdm = (struct modem *) &Obj->Modem;
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
 
@@ -1130,11 +1156,10 @@ W61_Status_t W61_SetClockSource(W61_Object_t *Obj, uint32_t source)
   }
 
   /* Wait for the ready message from the ST67 */
-  xReturned = xSemaphoreTake(mdm->sem_if_ready, pdMS_TO_TICKS(4000));
-  if (xReturned != pdPASS)
+  ret = W61_WaitForReady(Obj, W61_READY_DEFAULT_TIMEOUT_MS);
+  if (ret != W61_STATUS_OK)
   {
     SYS_LOG_ERROR("sem_if_ready not received\n");
-    ret = W61_STATUS_ERROR;
   }
 
 _err:
@@ -1228,6 +1253,20 @@ W61_Status_t W61_GetNetMode(W61_Object_t *Obj, int32_t *Netmode)
   return ret;
 }
 
+W61_Status_t W61_SdkMinVersion(W61_Object_t *Obj, uint32_t major, uint32_t sub1, uint32_t sub2)
+{
+  W61_NULL_ASSERT_STR(Obj, W61_Obj_Null_str);
+
+  if ((Obj->ModuleInfo.SDK_Version.Major > major) ||
+      ((Obj->ModuleInfo.SDK_Version.Major == major) && (Obj->ModuleInfo.SDK_Version.Sub1 > sub1)) ||
+      ((Obj->ModuleInfo.SDK_Version.Major == major) && (Obj->ModuleInfo.SDK_Version.Sub1 == sub1) &&
+       (Obj->ModuleInfo.SDK_Version.Sub2 >= sub2)))
+  {
+    return W61_STATUS_OK;
+  }
+
+  return W61_STATUS_ERROR;
+}
 /* Private Functions Definition ----------------------------------------------*/
 MODEM_CMD_DEFINE(on_cmd_at_version)
 {
@@ -1318,15 +1357,20 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_read_efuse)
 {
   struct modem *mdm = (struct modem *) data->user_data;
 
-  uint8_t *ptr = data->rx_buf + len;
+  uint8_t *ptr;
   uint32_t offset;
   uint8_t *endptr;
   uint16_t rx_data_len;
 
+  if (data->rx_buf == NULL)
+  {
+    return -EINVAL;
+  }
+  ptr = data->rx_buf + len;
   data->rx_buf[data->rx_buf_len] = 0;
 
   rx_data_len = strtol((char *) ptr, (char **)&endptr, 10);
-  if (endptr == ptr || *endptr != ',')
+  if ((endptr == ptr) || (*endptr != ','))
   {
     SYS_LOG_ERROR("Invalid EFUSE read response format");
     return -EINVAL;
@@ -1363,11 +1407,16 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_fs_readfile)
 {
   struct modem *mdm = (struct modem *) data->user_data;
 
-  uint8_t *ptr = data->rx_buf + len;
+  uint8_t *ptr;
   uint32_t offset;
   uint8_t *endptr;
   uint16_t rx_data_len;
 
+  if (data->rx_buf == NULL)
+  {
+    return -EINVAL;
+  }
+  ptr = data->rx_buf + len;
   data->rx_buf[data->rx_buf_len] = 0;
 
   rx_data_len = strtol((char *) ptr, (char **)&endptr, 10);

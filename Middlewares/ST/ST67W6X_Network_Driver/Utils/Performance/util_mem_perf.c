@@ -24,7 +24,6 @@
 #include <stdlib.h>
 
 #include "util_mem_perf.h"
-#include "w6x_config.h"
 #include "shell.h"
 #include "logging.h"
 #include "FreeRTOS.h"
@@ -59,14 +58,19 @@ typedef struct A_BLOCK_LINK
 /** @} */
 
 /* Private defines -----------------------------------------------------------*/
-/** @defgroup ST67W6X_Utilities_Performance_Mem_Perf_Constants ST67W6X Utility Performance Mem Perf Constants
-  * @ingroup  ST67W6X_Utilities_Performance_Mem_Perf
+/** @addtogroup ST67W6X_Utilities_Performance_Mem_Perf_Constants
   * @{
   */
 
-#ifndef MEM_PERF_ENABLE
-/** Enable memory performance measurement */
-#define MEM_PERF_ENABLE       0
+#if (MEM_PERF_ENABLE == 1)
+/*
+  MEM_PERF_ENABLE requires FreeRTOS function vTaskGetInfo
+  which is only enabled if configUSE_TRACE_FACILITY == 1.
+  Set #define configUSE_TRACE_FACILITY 1 to fix this error. (in FreeRTOSConfig.h)
+*/
+#if (configUSE_TRACE_FACILITY == 0)
+#error "Definition configUSE_TRACE_FACILITY must equal 1 to implement MEM_PERF_ENABLE."
+#endif /* configUSE_TRACE_FACILITY */
 #endif /* MEM_PERF_ENABLE */
 
 #ifndef LEAKAGE_ARRAY

@@ -30,8 +30,8 @@ extern "C" {
   */
 
 #define W6X_VERSION_MAIN   1    /*!< [31:24] main version */
-#define W6X_VERSION_SUB1   1    /*!< [23:16] sub1 version */
-#define W6X_VERSION_SUB2   1    /*!< [15:8]  sub2 version */
+#define W6X_VERSION_SUB1   2    /*!< [23:16] sub1 version */
+#define W6X_VERSION_SUB2   0    /*!< [15:8]  sub2 version */
 
 #define W6X_MAIN_SHIFT     24   /*!< main version shift */
 #define W6X_SUB1_SHIFT     16   /*!< sub1 version shift */

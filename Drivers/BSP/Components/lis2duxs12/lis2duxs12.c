@@ -159,6 +159,10 @@ int32_t LIS2DUXS12_RegisterBusIO(LIS2DUXS12_Object_t *pObj, LIS2DUXS12_IO_t *pIO
           }
         }
       }
+      else
+      {
+        ret = LIS2DUXS12_ERROR;
+      }
     }
   }
 
@@ -270,7 +274,8 @@ int32_t LIS2DUXS12_ExitDeepPowerDownI2C(LIS2DUXS12_Object_t *pObj)
 {
   uint8_t val;
 
-  /* Perform dummy read in order to exit from deep power down in I2C mode*/
+  /* Perform dummy read in order to exit from deep power down in I2C mode.
+   * NOTE: No return value check - expected first read fail. */
   (void)lis2duxs12_device_id_get(&(pObj->Ctx), &val);
 
   /* Wait for 25 ms based on datasheet */

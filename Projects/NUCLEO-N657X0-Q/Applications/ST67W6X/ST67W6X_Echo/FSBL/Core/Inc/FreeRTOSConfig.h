@@ -6,7 +6,7 @@
   ******************************************************************************
   */
 /*
- * FreeRTOS Kernel V10.6.2
+ * FreeRTOS Kernel V11.2.0
  * Portion Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  * Portion Copyright (C) 2019 StMicroelectronics, Inc.  All Rights Reserved.
  *
@@ -100,6 +100,13 @@ extern unsigned long getRunTimeCounterValue(void);
 #define configHEAP_CLEAR_MEMORY_ON_FREE          0
 #define configUSE_MINI_LIST_ITEM                 1
 #define configUSE_SB_COMPLETED_CALLBACK          0
+#define configKERNEL_PROVIDED_STATIC_MEMORY      1
+#define configSTATS_BUFFER_MAX_LENGTH            0xFFFF
+#define configENABLE_HEAP_PROTECTOR              0
+#define configUSE_EVENT_GROUPS                   1
+#define configUSE_STREAM_BUFFERS                 1
+#define configCHECK_HANDLER_INSTALLATION         1
+#define configVALIDATE_HEAP_BLOCK_POINTER        0
 /* USER CODE BEGIN MESSAGE_BUFFER_LENGTH_TYPE */
 /* Defaults to size_t for backward compatibility, but can be changed
    if lengths will always be less than the number of bytes in a size_t. */
@@ -107,6 +114,8 @@ extern unsigned long getRunTimeCounterValue(void);
 /* USER CODE END MESSAGE_BUFFER_LENGTH_TYPE */
 
 #define configRUN_TIME_COUNTER_TYPE              size_t
+
+#define configSTACK_DEPTH_TYPE                   size_t
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                    0
@@ -142,6 +151,7 @@ to exclude the API function. */
 #define INCLUDE_uxTaskGetStackHighWaterMark  1
 #define INCLUDE_xTaskGetCurrentTaskHandle    1
 #define INCLUDE_eTaskGetState                1
+#define INCLUDE_xTaskAbortDelay              1
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
@@ -176,8 +186,8 @@ header file. */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */
-#define vPortSVCHandler    SVC_Handler
-#define xPortPendSVHandler PendSV_Handler
+#define vPortSVCHandler     SVC_Handler
+#define xPortPendSVHandler  PendSV_Handler
 
 /* IMPORTANT: After 10.3.1 update, Systick_Handler comes from NVIC (if SYS timebase = systick), otherwise from cmsis_os2.c */
 
@@ -191,6 +201,23 @@ standard names. */
 
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
+
+/* Util task perf hooks definition */
+#if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__) /* exclude the IAR assembler */
+void task_perf_in_hook(void);
+void task_perf_out_hook(void);
+#endif /* __ICCARM__ || __ARMCC_VERSION || __GNUC__ */
+#define traceTASK_SWITCHED_IN task_perf_in_hook
+#define traceTASK_SWITCHED_OUT task_perf_out_hook
+
+/* Util mem perf hooks definition */
+#if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__) /* exclude the IAR assembler */
+void mem_perf_malloc_hook(void *pvAddress, size_t uiSize);
+void mem_perf_free_hook(void *pvAddress, size_t uiSize);
+#endif /* __ICCARM__ || __ARMCC_VERSION || __GNUC__ */
+#define traceMALLOC mem_perf_malloc_hook
+#define traceFREE mem_perf_free_hook
+
 /* USER CODE END Defines */
 
 #endif /* __FREERTOS_CONFIG_H */

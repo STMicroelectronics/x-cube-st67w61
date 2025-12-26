@@ -58,7 +58,7 @@ extern "C" {
   * @ingroup  ST67W6X_Private
   */
 
-/** @defgroup ST67W6X_Private_OTA ST67W6X OTA
+/** @defgroup ST67W6X_Private_FWU ST67W6X Firmware updates
   * @ingroup  ST67W6X_Private
   */
 

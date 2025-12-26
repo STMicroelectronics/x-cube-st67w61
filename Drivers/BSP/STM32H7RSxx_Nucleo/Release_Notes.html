@@ -36,13 +36,13 @@
 <div class="col-sm-12 col-lg-8">
 <h1 id="update-history">Update History</h1>
 <div class="collapse">
-<input type="checkbox" id="collapse-section2" checked aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.0 / 13-January-2025</strong></label>
+<input type="checkbox" id="collapse-section3" checked aria-hidden="true"> <label for="collapse-section3" aria-hidden="true"><strong>V1.1.1 / 12-September-2025</strong></label>
 <div>
 <h2 id="maintenance-release">Maintenance release</h2>
 <h2 id="contents">Contents</h2>
 <ul>
-<li>Fix Dynamic Clock Prescaler calculation in stm32h7rsxx_nucleo_xspi.c</li>
-<li>Use ReleasePowerDown command instead of No operation in BSP_XSPI_NOR_LeaveDeepPowerDown() API</li>
+<li>Fix Misra-C 2012 Rule 12.2 violations</li>
+<li>Modify the Led_TypeDef enum in the stm32h7rsxx_nucleo.h file to change the definition of LD2 from LED_BLUE to LED_YELLOW</li>
 </ul>
 <h2 id="supported-devices-and-boards">Supported Devices and boards</h2>
 <ul>
@@ -66,13 +66,13 @@
 </div>
 </div>
 <div class="collapse">
-<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-February-2024</strong></label>
+<input type="checkbox" id="collapse-section2" aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.0 / 13-January-2025</strong></label>
 <div>
-<h2 id="main-changes">Main Changes</h2>
-<h3 id="official-release-of-stm32h7rsxx_nucleo-bsp-board-drivers">Official release of <strong>STM32H7RSxx_Nucleo</strong> BSP Board drivers</h3>
+<h2 id="maintenance-release-1">Maintenance release</h2>
 <h2 id="contents-1">Contents</h2>
 <ul>
-<li>Official release of board drivers for <strong>STM32H7Rx/7Sx Nucleo-144 board</strong></li>
+<li>Fix Dynamic Clock Prescaler calculation in stm32h7rsxx_nucleo_xspi.c</li>
+<li>Use ReleasePowerDown command instead of No operation in BSP_XSPI_NOR_LeaveDeepPowerDown() API</li>
 </ul>
 <h2 id="supported-devices-and-boards-1">Supported Devices and boards</h2>
 <ul>
@@ -88,6 +88,36 @@
 <li>None</li>
 </ul>
 <h2 id="notes-1">Notes</h2>
+<ul>
+<li>None</li>
+</ul>
+<p><br />
+</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-February-2024</strong></label>
+<div>
+<h2 id="main-changes">Main Changes</h2>
+<h3 id="official-release-of-stm32h7rsxx_nucleo-bsp-board-drivers">Official release of <strong>STM32H7RSxx_Nucleo</strong> BSP Board drivers</h3>
+<h2 id="contents-2">Contents</h2>
+<ul>
+<li>Official release of board drivers for <strong>STM32H7Rx/7Sx Nucleo-144 board</strong></li>
+</ul>
+<h2 id="supported-devices-and-boards-2">Supported Devices and boards</h2>
+<ul>
+<li>STM32H7S3L8H6</li>
+<li>NUCLEO-H7S3L8</li>
+</ul>
+<h2 id="known-limitations-2">Known Limitations</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="dependencies-2">Dependencies</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="notes-2">Notes</h2>
 <p>stm32h7rsxx_nucleo_conf_template.h file must be copied in user application as stm32h7rsxx_nucleo_conf.h with optional configuration update</p>
 <p><br />
 </p>

@@ -137,7 +137,7 @@ int32_t net_if_init(W6X_Net_if_cb_t *net_if_cb)
 
   if (W6X_Netif_Init(net_if_cb))
   {
-    LogError("failed to initialize ST67W6X Net if component\n");
+    LogError("Failed to initialize ST67W6X Net if component\n");
     return -1;
   }
 
@@ -270,16 +270,6 @@ static int32_t netif_rx_process(uint32_t link_id)
   ret = W6X_Netif_input(link_id, &buffer, &payload);
   if (ret <= 0)
   {
-    if (ret < 0)
-    {
-      LogError("Read failed\n");
-    }
-    else
-    {
-      /* Data received is empty. skip to send on upper layer */
-      LogInfo("netif input : nothing to read\n");
-    }
-
     if (buffer)
     {
       W6X_Netif_free(buffer); /* Free the buffer even if in error */

@@ -173,6 +173,9 @@ W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_
     }
   }
 
+  /* Save the BLE mode */
+  p_DrvObj->BleCtx.NetSettings.Mode = (W61_Ble_Mode_e)mode;
+
   if (W6X_Ble_SetDeviceName(W6X_BLE_HOSTNAME) != W6X_STATUS_OK) /* Set device name */
   {
     BLE_LOG_ERROR("Failed to set device name\n");
@@ -547,24 +550,24 @@ W6X_Status_t W6X_Ble_RegisterCharacteristics(void)
   return TranslateErrorStatus(W61_Ble_RegisterCharacteristics(p_DrvObj));
 }
 
-W6X_Status_t W6X_Ble_ServerSendNotification(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,
-                                            uint32_t *sent_data_len, uint32_t timeout)
+W6X_Status_t W6X_Ble_ServerNotify(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
+                                  void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
 {
   NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
 
   /* Send a notification */
-  return TranslateErrorStatus(W61_Ble_ServerSendNotification(p_DrvObj, service_index, char_index, (uint8_t *)pdata,
-                                                             req_len, sent_data_len, timeout));
+  return TranslateErrorStatus(W61_Ble_ServerSendNotification(p_DrvObj, conn_handle, service_index, char_index,
+                                                             (uint8_t *)pdata, req_len, sent_data_len, timeout));
 }
 
-W6X_Status_t W6X_Ble_ServerSendIndication(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,
-                                          uint32_t *sent_data_len, uint32_t timeout)
+W6X_Status_t W6X_Ble_ServerIndicate(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
+                                    void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
 {
   NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
 
   /* Send an indication */
-  return TranslateErrorStatus(W61_Ble_ServerSendIndication(p_DrvObj, service_index, char_index, (uint8_t *)pdata,
-                                                           req_len, sent_data_len, timeout));
+  return TranslateErrorStatus(W61_Ble_ServerSendIndication(p_DrvObj, conn_handle, service_index, char_index,
+                                                           (uint8_t *)pdata, req_len, sent_data_len, timeout));
 }
 
 W6X_Status_t W6X_Ble_ServerSetReadData(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,

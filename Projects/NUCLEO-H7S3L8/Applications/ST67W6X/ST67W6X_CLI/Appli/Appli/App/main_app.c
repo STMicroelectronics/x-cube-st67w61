@@ -281,7 +281,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -289,7 +289,7 @@ void main_app(void)
   ret = W6X_WiFi_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Wi-Fi init is done\n");
@@ -298,7 +298,7 @@ void main_app(void)
   ret = W6X_Net_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Net init is done\n");
@@ -309,7 +309,7 @@ void main_app(void)
   ret = W6X_MQTT_Init(&mqtt_recv_data);
   if (ret)
   {
-    LogError("failed to initialize ST67W6X MQTT component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X MQTT component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("MQTT init is done\n");
@@ -341,8 +341,8 @@ void main_app(void)
     {
       if (W6X_WiFi_Station_GetState(&state, &connectData) != W6X_STATUS_OK)
       {
-        LogInfo("Connected to an Access Point\n");
-        return;
+        LogWarn("Connected to an unknown Access Point\n");
+        continue;
       }
 
       LogInfo("Connected to following Access Point :\n");
@@ -357,13 +357,14 @@ void main_app(void)
     {
       if (W6X_Net_Station_GetIPAddress(ip_addr, gateway_addr, netmask_addr) != W6X_STATUS_OK)
       {
-        LogInfo("Station got a new IP address\n");
-        return;
+        LogError("Failed to get Station IP address\n");
+        continue;
       }
       /* Get the Soft-AP IP address */
       if (W6X_Net_AP_GetIPAddress(ap_ipaddr, ap_netmask_addr) != W6X_STATUS_OK)
       {
-        return;
+        LogError("Failed to get Soft-AP IP address\n");
+        continue;
       }
       LogInfo("Station got a new IP address : " IPSTR "\n", IP2STR(ip_addr));
 
@@ -618,27 +619,23 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     case W6X_BLE_EVT_INDICATION_STATUS_ENABLED_ID:
-      LogInfo(" -> BLE INDICATION ENABLED [Connection: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
-              p_param_ble_data->remote_ble_device.conn_handle, p_param_ble_data->service_idx,
-              p_param_ble_data->charac_idx);
+      LogInfo(" -> BLE INDICATION ENABLED [Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
+              p_param_ble_data->service_idx, p_param_ble_data->charac_idx);
       break;
 
     case W6X_BLE_EVT_INDICATION_STATUS_DISABLED_ID:
-      LogInfo(" -> BLE INDICATION DISABLED [Connection: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
-              p_param_ble_data->remote_ble_device.conn_handle, p_param_ble_data->service_idx,
-              p_param_ble_data->charac_idx);
+      LogInfo(" -> BLE INDICATION DISABLED [Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
+              p_param_ble_data->service_idx, p_param_ble_data->charac_idx);
       break;
 
     case W6X_BLE_EVT_NOTIFICATION_STATUS_ENABLED_ID:
-      LogInfo(" -> BLE NOTIFICATION ENABLED [Connection: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
-              p_param_ble_data->remote_ble_device.conn_handle, p_param_ble_data->service_idx,
-              p_param_ble_data->charac_idx);
+      LogInfo(" -> BLE NOTIFICATION ENABLED [Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
+              p_param_ble_data->service_idx, p_param_ble_data->charac_idx);
       break;
 
     case W6X_BLE_EVT_NOTIFICATION_STATUS_DISABLED_ID:
-      LogInfo(" -> BLE NOTIFICATION DISABLED [Connection: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
-              p_param_ble_data->remote_ble_device.conn_handle, p_param_ble_data->service_idx,
-              p_param_ble_data->charac_idx);
+      LogInfo(" -> BLE NOTIFICATION DISABLED [Service: %" PRIu16 ", Charac: %" PRIu16 "]\n",
+              p_param_ble_data->service_idx, p_param_ble_data->charac_idx);
       break;
 
     case W6X_BLE_EVT_NOTIFICATION_DATA_ID:

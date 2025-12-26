@@ -45,7 +45,7 @@ extern "C" {
   * ============================
   */
 
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP power save mode : 0: NCP stays always active / 1: NCP goes in low power mode when idle */
 #define W6X_POWER_SAVE_AUTO                     1
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
@@ -140,7 +140,8 @@ extern "C" {
 #define W6X_HTTP_CLIENT_TCP_SOCK_RECV_TIMEOUT   1000
 
 /** Size of the TCP socket used by the HTTP client, recommended to be at least 0x2000 when fetching lots of data.
-  * 0x2000 is the value used in the SPI host project for OTA update, which retrieves around 1 mega bytes of data. */
+  * 0x2000 is the value used in the SPI host project for Firmware updates,
+  * which retrieves around 1 mega bytes of data. */
 #define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         0x3000
 
 /** ============================

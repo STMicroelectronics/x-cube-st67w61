@@ -1,5 +1,5 @@
 [FSBL:Groups]
-Doc=../readme.md;
+Doc=../README.md;
 [FSBL:ProjectFiles]
 [FSBL:Others]
 Define=;

@@ -344,7 +344,10 @@ int32_t mbedtls_sha256_finish(mbedtls_sha256_context_t *ctx, unsigned char *outp
   else
   {
     /* We'll need an extra block */
-    memset(ctx->buffer + used, 0, SHA256_BLOCK_SIZE - used);
+    if (used < SHA256_BLOCK_SIZE)
+    {
+      memset(ctx->buffer + used, 0, SHA256_BLOCK_SIZE - used);
+    }
 
     if ((ret = mbedtls_internal_sha256_process(ctx, ctx->buffer)) != 0)
     {

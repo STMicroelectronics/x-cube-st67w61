@@ -351,15 +351,21 @@ W61_Status_t W61_WiFi_Connect(W61_Object_t *Obj, W61_WiFi_Connect_Opts_t *Connec
   return ret;
 }
 
-W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi)
+W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi, W61_WiFi_SecurityType_e *Security,
+                                     W61_WiFi_Protocol_e *Protocol)
 {
   char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
   char cmd[W61_CMD_MATCH_BUFF_SIZE];
   uint16_t argc = 0;
   uint8_t index = 0;
-  W61_Status_t ret;
+
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Rssi);
+  W61_NULL_ASSERT(Security);
+  W61_NULL_ASSERT(Protocol);
+
+  W61_Status_t ret;
+  W61_WiFi_StaStateType_e state;
 
   strncpy(cmd, "AT+CWJAP?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWJAP:", &argc, argv, W61_WIFI_TIMEOUT);
@@ -385,6 +391,31 @@ W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi)
   Obj->WifiCtx.STASettings.Channel = atoi(argv[index++]);
   *Rssi = atoi(argv[index++]);
 
+  if (W61_SdkMinVersion(Obj, 2, 0, 97) == W61_STATUS_OK)
+  {
+    /* Get security type and protocol before disconnecting */
+    strncpy(cmd, "AT+CWSTATE?\r\n", sizeof(cmd));
+    ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWSTATE:", &argc, argv, W61_WIFI_TIMEOUT);
+    if (ret != W61_STATUS_OK)
+    {
+      return ret;
+    }
+    if (argc < 4)
+    {
+      return W61_STATUS_ERROR;
+    }
+    state = (W61_WiFi_StaStateType_e)atoi(argv[0]);
+    if ((state == W61_WIFI_STATE_STA_CONNECTED) || (state == W61_WIFI_STATE_STA_GOT_IP))
+    {
+      *Security = (W61_WiFi_SecurityType_e)atoi(argv[2]);
+      *Protocol = (W61_WiFi_Protocol_e)atoi(argv[3]);
+    }
+    else
+    {
+      *Security = W61_WIFI_SECURITY_UNKNOWN;
+      *Protocol = W61_WIFI_PROTOCOL_UNKNOWN;
+    }
+  }
   return ret;
 }
 
@@ -506,6 +537,8 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
 {
   W61_Status_t ret = W61_STATUS_ERROR;
   int32_t tmp_rssi = 0;
+  W61_WiFi_SecurityType_e tmp_security = W61_WIFI_SECURITY_UNKNOWN;
+  W61_WiFi_Protocol_e tmp_protocol = W61_WIFI_PROTOCOL_UNKNOWN;
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(ApConfig);
@@ -531,7 +564,7 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
   /* Get the channel the station is connected to */
   if ((Obj->WifiCtx.StaState == W61_WIFI_STATE_STA_CONNECTED) || (Obj->WifiCtx.StaState == W61_WIFI_STATE_STA_GOT_IP))
   {
-    if (W61_WiFi_GetConnectInfo(Obj, &tmp_rssi) != W61_STATUS_OK)
+    if (W61_WiFi_GetConnectInfo(Obj, &tmp_rssi, &tmp_security, &tmp_protocol) != W61_STATUS_OK)
     {
       WIFI_LOG_ERROR("Get connection information failed\n");
       return W61_STATUS_ERROR;
@@ -681,6 +714,10 @@ W61_Status_t W61_WiFi_AP_ListConnectedStations(W61_Object_t *Obj, W61_WiFi_Conne
     MODEM_CMD("+CWLIF:", on_cmd_ap_liststa, 2U, ","),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = Stations;
@@ -810,10 +847,23 @@ W61_Status_t W61_WiFi_AP_GetMACAddress(W61_Object_t *Obj, uint8_t *Mac)
 W61_Status_t W61_WiFi_SetDTIM(W61_Object_t *Obj, uint32_t dtim)
 {
   char cmd[W61_CMDRSP_STRING_SIZE];
+  uint32_t max_dtim = 10;
   W61_NULL_ASSERT(Obj);
 
-  if ((dtim == 0) || (dtim > 0xFF))
+  if (W61_SdkMinVersion(Obj, 2, 0, 97) != W61_STATUS_OK)
   {
+    if (dtim == 0)
+    {
+      WIFI_LOG_ERROR("DTIM value should be greater than 0\n");
+      return W61_STATUS_ERROR;
+    }
+    max_dtim = 25;
+  }
+
+  /* Verify the DTIM to configure does not exceed the maximum value */
+  if (dtim > max_dtim)
+  {
+    WIFI_LOG_ERROR("DTIM value exceeds maximum value : %" PRIu32 "\n", max_dtim);
     return W61_STATUS_ERROR;
   }
 
@@ -900,6 +950,10 @@ W61_Status_t W61_WiFi_TWT_GetStatus(W61_Object_t *Obj, W61_WiFi_TWT_Status_t *tw
     MODEM_CMD_ARGS_MAX("+TWT:", on_cmd_twt_status, 1U, 7U, ":,"),
   };
 
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
   (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
 
   mdm->rx_data = twt_status;
@@ -965,13 +1019,25 @@ W61_Status_t W61_WiFi_SetAntennaEnable(W61_Object_t *Obj, W61_WiFi_AntennaMode_e
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
+  if (Obj->ModuleInfo.ModuleID.ModuleID == W61_MODULE_ID_B)
+  {
+    SYS_LOG_ERROR("Antenna configuration not supported by the module\n");
+    return W61_STATUS_ERROR;
+  }
+
   if (mode == W61_WIFI_ANTENNA_STATIC)
   {
     static_enable = 1;
   }
-  else if (mode == W61_WIFI_ANTENNA_DYNAMIC)
+  else if ((W61_SdkMinVersion(Obj, 2, 0, 97) == W61_STATUS_OK) && (mode == W61_WIFI_ANTENNA_DYNAMIC))
   {
+    static_enable = 1;
     dynamic_enable = 1;
+  }
+  else
+  {
+    SYS_LOG_ERROR("Invalid antenna mode\n");
+    return W61_STATUS_ERROR;
   }
 
   snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWANTENABLE=%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
@@ -1006,7 +1072,7 @@ W61_Status_t W61_WiFi_GetAntennaEnable(W61_Object_t *Obj, W61_WiFi_AntennaMode_e
   {
     *mode = W61_WIFI_ANTENNA_DISABLED;
   }
-  else if ((dynamic_enable == 1) && (static_enable == 0))
+  else if (dynamic_enable == 1)
   {
     *mode = W61_WIFI_ANTENNA_DYNAMIC;
   }

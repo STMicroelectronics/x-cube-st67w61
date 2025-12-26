@@ -495,9 +495,9 @@
           <GroupName>Doc</GroupName>
           <Files>
             <File>
-              <FileName>readme.md</FileName>
+              <FileName>README.md</FileName>
               <FileType>5</FileType>
-              <FilePath>../readme.md</FilePath>
+              <FilePath>../README.md</FilePath>
             </File>
           </Files>
         </Group>
@@ -733,11 +733,6 @@
               <FileName>w6x_netif.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_netif.c</FilePath>
-            </File>
-            <File>
-              <FileName>w6x_ota.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/ST/ST67W6X_Network_Driver/Core/w6x_ota.c</FilePath>
             </File>
             <File>
               <FileName>w6x_sys.c</FileName>

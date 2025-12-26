@@ -35,6 +35,8 @@
   */
 #define PING_MAX_SIZE  10000 /*!< Max size of the ping request to send */
 
+#define PING_TIMEOUT   1000  /*!< Default timeout value for ping request */
+
 /** @} */
 
 /* Private macros ------------------------------------------------------------*/
@@ -185,7 +187,12 @@ int32_t W6X_Shell_Net_Station_IP(int32_t argc, char **argv)
   uint8_t ip_addr[4] = {0};
   uint8_t gateway_addr[4] = {0};
   uint8_t netmask_addr[4] = {0};
-
+#if (W6X_NET_IPV6_ENABLE == 1)
+  ip6_addr_t Ip6ll_addr = {0};
+  ip6_addr_t Ip6gl_addr = {0};
+  char ipv6ll[INET6_ADDRSTRLEN] = {0};
+  char ipv6gl[INET6_ADDRSTRLEN] = {0};
+#endif /* W6X_NET_IPV6_ENABLE */
 #if (SHELL_CMD_LEVEL >= 0)
   if (argc == 1)
   {
@@ -193,9 +200,31 @@ int32_t W6X_Shell_Net_Station_IP(int32_t argc, char **argv)
     if (W6X_Net_Station_GetIPAddress(ip_addr, gateway_addr, netmask_addr) == W6X_STATUS_OK)
     {
       /* Display the IP configuration */
-      SHELL_PRINTF("STA IP address : " IPSTR "\n", IP2STR(ip_addr));
-      SHELL_PRINTF("Gateway :        " IPSTR "\n", IP2STR(gateway_addr));
-      SHELL_PRINTF("Netmask :        " IPSTR "\n", IP2STR(netmask_addr));
+      SHELL_PRINTF("STA IP :\n");
+      SHELL_PRINTF("IP :              " IPSTR "\n", IP2STR(ip_addr));
+      SHELL_PRINTF("Gateway :         " IPSTR "\n", IP2STR(gateway_addr));
+      SHELL_PRINTF("Netmask :         " IPSTR "\n", IP2STR(netmask_addr));
+#if (W6X_NET_IPV6_ENABLE == 1)
+      if (W6X_Net_Station_GetIPv6Address(&Ip6ll_addr, &Ip6gl_addr) == W6X_STATUS_OK)
+      {
+        /* Each ip6_addr_t holds 4 host-order 32-bit words; inet_ntop applies byte-order conversion */
+        uint8_t ll_zero = (Ip6ll_addr.addr[0] == 0 && Ip6ll_addr.addr[1] == 0
+                           && Ip6ll_addr.addr[2] == 0 && Ip6ll_addr.addr[3] == 0);
+        uint8_t gl_zero = (Ip6gl_addr.addr[0] == 0 && Ip6gl_addr.addr[1] == 0
+                           && Ip6gl_addr.addr[2] == 0 && Ip6gl_addr.addr[3] == 0);
+        if (!ll_zero)
+        {
+          (void)W6X_Net_Inet_ntop(AF_INET6, Ip6ll_addr.addr, ipv6ll, sizeof(ipv6ll));
+        }
+        if (!gl_zero)
+        {
+          (void)W6X_Net_Inet_ntop(AF_INET6, Ip6gl_addr.addr, ipv6gl, sizeof(ipv6gl));
+        }
+        SHELL_PRINTF("IPv6 link-local : %s\n", ll_zero ? "not assigned" : ipv6ll);
+        SHELL_PRINTF("IPv6 global 1   : %s\n", gl_zero ? "not assigned" : ipv6gl);
+        SHELL_PRINTF("IPv6 global 2   : not assigned\n");
+      }
+#endif /* W6X_NET_IPV6_ENABLE */
     }
     else
     {
@@ -366,8 +395,9 @@ int32_t W6X_Shell_Net_AP_IP(int32_t argc, char **argv)
     if (W6X_Net_AP_GetIPAddress(ip_addr, netmask_addr) == W6X_STATUS_OK)
     {
       /* Display the IP configuration */
-      SHELL_PRINTF("Soft-AP IP address : " IPSTR "\n", IP2STR(ip_addr));
-      SHELL_PRINTF("Netmask :            " IPSTR "\n", IP2STR(netmask_addr));
+      SHELL_PRINTF("Soft-AP :\n");
+      SHELL_PRINTF("IP :      " IPSTR "\n", IP2STR(ip_addr));
+      SHELL_PRINTF("Netmask : " IPSTR "\n", IP2STR(netmask_addr));
     }
     else
     {
@@ -519,6 +549,7 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
   uint32_t ping_size = 0;
   uint32_t ping_interval = 0;
   uint32_t average_ping = 0;
+  uint32_t ping_timeout = PING_TIMEOUT;
   uint16_t ping_received_response = 0;
   int32_t current_arg = 2;
 
@@ -576,14 +607,36 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
       }
       current_arg += 2;
     }
+    /* Parse the timeout argument */
+    else if (strncmp(argv[current_arg], "-t", 2) == 0)
+    {
+      if (current_arg + 1 >= argc)
+      {
+        return SHELL_STATUS_UNKNOWN_ARGS;
+      }
+      /* Parse the timeout value */
+      ping_timeout = (uint32_t)atoi(argv[current_arg + 1]);
+      if (ping_timeout < 100 || ping_timeout > 3500)
+      {
+        SHELL_E("Ping timeout is invalid, valid range : [100;3500]\n");
+        return SHELL_STATUS_ERROR;
+      }
+      current_arg += 2;
+    }
     else
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
   }
 
-  if (W6X_STATUS_OK == W6X_Net_Ping((uint8_t *)argv[1], ping_size, ping_count, ping_interval, &average_ping,
-                                    &ping_received_response))
+  if (ping_timeout < ping_interval)
+  {
+    SHELL_E("Ping timeout must be greater than or equal to ping interval. Value adjusted.\n");
+    ping_timeout = ping_interval;
+  }
+
+  if (W6X_STATUS_OK == W6X_Net_Ping((uint8_t *)argv[1], ping_size, ping_count, ping_interval, ping_timeout,
+                                    &average_ping, &ping_received_response))
   {
     if (ping_received_response == 0)
     {
@@ -611,7 +664,7 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
 /** Shell command to ping a host */
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_Ping, ping,
                        ping <hostname> [ -c count [1; max(uint16_t) - 1] ]
-                       [ -s size [1; 10000] ] [ -i interval [100; 3500] ]);
+                       [ -s size [1; 10000] ] [ -i interval [100; 3500] ] [ -t timeout [100; 3500] ]);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_Net_SNTP_GetTime(int32_t argc, char **argv)
@@ -653,6 +706,7 @@ int32_t W6X_Shell_Net_SNTP_GetTime(int32_t argc, char **argv)
       SHELL_E("Set SNTP Configuration failed\n");
       goto _err;
     }
+    SHELL_PRINTF("SNTP: Getting time from server (can take up to 5000 ms)...\n");
     vTaskDelay(5000); /* Wait few seconds to execute the first request */
   }
 
@@ -681,18 +735,16 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_SNTP_GetTime, time, time < timezone : UTC f
 
 int32_t W6X_Shell_Net_ResolveHostAddress(int32_t argc, char **argv)
 {
-  uint8_t ipaddr[4] = {0};
-
+  ip_addr_t ipaddr = {0};
   if (argc != 2)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Get the IP address from the host name */
-  if (W6X_Net_ResolveHostAddress(argv[1], ipaddr) == W6X_STATUS_OK)
+  if (W6X_Net_ResolveHostAddressByType(argv[1], &ipaddr, W6X_NET_DNS_ADDRTYPE_IPV4) == W6X_STATUS_OK)
   {
-    SHELL_PRINTF("IP address: %" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16 "\n",
-                 ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3]);
+    SHELL_PRINTF("IPv4 address: " IPSTR "\n", IP2STR((uint8_t *)&ipaddr.u_addr.ip4.addr));
   }
   else
   {

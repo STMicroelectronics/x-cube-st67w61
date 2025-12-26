@@ -44,7 +44,7 @@ extern "C" {
   * @ingroup  ST67W6X_API
   */
 
-/** @defgroup ST67W6X_API_OTA ST67W6X OTA
+/** @defgroup ST67W6X_API_FWU ST67W6X Firmware updates
   * @ingroup  ST67W6X_API
   */
 
@@ -232,6 +232,15 @@ const char *W6X_StatusToStr(W6X_Status_t status);
   * @return Module ID string
   */
 const char *W6X_ModelToStr(W6X_ModuleID_e module_id);
+
+/**
+  * @brief  Check that the SDK version is at least the specified version
+  * @param  major: Major version
+  * @param  sub1: Sub1 version
+  * @param  sub2: Sub2 version
+  * @return Operation status
+  */
+W6X_Status_t W6X_SdkMinVersion(uint8_t major, uint8_t sub1, uint8_t sub2);
 
 /** @} */
 
@@ -429,7 +438,7 @@ W6X_Status_t W6X_WiFi_GetAntennaDiversity(W6X_WiFi_AntennaInfo_t *antenna_info);
 
 /**
   * @brief  Set the antenna diversity configuration
-  * @param  mode: antenna mode (0: disabled, 1: static, 2: dynamic (not yet supported))
+  * @param  mode: antenna mode (0: disabled, 1: static, 2: dynamic)
   * @return Operation status
   */
 W6X_Status_t W6X_WiFi_SetAntennaDiversity(W6X_WiFi_AntennaMode_e mode);
@@ -511,6 +520,18 @@ W6X_Status_t W6X_Net_GetHostname(uint8_t Hostname[33]);
   */
 W6X_Status_t W6X_Net_Station_GetIPAddress(uint8_t Ip_addr[4], uint8_t Gateway_addr[4], uint8_t Netmask_addr[4]);
 
+#if (W6X_NET_IPV6_ENABLE == 1)
+/**
+  * @brief  Get the Wi-Fi Station interface's IPv6 addresses (link-local & global)
+  * @param  Ip6ll_addr: (optional) pointer to ip6_addr_t receiving link-local address (can be NULL)
+  * @param  Ip6gl_addr: (optional) pointer to ip6_addr_t receiving global/unicast address (can be NULL)
+  * @return Operation status
+  * @note   Each ip6_addr_t contains 4 host-order 32-bit words (uint32_t[4]) representing the 128-bit address.
+  *         Use W6X_Net_Inet_ntop(AF_INET6, ip6.addr, buf, buflen) to obtain the compressed textual form.
+  */
+W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *Ip6ll_addr, ip6_addr_t *Ip6gl_addr);
+#endif /* W6X_NET_IPV6_ENABLE */
+
 /**
   * @brief  Set the Wi-Fi Station interface's IP address
   * @param  Ipaddr: IP address to set
@@ -583,12 +604,13 @@ W6X_Status_t W6X_Net_SetDnsAddress(uint8_t Dns1_addr[4], uint8_t Dns2_addr[4], u
   * @param  length: Length of the URL or IP address
   * @param  count: Number of pings to send
   * @param  interval_ms: Interval between pings
+  * @param  timeout: Timeout for each ping
   * @param  average_time: Average time of the pings
   * @param  received_response: Number of received responses
   * @return Operation status
   */
 W6X_Status_t W6X_Net_Ping(uint8_t *location, uint16_t length, uint16_t count, uint16_t interval_ms,
-                          uint32_t *average_time, uint16_t *received_response);
+                          uint16_t timeout, uint32_t *average_time, uint16_t *received_response);
 
 /**
   * @brief  Get IP address from URL using DNS
@@ -597,6 +619,15 @@ W6X_Status_t W6X_Net_Ping(uint8_t *location, uint16_t length, uint16_t count, ui
   * @return Operation status
   */
 W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t *ipaddr);
+
+/**
+  * @brief  Resolve a hostname to an IP (IPv4 or IPv6).
+  * @param  location: Hostname to resolve
+  * @param  out_addr: ip_addr_t* to fill as result of the resolve operation
+  * @param  family: family request for ip_addr_t
+  * @return Operation status
+  */
+W6X_Status_t W6X_Net_ResolveHostAddressByType(const char *location, ip_addr_t *out_addr, uint8_t family);
 
 /**
   * @brief  Get current SNTP status, timezone and servers
@@ -832,27 +863,39 @@ char *W6X_Net_Inet_ntop(int32_t af, const void *src, char *dst, socklen_t size);
   * @return Operation status (-1 or 0 on failure, 1 on success)
   */
 int32_t W6X_Net_Inet_pton(int32_t af, char *src, const void *dst);
+
+#if (W6X_NET_IPV6_ENABLE == 1)
+/**
+  * @brief  Convert an IPv6 text representation to binary (struct in6_addr) via driver aton
+  * @param  src: textual IPv6 address (compressed or full form)
+  * @param  dst: destination pointer to struct in6_addr (host-order words un.u32_addr[])
+  * @return 1 on success, 0 on failure
+  * @note   Delegates to W61_Net_Inet6_aton driver implementation.
+  */
+int32_t W6X_Net_Inet6_aton(const char *src, struct in6_addr *dst);
+#endif /* W6X_NET_IPV6_ENABLE */
+
 /** @} */
 
 /* ===================================================================== */
-/** @defgroup ST67W6X_API_OTA_Public_Functions ST67W6X OTA Functions
-  * @ingroup  ST67W6X_API_OTA
+/** @defgroup ST67W6X_API_FWU_Public_Functions ST67W6X Firmware updates Functions
+  * @ingroup  ST67W6X_API_FWU
   * @{
   */
 /* ===================================================================== */
 
 /**
-  * @brief  Starts the NCP OTA process
-  * @param  enable: 0 Terminate the OTA transmission. 1 Start the OTA transmission
+  * @brief  Starts the NCP FWU process
+  * @param  enable: 0 Terminate the FWU transmission. 1 Start the FWU transmission
   * @return Operation status
   */
-W6X_Status_t W6X_OTA_Starts(uint32_t enable);
+W6X_Status_t W6X_FWU_Starts(uint32_t enable);
 
 /**
-  * @brief  Finish the NCP OTA process which reboot the module to apply the new firmware
+  * @brief  Finish the NCP FWU process which reboot the module to apply the new firmware
   * @return Operation status
   */
-W6X_Status_t W6X_OTA_Finish(void);
+W6X_Status_t W6X_FWU_Finish(void);
 
 /**
   * @brief  Send the firmware binary to the module
@@ -860,7 +903,7 @@ W6X_Status_t W6X_OTA_Finish(void);
   * @param  len: Length of the firmware binary chunk
   * @return Operation status
   */
-W6X_Status_t W6X_OTA_Send(uint8_t *buff, uint32_t len);
+W6X_Status_t W6X_FWU_Send(uint8_t *buff, uint32_t len);
 
 /** @} */
 
@@ -994,14 +1037,14 @@ const char *W6X_MQTT_StateToStr(uint32_t state);
 /* ===================================================================== */
 /**
   * @brief  Get BLE initialization mode
-  * @param  Mode: pointer to BLE mode (Server/Client)
+  * @param  Mode: pointer to BLE mode (Server/Client/Dual)
   * @return Operation status
   */
 W6X_Status_t W6X_Ble_GetInitMode(W6X_Ble_Mode_e *Mode);
 
 /**
-  * @brief  Initialize BLE Server/Client
-  * @param  mode: BLE mode (Server/Client)
+  * @brief  Initialize BLE Server/Client/Dual mode
+  * @param  mode: BLE mode (Server/Client/Dual)
   * @param  p_recv_data: Pointer to the received data
   * @param  max_len: Maximum length of the received data
   * @return Operation status
@@ -1009,7 +1052,7 @@ W6X_Status_t W6X_Ble_GetInitMode(W6X_Ble_Mode_e *Mode);
 W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_len);
 
 /**
-  * @brief  De-Initialize BLE Server/Client
+  * @brief  De-Initialize BLE Server/Client/Dual mode
   */
 void W6X_Ble_DeInit(void);
 
@@ -1198,7 +1241,7 @@ W6X_Status_t W6X_Ble_GetConnParam(uint32_t *ConnHandle, uint32_t *ConnIntMin,
 
 /**
   * @brief  Get the connection information
-  * @param  ConnHandle: pointer to get BLE connection handle
+  * @param  ConnHandle: pointer to get BLE connection handle. 0xFF if no connection
   * @param  RemoteBDAddr: pointer to get the remote device address
   * @return Operation status
   */
@@ -1280,6 +1323,7 @@ W6X_Status_t W6X_Ble_RemoteCharDiscovery(uint8_t conn_handle, uint8_t service_in
 
 /**
   * @brief  Notify the Characteristic Value from the Server to a Client
+  * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to notify
   * @param  char_index: index of the characteristic to notify
   * @param  pdata: pointer to the data to notify
@@ -1288,11 +1332,12 @@ W6X_Status_t W6X_Ble_RemoteCharDiscovery(uint8_t conn_handle, uint8_t service_in
   * @param  timeout: timeout in ms
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_ServerSendNotification(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,
-                                            uint32_t *sent_data_len, uint32_t timeout);
+W6X_Status_t W6X_Ble_ServerNotify(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
+                                  void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
 
 /**
   * @brief  Indicate the Characteristic Value from the Server to a Client
+  * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to indicate
   * @param  char_index: index of the characteristic to indicate
   * @param  pdata: pointer to the data to indicate
@@ -1301,8 +1346,8 @@ W6X_Status_t W6X_Ble_ServerSendNotification(uint8_t service_index, uint8_t char_
   * @param  timeout: timeout in ms
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_ServerSendIndication(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,
-                                          uint32_t *sent_data_len, uint32_t timeout);
+W6X_Status_t W6X_Ble_ServerIndicate(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
+                                    void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
 
 /**
   * @brief  Set the data when Client read characteristic from the Server

@@ -40,12 +40,111 @@
 <div class="col-sm-12 col-lg-8">
 <h1 id="update-history">Update History</h1>
 <div class="collapse">
-<input type="checkbox" id="collapse-section3" checked aria-hidden="true"> <label for="collapse-section3" aria-hidden="true"><strong>V1.2.0 / 05-February-2025</strong></label>
+<input type="checkbox" id="collapse-section4" checked aria-hidden="true"> <label for="collapse-section4" aria-hidden="true"><strong>V1.2.1 / 29-October-2025</strong></label>
 <div>
 <h2 id="main-changes">Main Changes</h2>
 <h3 id="maintenance-release-of-stm32cubeh7rs-halll-drivers-supporting-stm32h7rxsx-devices">Maintenance Release of <strong>STM32CubeH7RS</strong> HAL/LL Drivers supporting <strong>STM32H7Rx/Sx</strong> devices</h3>
 <h2 id="contents">Contents</h2>
 <h3 id="hal-drivers-updates"><strong>HAL Drivers</strong> updates</h3>
+<ul>
+<li>Fix MISRA-C 2012 Rule 12.2 violations.</li>
+<li><strong>HAL GPIO</strong>
+<ul>
+<li>Correct HAL_GPIO_DeInit() API description.</li>
+</ul></li>
+<li><strong>HAL RTC</strong>
+<ul>
+<li>Prevent entering initialization mode when calling HAL_RTC_Init() API if the RTC is already configured in binary mode to avoid unwanted reset of the SSR register.</li>
+<li>Use SET_BIT() instead of WRITE_REG() in HAL_RTCEx_BKUPErase() and HAL_RTCEx_BKUPBlock() APIs to prevent overwriting other bitfields of the TAMP’s CR2 register.</li>
+<li>Use SET_BIT() instead of WRITE_REG() in HAL_RTCEx_LockBootHardwareKey() API to prevent overwriting other bitfields of the TAMP’s CFGR register.</li>
+</ul></li>
+<li><strong>HAL TIM</strong>
+<ul>
+<li>Resolve MISRA-C 2012 Rule 20.7 warning.</li>
+<li>Correct update flag (UIF) clearing in TIM_Base_SetConfig() function.</li>
+<li>Update TIM_CCER_CCxE_MASK to support internal TIM Channel5 and TIM Channel6.</li>
+<li>Adjust period value assertion to account for dithering.</li>
+<li>Fix complementary channel being systematically disabled by TIM_OCx_SetConfig() function.</li>
+<li>Correct arguments in TIM_ITRx_SetConfig() brief function.</li>
+</ul></li>
+<li><strong>HAL/LL DMA</strong>
+<ul>
+<li>Add attribute ((no_inline)) to DMA_List_CheckNodesBaseAddresse() API to avoid GCC compiler warnings.</li>
+</ul></li>
+<li><strong>HAL HASH</strong>
+<ul>
+<li>Update HAL HASH IT process to enable the Hash interrupt after write data to avoid unexpected error callback.</li>
+</ul></li>
+<li><strong>HAL FMC</strong>
+<ul>
+<li>Remove unused local variables.</li>
+</ul></li>
+<li><strong>HAL SDMMC</strong>
+<ul>
+<li>Resolve HAL SD, MMC and SDIO Coverity warnings.</li>
+<li>Add support for SD card V1 within HAL SD.</li>
+</ul></li>
+<li><strong>HAL ETH</strong>
+<ul>
+<li>Fix Eth Bus Fault error for Rx Context Descriptor and remove CSC MACTSCR configuration.</li>
+</ul></li>
+<li><strong>HAL SPI</strong>
+<ul>
+<li>Resolve buffer overflow in TX interrupt service routine.</li>
+</ul></li>
+<li><strong>HAL XSPI</strong>
+<ul>
+<li>Add new helper HAL_XSPI_IsMemoryMapped() API to verify whether memory-mapped mode is configured or not.</li>
+<li>Include asserts to inform users when data size or address requested is incompatible with current XSPI configuration.</li>
+<li>Suppress auto activation of Data DTR when Instruction is on DTR (user choice).</li>
+<li>Remove DHQC bit references when the feature is not present.</li>
+</ul></li>
+<li><strong>HAL FDCAN</strong>
+<ul>
+<li>Fix GetIndex computation overflow in overwrite mode.</li>
+</ul></li>
+<li><strong>HAL I2C</strong>
+<ul>
+<li>Improve and simplify IsDeviceReady() function.</li>
+</ul></li>
+<li><strong>HAL UART/LPUART</strong>
+<ul>
+<li>Resolve transfer count underflow when using polling mode.</li>
+</ul></li>
+<li><strong>HAL LTDC</strong>
+<ul>
+<li>Update to prevent compilation errors when the DSI module is not enabled.</li>
+</ul></li>
+</ul>
+<h2 id="supported-devices-and-boards">Supported Devices and boards</h2>
+<ul>
+<li>STM32H7S7xx, STM32H7S3xx, STM32H7R7xx, STM32H7R3xx devices</li>
+</ul>
+<h2 id="backward-compatibility">Backward compatibility</h2>
+<ul>
+<li>Not applicable</li>
+</ul>
+<h2 id="known-limitations">Known Limitations</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="dependencies">Dependencies</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>None</li>
+</ul>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section3" aria-hidden="true"> <label for="collapse-section3" aria-hidden="true"><strong>V1.2.0 / 05-February-2025</strong></label>
+<div>
+<h2 id="main-changes-1">Main Changes</h2>
+<h3 id="maintenance-release-of-stm32cubeh7rs-halll-drivers-supporting-stm32h7rxsx-devices-1">Maintenance Release of <strong>STM32CubeH7RS</strong> HAL/LL Drivers supporting <strong>STM32H7Rx/Sx</strong> devices</h3>
+<h2 id="contents-1">Contents</h2>
+<h3 id="hal-drivers-updates-1"><strong>HAL Drivers</strong> updates</h3>
 <ul>
 <li>Remove unnecessary parentheses that causes compilation warning.</li>
 <li>Enhance HAL code quality for MISRA-C Rule-8.13 by adding const qualifiers.</li>
@@ -210,23 +309,23 @@
 <li>Fix incorrect word ‘surcharged’ in functions headers.</li>
 </ul></li>
 </ul>
-<h2 id="supported-devices-and-boards">Supported Devices and boards</h2>
+<h2 id="supported-devices-and-boards-1">Supported Devices and boards</h2>
 <ul>
 <li>STM32H7S7xx, STM32H7S3xx, STM32H7R7xx, STM32H7R3xx devices</li>
 </ul>
-<h2 id="backward-compatibility">Backward compatibility</h2>
+<h2 id="backward-compatibility-1">Backward compatibility</h2>
 <ul>
 <li>Not applicable</li>
 </ul>
-<h2 id="known-limitations">Known Limitations</h2>
+<h2 id="known-limitations-1">Known Limitations</h2>
 <ul>
 <li>None</li>
 </ul>
-<h2 id="dependencies">Dependencies</h2>
+<h2 id="dependencies-1">Dependencies</h2>
 <ul>
 <li>None</li>
 </ul>
-<h2 id="notes">Notes</h2>
+<h2 id="notes-1">Notes</h2>
 <ul>
 <li>None</li>
 </ul>
@@ -235,10 +334,10 @@
 <div class="collapse">
 <input type="checkbox" id="collapse-section2" aria-hidden="true"> <label for="collapse-section2" aria-hidden="true"><strong>V1.1.0 / 05-June-2024</strong></label>
 <div>
-<h2 id="main-changes-1">Main Changes</h2>
-<h3 id="maintenance-release-of-stm32cubeh7rs-halll-drivers-supporting-stm32h7rxsx-devices-1">Maintenance Release of <strong>STM32CubeH7RS</strong> HAL/LL Drivers supporting <strong>STM32H7Rx/Sx</strong> devices</h3>
-<h2 id="contents-1">Contents</h2>
-<h3 id="hal-drivers-updates-1"><strong>HAL Drivers</strong> updates</h3>
+<h2 id="main-changes-2">Main Changes</h2>
+<h3 id="maintenance-release-of-stm32cubeh7rs-halll-drivers-supporting-stm32h7rxsx-devices-2">Maintenance Release of <strong>STM32CubeH7RS</strong> HAL/LL Drivers supporting <strong>STM32H7Rx/Sx</strong> devices</h3>
+<h2 id="contents-2">Contents</h2>
+<h3 id="hal-drivers-updates-2"><strong>HAL Drivers</strong> updates</h3>
 <ul>
 <li><strong>HAL CORDIC</strong> driver
 <ul>
@@ -330,41 +429,6 @@
 <li>Remove number of WS according to RM</li>
 </ul></li>
 </ul>
-<h2 id="supported-devices-and-boards-1">Supported Devices and boards</h2>
-<ul>
-<li>STM32H7S7xx, STM32H7S3xx, STM32H7R7xx, STM32H7R3xx devices</li>
-</ul>
-<h2 id="backward-compatibility-1">Backward compatibility</h2>
-<ul>
-<li>Not applicable</li>
-</ul>
-<h2 id="known-limitations-1">Known Limitations</h2>
-<ul>
-<li>None</li>
-</ul>
-<h2 id="dependencies-1">Dependencies</h2>
-<ul>
-<li>None</li>
-</ul>
-<h2 id="notes-1">Notes</h2>
-<ul>
-<li>None</li>
-</ul>
-</div>
-</div>
-<div class="collapse">
-<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-February-2024</strong></label>
-<div>
-<h2 id="first-release">First Release</h2>
-<ul>
-<li>First official Release of <strong>STM32CubeH7RS</strong> HAL/LL Drivers supporting <strong>STM32H7Rx/Sx</strong> devices</li>
-</ul>
-<h2 id="contents-2">Contents</h2>
-<ul>
-<li><strong>HAL</strong>: ADC, CEC, CORDIC, CORTEX, CRC, CRS, CRYP, DBGMCU, DCMIPP, DLB, DMA (HPDMA and GPDMA), DMA2D, DTS, ETH, EXTI, FDCAN, FLASH, FMC, GPIO, GFXMMU, GFXTIM, GPU2D, HASH, I2C, I3C, I2S, ICACHE, IRDA, IWDG, JPEG, LPTIM, LTDC, MCE, MDF, MDIOS, MMC/NAND/NOR/SD/SDRAM/SRAM, PKA, PSSI, PWR, RAMECC, RCC, RNG, RTC, SAI, SBS, SPDIFRX, SMARTCARD, SMBUS, SPI, TIM, UART, USART, USB (HCD and PCD), WWDG, XSPI</li>
-<li><strong>LL</strong>: ADC, CORDIC, CORTEX, CRC, CRS, DMA, EXTI, FMC, GPIO, I2C, I3C, ICACHE, LPTIM, LPUART, PKA, PWR, RCC, RNG, RTC, SDMMC, SPI, SYSTEM, TIM, USART, USB, UTILS, UCPD<br />
-</li>
-</ul>
 <h2 id="supported-devices-and-boards-2">Supported Devices and boards</h2>
 <ul>
 <li>STM32H7S7xx, STM32H7S3xx, STM32H7R7xx, STM32H7R3xx devices</li>
@@ -382,6 +446,41 @@
 <li>None</li>
 </ul>
 <h2 id="notes-2">Notes</h2>
+<ul>
+<li>None</li>
+</ul>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true"><strong>V1.0.0 / 28-February-2024</strong></label>
+<div>
+<h2 id="first-release">First Release</h2>
+<ul>
+<li>First official Release of <strong>STM32CubeH7RS</strong> HAL/LL Drivers supporting <strong>STM32H7Rx/Sx</strong> devices</li>
+</ul>
+<h2 id="contents-3">Contents</h2>
+<ul>
+<li><strong>HAL</strong>: ADC, CEC, CORDIC, CORTEX, CRC, CRS, CRYP, DBGMCU, DCMIPP, DLB, DMA (HPDMA and GPDMA), DMA2D, DTS, ETH, EXTI, FDCAN, FLASH, FMC, GPIO, GFXMMU, GFXTIM, GPU2D, HASH, I2C, I3C, I2S, ICACHE, IRDA, IWDG, JPEG, LPTIM, LTDC, MCE, MDF, MDIOS, MMC/NAND/NOR/SD/SDRAM/SRAM, PKA, PSSI, PWR, RAMECC, RCC, RNG, RTC, SAI, SBS, SPDIFRX, SMARTCARD, SMBUS, SPI, TIM, UART, USART, USB (HCD and PCD), WWDG, XSPI</li>
+<li><strong>LL</strong>: ADC, CORDIC, CORTEX, CRC, CRS, DMA, EXTI, FMC, GPIO, I2C, I3C, ICACHE, LPTIM, LPUART, PKA, PWR, RCC, RNG, RTC, SDMMC, SPI, SYSTEM, TIM, USART, USB, UTILS, UCPD<br />
+</li>
+</ul>
+<h2 id="supported-devices-and-boards-3">Supported Devices and boards</h2>
+<ul>
+<li>STM32H7S7xx, STM32H7S3xx, STM32H7R7xx, STM32H7R3xx devices</li>
+</ul>
+<h2 id="backward-compatibility-3">Backward compatibility</h2>
+<ul>
+<li>Not applicable</li>
+</ul>
+<h2 id="known-limitations-3">Known Limitations</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="dependencies-3">Dependencies</h2>
+<ul>
+<li>None</li>
+</ul>
+<h2 id="notes-3">Notes</h2>
 <ul>
 <li>None</li>
 </ul>

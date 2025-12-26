@@ -48,6 +48,9 @@ extern void HAL_NVIC_SystemReset(void);
 #define HAL_SYS_RESET() do{ HAL_NVIC_SystemReset(); } while(0);
 #endif /* HAL_SYS_RESET */
 
+/** Time (ms) to wait for module ready after firmware update finish */
+#define W6X_FWU_READY_TIMEOUT_MS 30000U
+
 /** @} */
 
 /* Private macros ------------------------------------------------------------*/
@@ -69,6 +72,17 @@ static W6X_App_Cb_t W6X_CbHandler;                    /*!< W6X Applicative Callb
 static W6X_FS_FilesListFull_t *W6X_FilesList = NULL;  /*!< List of files */
 
 static W6X_ModuleInfo_t *p_module_info = NULL;        /*!< W61 module info */
+
+/** @} */
+
+/** @defgroup ST67W6X_Private_FWU_Variables ST67W6X Firmware updates Variables
+  * @ingroup  ST67W6X_Private_FWU
+  * @{
+  */
+#if (W6X_ASSERT_ENABLE == 1)
+/** W6X FWU init error string */
+static const char W6X_FWU_Uninit_str[] = "W6X FWU module not initialized";
+#endif /* W6X_ASSERT_ENABLE */
 
 /** @} */
 
@@ -613,7 +627,7 @@ W6X_Status_t W6X_GetPowerMode(uint32_t *ps_mode)
 
 W6X_Status_t W6X_Reset(uint8_t restore)
 {
-  W61_Ble_Mode_e ble_mode;
+  int32_t ble_mode = 0;
   uint8_t *ble_BuffRecvData = NULL;
   int32_t ble_BuffRecvDataSize = 0;
   uint8_t isWiFiMode;
@@ -655,10 +669,7 @@ W6X_Status_t W6X_Reset(uint8_t restore)
     /* Save BLE buffer and mode information */
     ble_BuffRecvData = p_DrvObj->BleCtx.AppBuffRecvData;
     ble_BuffRecvDataSize = p_DrvObj->BleCtx.AppBuffRecvDataSize;
-    if (W61_Ble_GetInitMode(p_DrvObj, &ble_mode) != W61_STATUS_OK)
-    {
-      goto _err;
-    }
+    ble_mode = p_DrvObj->BleCtx.NetSettings.Mode;
 
     W6X_Ble_DeInit();
   }
@@ -757,6 +768,81 @@ const char *W6X_ModelToStr(W6X_ModuleID_e module_id)
     default:
       return "Undefined";
   }
+}
+
+W6X_Status_t W6X_SdkMinVersion(uint8_t major, uint8_t sub1, uint8_t sub2)
+{
+  NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
+
+  if (W61_SdkMinVersion(p_DrvObj, major, sub1, sub2) != W61_STATUS_OK)
+  {
+    return W6X_STATUS_ERROR;
+  }
+  return W6X_STATUS_OK;
+}
+
+/** @} */
+
+/** @addtogroup ST67W6X_API_FWU_Public_Functions
+  * @{
+  */
+
+W6X_Status_t W6X_FWU_Starts(uint32_t enable)
+{
+  p_DrvObj = W61_ObjGet();
+  NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
+
+  /* Start of firmware update on W61 currently supports only value 1 or 0 as parameters,
+     all other value will raise an error */
+  if ((enable != 0) && (enable != 1))
+  {
+    return W6X_STATUS_ERROR;
+  }
+
+  return TranslateErrorStatus(W61_FWU_starts(p_DrvObj, enable));
+}
+
+W6X_Status_t W6X_FWU_Finish(void)
+{
+  W6X_Status_t ret;
+  NULL_ASSERT(p_DrvObj, W6X_FWU_Uninit_str);
+
+  /* Finish the firmware update and reboot the ST67W611M on the new firmware version if integrity check passes */
+  ret = TranslateErrorStatus(W61_FWU_Finish(p_DrvObj));
+  if (ret != W6X_STATUS_OK)
+  {
+    return ret;
+  }
+
+  /* Wait for the module to be ready after reboot */
+  ret = TranslateErrorStatus(W61_WaitForReady(p_DrvObj, W6X_FWU_READY_TIMEOUT_MS));
+  if (ret != W6X_STATUS_OK)
+  {
+    return ret;
+  }
+
+  /* Perform a module reset to reinitialize all contexts to their initial state */
+  ret = W6X_Reset(0);
+  if (ret != W6X_STATUS_OK)
+  {
+    return ret;
+  }
+
+  p_DrvObj = NULL; /* Reset the pointer to avoid using it after firmware update finish */
+  return ret;
+}
+
+W6X_Status_t W6X_FWU_Send(uint8_t *buff, uint32_t len)
+{
+  NULL_ASSERT(p_DrvObj, W6X_FWU_Uninit_str);
+  NULL_ASSERT(buff, "buff not defined");
+
+  if (len == 0)
+  {
+    return W6X_STATUS_OK;
+  }
+
+  return TranslateErrorStatus(W61_FWU_Send(p_DrvObj, buff, len));
 }
 
 /** @} */

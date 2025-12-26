@@ -709,7 +709,11 @@ static void shell_auto_complete(char *prefix)
   {
     for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
     {
-      cmd_name = (const char *)&index->name[0];
+      if (index->name == NULL)
+      {
+        continue;
+      }
+      cmd_name = index->name;
 
       if (strncmp(prefix, cmd_name, strlen(prefix)) == 0)
       {
@@ -792,7 +796,7 @@ static int32_t shell_split(char *cmd, uint32_t length, char *argv[SHELL_ARG_NUM]
       argc++;
 
       /* Skip this string */
-      while (*ptr != '"' && position < length)
+      while ((*ptr != '"') && (position < length))
       {
         if (*ptr == '\\')
         {
@@ -822,7 +826,7 @@ static int32_t shell_split(char *cmd, uint32_t length, char *argv[SHELL_ARG_NUM]
       argv[argc] = ptr;
       argc++;
 
-      while ((*ptr != ' ' && *ptr != '\t') && position < length)
+      while ((*ptr != ' ' && *ptr != '\t') && (position < length))
       {
         ptr++;
         position++;
@@ -846,8 +850,11 @@ static cmd_function_t shell_get_cmd(char *cmd, int32_t size)
 
   for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
   {
-    if (strncmp(&index->name[0], cmd, size) == 0 &&
-        index->name[0 + size] == '\0')
+    if (index->name == NULL)
+    {
+      continue;
+    }
+    if ((strncmp(index->name, cmd, size) == 0) && (index->name[0 + size] == '\0'))
     {
       cmd_func = (cmd_function_t)index->func;
       break;
@@ -904,8 +911,9 @@ static int32_t shell_exec_cmd(char *cmd, uint32_t length, int32_t *retp)
 
     for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
     {
-      if (strncmp(&index->name[0], cmd, cmd0_size) == 0 &&
-          index->name[0 + cmd0_size] == '\0')
+      if ((index->name == NULL) ||
+          ((strncmp(index->name, cmd, cmd0_size) == 0) &&
+           (index->name[0 + cmd0_size] == '\0')))
       {
         SHELL_E("Unknown argument. Usage: %s\n", index->desc);
         break;
@@ -922,7 +930,7 @@ int32_t shell_exec(char *cmd, uint32_t length)
   int32_t cmd_ret;
 
   /* Strip the beginning of command */
-  while (*cmd == ' ' || *cmd == '\t')
+  while ((*cmd == ' ') || (*cmd == '\t'))
   {
     cmd++;
     length--;
@@ -984,15 +992,19 @@ int32_t shell_help(int32_t argc, char **argv)
 
     for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
     {
+      if (index->name == NULL)
+      {
+        continue;
+      }
 #if (SHELL_USING_DESCRIPTION == 1)
       if ((argc > 1) && (strncmp(index->name, argv[1],
                                  MIN(strlen(argv[1]), SHELL_HELP_MAX_COMPARED_NB_CHAR)) != 0))
       {
         continue;
       }
-      SHELL_PRINTF("%-30s - %s\n", &index->name[0], index->desc);
+      SHELL_PRINTF("%-30s - %s\n", index->name, index->desc);
 #else
-      SHELL_PRINTF("%s\n", &index->name[0]);
+      SHELL_PRINTF("%s\n", index->name);
 #endif /* SHELL_USING_DESCRIPTION */
     }
   }

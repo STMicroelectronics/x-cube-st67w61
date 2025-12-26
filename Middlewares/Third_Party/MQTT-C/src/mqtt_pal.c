@@ -120,7 +120,7 @@ static ssize_t mqtt_pal_recvall_tcp(mqtt_pal_socket_handle fd, void* buf, size_t
 #if defined(MQTT_SECURE_SOCKET)
 static ssize_t mqtt_pal_sendall_tls(mqtt_pal_socket_handle fd, const void* buf, size_t len, int flags)
 {
-    enum MQTTErrors error = 0;
+    enum MQTTErrors error = (enum MQTTErrors)0;
     size_t sent = 0;
     while(sent < len) {
         int rv = mbedtls_ssl_write(fd->ctx.ssl_ctx, (const unsigned char*)buf + sent, len - sent);
@@ -157,7 +157,7 @@ static ssize_t mqtt_pal_sendall_tls(mqtt_pal_socket_handle fd, const void* buf, 
 static ssize_t mqtt_pal_recvall_tls(mqtt_pal_socket_handle fd, void* buf, size_t bufsz, int flags)
 {
     const void *const start = buf;
-    enum MQTTErrors error = 0;
+    enum MQTTErrors error = (enum MQTTErrors)0;
     int rv;
     do {
         rv = mbedtls_ssl_read(fd->ctx.ssl_ctx, (unsigned char*)buf, bufsz);

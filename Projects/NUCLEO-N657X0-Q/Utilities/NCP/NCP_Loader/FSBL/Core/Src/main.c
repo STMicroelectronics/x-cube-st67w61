@@ -55,6 +55,8 @@ static uint32_t ncp_flash_mode = 0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
+static void uart_pass_through(void);
+static void uart_bypass(uint32_t flash);
 
 /* USER CODE END PFP */
 
@@ -64,8 +66,10 @@ volatile uint32_t pushbutton = 0;
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
-	if (GPIO_Pin == USER_BUTTON_Pin)
-		pushbutton = 1;
+  if (GPIO_Pin == USER_BUTTON_Pin)
+  {
+    pushbutton = 1;
+  }
 }
 
 static void uart_pass_through(void)
@@ -221,6 +225,13 @@ void SystemClock_Config(void)
   /** Configure the System Power Supply
   */
   if (HAL_PWREx_ConfigSupply(PWR_EXTERNAL_SOURCE_SUPPLY) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -390,8 +401,8 @@ static void MX_GPIO_Init(void)
   HAL_EXTI_ConfigLineAttributes(EXTI_LINE_13, EXTI_LINE_SEC);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI13_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI13_IRQn);
+  HAL_NVIC_SetPriority(USER_BUTTON_EXTI_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(USER_BUTTON_EXTI_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -410,6 +421,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
   while (1)
   {
   }
@@ -427,12 +439,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-    ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
-  /* Infinite loop */
-  while (1)
-  {
-  }
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

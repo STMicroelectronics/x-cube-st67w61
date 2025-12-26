@@ -144,12 +144,20 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the System Power Supply
   */
   if (HAL_PWREx_ConfigSupply(PWR_EXTERNAL_SOURCE_SUPPLY) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -164,6 +172,15 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL3.PLLState = RCC_PLL_NONE;
   RCC_OscInitStruct.PLL4.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes TIMPRE when TIM is used as Systick Clock Source
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_TIM;
+  PeriphClkInitStruct.TIMPresSelection = RCC_TIMPRES_DIV2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
@@ -444,11 +461,11 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(SPI_CS_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_IRQn);
+  HAL_NVIC_SetPriority(SPI_RDY_EXTI_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(SPI_RDY_EXTI_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI12_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI12_IRQn);
+  HAL_NVIC_SetPriority(USER_BUTTON_EXTI_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(USER_BUTTON_EXTI_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

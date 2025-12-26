@@ -5,8 +5,6 @@
 
   <Header>### uVision Project, (C) Keil Software</Header>
 
-  <WorkspaceName>C:\git\ST67W6X\Firmware\Projects\NUCLEO-H7S3L8\Applications\ST67W6X\ST67W6X_CLI\MDK-ARM\Project.uvmpw</WorkspaceName>
-
   <project>
     <PathAndName>.\Boot\ST67W6X_CLI_Boot.uvprojx</PathAndName>
     <NodeIsExpanded>1</NodeIsExpanded>

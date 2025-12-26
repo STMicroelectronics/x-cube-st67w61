@@ -52,6 +52,11 @@
 #error "low power standby mode not supported"
 #endif /* LOW_POWER_MODE */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+#include "util_mem_perf.h"
+#include "util_task_perf.h"
+#endif /* TEST_AUTOMATION_ENABLE */
+
 /* USER CODE BEGIN Includes */
 #include "fota_flash.h"
 
@@ -109,6 +114,7 @@ typedef struct
   */
 typedef struct
 {
+  uint8_t conn_handle;                      /*!< Connection handle */
   uint8_t charac_idx;                       /*!< Characteristic index */
   uint32_t data_len;                        /*!< Length of the data */
   uint8_t *data;                            /*!< Data received */
@@ -169,14 +175,12 @@ typedef struct
 #define EVT_APP_BLE_PASSKEY_DISPLAYED               (1<<18)
 /** Event when BLE passkey confirmation is requested */
 #define EVT_APP_BLE_PASSKEY_CONFIRM                 (1<<19)
-/** Event when BLE battery level is received */
-#define EVT_APP_BLE_BAS_LEVEL                       (1<<20)
-/** Event when BLE scan is done */
-#define EVT_APP_BLE_SCAN_DONE                       (1<<21)
+/** Event when BLE pairing is canceled */
+#define EVT_APP_BLE_PAIRING_CANCELED                (1<<20)
 /** Event when Wi-Fi is connected to an Access Point */
-#define EVT_APP_WIFI_CONNECTED                      (1<<22)
+#define EVT_APP_WIFI_CONNECTED                      (1<<21)
 /** Event when Wi-Fi connection timeout */
-#define EVT_APP_WIFI_CONNECTION_TIMEOUT             (1<<23)
+#define EVT_APP_WIFI_CONNECTION_TIMEOUT             (1<<22)
 
 /** Wi-Fi scan done event flag */
 #define EVENT_FLAG_WIFI_SCAN_DONE                   (1<<1)
@@ -202,8 +206,7 @@ typedef struct
                                  EVT_APP_BLE_PASSKEY_ENTRY | \
                                  EVT_APP_BLE_PASSKEY_DISPLAYED | \
                                  EVT_APP_BLE_PASSKEY_CONFIRM | \
-                                 EVT_APP_BLE_BAS_LEVEL | \
-                                 EVT_APP_BLE_SCAN_DONE | \
+                                 EVT_APP_BLE_PAIRING_CANCELED | \
                                  EVT_APP_WIFI_CONNECTED | \
                                  EVT_APP_WIFI_CONNECTION_TIMEOUT )
 
@@ -268,6 +271,9 @@ typedef struct
 #define CONTROL_ACTION_CONNECT                   0x3  /*!< Connect to Wi-Fi */
 #define CONTROL_ACTION_DISCONNECT                0x4  /*!< Disconnect from Wi-Fi */
 #define CONTROL_ACTION_PING                      0x5  /*!< Ping Wi-Fi */
+#if (TEST_AUTOMATION_ENABLE == 1)
+#define CONTROL_ACTION_QUIT_CONTROL              0xFF /*!< Quit automation */
+#endif /* TEST_AUTOMATION_ENABLE */
 
 /* Wi-Fi Configure Characteristic first byte possible values */
 #define CONFIGURE_TYPE_SSID                      0x1  /*!< Configure SSID */
@@ -360,7 +366,7 @@ static EventGroupHandle_t scan_event_flags = NULL;
 /** Queue to handle BLE write events for FUOTA */
 QueueHandle_t bleWriteQueue = NULL;
 
-/** FUOTA buffer to store and sand back via OTA AT send
+/** FUOTA buffer to store and sand back via FWU AT send
   * the data received from the BLE FUOTA raw data characteristic */
 uint8_t *fuota_buffer = NULL;
 
@@ -543,6 +549,12 @@ static void APP_setevent(EventGroupHandle_t *app_event, uint32_t evt);
 static void APP_wifi_scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *Scan_results);
 
 /**
+  * @brief Initialize BLE in advertising mode
+  * @return Operation Status
+  */
+W6X_Status_t BleSetServerAdvertising(void);
+
+/**
   * @brief   Task to handle BLE write events for FUOTA
   *
   * @param pvParameters : Pointer to task parameters (not used)
@@ -564,16 +576,17 @@ void main_app(void)
 {
   int32_t ret = 0;
   EventBits_t eventBits = 0;
-  int32_t data_index = 0;
-  uint8_t bd_address[W6X_BLE_BD_ADDR_SIZE];
-  const char hex_chars[] = "0123456789ABCDEF";
-  char ble_device_name[W6X_BLE_DEVICE_NAME_SIZE];
   W6X_WiFi_Connect_t connectData = {0};
   W6X_WiFi_StaStateType_e state = W6X_WIFI_STATE_STA_OFF;
 
   /* USER CODE BEGIN main_app_1 */
 
   /* USER CODE END main_app_1 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Start the task performance measurement */
+  task_perf_start();
+#endif /* TEST_AUTOMATION_ENABLE */
 
   LowPowerManagerInit();
 
@@ -613,7 +626,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -621,7 +634,7 @@ void main_app(void)
   ret = W6X_WiFi_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Wi-Fi init is done\n");
@@ -630,7 +643,7 @@ void main_app(void)
   ret = W6X_Net_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Net init is done\n");
@@ -639,7 +652,7 @@ void main_app(void)
   ret = W6X_Ble_Init(W6X_BLE_MODE_SERVER, a_APP_AvailableData, sizeof(a_APP_AvailableData) - 1);
   if (ret)
   {
-    LogError("failed to initialize ST67W6X BLE component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X BLE component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Ble init is done\n");
@@ -648,118 +661,11 @@ void main_app(void)
 
   /* USER CODE END main_app_3 */
 
-  ret = W6X_Ble_GetBDAddress(bd_address);
-  if (ret == W6X_STATUS_OK)
+  ret = BleSetServerAdvertising();
+  if (ret != W6X_STATUS_OK)
   {
-    LogInfo("BD Address: " MACSTR "\n", MAC2STR(bd_address));
-  }
-  else
-  {
-    LogError("BD Address identification failed, %" PRIi32 "\n", ret);
     goto _err;
   }
-
-  sprintf(ble_device_name, W6X_BLE_HOSTNAME "_%02" PRIX16, bd_address[5]);
-  ret = W6X_Ble_SetDeviceName(ble_device_name);
-  if (ret)
-  {
-    LogError("failed to set device name, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-
-  /* Configure the ST67W6X BLE module
-   * - Set the Tx power to 0 (minimal)
-   * - Set the Bluetooth Device Address
-   * - Set the Advertising data
-   */
-  LogInfo("Configure BLE\n");
-  ret = W6X_Ble_SetTxPower(0);
-  if (ret)
-  {
-    LogError("failed to set TX power, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-
-  /* Fill adv data with BD Address */
-  while (data_index < 6)
-  {
-    a_AdvData[20 + (2 * data_index)] = hex_chars[(bd_address[data_index] & 0xF0) >> 4];
-    a_AdvData[20 + (2 * data_index) + 1] = hex_chars[bd_address[data_index] & 0x0F];
-    data_index++;
-  }
-  ret = W6X_Ble_SetAdvData((const char *) a_AdvData);
-  if (ret)
-  {
-    LogError("failed to set ADV data, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-  LogInfo("BLE configuration is done\n");
-
-  /* Create the BLE Commissioning Service */
-  LogInfo("\nBLE Commissioning Service Creation\n");
-  ret = W6X_Ble_CreateService(WIFI_COMMISSIONING_SERVICE_INDEX,
-                              WIFI_COMMISSIONING_SERVICE_UUID,
-                              W6X_BLE_UUID_TYPE_128);
-
-  if (ret)
-  {
-    LogError("failed to Create service, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-
-  ret = W6X_Ble_CreateService(FUOTA_SERVICE_INDEX,
-                              FUOTA_SERVICE_UUID,
-                              W6X_BLE_UUID_TYPE_128);
-
-  if (ret)
-  {
-    LogError("failed to Create service, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-
-  /* Create the BLE Characteristics */
-  for (uint8_t i = 0; i < sizeof(app_ble_char) / sizeof(APP_Ble_Char_t); i++)
-  {
-    ret = W6X_Ble_CreateCharacteristic(app_ble_char[i].service_index, app_ble_char[i].char_index,
-                                       app_ble_char[i].char_uuid, app_ble_char[i].uuid_type,
-                                       app_ble_char[i].char_property, app_ble_char[i].char_permission);
-
-    if (ret != 0)
-    {
-      LogError("failed to create %s, %" PRIi32 "\n", app_ble_char[i].desc, ret);
-      goto _err;
-    }
-    LogInfo("- %s created\n", app_ble_char[i].desc);
-  }
-
-  /* Register the BLE Characteristics */
-  ret = W6X_Ble_RegisterCharacteristics();
-
-  if (ret != 0)
-  {
-    LogError("failed to Register characteristics, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-  LogInfo("- BLE services and charac registered\n");
-  LogInfo("BLE service and charac creation is done\n");
-
-  /* Setup security mode */
-  ret = W6X_Ble_SetSecurityParam(W6X_BLE_SEC_IO_KEYBOARD_DISPLAY);
-  if (ret)
-  {
-    LogError("BLE Set Security Parameters failed, %" PRIi32 "\n", ret);
-  }
-
-  /* Start the BLE Advertising mode: the ST67W6X can be detected as BLE device */
-  LogInfo("\nStart BLE advertising\n");
-  ret = W6X_Ble_AdvStart();
-  if (ret)
-  {
-    LogError("failed to start advertising, %" PRIi32 "\n", ret);
-    goto _err;
-  }
-
-  LogInfo("BLE advertising is started\n");
 
   while (1)
   {
@@ -772,7 +678,7 @@ void main_app(void)
       if (app_ble_params.remote_ble_device.IsConnected != 0x00)
       {
         ret = W6X_Ble_Disconnect(app_ble_params.remote_ble_device.conn_handle);
-        if (ret)
+        if (ret != W6X_STATUS_OK)
         {
           LogError("BLE disconnection failed, %" PRIi32 "\n", ret);
         }
@@ -789,9 +695,9 @@ void main_app(void)
 
           ret = W6X_Ble_SecurityUnpair(app_ble_BondedDeviceList.Bonded_device[count].BDAddr,
                                        W6X_BLE_PUBLIC_ADDR);
-          if (ret)
+          if (ret != W6X_STATUS_OK)
           {
-            LogError("failed to unpair bonded devices, %" PRIi32 "\n", ret);
+            LogError("Failed to unpair bonded devices, %" PRIi32 "\n", ret);
           }
           LogInfo(ADDRSTR " unpaired\n",
                   ADDR2STR(app_ble_BondedDeviceList.Bonded_device[count].BDAddr));
@@ -818,7 +724,7 @@ void main_app(void)
         strncpy((char *) &monitoring_data[1], (char *)a_APP_WifiConnectedSSID, size_of_WifiCommUpdateCharData - 1);
         memcpy(a_APP_WifiCommUpdateCharData, (void *) &monitoring_data, size_of_WifiCommUpdateCharData);
 
-        BLE_Send_Wifi_Monitoring_Notification();
+        BLE_Send_Wifi_Monitoring_Notification(app_ble_params.remote_ble_device.conn_handle);
       }
     }
 
@@ -864,7 +770,7 @@ void main_app(void)
                 size_of_WifiCommUpdateCharData = sizeof(APP_AP_t);
 
                 /* Send the configuration of each Access Point as BLE notification */
-                BLE_Send_Wifi_Scan_Report_Notification();
+                BLE_Send_Wifi_Scan_Report_Notification(app_ble_params.remote_ble_device.conn_handle);
               }
             }
           }
@@ -874,9 +780,9 @@ void main_app(void)
           /* Connect the device to the selected Access Point */
           LogInfo("WIFI Connect\n");
           ret = W6X_WiFi_Connect(&APP_ConnectOpts);
-          if (ret)
+          if (ret != W6X_STATUS_OK)
           {
-            LogError("failed to connect, %" PRIi32 "\n", ret);
+            LogError("Failed to connect, %" PRIi32 "\n", ret);
             APP_setevent(&app_evt_current, EVT_APP_WIFI_CONNECTION_TIMEOUT);
           }
           else
@@ -904,6 +810,7 @@ void main_app(void)
           uint16_t ping_count = WIFI_PING_COUNT;
           uint32_t ping_size = WIFI_PING_SIZE;
           uint32_t ping_interval = WIFI_PING_INTERVAL;
+          uint32_t ping_timeout = WIFI_PING_INTERVAL;
           uint32_t average_ping = 0;
           uint16_t ping_received_response = 0;
           uint8_t percent_packet_loss = 0;
@@ -922,7 +829,7 @@ void main_app(void)
 
             /* Run the ping */
             if (W6X_STATUS_OK == W6X_Net_Ping((uint8_t *)gw_str, ping_size, ping_count, ping_interval,
-                                              &average_ping, &ping_received_response))
+                                              ping_timeout, &average_ping, &ping_received_response))
             {
               if (ping_received_response == 0)
               {
@@ -950,7 +857,7 @@ void main_app(void)
                 };
                 size_of_WifiCommUpdateCharData = 8;
                 memcpy(a_APP_WifiCommUpdateCharData, (void *) &ping_data, size_of_WifiCommUpdateCharData);
-                BLE_Send_Wifi_Monitoring_Notification();
+                BLE_Send_Wifi_Monitoring_Notification(app_ble_params.remote_ble_device.conn_handle);
               }
             }
             else
@@ -959,6 +866,13 @@ void main_app(void)
             }
           }
         }
+#if (TEST_AUTOMATION_ENABLE == 1)
+        else if ((a_APP_AvailableData[0] == CONTROL_ACTION_QUIT_CONTROL) && (a_APP_AvailableData[1] == 0xFF))
+        {
+          LogInfo(" -> Quit Automation Write received\n");
+          break;
+        }
+#endif /* TEST_AUTOMATION_ENABLE */
       }
     }
 
@@ -966,8 +880,8 @@ void main_app(void)
     {
       if (W6X_WiFi_Station_GetState(&state, &connectData) != W6X_STATUS_OK)
       {
-        LogInfo("Connected to an Access Point\n");
-        return;
+        LogWarn("Connected to an unknown Access Point\n");
+        continue;
       }
 
       memcpy(a_APP_WifiConnectedSSID, connectData.SSID, sizeof(a_APP_WifiConnectedSSID));
@@ -992,7 +906,7 @@ void main_app(void)
       strncpy((char *) &monitoring_data[1], (char *)APP_ConnectOpts.SSID, size_of_WifiCommUpdateCharData - 1);
       memcpy(a_APP_WifiCommUpdateCharData, (void *) &monitoring_data, size_of_WifiCommUpdateCharData);
 
-      BLE_Send_Wifi_Monitoring_Notification();
+      BLE_Send_Wifi_Monitoring_Notification(app_ble_params.remote_ble_device.conn_handle);
     }
 
     if (eventBits & EVT_APP_WIFI_CONNECTION_TIMEOUT)
@@ -1002,7 +916,7 @@ void main_app(void)
       size_of_WifiCommUpdateCharData = 2;
       memcpy(a_APP_WifiCommUpdateCharData, (void *) &monitoring_data, size_of_WifiCommUpdateCharData);
 
-      BLE_Send_Wifi_Monitoring_Notification();
+      BLE_Send_Wifi_Monitoring_Notification(app_ble_params.remote_ble_device.conn_handle);
     }
 
     /* Process BLE passkey entry */
@@ -1012,7 +926,7 @@ void main_app(void)
       if (app_ble_params.remote_ble_device.conn_handle != 0xff)
       {
         ret = W6X_Ble_SecuritySetPassKey(app_ble_params.remote_ble_device.conn_handle, app_ble_params.PassKey);
-        if (ret)
+        if (ret != W6X_STATUS_OK)
         {
           LogError("Failed to set passkey, %" PRIi32 "\n"
                    "Press button while disconnected to clear security Database and relaunch pairing process\n", ret);
@@ -1035,7 +949,7 @@ void main_app(void)
       if (app_ble_params.remote_ble_device.conn_handle != 0xff)
       {
         ret = W6X_Ble_SecurityPassKeyConfirm(app_ble_params.remote_ble_device.conn_handle);
-        if (ret)
+        if (ret != W6X_STATUS_OK)
         {
           LogError("Failed to send passkey confirm, %" PRIi32 "\n"
                    "Press button while disconnected to clear security Database and relaunch pairing process\n", ret);
@@ -1058,7 +972,7 @@ void main_app(void)
       if (app_ble_params.remote_ble_device.conn_handle != 0xff)
       {
         ret = W6X_Ble_SecurityPairingConfirm(app_ble_params.remote_ble_device.conn_handle);
-        if (ret)
+        if (ret != W6X_STATUS_OK)
         {
           LogError("Pairing Confirm Failed, %" PRIi32 "\n"
                    "Press button while disconnected to clear security Database and relaunch pairing process\n", ret);
@@ -1106,7 +1020,143 @@ _err:
   /* USER CODE BEGIN main_app_Err_2 */
 
   /* USER CODE END main_app_Err_2 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Stop the task perf execution */
+  task_perf_stop();
+
+  /* Report the task performance measurement */
+  task_perf_report();
+
+  /* Report the memory performance measurement */
+  mem_perf_report();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   LogInfo("##### Application end\n");
+}
+
+W6X_Status_t BleSetServerAdvertising(void)
+{
+  W6X_Status_t ret;
+  int32_t data_index = 0;
+  uint8_t bd_address[W6X_BLE_BD_ADDR_SIZE];
+  const char hex_chars[] = "0123456789ABCDEF";
+  char ble_device_name[W6X_BLE_DEVICE_NAME_SIZE];
+
+  ret = W6X_Ble_GetBDAddress(bd_address);
+  if (ret == W6X_STATUS_OK)
+  {
+    LogInfo("BD Address: " MACSTR "\n", MAC2STR(bd_address));
+  }
+  else
+  {
+    LogError("BD Address identification failed, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  sprintf(ble_device_name, W6X_BLE_HOSTNAME "_%02" PRIX16, bd_address[5]);
+  ret = W6X_Ble_SetDeviceName(ble_device_name);
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to set device name, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  /* Configure the ST67W6X BLE module
+   * - Set the Tx power to 0 (minimal)
+   * - Set the Bluetooth Device Address
+   * - Set the Advertising data
+   */
+  LogInfo("Configure BLE\n");
+
+  ret = W6X_Ble_SetTxPower(0);
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to set TX power, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  /* Fill adv data with BD Address */
+  while (data_index < 6)
+  {
+    a_AdvData[20 + (2 * data_index)] = hex_chars[(bd_address[data_index] & 0xF0) >> 4];
+    a_AdvData[20 + (2 * data_index) + 1] = hex_chars[bd_address[data_index] & 0x0F];
+    data_index++;
+  }
+
+  ret = W6X_Ble_SetAdvData((const char *) a_AdvData);
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to set ADV data, %" PRIi32 "\n", ret);
+    return ret;
+  }
+  LogInfo("BLE configuration is done\n");
+
+  /* Create the BLE Commissioning Service */
+  LogInfo("\nBLE Commissioning Service Creation\n");
+  ret = W6X_Ble_CreateService(WIFI_COMMISSIONING_SERVICE_INDEX,
+                              WIFI_COMMISSIONING_SERVICE_UUID,
+                              W6X_BLE_UUID_TYPE_128);
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to Create service, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  ret = W6X_Ble_CreateService(FUOTA_SERVICE_INDEX,
+                              FUOTA_SERVICE_UUID,
+                              W6X_BLE_UUID_TYPE_128);
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to Create service, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  /* Create the BLE Characteristics */
+  for (uint8_t i = 0; i < sizeof(app_ble_char) / sizeof(APP_Ble_Char_t); i++)
+  {
+    ret = W6X_Ble_CreateCharacteristic(app_ble_char[i].service_index, app_ble_char[i].char_index,
+                                       app_ble_char[i].char_uuid, app_ble_char[i].uuid_type,
+                                       app_ble_char[i].char_property, app_ble_char[i].char_permission);
+    if (ret != W6X_STATUS_OK)
+    {
+      LogError("Failed to create %s, %" PRIi32 "\n", app_ble_char[i].desc, ret);
+      return ret;
+    }
+
+    LogInfo("- %s created\n", app_ble_char[i].desc);
+  }
+
+  /* Register the BLE Characteristics */
+  ret = W6X_Ble_RegisterCharacteristics();
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to Register characteristics, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  LogInfo("- BLE services and charac registered\n");
+  LogInfo("BLE service and charac creation is done\n");
+
+  /* Setup security mode */
+  ret = W6X_Ble_SetSecurityParam(W6X_BLE_SEC_IO_KEYBOARD_DISPLAY);
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("BLE Set Security Parameters failed, %" PRIi32 "\n", ret);
+  }
+
+  /* Start the BLE Advertising mode: the ST67W6X can be detected as BLE device */
+  LogInfo("\nStart BLE advertising\n");
+  ret = W6X_Ble_AdvStart();
+  if (ret != W6X_STATUS_OK)
+  {
+    LogError("Failed to start advertising, %" PRIi32 "\n", ret);
+    return ret;
+  }
+
+  LogInfo("BLE advertising is started\n");
+
+  return ret;
 }
 
 /* This task is used to handle BLE FUOTA write events.
@@ -1144,14 +1194,15 @@ void BleFuotaWriteTask(void *pvParameters)
 
             LogInfo("FUOTA %s\n", (action == 0x00) ? "STOP" : "CANCEL");
             fuota_buffer_offset = 0;
-            /* Stops and reset the ST67 OTA context */
-            ret_w6x = W6X_OTA_Starts(0);
+            /* Stops and reset the ST67 FWU context */
+            ret_w6x = W6X_FWU_Starts(0);
             if (ret_w6x != W6X_STATUS_OK)
             {
               LogError("Failed to start the ST67 OTA , %" PRIi32 "\n", ret_w6x);
               confirm = 0x03;
               sent = 0;
-              W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+              W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                     &confirm, 1, &sent, 1000);
             }
             break;
 
@@ -1173,7 +1224,8 @@ void BleFuotaWriteTask(void *pvParameters)
               LogInfo("FUOTA STM32 START Application\n");
               confirm = 0x02;
               sent = 0;
-              W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+              W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                     &confirm, 1, &sent, 1000);
               break;
             }
 
@@ -1181,7 +1233,8 @@ void BleFuotaWriteTask(void *pvParameters)
             LogError("FUOTA not ready or not supported\n");
             confirm = 0x03;
             sent = 0;
-            W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+            W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                   &confirm, 1, &sent, 1000);
 
             break;
           case 0x02: /* START ST67 FUOTA */
@@ -1197,20 +1250,22 @@ void BleFuotaWriteTask(void *pvParameters)
 
             /* USER CODE END fota_ble_task_2 */
 
-            /* Start the ST67 OTA */
-            if (W6X_OTA_Starts(1) == W6X_STATUS_OK)
+            /* Start the ST67 FWU */
+            if (W6X_FWU_Starts(1) == W6X_STATUS_OK)
             {
               LogInfo("FUOTA ST67 START Application\n");
               confirm = 0x02;
               sent = 0;
-              W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+              W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                     &confirm, 1, &sent, 1000);
             }
             else
             {
               LogError("FUOTA not ready\n");
               confirm = 0x03;
               sent = 0;
-              W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+              W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                     &confirm, 1, &sent, 1000);
             }
             break;
           case 0x06: /* EOF */
@@ -1233,7 +1288,7 @@ void BleFuotaWriteTask(void *pvParameters)
               /* USER CODE END fota_ble_task_3 */
               if (!fuota_stm32_mode)
               {
-                ret_w6x = W6X_OTA_Send(fuota_buffer, fuota_buffer_offset);
+                ret_w6x = W6X_FWU_Send(fuota_buffer, fuota_buffer_offset);
               }
 
               /* Free the fuota buffer */
@@ -1244,7 +1299,8 @@ void BleFuotaWriteTask(void *pvParameters)
                 LogError("Failed to transfer last FUOTA buffer, %" PRIi32 "\n", ret_w6x);
                 confirm = 0x03;
                 sent = 0;
-                W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+                W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                       &confirm, 1, &sent, 1000);
                 break;
               }
               LogInfo("Last FUOTA buffer transferred\n");
@@ -1271,7 +1327,7 @@ void BleFuotaWriteTask(void *pvParameters)
               /* USER CODE END fota_ble_task_4 */
               if (!fuota_stm32_mode)
               {
-                ret_w6x = W6X_OTA_Send(fuota_buffer, fuota_buffer_offset);
+                ret_w6x = W6X_FWU_Send(fuota_buffer, fuota_buffer_offset);
               }
 
               /* Free the fuota buffer */
@@ -1282,7 +1338,8 @@ void BleFuotaWriteTask(void *pvParameters)
                 LogError("Failed to transfer last FUOTA buffer, %" PRIi32 "\n", ret_w6x);
                 confirm = 0x03;
                 sent = 0;
-                W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+                W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                       &confirm, 1, &sent, 1000);
                 break;
               }
               LogInfo("Last FUOTA buffer transferred\n");
@@ -1291,7 +1348,8 @@ void BleFuotaWriteTask(void *pvParameters)
             /* Send confirmation that the FUOTA is finished */
             confirm = 0x01;
             sent = 0;
-            W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+            W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                   &confirm, 1, &sent, 1000);
             vTaskDelay(pdMS_TO_TICKS(1000)); /* Wait for the BLE stack to process indication */
 
             /* USER CODE BEGIN fota_ble_task_5 */
@@ -1303,7 +1361,8 @@ void BleFuotaWriteTask(void *pvParameters)
                 LogError("Failed to finish FUOTA, %" PRIi32 "\n", ret_w6x);
                 confirm = 0x03;
                 sent = 0;
-                W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+                W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                       &confirm, 1, &sent, 1000);
                 break;
               }
 
@@ -1314,21 +1373,27 @@ void BleFuotaWriteTask(void *pvParameters)
             }
 
             /* USER CODE END fota_ble_task_5 */
-            ret_w6x = W6X_OTA_Finish();
+            LogInfo("Apply ST67 new binary\n");
+
+            ret_w6x = W6X_FWU_Finish();
             if (ret_w6x != W6X_STATUS_OK)
             {
               LogError("Failed to finish FUOTA, %" PRIi32 "\n", ret_w6x);
               confirm = 0x03;
               sent = 0;
-              W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+              W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                     &confirm, 1, &sent, 1000);
               break;
             }
-            LogInfo("Rebooting in 15 seconds ....\n");
-            vTaskDelay(pdMS_TO_TICKS(15000)); /* Wait for update to be applied by the ST67 */
+            LogInfo("New ST67 binary successfully Applied\n");
 
-            /* Perform a system reset of the STM32 */
-            HAL_NVIC_SystemReset();
-            /* Because of NVIC reset, any code beyond this point won't be executed */
+            ret_w6x = BleSetServerAdvertising();
+            if (ret_w6x != W6X_STATUS_OK)
+            {
+              LogError("Failed to start BLE advertising, %" PRIi32 "\n", ret_w6x);
+              break;
+            }
+
             break;
           default:
             LogError("Unknown FUOTA action: 0x%02X\n", action);
@@ -1363,7 +1428,8 @@ void BleFuotaWriteTask(void *pvParameters)
               LogError("Failed to transfer FUOTA buffer, %" PRIi32 "\n", W6X_STATUS_ERROR);
               confirm = 0x03;
               sent = 0;
-              W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+              W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                     &confirm, 1, &sent, 1000);
             }
 
             if (total_to_send > FUOTA_BUFFER_SIZE)
@@ -1380,13 +1446,14 @@ void BleFuotaWriteTask(void *pvParameters)
           }
 
           /* USER CODE END fota_ble_task_6 */
-          ret_w6x = W6X_OTA_Send(fuota_buffer, FUOTA_BUFFER_SIZE);
+          ret_w6x = W6X_FWU_Send(fuota_buffer, FUOTA_BUFFER_SIZE);
           if (ret_w6x != W6X_STATUS_OK)
           {
             LogError("Failed to transfer FUOTA buffer, %" PRIi32 "\n", ret_w6x);
             confirm = 0x03;
             sent = 0;
-            W6X_Ble_ServerSendIndication(FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX, &confirm, 1, &sent, 1000);
+            W6X_Ble_ServerIndicate(fuota_evt.conn_handle, FUOTA_SERVICE_INDEX, FUOTA_CONF_CHAR_INDEX,
+                                   &confirm, 1, &sent, 1000);
           }
           else
           {
@@ -1414,7 +1481,7 @@ void BleFuotaWriteTask(void *pvParameters)
   }
 }
 
-void BLE_Send_Wifi_Scan_Report_Notification(void)
+void BLE_Send_Wifi_Scan_Report_Notification(uint8_t conn_handle)
 {
   /* USER CODE BEGIN BLE_Send_Wifi_Scan_Report_Notification_1 */
 
@@ -1423,11 +1490,10 @@ void BLE_Send_Wifi_Scan_Report_Notification(void)
   uint32_t SentDatalen = 0;
 
   LogInfo("BLE Send Notification\n");
-  ret = W6X_Ble_ServerSendNotification(WIFI_COMMISSIONING_SERVICE_INDEX, WIFI_AP_LIST_CHAR_INDEX,
-                                       a_APP_WifiCommUpdateCharData, size_of_WifiCommUpdateCharData,
-                                       &SentDatalen, 6000);
-
-  if (ret)
+  ret = W6X_Ble_ServerNotify(conn_handle, WIFI_COMMISSIONING_SERVICE_INDEX, WIFI_AP_LIST_CHAR_INDEX,
+                             a_APP_WifiCommUpdateCharData, size_of_WifiCommUpdateCharData,
+                             &SentDatalen, 6000);
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Send Notification FAILED: %" PRIi32 "\n", ret);
   }
@@ -1437,7 +1503,7 @@ void BLE_Send_Wifi_Scan_Report_Notification(void)
   /* USER CODE END BLE_Send_Wifi_Scan_Report_Notification_End */
 }
 
-void BLE_Send_Wifi_Monitoring_Notification(void)
+void BLE_Send_Wifi_Monitoring_Notification(uint8_t conn_handle)
 {
   int32_t ret;
   uint32_t SentDatalen = 0;
@@ -1446,11 +1512,10 @@ void BLE_Send_Wifi_Monitoring_Notification(void)
   /* USER CODE END BLE_Send_Wifi_Monitoring_Notification_1 */
 
   LogInfo("BLE Send Notification\n");
-  ret = W6X_Ble_ServerSendNotification(WIFI_COMMISSIONING_SERVICE_INDEX, WIFI_MONITORING_CHAR_INDEX,
-                                       a_APP_WifiCommUpdateCharData, size_of_WifiCommUpdateCharData,
-                                       &SentDatalen, 6000);
-
-  if (ret)
+  ret = W6X_Ble_ServerNotify(conn_handle, WIFI_COMMISSIONING_SERVICE_INDEX, WIFI_MONITORING_CHAR_INDEX,
+                             a_APP_WifiCommUpdateCharData, size_of_WifiCommUpdateCharData,
+                             &SentDatalen, 6000);
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Send Notification FAILED: %" PRIu32 "\n", SentDatalen);
   }
@@ -1604,12 +1669,11 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
   switch (event_id)
   {
     case W6X_BLE_EVT_CONNECTED_ID:
-      LogInfo(" -> BLE CONNECTED: Conn_Handle: %" PRIu16 "\n", p_param_ble_data->remote_ble_device.conn_handle);
+      LogInfo(" -> BLE CONNECTED [Conn_Handle: %" PRIu16 "]\n", p_param_ble_data->remote_ble_device.conn_handle);
 
       /* Fill remote device structure */
       app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
       app_ble_params.remote_ble_device.IsConnected = p_param_ble_data->remote_ble_device.IsConnected;
-
       memcpy(app_ble_params.remote_ble_device.BDAddr, p_param_ble_data->remote_ble_device.BDAddr,
              sizeof(app_ble_params.remote_ble_device.BDAddr));
       memcpy(app_ble_params.remote_ble_device.DeviceName, p_param_ble_data->remote_ble_device.DeviceName,
@@ -1621,12 +1685,13 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     case W6X_BLE_EVT_CONNECTION_PARAM_ID:
-      LogInfo(" -> BLE CONNECTION PARAM UPDATE\n");
+      LogInfo(" -> BLE CONNECTION PARAM UPDATE [Conn_Handle: %" PRIu16 "]\n",
+              p_param_ble_data->remote_ble_device.conn_handle);
       APP_setevent(&app_evt_current, EVT_APP_BLE_CONNECTION_PARAM_UPDATE);
       break;
 
     case W6X_BLE_EVT_DISCONNECTED_ID:
-      LogInfo(" -> BLE DISCONNECTED.\n");
+      LogInfo(" -> BLE DISCONNECTED [Conn_Handle: %" PRIu16 "]\n", p_param_ble_data->remote_ble_device.conn_handle);
 
       /* Reinitialize remote device struct */
       app_ble_params.remote_ble_device.RSSI = 0;
@@ -1665,17 +1730,17 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     case W6X_BLE_EVT_NOTIFICATION_DATA_ID:
-      LogInfo(" -> BLE NOTIFICATION.\n");
+      LogInfo(" -> BLE NOTIFICATION DATA.\n");
       APP_setevent(&app_evt_current, EVT_APP_BLE_NOTIFICATION_DATA);
       break;
 
     case W6X_BLE_EVT_WRITE_ID:
-      LogInfo(" -> BLE WRITE.\n");
       app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
       app_ble_params.service_idx = p_param_ble_data->service_idx;
       app_ble_params.charac_idx = p_param_ble_data->charac_idx;
       app_ble_params.available_data_length = p_param_ble_data->available_data_length;
-      LogInfo(" -> Conn_Handle: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16 ", length %" PRIu32 "\n",
+      LogInfo(" -> BLE WRITE [Conn_Handle: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16
+              ", length %" PRIu32 "]\n",
               p_param_ble_data->remote_ble_device.conn_handle, p_param_ble_data->service_idx,
               p_param_ble_data->charac_idx, p_param_ble_data->available_data_length);
 
@@ -1683,6 +1748,7 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       if (app_ble_params.service_idx == FUOTA_SERVICE_INDEX)
       {
         APP_Ble_WriteEvent_t evt;
+        evt.conn_handle = app_ble_params.remote_ble_device.conn_handle;
         evt.charac_idx = p_param_ble_data->charac_idx;
         evt.data_len = p_param_ble_data->available_data_length;
         evt.data = pvPortMalloc(evt.data_len);
@@ -1729,26 +1795,26 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
 
     case W6X_BLE_EVT_PASSKEY_ENTRY_ID:
       app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      LogInfo(" -> BLE PassKey Entry: Conn_Handle: %" PRIu16 "\n", app_ble_params.remote_ble_device.conn_handle);
+      LogInfo(" -> BLE PassKey Entry [Conn_Handle %" PRIu16 "]\n", app_ble_params.remote_ble_device.conn_handle);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PASSKEY_ENTRY);
       break;
 
     case W6X_BLE_EVT_PASSKEY_CONFIRM_ID:
       app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
       app_ble_params.PassKey = p_param_ble_data->PassKey;
-      LogInfo(" -> BLE PassKey received = %06" PRIu32 ", Conn_Handle: %" PRIu16 "\n", app_ble_params.PassKey,
+      LogInfo(" -> BLE PassKey received = %06" PRIu32 " [Conn_Handle %" PRIu16 "]\n", app_ble_params.PassKey,
               app_ble_params.remote_ble_device.conn_handle);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PASSKEY_CONFIRM);
       break;
 
     case W6X_BLE_EVT_PAIRING_CONFIRM_ID:
       app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      LogInfo(" -> BLE Pairing Confirm: Conn_Handle: %" PRIu16 "\n", app_ble_params.remote_ble_device.conn_handle);
+      LogInfo(" -> BLE Pairing Confirm [Conn_Handle %" PRIu16 "]\n", app_ble_params.remote_ble_device.conn_handle);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_CONFIRM);
       break;
 
     case W6X_BLE_EVT_PAIRING_COMPLETED_ID:
-      LogInfo(" -> BLE Pairing Complete\n\n");
+      LogInfo(" -> BLE Pairing Complete\n");
       APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_COMPLETED);
       break;
 
@@ -1756,6 +1822,16 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       app_ble_params.PassKey = p_param_ble_data->PassKey;
       LogInfo(" -> BLE PASSKEY  = %06" PRIu32 "\n", app_ble_params.PassKey);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PASSKEY_DISPLAYED);
+      break;
+
+    case W6X_BLE_EVT_PAIRING_FAILED_ID:
+      LogInfo(" -> BLE Pairing Failed [Conn_Handle: %" PRIu16 "]\n", app_ble_params.remote_ble_device.conn_handle);
+      APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_FAILED);
+      break;
+
+    case W6X_BLE_EVT_PAIRING_CANCELED_ID:
+      LogInfo(" -> BLE Pairing Canceled [Conn_Handle %" PRIu16 "]\n", app_ble_params.remote_ble_device.conn_handle);
+      APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_CANCELED);
       break;
 
     default:

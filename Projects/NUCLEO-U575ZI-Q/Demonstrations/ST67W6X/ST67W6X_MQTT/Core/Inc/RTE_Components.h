@@ -22,7 +22,7 @@
 #define  __RTE_COMPONENTS_H__
 
 /* Defines ------------------------------------------------------------------*/
-/* STMicroelectronics.X-CUBE-MEMS1.11.2.0 */
+/* STMicroelectronics.X-CUBE-MEMS1.12.0.0 */
 #define IKS4A1
 
 #endif /* __RTE_COMPONENTS_H__ */

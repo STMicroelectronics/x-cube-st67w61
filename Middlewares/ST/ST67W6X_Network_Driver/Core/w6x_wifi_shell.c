@@ -127,16 +127,6 @@ int32_t W6X_Shell_WiFi_Country_Code(int32_t argc, char **argv);
 int32_t W6X_Shell_WiFi_Station_State(int32_t argc, char **argv);
 
 /**
-  * @brief  Wi-Fi station mode shell function
-  * @param  argc: number of arguments
-  * @param  argv: pointer to the arguments
-  * @retval ::SHELL_STATUS_OK on success
-  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
-  * @retval ::SHELL_STATUS_ERROR otherwise
-  */
-int32_t W6X_Shell_WiFi_Station_Mode(int32_t argc, char **argv);
-
-/**
   * @brief  Wi-Fi get STA MAC shell function
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
@@ -165,16 +155,6 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv);
   * @retval ::SHELL_STATUS_ERROR otherwise
   */
 int32_t W6X_Shell_WiFi_AP_Stop(int32_t argc, char **argv);
-
-/**
-  * @brief  Wi-Fi Soft-AP mode shell function
-  * @param  argc: number of arguments
-  * @param  argv: pointer to the arguments
-  * @retval ::SHELL_STATUS_OK on success
-  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
-  * @retval ::SHELL_STATUS_ERROR otherwise
-  */
-int32_t W6X_Shell_WiFi_AP_Mode(int32_t argc, char **argv);
 
 /**
   * @brief  Wi-Fi list connected stations shell function
@@ -752,7 +732,6 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_Country_Code, wifi_country_code,
                        [ Country code [CN; JP; US; EU; 00] ]);
 #endif /* SHELL_CMD_LEVEL */
 
-#if (ST67_ARCH == W6X_ARCH_T01)
 /** Shell command to start a WiFi Soft-AP */
 int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
 {
@@ -948,6 +927,7 @@ int32_t W6X_Shell_WiFi_AP_Stop(int32_t argc, char **argv)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_AP_Stop, wifi_ap_stop, wifi_ap_stop);
 #endif /* SHELL_CMD_LEVEL */
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /** Shell command to list stations connected to the Soft-AP */
 int32_t W6X_Shell_WiFi_AP_List_Stations(int32_t argc, char **argv)
 {
@@ -975,6 +955,7 @@ int32_t W6X_Shell_WiFi_AP_List_Stations(int32_t argc, char **argv)
 #if (SHELL_CMD_LEVEL >= 0)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_AP_List_Stations, wifi_ap_list_sta, wifi_ap_list_sta);
 #endif /* SHELL_CMD_LEVEL */
+#endif /* ST67_ARCH_T01 */
 
 /** Shell command to disconnect a station connected to the Soft-AP */
 int32_t W6X_Shell_WiFi_AP_Disconnect_Station(int32_t argc, char **argv)
@@ -1057,11 +1038,16 @@ int32_t W6X_Shell_WiFi_DTIM(int32_t argc, char **argv)
       SHELL_E("Get DTIM error\n");
       return SHELL_STATUS_ERROR;
     }
-    if (W6X_WiFi_GetDTIM_AP(&dtim_ap) != W6X_STATUS_OK)
+
+    if (dtim_interval != 0)
     {
-      SHELL_E("Get AP DTIM error\n");
-      return SHELL_STATUS_ERROR;
+      if (W6X_WiFi_GetDTIM_AP(&dtim_ap) != W6X_STATUS_OK)
+      {
+        SHELL_E("Get AP DTIM error\n");
+        return SHELL_STATUS_ERROR;
+      }
     }
+
     SHELL_PRINTF("STA DTIM factor: %" PRIu32 "\n", dtim_factor);
     SHELL_PRINTF("AP  DTIM factor: %" PRIu32 "\n", dtim_ap);
     SHELL_PRINTF("Listen interval: %" PRIu32 " x beacon interval ms\n", dtim_interval);
@@ -1072,11 +1058,6 @@ int32_t W6X_Shell_WiFi_DTIM(int32_t argc, char **argv)
   if (argc == 2)
   {
     value = atoi(argv[1]);
-    if (value < 1)
-    {
-      SHELL_E("DTIM value should be greater than 0\n");
-      return SHELL_STATUS_ERROR;
-    }
 
     SHELL_PRINTF("STA DTIM factor: %" PRIi32 "\n", value);
 
@@ -1158,12 +1139,15 @@ int32_t W6X_Shell_WiFi_TWT_GetStatus(int32_t argc, char **argv)
   SHELL_PRINTF("TWT flows active: %" PRIu32 "\n", twt_status.flow_count);
   if (twt_status.flow_count != 0)
   {
-    for (uint32_t i = 0; i < twt_status.flow_count; i++)
+    for (uint32_t i = 0; i < W6X_WIFI_MAX_TWT_FLOWS; i++)
     {
-      SHELL_PRINTF("ID: %" PRIu32 " Type %" PRIu16 " Wake Interval exponent: %" PRIu32
-                   " Minimum Wake duration: %" PRIu32 " Wake Interval mantissa: %" PRIu32 "\n",
-                   i, twt_status.flow[i].flow_type, twt_status.flow[i].wake_int_exp,
-                   twt_status.flow[i].min_twt_wake_dur, twt_status.flow[i].wake_int_mantissa);
+      if (twt_status.flow[i].wake_int_mantissa != 0)
+      {
+        SHELL_PRINTF("ID: %" PRIu32 " Type %" PRIu16 " Wake Interval exponent: %" PRIu32
+                     " Minimum Wake duration: %" PRIu32 " Wake Interval mantissa: %" PRIu32 "\n",
+                     i, twt_status.flow[i].flow_type, twt_status.flow[i].wake_int_exp,
+                     twt_status.flow[i].min_twt_wake_dur, twt_status.flow[i].wake_int_mantissa);
+      }
     }
   }
   return SHELL_STATUS_OK;
@@ -1234,8 +1218,6 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_TWT_Teardown, wifi_twt_teardown,
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_TWT_Teardown, wifi_twt_teardown, wifi_twt_teardown);
 #endif /* TWT multi flow is not supported in current version */
 #endif /* SHELL_CMD_LEVEL */
-
-#endif /* ST67_ARCH */
 
 int32_t W6X_Shell_WiFi_Antenna(int32_t argc, char **argv)
 {

@@ -1,22 +1,22 @@
-# __ST67W6X_HTTPS_Client Application Description__
+## __ST67W6X_HTTPS_Client Application Description__
 
 This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.
 
 It exercises the ST67W6X_Network_Driver capabilities. It relies on the FreeRTOS RealTime Operating System.
 
-> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.89.bin.
+> This project requires to use the ST67W611M Coprocessor binary st67w611m_mission_t01_v2.0.97.bin.
 >
-> Please follow the [NCP Binaries README.md](../../../../ST67W6X_Utilities/Binaries/README.md) instructions using the __NCP_update_mission_profile.bat__ script.
+> Please follow the [NCP Binaries README.md](../../../../ST67W6X_Scripts/Binaries/README.md) instructions using the __NCP_update_mission_profile_t01.bat__ script.
 
-## __Keywords__
+### __Keywords__
 
 Connectivity, WiFi, ST67W6X_Network_Driver, FreeRTOS, CLI, Station mode, DHCP, TCP, HTTPS, WPA2, WPA3, Weather
 
-## __Links and references__
+### __Links and references__
 
 For further information, please visit the dedicated Wiki page [ST67W6X_HTTPS_Client](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_ST67W6X_HTTPS_Client_Application).
 
-## __Directory structure__
+### __Directory structure__
 
 |Directory  |                                                                     |Description|
 |---   |:-:                                                                       |---        |
@@ -32,8 +32,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_HTTPS_Cli
 |ST67W6X_HTTPS_Client/MDK-ARM|                                                    |Project for the RealView Microcontroller Development Kit|
 |ST67W6X_HTTPS_Client/STM32CubeIDE|                                               |Project for the STM32CubeIDE toolchain|
 
-## __Directory contents__
-
+### __Directory contents__
 
 |File  |                                                                          |Description|
 |---   |:-:                                                                       |---        |
@@ -52,7 +51,7 @@ For further information, please visit the dedicated Wiki page [ST67W6X_HTTPS_Cli
 |ST67W6X_HTTPS_Client/littlefs/Target/easyflash.h|                                |Header file that adapts LittleFS to EasyFlash4|
 |ST67W6X_HTTPS_Client/littlefs/Target/lfs_port.h|                                 |lfs flash port definition|
 |ST67W6X_HTTPS_Client/littlefs/Target/lfs_util_config.h|                          |lfs utility user configuration|
-|ST67W6X_HTTPS_Client/ST67W6X/App/app_st67w6x.h|                                  |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_HTTPS_Client/ST67W6X/App/app_st67w6x.h|                                  |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.|
 |ST67W6X_HTTPS_Client/ST67W6X/Target/bsp_conf.h|                                  |This file contains definitions for the BSP interface|
 |ST67W6X_HTTPS_Client/ST67W6X/Target/logging_config.h|                            |Header file for the W6X Logging configuration module|
 |ST67W6X_HTTPS_Client/ST67W6X/Target/shell_config.h|                              |Header file for the W6X Shell configuration module|
@@ -72,13 +71,13 @@ For further information, please visit the dedicated Wiki page [ST67W6X_HTTPS_Cli
 |ST67W6X_HTTPS_Client/Core/Src/system_stm32u5xx.c|                                |CMSIS Cortex-M33 Device Peripheral Access Layer System Source File|
 |ST67W6X_HTTPS_Client/littlefs/Target/lfs_easyflash.c|                            |Adapts LittleFS to EasyFlash4|
 |ST67W6X_HTTPS_Client/littlefs/Target/lfs_flash.c|                                |Host flash interface|
-|ST67W6X_HTTPS_Client/ST67W6X/App/app_st67w6x.c|                                  |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.1.0 instances.|
+|ST67W6X_HTTPS_Client/ST67W6X/App/app_st67w6x.c|                                  |This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.|
 |ST67W6X_HTTPS_Client/ST67W6X/Target/spi_port.c|                                  |SPI bus interface porting layer implementation|
+|ST67W6X_HTTPS_Client/ST67W6X/Target/util_task_port.c|                            |Task Performance porting layer implementation|
 |ST67W6X_HTTPS_Client/STM32CubeIDE/Application/User/Core/syscalls.c|              |STM32CubeIDE Minimal System calls file|
 |ST67W6X_HTTPS_Client/STM32CubeIDE/Application/User/Core/sysmem.c|                |STM32CubeIDE System Memory calls file|
 
-
-## __Hardware and Software environment__
+### __Hardware and Software environment__
 
   - This example runs on the NUCLEO-U575ZI-Q board combined with the X-NUCLEO-67W61M1 board
   - X-NUCLEO-67W61M1 board is plugged to the NUCLEO-U575ZI-Q board via the Arduino connectors:
@@ -88,9 +87,10 @@ For further information, please visit the dedicated Wiki page [ST67W6X_HTTPS_Cli
 
 For further information, please visit the dedicated Wiki page [ST67W611M Hardware setup](https://wiki.st.com/stm32mcu/wiki/Connectivity:Wi-Fi_MCU_Hardware_Setup).
 
-## __How to use it?__
+### __How to use it?__
 
 In order to make the program work, you must do the following :
+
   - Build the chosen Host project
     - Open your preferred toolchain
     - Rebuild all files and load your image into Host target memory
@@ -108,18 +108,23 @@ In order to make the program work, you must do the following :
       - Local Echo: Off
   - Press Reset button of the Host board
 
-##  __User setup__
+### __User setup__
 
-###  __ST67W6X configuration__
+#### __ST67W6X configuration__
 
 The default System configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
-/** NCP will go by default in low power mode when NCP is in idle mode */
+/** NCP power save mode : 0: NCP stays always active / 1: NCP goes in low power mode when idle */
 #define W6X_POWER_SAVE_AUTO                     1
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
 #define W6X_CLOCK_MODE                          1
 ```
+
+> __IMPORTANT__
+>
+> In order to setup and use external clock, SW and HW settings have to be modified.
+> Refer to [Wiki ST67W611M1 32.768 kHz and low power operation](https://wiki.st.com/stm32mcu/wiki/Connectivity:ST67W611M1_32KHz_management) page in order to be informed about required changes.
 
 The default Wi-Fi configuration can be modified in the _ST67W6X/Target/w6x_config.h_ file:
 ```
@@ -169,7 +174,7 @@ Additionally, some others options can be modified in the _ST67W6X/Target_ direct
 - _shell_config.h_ : This file provides configuration for Shell component.
 - _w61_driver_config.h_ : This file provides configuration for the W61 configuration module.
 
-###  __Application configuration__
+#### __Application configuration__
 
 The Wi-Fi configuration used in this application is define in the _Appli/App/app_config.h_ file:
 ```
@@ -193,24 +198,23 @@ The default DTIM Wi-Fi power mode can be modified in the _Appli/App/app_config.h
 The host low power mode can be modified in the _Appli/App/app_config.h_ file:
 ```
 /** Low power configuration [0: disable / 1: sleep / 2: stop / 3: standby] */
-#define LOW_POWER_MODE              LOW_POWER_SLEEP_ENABLE
+#define LOW_POWER_MODE              LOW_POWER_DISABLE
 ```
 
-###  __Certificates__
+### __Certificates__
 
-The certificate file __weather.crt__ used for the URL api.open-meteo.com is available on the website: https://letsencrypt.org/certificates/
-The file used is that of the subordinate (intermediate) Let's Encrypt R13 certification authorities in PEM format: https://letsencrypt.org/certs/2024/r13.pem
+The certificate file __r12.pem__ used for the URL api.open-meteo.com is available on the website: https://letsencrypt.org/certificates/
+The file used is that of the subordinate (intermediate) Let's Encrypt R12 certification authorities in PEM format: https://letsencrypt.org/certs/2024/r12.pem
 
-####  __Certificates Update__
+> __WARNING__
+>
+> Let's Encrypt R12 certificate can be revoked before the expiration date. If the application fails to connect to the server, please check with other certificates on the Let's Encrypt website.
+
+#### __Certificates Update__
 
 In case the registered certificate has expired, please install most recent non-retired version:
 
 - If the define `LFS_ENABLE` equals 0: update the `weather_cert[]` buffer content defined in _Appli/App/https_client.c_ (preserve the trailing `\r\n` line endings).
-- If the define `LFS_ENABLE` equals 1: install the new one in the directory _littlefs/lfs_ as _weather.crt_ file and execute the _littlefs/build.bat_ or _littlefs/build.sh_ to rebuild the _littlefs/littlefs.bin_
+- If the define `LFS_ENABLE` equals 1: install the new one in the directory _littlefs/lfs_ as _r12.pem_ file and execute the _littlefs/build.bat_ or _littlefs/build.sh_ to rebuild the _littlefs/littlefs.bin_
 
-## __Known limitations__
-
-  - W6X_WiFi_Connect API cannot use special characters [,"\\] in the SSID and password. If needed, they must be preceded by a \\ to be interpreted correctly
-  - By default the country code / region configured in the device is World with 1 to 13 active channels
-  - Enabling Wi-Fi DTIM can generates some failure during Network transaction
-  - Static IP addressing is not compatible with power save mode (ARP broadcast issue)
+### __Known limitations__

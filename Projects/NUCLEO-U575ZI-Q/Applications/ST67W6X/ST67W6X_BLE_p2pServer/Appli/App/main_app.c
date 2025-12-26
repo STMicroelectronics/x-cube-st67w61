@@ -52,6 +52,11 @@
 #error "low power standby mode not supported"
 #endif /* LOW_POWER_MODE */
 
+#if (TEST_AUTOMATION_ENABLE == 1)
+#include "util_mem_perf.h"
+#include "util_task_perf.h"
+#endif /* TEST_AUTOMATION_ENABLE */
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -62,21 +67,6 @@
 /* USER CODE END GV */
 
 /* Private typedef -----------------------------------------------------------*/
-/**
-  * @brief  BLE parameters structure
-  */
-typedef struct
-{
-  uint8_t service_idx;                      /*!< Service index */
-  uint8_t charac_idx;                       /*!< Characteristic index */
-  uint8_t notification_status[2];           /*!< Notification status */
-  uint8_t indication_status[2];             /*!< Indication status */
-  uint16_t mtu_size;                        /*!< MTU Size */
-  uint32_t PassKey;                         /*!< BLE Security passkey */
-  uint32_t available_data_length;           /*!< Length of the available data */
-  W6X_Ble_Device_t remote_ble_device;       /*!< BLE Remote device */
-} APP_Ble_Data_t;
-
 /**
   * @brief  BLE characteristic information structure
   */
@@ -189,10 +179,11 @@ typedef struct
 /** P2P Server Switch Characteristic UUID */
 #define P2PSERVER_SWITCH_CHAR_UUID          "0000fe428e2245419d4c21edae82ed19"
 
-/** P2P Server Switch Characteristic value to switch on */
-#define NOTIFICATION_DATA_ON                "\001\001"
-/** P2P Server Switch Characteristic value to switch off */
-#define NOTIFICATION_DATA_OFF               "\001\0"
+/* P2P Server Led control Characteristic first byte possible values */
+#define P2PSERVER_LED_CONTROL               0x01  /*!< Led control */
+#if (TEST_AUTOMATION_ENABLE == 1)
+#define P2PSERVER_QUIT_CONTROL              0xFF  /*!< Quit automation */
+#endif /* TEST_AUTOMATION_ENABLE */
 
 /** Generic Passkey */
 #define BLE_GENERIC_PASSKEY                 123456
@@ -229,6 +220,9 @@ typedef struct
 /** BLE data buffer to receive message from the ST67W6X Driver */
 static uint8_t a_APP_AvailableData[247] = {0};
 
+/** Connection handle */
+uint32_t connection_index = 0xff;
+
 /** Advertising Data */
 char a_AdvData[36] =
 {
@@ -250,27 +244,10 @@ char a_AdvData[36] =
 };
 
 /** OnOff Switch value */
-int32_t OnOffSwitch = 0;
+int32_t OnOffSwitch[W6X_BLE_MAX_CONN_NBR] = {0};
 
 /** Application event group */
 EventGroupHandle_t app_evt_current;
-
-/** BLE parameters */
-APP_Ble_Data_t app_ble_params =
-{
-  /* Initialize remote device struct */
-  .remote_ble_device.RSSI = 0,
-  .remote_ble_device.IsConnected = 0,
-  .remote_ble_device.conn_handle = 0xff,
-  .remote_ble_device.DeviceName = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  .remote_ble_device.BDAddr = {0, 0, 0, 0, 0, 0},
-  .service_idx = 0,                /* Initialize service index to 0 */
-  .charac_idx = 0,                 /* Initialize characteristic index to 0 */
-  .notification_status = {0, 0},   /* Initialize notification status array to {0, 0} */
-  .indication_status = {0, 0},     /* Initialize indication status array to {0, 0} */
-  .mtu_size = 0,                   /* Initialize MTU size to 0 */
-  .available_data_length = 0,      /* Initialize available data length to 0 */
-};
 
 /** BLE characteristics */
 static const APP_Ble_Char_t app_ble_char[] =
@@ -294,6 +271,9 @@ static const APP_Ble_Char_t app_ble_char[] =
     .desc = "BLE P2PServer SWITCH charac"
   },
 };
+
+/** Connected devices information */
+W6X_Ble_Connected_Device_t app_ble_connected_device_list[W6X_BLE_MAX_CONN_NBR] = {0};
 
 /** List of bonded BLE devices */
 W6X_Ble_Bonded_Devices_Result_t app_ble_BondedDeviceList = {0};
@@ -372,13 +352,24 @@ void main_app(void)
   int32_t ret = 0;
   EventBits_t eventBits = 0;
   int32_t data_index = 0;
+  int8_t notified_device_nbr = 0;
   uint8_t bd_address[W6X_BLE_BD_ADDR_SIZE];
   const char hex_chars[] = "0123456789ABCDEF";
   char ble_device_name[W6X_BLE_DEVICE_NAME_SIZE];
 
+  for (int32_t i = 0; i < W6X_BLE_MAX_CONN_NBR; ++i)
+  {
+    app_ble_connected_device_list[i].conn_role = 0xFF;
+    app_ble_connected_device_list[i].conn_handle = 0xFF;
+  }
   /* USER CODE BEGIN main_app_1 */
 
   /* USER CODE END main_app_1 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Start the task performance measurement */
+  task_perf_start();
+#endif /* TEST_AUTOMATION_ENABLE */
 
   LowPowerManagerInit();
 
@@ -407,7 +398,7 @@ void main_app(void)
   ret = W6X_Init();
   if (ret)
   {
-    LogError("failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -415,7 +406,7 @@ void main_app(void)
   ret = W6X_Ble_Init(W6X_BLE_MODE_SERVER, a_APP_AvailableData, sizeof(a_APP_AvailableData) - 1);
   if (ret)
   {
-    LogError("failed to initialize ST67W6X BLE component, %" PRIi32 "\n", ret);
+    LogError("Failed to initialize ST67W6X BLE component, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("Ble init is done\n");
@@ -439,7 +430,7 @@ void main_app(void)
   ret = W6X_Ble_SetDeviceName(ble_device_name);
   if (ret)
   {
-    LogError("failed to set device name, %" PRIi32 "\n", ret);
+    LogError("Failed to set device name, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -452,7 +443,7 @@ void main_app(void)
   ret = W6X_Ble_SetTxPower(0);
   if (ret)
   {
-    LogError("failed to set TX power, %" PRIi32 "\n", ret);
+    LogError("Failed to set TX power, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -466,7 +457,7 @@ void main_app(void)
   ret = W6X_Ble_SetAdvData((const char *) a_AdvData);
   if (ret)
   {
-    LogError("failed to set ADV data, %" PRIi32 "\n", ret);
+    LogError("Failed to set ADV data, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("BLE configuration is done\n");
@@ -477,7 +468,7 @@ void main_app(void)
 
   if (ret != 0)
   {
-    LogError("failed to Create service, %" PRIi32 "\n", ret);
+    LogError("Failed to Create service, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("- BLE service created\n");
@@ -491,7 +482,7 @@ void main_app(void)
 
     if (ret != 0)
     {
-      LogError("failed to create %s, %" PRIi32 "\n", app_ble_char[i].desc, ret);
+      LogError("Failed to create %s, %" PRIi32 "\n", app_ble_char[i].desc, ret);
       goto _err;
     }
     LogInfo("- %s created\n", app_ble_char[i].desc);
@@ -502,7 +493,7 @@ void main_app(void)
 
   if (ret != 0)
   {
-    LogError("failed to Register characteristics, %" PRIi32 "\n", ret);
+    LogError("Failed to Register characteristics, %" PRIi32 "\n", ret);
     goto _err;
   }
   LogInfo("- BLE services and charac registered\n");
@@ -522,7 +513,7 @@ void main_app(void)
   ret = W6X_Ble_AdvStart();
   if (ret)
   {
-    LogError("failed to start advertising, %" PRIi32 "\n", ret);
+    LogError("Failed to start advertising, %" PRIi32 "\n", ret);
     goto _err;
   }
 
@@ -536,11 +527,18 @@ void main_app(void)
     /* Process button */
     if (eventBits & EVT_APP_BUTTON)
     {
-      if (app_ble_params.remote_ble_device.IsConnected != 0x00)
+      notified_device_nbr = 0;
+      for (int32_t i = 0; i < W6X_BLE_MAX_CONN_NBR; i++)
       {
-        BLE_Send_Notification();
+        if (app_ble_connected_device_list[i].IsConnected != 0x00)
+        {
+          BLE_Send_Notification(app_ble_connected_device_list[i].conn_handle);
+          notified_device_nbr++;
+        }
       }
-      else
+
+      /* If no device detected, clear security database on button press */
+      if (notified_device_nbr == 0x00)
       {
         LogInfo("Unpair bonded devices\n");
         W6X_Ble_SecurityGetBondedDeviceList(&app_ble_BondedDeviceList);
@@ -554,7 +552,7 @@ void main_app(void)
                                        W6X_BLE_PUBLIC_ADDR);
           if (ret)
           {
-            LogError("failed to unpair bonded devices, %" PRIi32 "\n", ret);
+            LogError("Failed to unpair bonded devices, %" PRIi32 "\n", ret);
           }
           LogInfo(ADDRSTR " unpaired\n",
                   ADDR2STR(app_ble_BondedDeviceList.Bonded_device[count].BDAddr));
@@ -583,17 +581,22 @@ void main_app(void)
 #if (TEST_AUTOMATION_ENABLE == 1)
       /* Send notification to p2p Client board */
       vTaskDelay(500);
-      BLE_Send_Notification();
+      BLE_Send_Notification(connection_index);
+      if ((a_APP_AvailableData[0] == P2PSERVER_QUIT_CONTROL) && (a_APP_AvailableData[1] == 0xFF))
+      {
+        LogInfo(" -> Quit Automation Write received\n");
+        break;
+      }
 #endif /* TEST_AUTOMATION_ENABLE */
     }
 
     /* Process BLE passkey entry */
     if (eventBits & EVT_APP_BLE_PASSKEY_ENTRY)
     {
-      app_ble_params.PassKey = BLE_GENERIC_PASSKEY;
-      if (app_ble_params.remote_ble_device.conn_handle != 0xff)
+      if (connection_index != 0xff)
       {
-        ret = W6X_Ble_SecuritySetPassKey(app_ble_params.remote_ble_device.conn_handle, app_ble_params.PassKey);
+        app_ble_connected_device_list[connection_index].PassKey = BLE_GENERIC_PASSKEY;
+        ret = W6X_Ble_SecuritySetPassKey(connection_index, app_ble_connected_device_list[connection_index].PassKey);
         if (ret)
         {
           LogError("Failed to set passkey, %" PRIi32 "\n"
@@ -614,9 +617,9 @@ void main_app(void)
     /* Process BLE passkey confirm */
     if (eventBits & EVT_APP_BLE_PASSKEY_CONFIRM)
     {
-      if (app_ble_params.remote_ble_device.conn_handle != 0xff)
+      if (connection_index != 0xff)
       {
-        ret = W6X_Ble_SecurityPassKeyConfirm(app_ble_params.remote_ble_device.conn_handle);
+        ret = W6X_Ble_SecurityPassKeyConfirm(connection_index);
         if (ret)
         {
           LogError("Failed to send passkey confirm, %" PRIi32 "\n"
@@ -637,9 +640,9 @@ void main_app(void)
     /* Process BLE pairing confirm */
     if (eventBits & EVT_APP_BLE_PAIRING_CONFIRM)
     {
-      if (app_ble_params.remote_ble_device.conn_handle != 0xff)
+      if (connection_index != 0xff)
       {
-        ret = W6X_Ble_SecurityPairingConfirm(app_ble_params.remote_ble_device.conn_handle);
+        ret = W6X_Ble_SecurityPairingConfirm(connection_index);
         if (ret)
         {
           LogError("Pairing Confirm Failed, %" PRIi32 "\n"
@@ -663,6 +666,12 @@ void main_app(void)
     {
       LogInfo("Pairing Completed\n");
     }
+
+    /* Process BLE connection complete */
+    if (eventBits & EVT_APP_BLE_CONNECTED)
+    {
+      LogInfo("Connected\n");
+    }
   }
 
   /* USER CODE BEGIN main_app_Last */
@@ -682,30 +691,43 @@ _err:
   /* USER CODE BEGIN main_app_Err_2 */
 
   /* USER CODE END main_app_Err_2 */
+
+#if (TEST_AUTOMATION_ENABLE == 1)
+  /* Stop the task perf execution */
+  task_perf_stop();
+
+  /* Report the task performance measurement */
+  task_perf_report();
+
+  /* Report the memory performance measurement */
+  mem_perf_report();
+#endif /* TEST_AUTOMATION_ENABLE */
+
   LogInfo("##### Application end\n");
 }
 
-void BLE_Send_Notification(void)
+void BLE_Send_Notification(uint8_t conn_handle)
 {
-  int32_t ret;
-  uint32_t SentDatalen;
   /* USER CODE BEGIN BLE_Send_Notification_1 */
 
   /* USER CODE END BLE_Send_Notification_1 */
+  int32_t ret;
+  uint32_t SentDatalen;
+  uint8_t data[3] = {0};
 
   LogInfo("BLE Send Notification\n");
-  if (OnOffSwitch == 0)
+  data[0] = P2PSERVER_LED_CONTROL;
+  if (OnOffSwitch[conn_handle] == 0)
   {
-    ret = W6X_Ble_ServerSendNotification(0, 1, NOTIFICATION_DATA_ON, strlen(NOTIFICATION_DATA_ON),
-                                         &SentDatalen, 6000);
-    OnOffSwitch = 1;
+    data[1] = 0x01;
+    OnOffSwitch[conn_handle] = 1;
   }
   else
   {
-    ret = W6X_Ble_ServerSendNotification(0, 1, NOTIFICATION_DATA_OFF, strlen(NOTIFICATION_DATA_ON),
-                                         &SentDatalen, 6000);
-    OnOffSwitch = 0;
+    OnOffSwitch[conn_handle] = 0;
   }
+
+  ret = W6X_Ble_ServerNotify(conn_handle, 0, 1, data, 2, &SentDatalen, 6000);
   if (ret != 0)
   {
     LogError("Send Notification FAILED, %" PRIi32 "\n", ret);
@@ -814,39 +836,35 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
   switch (event_id)
   {
     case W6X_BLE_EVT_CONNECTED_ID:
-      LogInfo(" -> BLE CONNECTED: Conn_Handle: %" PRIu16 "\n", p_param_ble_data->remote_ble_device.conn_handle);
-
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE CONNECTED [Conn_Handle: %" PRIu16 "]\n", connection_index);
       /* Fill remote device structure */
-      app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      app_ble_params.remote_ble_device.IsConnected = p_param_ble_data->remote_ble_device.IsConnected;
+      app_ble_connected_device_list[connection_index].conn_handle = connection_index;
+      app_ble_connected_device_list[connection_index].conn_role = p_param_ble_data->remote_ble_device.conn_role;
+      app_ble_connected_device_list[connection_index].IsConnected = p_param_ble_data->remote_ble_device.IsConnected;
 
-      memcpy(app_ble_params.remote_ble_device.BDAddr, p_param_ble_data->remote_ble_device.BDAddr,
-             sizeof(app_ble_params.remote_ble_device.BDAddr));
-      memcpy(app_ble_params.remote_ble_device.DeviceName, p_param_ble_data->remote_ble_device.DeviceName,
-             sizeof(app_ble_params.remote_ble_device.DeviceName));
-      memcpy(app_ble_params.remote_ble_device.ManufacturerData, p_param_ble_data->remote_ble_device.ManufacturerData,
-             sizeof(app_ble_params.remote_ble_device.ManufacturerData));
-
+      memcpy(app_ble_connected_device_list[connection_index].BDAddr, p_param_ble_data->remote_ble_device.BDAddr,
+             sizeof(app_ble_connected_device_list[connection_index].BDAddr));
       APP_setevent(&app_evt_current, EVT_APP_BLE_CONNECTED);
       break;
 
     case W6X_BLE_EVT_CONNECTION_PARAM_ID:
-      LogInfo(" -> BLE CONNECTION PARAM UPDATE\n");
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE CONNECTION PARAM UPDATE [Conn_Handle: %" PRIu16 "]\n", connection_index);
       APP_setevent(&app_evt_current, EVT_APP_BLE_CONNECTION_PARAM_UPDATE);
       break;
 
     case W6X_BLE_EVT_DISCONNECTED_ID:
-      LogInfo(" -> BLE DISCONNECTED.\n");
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE DISCONNECTED [Conn_Handle: %" PRIu16 "]\n", connection_index);
 
       /* Reinitialize remote device struct */
-      app_ble_params.remote_ble_device.RSSI = 0;
-      app_ble_params.remote_ble_device.IsConnected = 0;
-      app_ble_params.remote_ble_device.conn_handle = 0xff;
-      memset(app_ble_params.remote_ble_device.DeviceName, 0, sizeof(app_ble_params.remote_ble_device.DeviceName));
-      memset(app_ble_params.remote_ble_device.BDAddr, 0, sizeof(app_ble_params.remote_ble_device.BDAddr));
-      memset(app_ble_params.remote_ble_device.ManufacturerData, 0,
-             sizeof(app_ble_params.remote_ble_device.ManufacturerData));
-
+      app_ble_connected_device_list[connection_index].IsConnected = 0;
+      app_ble_connected_device_list[connection_index].conn_handle = 0xff;
+      app_ble_connected_device_list[connection_index].conn_role = 0xff;
+      memset(app_ble_connected_device_list[connection_index].BDAddr, 0,
+             sizeof(app_ble_connected_device_list[connection_index].BDAddr));
+      app_ble_connected_device_list[connection_index].bd_addr_type = 0;
       APP_setevent(&app_evt_current, EVT_APP_BLE_DISCONNECTED);
       break;
 
@@ -875,17 +893,14 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     case W6X_BLE_EVT_NOTIFICATION_DATA_ID:
-      LogInfo(" -> BLE NOTIFICATION.\n");
+      LogInfo(" -> BLE NOTIFICATION DATA.\n");
       APP_setevent(&app_evt_current, EVT_APP_BLE_NOTIFICATION_DATA);
       break;
 
     case W6X_BLE_EVT_WRITE_ID:
-      LogInfo(" -> BLE WRITE.\n");
-      app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      app_ble_params.service_idx = p_param_ble_data->service_idx;
-      app_ble_params.charac_idx = p_param_ble_data->charac_idx;
-      app_ble_params.available_data_length = p_param_ble_data->available_data_length;
-      LogInfo(" -> Conn_Handle: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16 ", length %" PRIu32 ", Data:\n",
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE WRITE [Conn_Handle: %" PRIu16 ", Service: %" PRIu16 ", Charac: %" PRIu16
+              ", length %" PRIu32 "]\n",
               p_param_ble_data->remote_ble_device.conn_handle, p_param_ble_data->service_idx,
               p_param_ble_data->charac_idx, p_param_ble_data->available_data_length);
 
@@ -903,43 +918,44 @@ static void APP_ble_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     case W6X_BLE_EVT_PASSKEY_ENTRY_ID:
-      app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      LogInfo(" -> BLE PassKey Entry: Conn_Handle: %" PRIu16 "\n", app_ble_params.remote_ble_device.conn_handle);
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE PassKey Entry [Conn_Handle: %" PRIu16 "]\n", connection_index);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PASSKEY_ENTRY);
       break;
 
     case W6X_BLE_EVT_PASSKEY_CONFIRM_ID:
-      app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      app_ble_params.PassKey = p_param_ble_data->PassKey;
-      LogInfo(" -> BLE PassKey received = %06" PRIu32 ", Conn_Handle: %" PRIu16 "\n", app_ble_params.PassKey,
-              app_ble_params.remote_ble_device.conn_handle);
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      app_ble_connected_device_list[connection_index].PassKey = p_param_ble_data->PassKey;
+      LogInfo(" -> BLE PassKey received = %06" PRIu32 " [Conn_Handle: %" PRIu16 "]\n",
+              app_ble_connected_device_list[connection_index].PassKey, connection_index);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PASSKEY_CONFIRM);
       break;
 
     case W6X_BLE_EVT_PAIRING_CONFIRM_ID:
-      app_ble_params.remote_ble_device.conn_handle = p_param_ble_data->remote_ble_device.conn_handle;
-      LogInfo(" -> BLE Pairing Confirm: Conn_Handle: %" PRIu16 "\n", app_ble_params.remote_ble_device.conn_handle);
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE Pairing Confirm [Conn_Handle: %" PRIu16 "]\n", connection_index);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_CONFIRM);
       break;
 
     case W6X_BLE_EVT_PAIRING_COMPLETED_ID:
-      LogInfo(" -> BLE Pairing Complete\n\n");
+      LogInfo(" -> BLE Pairing Complete\n");
       APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_COMPLETED);
       break;
 
     case W6X_BLE_EVT_PASSKEY_DISPLAY_ID:
-      app_ble_params.PassKey = p_param_ble_data->PassKey;
-      LogInfo(" -> BLE PASSKEY  = %06" PRIu32 "\n", app_ble_params.PassKey);
+      LogInfo(" -> BLE PASSKEY  = %06" PRIu32 "\n", p_param_ble_data->PassKey);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PASSKEY_DISPLAYED);
       break;
 
     case W6X_BLE_EVT_PAIRING_FAILED_ID:
-      LogInfo(" -> BLE Pairing Failed: Conn_Handle: %" PRIu16 "\n", app_ble_params.remote_ble_device.conn_handle);
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE Pairing Failed [Conn_Handle: %" PRIu16 "]\n", connection_index);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_FAILED);
       break;
 
     case W6X_BLE_EVT_PAIRING_CANCELED_ID:
-      LogInfo(" -> BLE Pairing Canceled: Conn_Handle: %" PRIu16 "\n", app_ble_params.remote_ble_device.conn_handle);
+      connection_index = p_param_ble_data->remote_ble_device.conn_handle;
+      LogInfo(" -> BLE Pairing Canceled [Conn_Handle: %" PRIu16 "]\n", connection_index);
       APP_setevent(&app_evt_current, EVT_APP_BLE_PAIRING_CANCELED);
       break;
 

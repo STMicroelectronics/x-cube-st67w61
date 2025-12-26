@@ -79,6 +79,10 @@ typedef enum
   */
 #define DEBUGGER_ENABLED            1
 
+/* Automation usage */
+/** Enable/Disable the test automation */
+#define TEST_AUTOMATION_ENABLE      0
+
 /* USER CODE BEGIN EC */
 
 /* USER CODE END EC */

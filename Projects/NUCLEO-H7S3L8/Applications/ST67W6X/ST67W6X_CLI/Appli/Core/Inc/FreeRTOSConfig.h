@@ -6,7 +6,7 @@
   ******************************************************************************
   */
 /*
- * FreeRTOS Kernel V10.6.2
+ * FreeRTOS Kernel V11.2.0
  * Portion Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  * Portion Copyright (C) 2019 StMicroelectronics, Inc.  All Rights Reserved.
  *
@@ -190,14 +190,18 @@ standard names. */
 
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
+/* Specific defines for FreeRTOS Kernel V11.2.0 */
+#define configKERNEL_PROVIDED_STATIC_MEMORY      1
+#define configSTATS_BUFFER_MAX_LENGTH            0xFFFF
+#define configENABLE_HEAP_PROTECTOR              0
+#define configUSE_EVENT_GROUPS                   1
+#define configUSE_STREAM_BUFFERS                 1
+#define configCHECK_HANDLER_INSTALLATION         1
+#define configVALIDATE_HEAP_BLOCK_POINTER        0
 
-/* Util task perf hooks definition */
-#if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__) /* exclude the IAR assembler */
-void task_perf_in_hook(void);
-void task_perf_out_hook(void);
-#endif /* __ICCARM__ || __ARMCC_VERSION || __GNUC__ */
-#define traceTASK_SWITCHED_IN task_perf_in_hook
-#define traceTASK_SWITCHED_OUT task_perf_out_hook
+#define configSTACK_DEPTH_TYPE                   size_t
+
+#define INCLUDE_xTaskAbortDelay              1
 
 /* Util mem perf hooks definition */
 #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__) /* exclude the IAR assembler */
