@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    bsp_conf.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file contains definitions for the BSP interface
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -27,6 +27,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -46,6 +48,19 @@ extern "C" {
 /* USER CODE BEGIN EC */
 
 /* USER CODE END EC */
+
+/* Global variables ----------------------------------------------------------*/
+/** SPI handle */
+extern SPI_HandleTypeDef NCP_SPI_HANDLE;
+
+/** UART handle */
+#ifdef UART_HANDLE
+extern UART_HandleTypeDef UART_HANDLE;
+#endif /* UART_HANDLE */
+
+/* USER CODE BEGIN GV */
+
+/* USER CODE END GV */
 
 #ifdef __cplusplus
 }

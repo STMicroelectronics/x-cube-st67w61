@@ -16,7 +16,7 @@ fi
 script_dir="$(dirname "$0")"
 
 # Run the mklfs.exe tool to generate the littlefs binary
-$script_dir/../../../../../ST67W6X_Scripts/LittleFS/mklfs/$mklfs_setup -c lfs -b 2048 -p 256 -r 256 -s 0x4000 -i littlefs.bin
+$script_dir/../../../../../ST67W6X_Scripts/LittleFS/mklfs/$mklfs_setup -c lfs -b 4096 -p 256 -r 256 -s 0x7000 -i littlefs.bin
 
 # Touch the lfs_flash.c file to update its timestamp
 if command -v touch > /dev/null 2>&1; then

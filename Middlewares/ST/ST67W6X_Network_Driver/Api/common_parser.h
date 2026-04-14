@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    common_parser.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the W6x common parser definitions
   ******************************************************************************
   * @attention
@@ -28,7 +28,6 @@ extern "C" {
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -56,10 +55,10 @@ extern "C" {
 #ifndef NIP2STR
 /** Macro to convert a uint32_t IP address to a string */
 #define NIP2STR(ip)               \
-  (uint8_t)(((ip) >> 24) & 0xFF), \
-  (uint8_t)(((ip) >> 16) & 0xFF), \
-  (uint8_t)(((ip) >> 8) & 0xFF),  \
-  (uint8_t)((ip) & 0xFF)
+  (uint8_t)(((ip) >> 24U) & 0xFFU), \
+  (uint8_t)(((ip) >> 16U) & 0xFFU), \
+  (uint8_t)(((ip) >> 8U) & 0xFFU),  \
+  (uint8_t)((ip) & 0xFFU)
 /** Macro to format the IP address as a string, same as IPSTR */
 #define NIP2STR_FMT "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16
 #endif /* NIP2STR */
@@ -117,28 +116,6 @@ uint8_t Parser_Hex2Num(char a);
   * @return Operation status
   */
 int32_t Parser_CheckValidAddress(uint8_t *buff, uint32_t len);
-
-/**
-  * @brief  Formats an IPv6 address into a human-readable string
-  *
-  * This function takes a 16-byte IPv6 address and formats it into a standard
-  * IPv6 notation string (e.g., "2001:0db8:85a3:0000:0000:8a2e:0370:7334").
-  *
-  * @param  addr  Pointer to the 16-byte IPv6 address
-  * @param  str   Pointer to the buffer where the formatted string will be stored
-  * @param  size  Size of the buffer pointed to by str
-  */
-void format_ipv6_address(uint8_t *addr, char *str, size_t size);
-
-/**
-  * @brief  Checks if a formatted IPv6 address string is all zeros
-  *
-  * This function checks if a formatted IPv6 address string is all zeros.
-  *
-  * @param  str  Pointer to the formatted IPv6 address string
-  * @return 1 if the address string is all zeros, 0 otherwise
-  */
-int32_t is_ipv6_address_str_zero(const char *str);
 
 /** @} */
 

@@ -2,14 +2,14 @@
 /**
   ******************************************************************************
   * @file    hardware_rng.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   mbedtls alternate entropy data function.
   *          the mbedtls_hardware_poll() is customized to use the STM32 RNG
   *          to generate random data, required for TLS encryption algorithms.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -45,21 +45,21 @@ extern RNG_HandleTypeDef hrng;
 
 /* Functions Definition ------------------------------------------------------*/
 #ifdef MBEDTLS_ENTROPY_HARDWARE_ALT
-int mbedtls_hardware_poll(void *Data, unsigned char *Output, size_t Len, size_t *oLen)
+int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
   /* USER CODE BEGIN mbedtls_hardware_poll_1 */
 
   /* USER CODE END mbedtls_hardware_poll_1 */
 #if defined(HAL_RNG_MODULE_ENABLED)
   uint32_t index;
-  uint32_t randomValue;
+  uint32_t randomValue = 0U;
 
-  for (index = 0; index < Len / 4; index++)
+  for (index = 0; index < len / 4; index++)
   {
     if (HAL_RNG_GenerateRandomNumber(&hrng, &randomValue) == HAL_OK)
     {
-      *oLen += 4;
-      memset(&(Output[index * 4]), (int)randomValue, 4);
+      *olen += 4;
+      (void)memset(&(output[index * 4]), (int)randomValue, 4);
     }
     else
     {

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    fota.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   FOTA test definition
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -42,19 +42,19 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /** Event bits for FOTA update */
 /** Start the FOTA update procedure */
-#define FOTA_UPDATE_BIT                      (1 << 0)
+#define FOTA_UPDATE_BIT                      (1UL << 0U)
 
 /** Error occurred */
-#define FOTA_ERROR_BIT                       (1 << 1)
+#define FOTA_ERROR_BIT                       (1UL << 1U)
 
 /** Notice completion of FOTA transfer to user */
-#define FOTA_COMPLETE_XFER_USER_NOTIF_BIT    (1 << 2)
+#define FOTA_COMPLETE_XFER_USER_NOTIF_BIT    (1UL << 2U)
 
 /** FOTA awaiting for user inputs before reboot */
-#define FOTA_WAIT_USER_ACK_BIT               (1 << 3)
+#define FOTA_WAIT_USER_ACK_BIT               (1UL << 3U)
 
 /** Notice completion of FOTA update to user */
-#define FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT  (1 << 4)
+#define FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT  (1UL << 4U)
 
 /** Return Busy code */
 #define FOTA_BUSY                     -2
@@ -73,7 +73,7 @@ extern "C" {
 #define FOTA_HTTP_COMMON_URI        "/download" FOTA_HTTP_URI_TARGET
 
 /** Default URI for the ST67 binary, should be smaller in bytes size than the value defined by FOTA_URI_MAX_SIZE */
-#define FOTA_HTTP_URI               FOTA_HTTP_COMMON_URI "/st67w611m_mission_t01_v2.0.97.bin.ota"
+#define FOTA_HTTP_URI               FOTA_HTTP_COMMON_URI "/st67w611m_mission_t01_v2.0.106.bin.ota"
 
 /** Default URI for the STM32 binary, should be smaller in bytes size than the value defined by FOTA_URI_MAX_SIZE */
 #define FOTA_HTTP_URI_STM32         FOTA_HTTP_COMMON_URI "/fota_ST67W6X_CLI.bin"

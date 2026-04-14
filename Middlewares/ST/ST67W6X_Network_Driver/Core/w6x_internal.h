@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_internal.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file contains the internal definitions of the API
   ******************************************************************************
   * @attention

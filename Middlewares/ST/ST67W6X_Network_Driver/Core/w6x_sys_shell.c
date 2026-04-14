@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_sys_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x System Shell Commands
   ******************************************************************************
   * @attention
@@ -37,7 +37,7 @@
 /** HAL System software reset function */
 extern void HAL_NVIC_SystemReset(void);
 /** HAL System software reset macro */
-#define HAL_SYS_RESET() do{ HAL_NVIC_SystemReset(); } while(0);
+#define HAL_SYS_RESET() do{ HAL_NVIC_SystemReset(); } while(false);
 #endif /* HAL_SYS_RESET */
 
 /** @} */
@@ -163,27 +163,29 @@ int32_t W6X_Shell_Reset(int32_t argc, char **argv)
   if (argc == 2)
   {
     uint32_t mode = (uint32_t)atoi(argv[1]);
-    switch (mode)
+    if (mode == 0U) /* HAL_Reset */
     {
-      case 0U: /* HAL_Reset */
-        HAL_SYS_RESET();
-        break;
-      case 1U: /* NCP_Restore */
-        if (W6X_Reset(1) != W6X_STATUS_OK)
-        {
-          SHELL_E("Unable to restore the device\n");
-          return SHELL_STATUS_ERROR;
-        }
-        break;
-      case 2U: /* NCP_Reset */
-        if (W6X_Reset(0) != W6X_STATUS_OK)
-        {
-          SHELL_E("Unable to reset the device\n");
-          return SHELL_STATUS_ERROR;
-        }
-        break;
-      default:
-        return SHELL_STATUS_UNKNOWN_ARGS;
+      HAL_SYS_RESET();
+    }
+    else if (mode == 1U) /* NCP_Restore */
+    {
+      if (W6X_Reset(1) != W6X_STATUS_OK)
+      {
+        SHELL_E("Unable to restore the device\n");
+        return SHELL_STATUS_ERROR;
+      }
+    }
+    else if (mode == 2U) /* NCP_Reset */
+    {
+      if (W6X_Reset(0) != W6X_STATUS_OK)
+      {
+        SHELL_E("Unable to reset the device\n");
+        return SHELL_STATUS_ERROR;
+      }
+    }
+    else
+    {
+      return SHELL_STATUS_UNKNOWN_ARGS;
     }
   }
   else
@@ -236,7 +238,7 @@ int32_t W6X_Shell_FS_ReadFile(int32_t argc, char **argv)
     return SHELL_STATUS_ERROR;
   }
 
-  if (size == 0)
+  if (size == 0U)
   {
     SHELL_E("File is empty\n");
     return SHELL_STATUS_ERROR;
@@ -244,17 +246,17 @@ int32_t W6X_Shell_FS_ReadFile(int32_t argc, char **argv)
   SHELL_PRINTF("Data:\n");
   while (read_offset < size)
   {
-    if ((size - read_offset) < 256)
+    if ((size - read_offset) < 256U)
     {
-      W6X_FS_ReadFile(argv[1], read_offset, buf, size - read_offset);
-      buf[size - read_offset] = '\0';
+      (void)W6X_FS_ReadFile(argv[1], read_offset, buf, size - read_offset);
+      buf[size - read_offset] = 0;
       SHELL_PRINTF("%s", buf);
       break;
     }
-    W6X_FS_ReadFile(argv[1], read_offset, buf, 256);
-    buf[256] = '\0';
+    (void)W6X_FS_ReadFile(argv[1], read_offset, buf, 256);
+    buf[256] = 0;
     SHELL_PRINTF("%s", buf);
-    read_offset += 256;
+    read_offset += 256U;
   }
 
   return SHELL_STATUS_OK;
@@ -331,7 +333,7 @@ int32_t W6X_Shell_LowPower(int32_t argc, char **argv)
       SHELL_E("Unable to get power mode\n");
       return SHELL_STATUS_ERROR;
     }
-    SHELL_PRINTF("powersave mode is %s\n", ps_mode ? "enabled" : "disabled");
+    SHELL_PRINTF("powersave mode is %s\n", (ps_mode == 1U) ? "enabled" : "disabled");
   }
   else if (argc == 2)
   {

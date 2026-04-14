@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    common_parser.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x common parser functions
   ******************************************************************************
   * @attention
@@ -23,20 +23,6 @@
 #include "common_parser.h"
 
 /* Private macros ------------------------------------------------------------*/
-/** @addtogroup ST67W6X_Utilities_Common_Macros
-  * @{
-  */
-
-/** Convert a character to a number */
-#define CHAR2NUM(x)                     ((x) - '0')
-
-/** Check if the character x is a number */
-#define CHARISNUM(x)                    isdigit((unsigned char)(x))
-
-/** Check if the character x is a hexadecimal number */
-#define CHARISHEXNUM(x)                 isxdigit((unsigned char)(x))
-
-/** @} */
 /* Private function prototypes -----------------------------------------------*/
 /** @addtogroup ST67W6X_Utilities_Common_Functions
   * @{
@@ -45,18 +31,18 @@
 /* Functions Definition ------------------------------------------------------*/
 int32_t Parser_StrToHex(char *ptr, uint8_t *cnt)
 {
-  int32_t sum = 0;
+  uint32_t sum = 0;
   uint8_t i = 0;
 
-  if (!CHARISHEXNUM(*ptr))
+  if (isxdigit((int32_t)(*ptr)) == 0)
   {
     return -1;
   }
 
   /* Loop on pointer content while it is a hexadecimal character */
-  while (CHARISHEXNUM(*ptr))
+  while (isxdigit((int32_t)(*ptr)) > 0)
   {
-    sum <<= 4;
+    sum <<= 4U;
     sum += Parser_Hex2Num(*ptr);
     ptr++;
     i++;
@@ -69,12 +55,12 @@ int32_t Parser_StrToHex(char *ptr, uint8_t *cnt)
   }
 
   /* Return the concatenated number */
-  return sum;
+  return (int32_t)sum;
 }
 
 int32_t Parser_StrToInt(char *ptr, uint8_t *cnt, int32_t *value)
 {
-  uint8_t minus = 0;
+  uint8_t minus = 0U;
   uint8_t i = 0;
   int32_t sum = 0;
   uint8_t len = 0;
@@ -100,15 +86,15 @@ int32_t Parser_StrToInt(char *ptr, uint8_t *cnt, int32_t *value)
   /* Check for minus character */
   if (*ptr == '-')
   {
-    minus = 1;
+    minus = 1U;
     ptr++;
     i++;
   }
 
   /* Loop on pointer content while it is a numeric character */
-  while (CHARISNUM(*ptr))
+  while (isdigit((int32_t)(*ptr)) > 0)
   {
-    sum = 10 * sum + CHAR2NUM(*ptr);
+    sum = (10 * sum) + ((*ptr) - '0');
     ptr++;
     i++;
   }
@@ -120,7 +106,7 @@ int32_t Parser_StrToInt(char *ptr, uint8_t *cnt, int32_t *value)
   }
 
   /* Minus detected */
-  if (minus)
+  if (minus == 1U)
   {
     *value = 0 - sum;
   }
@@ -144,7 +130,7 @@ void Parser_StrToIP(char *ptr, uint8_t ip[4])
   int32_t tmp_nb = 0;
   char *end_ptr = NULL;
 
-  while (*ptr && count_byte < 4)
+  while ((*ptr != '\0') && (count_byte < 4U))
   {
     /* Convert the current segment to an integer */
     tmp_nb = strtol(ptr, &end_ptr, 10);
@@ -153,7 +139,7 @@ void Parser_StrToIP(char *ptr, uint8_t ip[4])
     if ((tmp_nb < 0) || (tmp_nb > 0xFF) || (end_ptr == ptr))
     {
       /* If parsing fails or the number is out of range, set IP to 0 and return */
-      memset(ip, 0, 4);
+      (void)memset(ip, 0, 4);
       return;
     }
 
@@ -171,9 +157,9 @@ void Parser_StrToIP(char *ptr, uint8_t ip[4])
   }
 
   /* If exactly 4 bytes are not parsed, the IP is invalid */
-  if ((count_byte != 4) || (*ptr != '\0'))
+  if ((count_byte != 4U) || (*ptr != '\0'))
   {
-    memset(ip, 0, 4);
+    (void)memset(ip, 0, 4);
   }
 }
 
@@ -184,11 +170,11 @@ int32_t Parser_CheckValidAddress(uint8_t *buff, uint32_t len)
 
   for (int32_t i = 0; i < len; i++)
   {
-    if (buff[i] == 0xFF)
+    if (buff[i] == 0xFFU)
     {
       count_full++; /* Count the number of 255 */
     }
-    if (buff[i] == 0)
+    if (buff[i] == 0U)
     {
       count_zero++; /* Count the number of 0 */
     }
@@ -210,7 +196,7 @@ void Parser_StrToMAC(char *ptr, uint8_t mac[6])
   int32_t mac_string_len = 17; /* Maximum length of a MAC address string */
 
   /* Loop on pointer content while non empty */
-  while ((*ptr) && (mac_string_len > 0))
+  while ((*ptr != '\0') && (mac_string_len > 0))
   {
     hexcnt = 1;
     if (*ptr != ':') /* Skip ':' */
@@ -219,7 +205,7 @@ void Parser_StrToMAC(char *ptr, uint8_t mac[6])
       if (hex_value < 0)
       {
         /* If parsing fails, set MAC to 0 and return */
-        memset(mac, 0, 6);
+        (void)memset(mac, 0, 6);
         return;
       }
       mac[count_byte++] = (uint8_t)hex_value;
@@ -229,44 +215,33 @@ void Parser_StrToMAC(char *ptr, uint8_t mac[6])
   }
 
   /* If exactly 6 bytes are not parsed, the MAC Address is invalid */
-  if ((count_byte != 6) || (*ptr != '\0'))
+  if ((count_byte != 6U) || (*ptr != '\0'))
   {
-    memset(mac, 0, 6);
+    (void)memset(mac, 0, 6);
   }
 }
 
 uint8_t Parser_Hex2Num(char a)
 {
   /* Char is num */
-  if ((a >= '0') && (a <= '9'))
+  if (((uint8_t)a >= 0x30U) && ((uint8_t)a <= 0x39U))
   {
-    return a - '0';
-  }
-  /* Char is lowercase character A - Z (hex) */
-  else if ((a >= 'a') && (a <= 'f'))
-  {
-    return (a - 'a') + 10;
+    return (uint8_t)a - 0x30U;
   }
   /* Char is uppercase character A - Z (hex) */
-  else if ((a >= 'A') && (a <= 'F'))
+  else if (((uint8_t)a >= 0x41U) && ((uint8_t)a <= 0x46U))
   {
-    return (a - 'A') + 10;
+    return (uint8_t)a - 0x41U + 10U;
   }
-
-  return 0;
-}
-
-/* Private Functions Definition ----------------------------------------------*/
-void format_ipv6_address(uint8_t *addr, char *str, size_t size)
-{
-  snprintf(str, size, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7],
-           addr[8], addr[9], addr[10], addr[11], addr[12], addr[13], addr[14], addr[15]);
-}
-
-int32_t is_ipv6_address_str_zero(const char *str)
-{
-  return strcmp(str, "0000:0000:0000:0000:0000:0000:0000:0000") == 0;
+  /* Char is lowercase character a - f (hex) */
+  else if (((uint8_t)a >= 0x61U) && ((uint8_t)a <= 0x66U))
+  {
+    return (uint8_t)a - 0x61U + 10U;
+  }
+  else
+  {
+    return 0U;
+  }
 }
 
 /** @} */

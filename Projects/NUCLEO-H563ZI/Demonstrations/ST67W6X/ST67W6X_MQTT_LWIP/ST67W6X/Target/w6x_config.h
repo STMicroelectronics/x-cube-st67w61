@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    w6x_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W6X configuration module
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -49,7 +49,7 @@ extern "C" {
 #define W6X_POWER_SAVE_AUTO                     0
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
-#define W6X_CLOCK_MODE                          1
+#define W6X_CLOCK_MODE                          1U
 
 /** ============================
   * Wi-Fi
@@ -58,6 +58,9 @@ extern "C" {
   * Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_default_config.h
   * ============================
   */
+
+/** Boolean to enable/disable autoconnect functionality */
+#define W6X_WIFI_AUTOCONNECT                    0
 
 /** Define the region code, supported values : [CN, JP, US, EU, 00] */
 #define W6X_WIFI_COUNTRY_CODE                   "00"

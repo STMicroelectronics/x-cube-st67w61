@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    freertos_tickless.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Management of timers and ticks header file
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -19,8 +19,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __FREERTOS_TICKLESS_H
-#define __FREERTOS_TICKLESS_H
+#ifndef FREERTOS_TICKLESS_H
+#define FREERTOS_TICKLESS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,4 +80,4 @@ void EnableSuppressTicksAndSleep(uint32_t bitmask);
 }
 #endif /* __cplusplus */
 
-#endif /* __FREERTOS_TICKLESS_H */
+#endif /* FREERTOS_TICKLESS_H */

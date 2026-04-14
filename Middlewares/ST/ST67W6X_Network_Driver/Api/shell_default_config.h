@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    shell_default_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides default configuration for the Shell component
   ******************************************************************************
   * @attention
@@ -49,28 +49,33 @@ extern "C" {
 
 #ifndef SHELL_CONSOLEBUF_SIZE
 /** Console buffer size */
-#define SHELL_CONSOLEBUF_SIZE                      128
+#define SHELL_CONSOLEBUF_SIZE                      128U
 #endif /* SHELL_CONSOLEBUF_SIZE */
-
-#ifndef SHELL_PROMPT_SIZE
-/** Shell prompt maximum size */
-#define SHELL_PROMPT_SIZE                          20
-#endif /* SHELL_PROMPT_SIZE */
 
 #ifndef SHELL_HISTORY_LINES
 /** Shell history maximum lines */
-#define SHELL_HISTORY_LINES                        5
+#define SHELL_HISTORY_LINES                        5U
 #endif /* SHELL_HISTORY_LINES */
 
 #ifndef SHELL_CMD_SIZE
 /** Shell command maximum size */
-#define SHELL_CMD_SIZE                             120
+#define SHELL_CMD_SIZE                             120U
 #endif /* SHELL_CMD_SIZE */
 
 #ifndef SHELL_ARG_NUM
 /** Shell argument maximum number */
-#define SHELL_ARG_NUM                              16
+#define SHELL_ARG_NUM                              24U
 #endif /* SHELL_ARG_NUM */
+
+#ifndef SHELL_USING_WORD_OPERATION
+/** Enable word operation support */
+#define SHELL_USING_WORD_OPERATION                 1
+#endif /* SHELL_USING_WORD_OPERATION */
+
+#ifndef SHELL_USING_FUNC_EXT
+/** Enable function extension support */
+#define SHELL_USING_FUNC_EXT                       1
+#endif /* SHELL_USING_FUNC_EXT */
 
 #ifndef SHELL_USING_COLOR
 /** Shell using color */
@@ -84,17 +89,17 @@ extern "C" {
 
 #ifndef SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH
 /** Maximum length of the string to be printed */
-#define SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH     2000
+#define SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH     2000U
 #endif /* SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH */
 
 #ifndef SHELL_FREERTOS_RX_BUFF_SIZE
 /** Shell receive buffer size */
-#define SHELL_FREERTOS_RX_BUFF_SIZE                128
+#define SHELL_FREERTOS_RX_BUFF_SIZE                128U
 #endif /* SHELL_FREERTOS_RX_BUFF_SIZE */
 
 #ifndef SHELL_FREERTOS_RX_THREAD_STACK_SIZE
 /** Shell receive thread stack size */
-#define SHELL_FREERTOS_RX_THREAD_STACK_SIZE        2048
+#define SHELL_FREERTOS_RX_THREAD_STACK_SIZE        2048U
 #endif /* SHELL_FREERTOS_RX_THREAD_STACK_SIZE */
 
 #ifndef SHELL_FREERTOS_RX_THREAD_PRIO
@@ -104,7 +109,7 @@ extern "C" {
 
 #ifndef SHELL_FLUSH_OUT
 /** Flush the output */
-#define SHELL_FLUSH_OUT                            do { fflush(stdout); } while(0)
+#define SHELL_FLUSH_OUT                            do { (void)fflush(stdout); } while(false)
 #endif /* SHELL_FLUSH_OUT */
 
 #ifndef SHELL_USING_DESCRIPTION
@@ -114,8 +119,13 @@ extern "C" {
 
 #ifndef SHELL_HELP_MAX_COMPARED_NB_CHAR
 /** Maximum number of characters to compare in the help command */
-#define SHELL_HELP_MAX_COMPARED_NB_CHAR            10
+#define SHELL_HELP_MAX_COMPARED_NB_CHAR            10U
 #endif /* SHELL_HELP_MAX_COMPARED_NB_CHAR */
+
+#ifndef SHELL_HELP_DESC_SIZE
+/** Shell help command description size */
+#define SHELL_HELP_DESC_SIZE                       110U
+#endif /* SHELL_HELP_DESC_SIZE */
 
 #ifndef SHELL_LOG
 /** Print log message */

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    util_task_perf.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the implementation of Task Performance measurement
   ******************************************************************************
   * @attention
@@ -104,7 +104,7 @@ typedef struct
 static task_perf_t task_perf;
 
 /** Task Performance report title */
-static const char report_title[] = "Task Performance report";
+static const char task_perf_report_title[] = "Task Performance report";
 #endif /* TASK_PERF_ENABLE */
 
 /** @} */
@@ -134,7 +134,7 @@ const char *task_perf_get_task_name(TaskHandle_t xHandle);
   * @param  out_strlen: length of the output string
   * @param  num: 64 bit number to convert
   */
-void num2string64(char *out, int32_t out_strlen, const uint64_t num);
+void task_num2string64(char *out, int32_t out_strlen, const uint64_t num);
 
 #if (TASK_PERF_ENABLE == 1)
 /**
@@ -154,15 +154,6 @@ int32_t task_perf_shell(int32_t argc, char **argv);
 int32_t task_perf_shell_report(int32_t argc, char **argv);
 #endif /* TASK_PERF_ENABLE */
 
-/**
-  * @brief  Display a table of tasks in the system
-  * @param  argc: Number of arguments
-  * @param  argv: Pointer to the list of arguments
-  * @retval ::SHELL_STATUS_OK on success
-  * @retval ::SHELL_STATUS_ERROR otherwise
-  */
-int32_t task_alloc_shell_report(int32_t argc, char **argv);
-
 /** @} */
 
 /* Functions Definition ------------------------------------------------------*/
@@ -174,15 +165,15 @@ void task_perf_in_hook(void)
 {
 #if (TASK_PERF_ENABLE == 1)
   uint32_t i;
-  static uint32_t first_time = 1;
+  static uint32_t first_time = 1U;
   /* Get the current task handle */
   TaskHandle_t xHandle = xTaskGetCurrentTaskHandle();
 
   /* Initialize the task_perf structure at startup */
-  if (first_time)
+  if (first_time == 1U)
   {
-    first_time = 0;
-    memset(&task_perf, 0, sizeof(task_perf));
+    first_time = 0U;
+    (void)memset(&task_perf, 0, sizeof(task_perf));
   }
 
   for (i = 0; i < PERF_MAXTHREAD; i++)
@@ -193,7 +184,7 @@ void task_perf_in_hook(void)
       /* New thread */
       task_perf.task_count++;
       task_perf.handle[i] = xHandle;
-      snprintf(task_perf.name[i], 11, "%10s", task_perf_get_task_name(xHandle));
+      (void)snprintf(task_perf.name[i], 11, "%10s", task_perf_get_task_name(xHandle));
     }
 
     if (xHandle == task_perf.handle[i])
@@ -220,7 +211,7 @@ void task_perf_out_hook(void)
     {
       /* New thread */
       task_perf.handle[i] = xHandle;
-      snprintf(task_perf.name[i], 11, "%10s", task_perf_get_task_name(xHandle));
+      (void)snprintf(task_perf.name[i], 11, "%10s", task_perf_get_task_name(xHandle));
     }
 
     if (xHandle == task_perf.handle[i])
@@ -269,22 +260,22 @@ void task_perf_report(void)
   uint64_t total_cycle = 0;
   char cycle_string64[STR64BIT_DIGIT];
   char separator[SEPARATOR_SIZE] = {0};
-  memset(separator, '-', sizeof(separator) - 1);
+  (void)memset(separator, (int32_t)'-', sizeof(separator) - 1U);
 
   task_perf_out_hook();
 
   if (task_perf.state == PERF_TASK_STATE_INIT)
   {
-    LogInfo("### %s: not started\n", report_title);
+    LogInfo("### %s: not started\n", task_perf_report_title);
   }
-  else if (task_perf.task_count == 1)
+  else if (task_perf.task_count == 1U)
   {
-    LogInfo("### %s: only one thread detected. verify if the hooks are called by the RTOS\n", report_title);
+    LogInfo("### %s: only one thread detected. verify if the hooks are called by the RTOS\n", task_perf_report_title);
   }
   else
   {
     /* Display the CPU frequency */
-    LogInfo("### %s CPU Freq %3" PRIu32 " Mhz\n", report_title, SystemCoreClock / 1000000U);
+    LogInfo("### %s CPU Freq %3" PRIu32 " Mhz\n", task_perf_report_title, SystemCoreClock / 1000000U);
 
     /* Display the header */
     LogInfo("%-17s%-16s%-14stime (ms)\n", "thread id", "name", "cycles");
@@ -293,9 +284,9 @@ void task_perf_report(void)
     {
       uint32_t count = 0;
       /* Display the thread performance */
-      while ((count < PERF_MAXTHREAD) && task_perf.handle[count] != 0)
+      while ((count < PERF_MAXTHREAD) && (task_perf.handle[count] != NULL))
       {
-        num2string64(cycle_string64, STR64BIT_DIGIT, task_perf.elapsed_cycle[count]);
+        task_num2string64(cycle_string64, STR64BIT_DIGIT, task_perf.elapsed_cycle[count]);
         LogInfo("thread #%" PRIu32 "  %10s   %15s  %10" PRIu32 "\n", count, task_perf.name[count],
                 cycle_string64, (uint32_t)(task_perf.elapsed_cycle[count] / (SystemCoreClock / 1000U)));
         total_cycle += task_perf.elapsed_cycle[count];
@@ -304,11 +295,11 @@ void task_perf_report(void)
       LogInfo("%s\n", separator);
     }
     /* Display the total performance */
-    num2string64(cycle_string64, STR64BIT_DIGIT, total_cycle);
+    task_num2string64(cycle_string64, STR64BIT_DIGIT, total_cycle);
     LogInfo("%-24s%15s  %10" PRIu32 "\n", "Total", cycle_string64,
             (uint32_t)(total_cycle / (SystemCoreClock / 1000U)));
 
-    LogInfo("### %s end\n", report_title);
+    LogInfo("### %s end\n", task_perf_report_title);
   }
 
   task_perf_in_hook();
@@ -331,8 +322,8 @@ void task_alloc_report(void)
   }
 
   /* Fill the buffer with the header description */
-  snprintf(p_info, 512, "%-*s%s    %s   %s %s\n********************************************\n",
-           (configMAX_TASK_NAME_LEN - 3), "Task", "State", "Prio", "Free(u32)", "Index");
+  (void)snprintf(p_info, 512, "%-*s%s    %s   %s %s\n********************************************\n",
+                 (configMAX_TASK_NAME_LEN - 3), "Task", "State", "Prio", "Free(u32)", "Index");
   /* Get the address of the buffer after the header description */
   p_write_buffer = p_info + strlen(p_info);
   /* Fill the last character of the buffer with the null character */
@@ -346,17 +337,6 @@ void task_alloc_report(void)
 }
 
 /* Private Functions Definition ----------------------------------------------*/
-/**
-  * @brief  Get the current system time
-  * @retval Current system time
-  */
-uint32_t sys_now(void);
-
-__attribute__((weak)) uint32_t sys_now(void)
-{
-  return xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
-}
-
 uint32_t get_cycle(void)
 {
 #if (TASK_PERF_ENABLE == 1)
@@ -389,15 +369,15 @@ const char *task_perf_get_task_name(TaskHandle_t xHandle)
   return (const char *)xTaskDetails.pcTaskName;
 }
 
-void num2string64(char *out, int32_t out_strlen, const uint64_t num)
+void task_num2string64(char *out, int32_t out_strlen, const uint64_t num)
 {
   uint64_t temp = num;
   uint32_t count = 0;
 
   /* Count number of digit */
-  while ((temp != 0) && (count < out_strlen))
+  while ((temp != 0U) && (count < out_strlen))
   {
-    temp = temp / 10;
+    temp = temp / 10U;
     count++;
   }
 
@@ -408,10 +388,10 @@ void num2string64(char *out, int32_t out_strlen, const uint64_t num)
   *out-- = '\0';
 
   temp = num;
-  while (temp != 0)
+  while (temp != 0U)
   {
     *out-- = (char)((temp % 10) + '0');
-    temp = temp / 10;
+    temp = temp / 10U;
   }
 }
 

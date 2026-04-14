@@ -39,27 +39,40 @@ extern "C" {
 typedef void (*spi_transaction_complete_t)(void);
 
 /* Exported constants --------------------------------------------------------*/
-/* Transfer with size greater than this value should use DMA. */
-#define SPI_DMA_XFER_SIZE_THRESHOLD     8
+/** Transfer with size greater than this value should use DMA */
+#define SPI_DMA_XFER_SIZE_THRESHOLD     8U
 
+/** SPI wait txn data ready timeout in milliseconds */
 #define SPI_WAIT_TXN_TIMEOUT_MS         2000
+
+/** SPI transaction timeout in milliseconds */
 #define SPI_WAIT_MSG_XFER_TIMEOUT_MS    500
+
+/** SPI header ack timeout in milliseconds */
 #define SPI_WAIT_HDR_ACK_TIMEOUT_MS     100
+
+/** SPI polling transfer timeout in milliseconds */
 #define SPI_WAIT_POLL_XFER_TIMEOUT_MS   100
 
 #ifndef SPI_PORT_ERROR_ENABLE
+/** Enable/Disable SPI port error logging */
 #define SPI_PORT_ERROR_ENABLE           1
 #endif /* SPI_PORT_ERROR_ENABLE */
 
-enum
-{
-  SPI_EVT_TXN_PENDING = 0x1,
-  SPI_EVT_TXN_RDY = 0x2,
-  SPI_EVT_HDR_ACKED = 0x4,
-  SPI_EVT_HW_XFER_DONE = 0x8,
-};
+/** SPI event Tx pending */
+#define SPI_EVT_TXN_PENDING             0x1U
+
+/** SPI event Tx ready */
+#define SPI_EVT_TXN_RDY                 0x2U
+
+/** SPI event Header acknowledged */
+#define SPI_EVT_HDR_ACKED               0x4U
+
+/** SPI event Hardware transfer done */
+#define SPI_EVT_HW_XFER_DONE            0x8U
 
 #ifndef SHORT_FILE
+/** Macro to extract short file name from __FILE__ */
 #define SHORT_FILE \
   (strchr(__FILE__, '\\') \
    ? ((strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)) \
@@ -67,12 +80,18 @@ enum
 #endif /* SHORT_FILE */
 
 /* Exported macro ------------------------------------------------------------*/
+/**
+  * \def spi_err( ... )
+  * \brief SPI error logging macro
+  */
+
 #if (SPI_PORT_ERROR_ENABLE == 1)
 #define spi_err(...) LogError(__VA_ARGS__)
 #else
 #define spi_err(...)
 #endif /* SPI_PORT_ERROR_ENABLE */
 
+/** SPI trace logging. Disabled by default */
 #define spi_trace(...)
 
 /* Exported functions ------------------------------------------------------- */
@@ -91,12 +110,19 @@ int32_t spi_port_deinit(void);
 
 /**
   * @brief  Execute SPI transaction in blocking mode (polling) with timeout. Can be TxRX or Rx only
+  * @param  tx_buf: Pointer to the transmit buffer
+  * @param  rx_buf: Pointer to the receive buffer
+  * @param  len: Length of the transfer
+  * @param  timeout: Timeout in milliseconds
   * @retval 0 if successful, -1 otherwise
   */
 int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t timeout);
 
 /**
   * @brief  Execute SPI transaction in non-blocking mode (interrupt). Can be TxRX or Rx only
+  * @param  tx_buf: Pointer to the transmit buffer
+  * @param  rx_buf: Pointer to the receive buffer
+  * @param  len: Length of the transfer
   * @retval 0 if successful, -1 otherwise
   */
 int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len);

@@ -31,9 +31,9 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __LIB_H__
-#define __LIB_H__
+#ifndef LIB_H
+#define LIB_H
 
 #include <string.h>
 
-#endif /* __LIB_H__ */
+#endif /* LIB_H */

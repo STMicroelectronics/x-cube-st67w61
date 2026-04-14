@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    util_task_port_template.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Task Performance porting layer implementation
   ******************************************************************************
   * @attention

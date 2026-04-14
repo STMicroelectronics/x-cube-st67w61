@@ -179,9 +179,9 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Appli/Target/logshell_ctrl.c</locationURI>
 		</link>
 		<link>
-			<name>Application/User/LWIP/App/altcp_tls_mbedtls.c</name>
+			<name>Application/User/LWIP/App/altls_mbedtls.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/LWIP/App/altcp_tls_mbedtls.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/LWIP/App/altls_mbedtls.c</locationURI>
 		</link>
 		<link>
 			<name>Application/User/LWIP/App/dhcp_server_raw.c</name>
@@ -192,6 +192,11 @@
 			<name>Application/User/LWIP/App/echo.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/LWIP/App/echo.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/LWIP/App/http_client.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/LWIP/App/http_client.c</locationURI>
 		</link>
 		<link>
 			<name>Application/User/LWIP/App/lwip.c</name>

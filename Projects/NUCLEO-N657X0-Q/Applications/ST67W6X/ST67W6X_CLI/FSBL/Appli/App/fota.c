@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    fota.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Test a FOTA with a server
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -23,6 +23,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
+
+/* FreeRTOS includes. */
+#include "FreeRTOS.h"
+#include "timers.h"
 
 #include "fota.h"
 #include "app_config.h"
@@ -45,24 +50,24 @@
 #ifndef FOTA_TIMEOUT
 /** Timeout value to set the FOTA timer to when the FOTA application encountered an error for the first time.
   * This allows to tune the timeout value before doing a retry attempt. (not applicable if FOTA timer is not used)*/
-#define FOTA_TIMEOUT                20000
+#define FOTA_TIMEOUT                20000U
 #endif /* FOTA_TIMEOUT */
 
 #ifndef FOTA_TASK_STACK_SIZE
 /** Stack size of the FOTA application, this value needs to take into account the HTTP client
   * and NCP FWU static data allocation */
-#define FOTA_TASK_STACK_SIZE        1800
+#define FOTA_TASK_STACK_SIZE        1800U
 #endif /* FOTA_TASK_STACK_SIZE */
 
 #ifndef FOTA_URI_MAX_SIZE
 /** The max size of the URI supported, this because the buffer
   * that will receive this info is allocated at compile time (static) */
-#define FOTA_URI_MAX_SIZE           256
+#define FOTA_URI_MAX_SIZE           256U
 #endif /* FOTA_URI_MAX_SIZE */
 
 #ifndef FOTA_HTTP_URI
 /** Default URI for the ST67 binary, should be smaller in bytes size than the value defined by FOTA_URI_MAX_SIZE */
-#define FOTA_HTTP_URI               "/download/st67w611m_mission_t01_v2.0.97.bin.ota"
+#define FOTA_HTTP_URI               "/download/st67w611m_mission_t01_v2.0.106.bin.ota"
 #endif /* FOTA_HTTP_URI */
 
 #ifndef FOTA_HTTP_SERVER_ADDR
@@ -91,10 +96,10 @@
 #define FOTA_TASK_PRIORITY          24
 
 /** Size of the buffer used to transfer the FWU header to the ST67 in one shot (required by ST67) */
-#define FWU_HEADER_SIZE             512
+#define FWU_HEADER_SIZE             512U
 
 /** Multiple of data length that should be written in ST67, recommendation to ensure correct write into ST67 memory */
-#define FWU_SECTOR_ALIGNMENT        256
+#define FWU_SECTOR_ALIGNMENT        256U
 
 /* USER CODE BEGIN PD */
 
@@ -153,10 +158,8 @@ typedef struct
 
 /* Private macros ------------------------------------------------------------*/
 #ifndef HAL_SYS_RESET
-/** HAL System software reset function */
-extern void HAL_NVIC_SystemReset(void);
 /** HAL System software reset macro */
-#define HAL_SYS_RESET() do{ HAL_NVIC_SystemReset(); } while(0);
+#define HAL_SYS_RESET() do{ HAL_NVIC_SystemReset(); } while(false)
 #endif /* HAL_SYS_RESET */
 
 /* USER CODE BEGIN PM */
@@ -171,7 +174,7 @@ static FOTA_HttpXferTypeDef fota_args;
 static W6X_HTTP_connection_t fota_settings;
 
 /** HTTP request method to use */
-const static char fota_get_method[] = "GET";
+static const char fota_get_method[] = "GET";
 
 /** FOTA state variable */
 static FOTA_StateTypeDef fota_state = FOTA_STATE_RESET;
@@ -197,9 +200,6 @@ static FOTA_SuccessfulCompletionCallback_t fota_success_cb = NULL;
 
 /** FOTA callback for operations to do after error on completion */
 static FOTA_ErrorOnCompletionCallback_t fota_error_cb = NULL;
-
-/** Index to notify FOTA when HTTP request is finished (regardless of error code) */
-const UBaseType_t fota_notify_index = 1;
 
 /* USER CODE BEGIN PV */
 
@@ -227,6 +227,7 @@ static void Fota_FotaTask(void *pvParameters);
   */
 static void Fota_TimerCallback(TimerHandle_t xTimer);
 
+#if (SHELL_ENABLE == 1)
 /**
   * @brief  FOTA shell function
   * @param  argc: number of arguments
@@ -236,6 +237,7 @@ static void Fota_TimerCallback(TimerHandle_t xTimer);
   * @retval ::SHELL_STATUS_ERROR otherwise
   */
 int32_t fota_over_http_shell_trigger(int32_t argc, char **argv);
+#endif /* SHELL_ENABLE */
 
 /**
   * @brief  HTTP callback called on server response to a HTTP request.
@@ -294,7 +296,7 @@ int32_t Fota_StartFotaTask(void)
   fota_app_event_group_handle = xEventGroupCreate();
 
   /* Create the task */
-  xReturned = xTaskCreate(Fota_FotaTask, (char *)"FOTA task", FOTA_TASK_STACK_SIZE >> 2,
+  xReturned = xTaskCreate(Fota_FotaTask, (char *)"FOTA task", FOTA_TASK_STACK_SIZE >> 2U,
                           NULL, FOTA_TASK_PRIORITY, &fota_task);
 
   if (xReturned != pdPASS)
@@ -454,14 +456,14 @@ static void Fota_FotaTask(void *pvParameters)
     uxBits = xEventGroupWaitBits(fota_event_group_handle, FOTA_UPDATE_BIT | FOTA_WAIT_USER_ACK_BIT | FOTA_ERROR_BIT,
                                  pdTRUE, pdFALSE, FOTA_ACK_TIME);
 
-    if ((uxBits & FOTA_ERROR_BIT) != 0)
+    if ((uxBits & FOTA_ERROR_BIT) != 0U)
     {
       /* In the case that an ERROR bit is present,
          we clear it and inform that previous none cleared error was present.
          Only configure the timer when it has previously been set */
       if (fota_timer != NULL)
       {
-        Fota_SetFotaTimer(FOTA_TIMEOUT);
+        (void)Fota_SetFotaTimer(FOTA_TIMEOUT);
       }
 
       LogError("Error bit was raised during the FOTA update,\n"
@@ -470,7 +472,7 @@ static void Fota_FotaTask(void *pvParameters)
       (void)Fota_ResetFotaTimer();
       (void)Fota_StartFotaTimer();
     }
-    else if ((uxBits & FOTA_UPDATE_BIT) != 0) /* FOTA update is requested */
+    else if ((uxBits & FOTA_UPDATE_BIT) != 0U) /* FOTA update is requested */
     {
       (void)Fota_StopFotaTimer();
 
@@ -481,7 +483,7 @@ static void Fota_FotaTask(void *pvParameters)
 
       /* USER CODE END fota_task_3 */
 
-      if (skip_st67_update == false)
+      if (!skip_st67_update)
       {
         fota_requested = true;
         /* Download and transfer the ST67 binary to the ST67 */
@@ -517,12 +519,12 @@ static void Fota_FotaTask(void *pvParameters)
       }
     }
     /* FOTA update is finished, host can now reboot */
-    else if ((uxBits & FOTA_WAIT_USER_ACK_BIT) != 0)
+    else if ((uxBits & FOTA_WAIT_USER_ACK_BIT) != 0U)
     {
       ret = W6X_STATUS_OK;
       LogInfo("FOTA task done\n");
 
-      if (skip_st67_update == false)
+      if (!skip_st67_update)
       {
         LogInfo("Apply ST67 new binary...\n");
 
@@ -555,19 +557,22 @@ static void Fota_FotaTask(void *pvParameters)
         (void)xEventGroupSetBits(fota_app_event_group_handle, FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT);
       }
     }
+    else
+    {
+      /* Unknown event. Should not be here */
+    }
   }
 }
 
 static int32_t Fota_st67FotaTransfer(char *http_server_addr, uint16_t http_server_port, const uint8_t *uri)
 {
   int32_t ret = FOTA_ERR;
-  int32_t ret_w6x;
-  uint32_t http_task_notification_value;
+  W6X_Status_t ret_w6x;
   ip_addr_t addr = {0};
-  int8_t is_ip = 0;
+  int32_t is_ip = 0;
 
-  memset(&fota_args, 0, sizeof(fota_args));
-  memset(&fota_settings, 0, sizeof(fota_settings));
+  (void)memset(&fota_args, 0, sizeof(fota_args));
+  (void)memset(&fota_settings, 0, sizeof(fota_settings));
 
   fota_args.fwu_buffer = NULL;
   fota_args.fwu_buffer_len = 0;
@@ -640,10 +645,9 @@ static int32_t Fota_st67FotaTransfer(char *http_server_addr, uint16_t http_serve
     goto _err1;
   }
   /* We wait until the HTTP download has been done */
-  http_task_notification_value = ulTaskNotifyTakeIndexed(fota_notify_index, pdTRUE,
-                                                         pdMS_TO_TICKS(FOTA_HTTP_TIMEOUT_IN_MS));
+  (void)ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(FOTA_HTTP_TIMEOUT_IN_MS));
 
-  if ((fota_args.http_xfer_error_code != 0) || (fota_notify_index != http_task_notification_value))
+  if (fota_args.http_xfer_error_code != 0)
   {
     LogError("Failed to receive all the data from the server either because of a timeout or caught error\n");
     goto _err1;
@@ -681,11 +685,11 @@ int32_t Fota_WaitForFOTACompletion(void)
 
   uxBits = xEventGroupWaitBits(fota_app_event_group_handle, FOTA_COMPLETE_XFER_USER_NOTIF_BIT | FOTA_ERROR_BIT,
                                pdTRUE, pdFALSE, FOTA_ACK_TIME);
-  if ((uxBits & FOTA_COMPLETE_XFER_USER_NOTIF_BIT) != 0)
+  if ((uxBits & FOTA_COMPLETE_XFER_USER_NOTIF_BIT) != 0U)
   {
     if (fota_success_cb != NULL)
     {
-      fota_success_cb();
+      (void)fota_success_cb();
     }
 
     /* User tells that everything is done on it's side and that FOTA task can now proceed
@@ -696,7 +700,7 @@ int32_t Fota_WaitForFOTACompletion(void)
   {
     if (fota_error_cb != NULL)
     {
-      fota_error_cb();
+      (void)fota_error_cb();
     }
 
     fota_state = FOTA_STATE_READY;
@@ -705,7 +709,7 @@ int32_t Fota_WaitForFOTACompletion(void)
 
   uxBits = xEventGroupWaitBits(fota_app_event_group_handle, FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT | FOTA_ERROR_BIT,
                                pdTRUE, pdFALSE, FOTA_ACK_TIME);
-  if ((uxBits & FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT) != 0)
+  if ((uxBits & FOTA_COMPLETE_UPDATE_USER_NOTIF_BIT) != 0U)
   {
     fota_state = FOTA_STATE_READY;
     return FOTA_SUCCESS;
@@ -739,8 +743,8 @@ int32_t fota_over_http_shell_trigger(int32_t argc, char **argv)
   SHELL_CMD("Init FOTA callbacks for SHELL usage\n");
 
   /* Copy shell passed elements from argv to global struct fota_params */
-  (void)strncpy((char *)fota_params.server_name, argv[1], FOTA_MAX_DOMAIN_NAME_SIZE - 1);
-  fota_params.server_name[FOTA_MAX_DOMAIN_NAME_SIZE - 1] = '\0'; /* Ensure null-termination */
+  (void)strncpy((char *)fota_params.server_name, argv[1], FOTA_MAX_DOMAIN_NAME_SIZE - 1U);
+  fota_params.server_name[FOTA_MAX_DOMAIN_NAME_SIZE - 1U] = '\0'; /* Ensure null-termination */
 
   /* Check if the server port is a valid number */
   if (Parser_StrToInt(argv[2], NULL, &tmp) == 0)
@@ -750,8 +754,8 @@ int32_t fota_over_http_shell_trigger(int32_t argc, char **argv)
   }
   fota_params.server_port = (uint16_t)tmp;
 
-  (void)strncpy((char *)fota_params.uri_st67, argv[3], FOTA_URI_MAX_SIZE - 1);
-  fota_params.uri_st67[FOTA_URI_MAX_SIZE - 1] = '\0'; /* Ensure null-termination */
+  (void)strncpy((char *)fota_params.uri_st67, argv[3], FOTA_URI_MAX_SIZE - 1U);
+  fota_params.uri_st67[FOTA_URI_MAX_SIZE - 1U] = 0U; /* Ensure null-termination */
 
   /* USER CODE BEGIN fota_shell_1 */
 
@@ -786,7 +790,7 @@ static void Fota_HttpResponseCb(void *arg, W6X_HTTP_Status_Code_e httpc_result, 
   {
     LogError("HTTP received error:%" PRIi32 "\n", err);
     args->http_xfer_error_code = -1;
-    xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+    (void)xTaskNotifyGive(fota_task);
   }
   else
   {
@@ -795,7 +799,7 @@ static void Fota_HttpResponseCb(void *arg, W6X_HTTP_Status_Code_e httpc_result, 
     if (httpc_result != OK)
     {
       args->http_xfer_error_code = -1;
-      xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+      (void)xTaskNotifyGive(fota_task);
     }
   }
 }
@@ -809,15 +813,15 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
   {
     LogError("HTTP received error:%" PRIi32 "\n", err);
     args->http_xfer_error_code = -1;
-    xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+    (void)xTaskNotifyGive(fota_task);
     return -1;
   }
 
-  if ((p == NULL) || (p->length == 0) || (p->data == NULL) || (args->fwu_buffer == NULL))
+  if ((p == NULL) || (p->length == 0U) || (p->data == NULL) || (args->fwu_buffer == NULL))
   {
     LogError("Invalid HTTP buffer received or buffer in arg\n");
     args->http_xfer_error_code = -1;
-    xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+    (void)xTaskNotifyGive(fota_task);
     return -1;
   }
   /* If the FWU head has not been send out to the ST67 */
@@ -825,23 +829,23 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
   {
     /* If the data received is greater than the FWU header size, we know that the header is in the first 512 bytes
        and that we can send it to the ST67.*/
-    if (args->fwu_buffer_len + p->length >= FWU_HEADER_SIZE)
+    if ((args->fwu_buffer_len + p->length) >= FWU_HEADER_SIZE)
     {
       /* Compute if there is remaining data to send to the ST67 */
       size_t remaining_length = FWU_HEADER_SIZE - args->fwu_buffer_len;
       /* Copy any remaining data to the FWU buffer and then send it */
-      memcpy(args->fwu_buffer + args->fwu_buffer_len, p->data, remaining_length);
+      (void)memcpy(args->fwu_buffer + args->fwu_buffer_len, p->data, remaining_length);
       ret = W6X_FWU_Send(args->fwu_buffer, FWU_HEADER_SIZE);
       if (ret != W6X_STATUS_OK)
       {
         LogError("Failed to send remaining data in buffer to W6x via FWU send, error code : %" PRIu32 "\n", ret);
         args->http_xfer_error_code = -1;
-        xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+        (void)xTaskNotifyGive(fota_task);
         return -1;
 
       }
       /* A this point we know that the header has been send with success */
-      args->header_transferred = 1;
+      args->header_transferred = true;
       LogInfo("ST67 FWU header successfully transferred\n");
       args->fwu_buffer_len = 0;
 
@@ -853,7 +857,7 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
         {
           LogError("Failed to send remaining data in buffer to W6x via FWU send, error code : %" PRIu32 "\n", ret);
           args->http_xfer_error_code = -1;
-          xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+          (void)xTaskNotifyGive(fota_task);
           return -1;
 
         }
@@ -862,7 +866,7 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
     else
     {
       /* Else we didn't receive all the FWU ST67 header so we store the data in a buffer */
-      memcpy(args->fwu_buffer + args->fwu_buffer_len, p->data, p->length);
+      (void)memcpy(args->fwu_buffer + args->fwu_buffer_len, p->data, p->length);
       args->fwu_buffer_len += p->length;
     }
   }
@@ -875,14 +879,14 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
       LogError("Failed to send buffer to W6x via FWU send, error code : %" PRIu32 "\n", ret);
       /* If the data length is not aligned with ST67 memory requirement,
          we log an info on the potential error source */
-      if (!(p->length % FWU_SECTOR_ALIGNMENT))
+      if ((p->length % FWU_SECTOR_ALIGNMENT) != 0U)
       {
         LogError("Issue might be due to the received data length that is not inline with the FWU transfer buffer"
                  "(not aligned with recommended xfer size), %" PRIi32 " bytes\n",
                  p->length);
       }
       args->http_xfer_error_code = -1;
-      xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+      (void)xTaskNotifyGive(fota_task);
       return -1;
     }
     LogDebug("FOTA data length %" PRIu32 " xfer to ST67\n", p->length);
@@ -895,7 +899,7 @@ static int32_t Fota_HttpRecvCb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
   {
     args->http_xfer_error_code = 0;
     LogInfo("FOTA data transfer to ST67 finished\n");
-    xTaskNotifyGiveIndexed(fota_task, fota_notify_index);
+    (void)xTaskNotifyGive(fota_task);
   }
 
   return 0;

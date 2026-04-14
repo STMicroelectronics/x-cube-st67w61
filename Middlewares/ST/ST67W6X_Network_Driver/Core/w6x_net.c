@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_net.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x Net API
   ******************************************************************************
   * @attention
@@ -125,6 +125,10 @@ typedef struct
 #error "IPv6 support must be enabled in W61 for IPv6 W6x capabilities"
 #endif /* W6X_NET_IPV6_ENABLE && W61_NET_IPV6_ENABLE */
 
+#if (W6X_NET_DHCP > 3U)
+#error "Invalid W6X_NET_DHCP value defined in w6x_default_config.h"
+#endif /* W6X_NET_DHCP > W61_NET_DHCP_STA_AP_ENABLED */
+
 #define TCP_PROTOCOL          6           /*!< TCP protocol number */
 
 #define UDP_PROTOCOL          17          /*!< UDP protocol number */
@@ -144,7 +148,7 @@ typedef struct
   * @{
   */
 
-static W61_Object_t *p_DrvObj = NULL; /*!< Global W61 context pointer */
+static W61_Object_t *W6X_Net_drv_obj = NULL; /*!< Global W61 context pointer */
 
 static W6X_NetCtx_t *p_net_ctx = NULL; /*!< Global W6X Net context pointer */
 
@@ -240,18 +244,25 @@ W6X_Status_t W6X_Net_Init(void)
   uint32_t zero = 0;
   uint32_t one = 1;
   uint8_t hostname[33] = {0};
-  uint8_t Ipaddr[4] = W6X_NET_SAP_IP_SUBNET;
+  uint8_t ip_subnet[3] = W6X_NET_SAP_IP_SUBNET;
   uint8_t Netmask_addr[4] = {255, 255, 255, 0};
-  Ipaddr[3] = 1; /* Set the last digit of the Soft-AP IP address to 1 */
+  /* Set the last digit of the Soft-AP IP address to 1 */
+  uint8_t Ipaddr[4] = {ip_subnet[0], ip_subnet[1], ip_subnet[2], 1};
 
   /* Get the global W61 context pointer */
-  p_DrvObj = W61_ObjGet();
-  NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
+  W6X_Net_drv_obj = W61_ObjGet();
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Obj_Null_str);
 
-  if (p_DrvObj->NetCtx.Supported != 1)
+  if (W6X_Net_drv_obj->NetCtx.Supported != 1)
   {
     NET_LOG_ERROR("Network module not supported\n");
     goto _err;
+  }
+
+  if (W6X_Net_drv_obj->ResetCfg.Net_status == W61_MODULE_STATE_INIT)
+  {
+    NET_LOG_DEBUG("Network module already initialized\n");
+    return W6X_STATUS_OK; /* Network already initialized, nothing to do */
   }
 
   /* Allocate the Net context */
@@ -262,7 +273,7 @@ W6X_Status_t W6X_Net_Init(void)
     NET_LOG_ERROR("Could not initialize Net context structure\n");
     goto _err;
   }
-  memset(p_net_ctx, 0, sizeof(W6X_NetCtx_t));
+  (void)memset(p_net_ctx, 0, sizeof(W6X_NetCtx_t));
 
   /* Check that application callback is registered */
   p_cb_handler = W6X_GetCbHandler();
@@ -273,27 +284,21 @@ W6X_Status_t W6X_Net_Init(void)
   }
 
   /* Register W61 driver callbacks */
-  W61_RegisterULcb(p_DrvObj,
-                   NULL,
-                   NULL,
-                   W6X_Net_cb,
-                   NULL,
-                   NULL);
+  (void)W61_RegisterULcb(W6X_Net_drv_obj,
+                         NULL,
+                         NULL,
+                         W6X_Net_cb,
+                         NULL,
+                         NULL);
 
-  ret = TranslateErrorStatus(W61_Net_Init(p_DrvObj)); /* Initialize the default configuration */
+  ret = TranslateErrorStatus(W61_Net_Init(W6X_Net_drv_obj)); /* Initialize the default configuration */
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
   }
 
-  if ((uint32_t)W6X_NET_DHCP > W6X_NET_DHCP_STA_AP_ENABLED)
-  {
-    NET_LOG_ERROR("Invalid DHCP configuration\n");
-    goto _err;
-  }
-
   /* Reset the DHCP global configuration */
-  ret = TranslateErrorStatus(W61_Net_SetDhcpConfig(p_DrvObj, &State, &zero));
+  ret = TranslateErrorStatus(W61_Net_SetDhcpConfig(W6X_Net_drv_obj, &State, &zero));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
@@ -301,7 +306,7 @@ W6X_Status_t W6X_Net_Init(void)
 
   /* Set the defined DHCP global configuration */
   State = (W61_Net_DhcpType_e)W6X_NET_DHCP;
-  ret = TranslateErrorStatus(W61_Net_SetDhcpConfig(p_DrvObj, &State, &one));
+  ret = TranslateErrorStatus(W61_Net_SetDhcpConfig(W6X_Net_drv_obj, &State, &one));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
@@ -313,25 +318,25 @@ W6X_Status_t W6X_Net_Init(void)
     goto _err;
   }
 
-  strncpy((char *)hostname, W6X_NET_HOSTNAME, sizeof(hostname) - 1);
+  (void)strncpy((char *)hostname, W6X_NET_HOSTNAME, sizeof(hostname) - 1U);
   /* Set the hostname */
-  ret = TranslateErrorStatus(W61_Net_SetHostname(p_DrvObj, hostname));
+  ret = TranslateErrorStatus(W61_Net_SetHostname(W6X_Net_drv_obj, hostname));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
   }
 
   /* Set default IP of the Soft-AP */
-  ret = TranslateErrorStatus(W61_Net_AP_SetIPAddress(p_DrvObj, Ipaddr, Netmask_addr));
+  ret = TranslateErrorStatus(W61_Net_AP_SetIPAddress(W6X_Net_drv_obj, Ipaddr, Netmask_addr));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
   }
 
   /* Initialize the connections */
-  for (uint8_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
+  for (uint8_t i = 0U; i < W61_NET_MAX_CONNECTIONS; i++)
   {
-    memset(&p_net_ctx->Connection[i], 0, sizeof(W6X_Net_Connection_t));
+    (void)memset(&p_net_ctx->Connection[i], 0, sizeof(W6X_Net_Connection_t));
     /* Initialize a semaphore for each connection */
     p_net_ctx->Connection[i].DataAvailable = xSemaphoreCreateBinary();
     if (p_net_ctx->Connection[i].DataAvailable == NULL)
@@ -340,7 +345,7 @@ W6X_Status_t W6X_Net_Init(void)
     }
 
     /* Set the buffer length available in NCP for each connection */
-    ret = TranslateErrorStatus(W61_Net_SetReceiveBufferLen(p_DrvObj, i, W6X_NET_RECV_BUFFER_SIZE));
+    ret = TranslateErrorStatus(W61_Net_SetReceiveBufferLen(W6X_Net_drv_obj, i, W6X_NET_RECV_BUFFER_SIZE));
     if (ret != W6X_STATUS_OK)
     {
       if (ret == W6X_STATUS_ERROR)
@@ -351,11 +356,11 @@ W6X_Status_t W6X_Net_Init(void)
     }
 
     /* Verify the buffer length available in NCP for each connection */
-    ret = TranslateErrorStatus(W61_Net_GetReceiveBufferLen(p_DrvObj, i, &ncp_buf_size_resp));
-    if (ret != 0)
+    ret = TranslateErrorStatus(W61_Net_GetReceiveBufferLen(W6X_Net_drv_obj, i, &ncp_buf_size_resp));
+    if (ret != W6X_STATUS_OK)
     {
-      NET_LOG_ERROR("Could not set Receive buffer size\n");
-      return ret;
+      NET_LOG_ERROR("Could not get Receive buffer size\n");
+      goto _err;
     }
     else
     {
@@ -366,49 +371,55 @@ W6X_Status_t W6X_Net_Init(void)
     }
   }
 
-  for (uint32_t i = 0; i < (W61_NET_MAX_CONNECTIONS + 1); i++) /* Initialize the sockets */
+  for (uint8_t i = 0; i < (W61_NET_MAX_CONNECTIONS + 1U); i++) /* Initialize the sockets */
   {
-    memset(&p_net_ctx->Sockets[i], 0, sizeof(W6X_Net_Socket_t));
-    p_net_ctx->Sockets[i].Number = W61_NET_MAX_CONNECTIONS + 1; /* Set the socket number to an invalid value */
+    (void)memset(&p_net_ctx->Sockets[i], 0, sizeof(W6X_Net_Socket_t));
+    p_net_ctx->Sockets[i].Number = W61_NET_MAX_CONNECTIONS + 1U; /* Set the socket number to an invalid value */
     p_net_ctx->Sockets[i].SoSndTimeo = W6X_NET_SEND_TIMEOUT; /* Default value for SO_SNDTIMEO */
     p_net_ctx->Sockets[i].RecvTimeout = W6X_NET_RECV_TIMEOUT; /* Default value for SO_RCVTIMEO */
   }
 
-  for (uint8_t i = 0; i < (W61_NET_MAX_CONNECTIONS * 3); i++)
+  for (uint8_t i = 0; i < (W61_NET_MAX_CONNECTIONS * 3U); i++)
   {
     /* Initialize the credentials */
     p_net_ctx->Credentials[i].is_valid = 0;
     p_net_ctx->Credentials[i].name = NULL;
   }
   p_net_ctx->NextSocketToUse = 0; /* Initialize the rotary index for the socket usage */
+
+  W6X_Net_drv_obj->ResetCfg.Net_status = W61_MODULE_STATE_INIT; /* Update Net state */
+  return W6X_STATUS_OK;
+
 _err:
+  W6X_Net_DeInit(); /* Deinitialize Net in case of failure */
   return ret;
 }
 
 void W6X_Net_DeInit(void)
 {
   /* Deinitialize the W6X Net context and free resources */
-  if ((p_net_ctx == NULL) || (p_DrvObj == NULL))
+  if ((p_net_ctx == NULL) || (W6X_Net_drv_obj == NULL))
   {
     return;
   }
-  for (uint32_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++) /* Delete all the socket semaphores */
+  for (uint8_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++) /* Delete all the socket semaphores */
   {
     vSemaphoreDelete(p_net_ctx->Connection[i].DataAvailable);
   }
 
   /* Call lower-level deinit and free memory */
-  W61_Net_DeInit(p_DrvObj); /* Deinitialize the Net context */
+  (void)W61_Net_DeInit(W6X_Net_drv_obj); /* Deinitialize the Net context */
   vPortFree(p_net_ctx); /* Free the Net context */
-  p_DrvObj = NULL; /* Reset the global pointer */
+  W6X_Net_drv_obj->ResetCfg.Net_status = W61_MODULE_STATE_NOT_INIT; /* Update Net state */
+  W6X_Net_drv_obj = NULL; /* Reset the global pointer */
   p_net_ctx = NULL;
 }
 
-W6X_Status_t W6X_Net_SetHostname(uint8_t Hostname[33])
+W6X_Status_t W6X_Net_SetHostname(uint8_t hostname[33])
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W6X_WiFi_StaStateType_e wifi_station_state = W6X_WIFI_STATE_STA_OFF;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the station state. The hostname cannot be set if the Wi-Fi station is off */
   if (W6X_WiFi_Station_GetState(&wifi_station_state, NULL) != W6X_STATUS_OK)
@@ -424,14 +435,14 @@ W6X_Status_t W6X_Net_SetHostname(uint8_t Hostname[33])
   }
 
   /* Set the host name */
-  return TranslateErrorStatus(W61_Net_SetHostname(p_DrvObj, Hostname));
+  return TranslateErrorStatus(W61_Net_SetHostname(W6X_Net_drv_obj, hostname));
 }
 
-W6X_Status_t W6X_Net_GetHostname(uint8_t Hostname[33])
+W6X_Status_t W6X_Net_GetHostname(uint8_t hostname[33])
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W6X_WiFi_StaStateType_e wifi_station_state = W6X_WIFI_STATE_STA_OFF;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the station state. The host name cannot be get if the Wi-Fi station is off */
   if (W6X_WiFi_Station_GetState(&wifi_station_state, NULL) != W6X_STATUS_OK)
@@ -447,14 +458,15 @@ W6X_Status_t W6X_Net_GetHostname(uint8_t Hostname[33])
   }
 
   /* Get the host name */
-  return TranslateErrorStatus(W61_Net_GetHostname(p_DrvObj, Hostname));
+  return TranslateErrorStatus(W61_Net_GetHostname(W6X_Net_drv_obj, hostname));
 }
 
-W6X_Status_t W6X_Net_Station_GetIPAddress(uint8_t Ip_addr[4], uint8_t Gateway_addr[4], uint8_t Netmask_addr[4])
+W6X_Status_t W6X_Net_Station_GetIPAddress(uint8_t ip_address[4], uint8_t gateway_address[4],
+                                          uint8_t netmask_address[4])
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W6X_WiFi_StaStateType_e wifi_station_state = W6X_WIFI_STATE_STA_OFF;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the station state. The IP address cannot be get if the Wi-Fi station is off */
   if (W6X_WiFi_Station_GetState(&wifi_station_state, NULL) != W6X_STATUS_OK)
@@ -470,23 +482,23 @@ W6X_Status_t W6X_Net_Station_GetIPAddress(uint8_t Ip_addr[4], uint8_t Gateway_ad
   }
 
   /* Get the IP address of the Station */
-  ret = TranslateErrorStatus(W61_Net_Station_GetIPAddress(p_DrvObj));
+  ret = TranslateErrorStatus(W61_Net_Station_GetIPAddress(W6X_Net_drv_obj));
   if (ret == W6X_STATUS_OK)
   {
     /* Copy the IP address information */
-    memcpy(Ip_addr, p_DrvObj->NetCtx.Net_sta_info.IP_Addr, 4);
-    memcpy(Gateway_addr, p_DrvObj->NetCtx.Net_sta_info.Gateway_Addr, 4);
-    memcpy(Netmask_addr, p_DrvObj->NetCtx.Net_sta_info.IP_Mask, 4);
+    (void)memcpy(ip_address, W6X_Net_drv_obj->NetCtx.Net_sta_info.IP_Addr, 4);
+    (void)memcpy(gateway_address, W6X_Net_drv_obj->NetCtx.Net_sta_info.Gateway_Addr, 4);
+    (void)memcpy(netmask_address, W6X_Net_drv_obj->NetCtx.Net_sta_info.IP_Mask, 4);
   }
   return ret;
 }
 
 #if (W6X_NET_IPV6_ENABLE == 1)
-W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *Ip6ll_addr, ip6_addr_t *Ip6gl_addr)
+W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *ip6ll_addr, ip6_addr_t *ip6gl_addr)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W6X_WiFi_StaStateType_e wifi_station_state = W6X_WIFI_STATE_STA_OFF;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the station state. The IP address cannot be get if the Wi-Fi station is off */
   if (W6X_WiFi_Station_GetState(&wifi_station_state, NULL) != W6X_STATUS_OK)
@@ -502,22 +514,22 @@ W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *Ip6ll_addr, ip6_addr_t *
   }
 
   /* Get the IP address of the Station */
-  ret = TranslateErrorStatus(W61_Net_Station_GetIPAddress(p_DrvObj));
+  ret = TranslateErrorStatus(W61_Net_Station_GetIPAddress(W6X_Net_drv_obj));
   if (ret == W6X_STATUS_OK)
   {
     /* Copy host-order 32-bit words directly if parameter is not NULL */
-    if (Ip6ll_addr != NULL)
+    if (ip6ll_addr != NULL)
     {
-      for (uint8_t i = 0; i < 4; ++i)
+      for (uint8_t i = 0; i < 4U; ++i)
       {
-        Ip6ll_addr->addr[i] = p_DrvObj->NetCtx.Net_sta_info.IP6_LinkLocal[i];
+        ip6ll_addr->addr[i] = W6X_Net_drv_obj->NetCtx.Net_sta_info.IP6_LinkLocal[i];
       }
     }
-    if (Ip6gl_addr != NULL)
+    if (ip6gl_addr != NULL)
     {
-      for (uint8_t i = 0; i < 4; ++i)
+      for (uint8_t i = 0; i < 4U; ++i)
       {
-        Ip6gl_addr->addr[i] = p_DrvObj->NetCtx.Net_sta_info.IP6_Global[i];
+        ip6gl_addr->addr[i] = W6X_Net_drv_obj->NetCtx.Net_sta_info.IP6_Global[i];
       }
     }
   }
@@ -525,11 +537,11 @@ W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *Ip6ll_addr, ip6_addr_t *
 }
 #endif /* W6X_NET_IPV6_ENABLE */
 
-W6X_Status_t W6X_Net_Station_SetIPAddress(uint8_t Ipaddr[4], uint8_t Gateway_addr[4], uint8_t Netmask_addr[4])
+W6X_Status_t W6X_Net_Station_SetIPAddress(uint8_t ip_address[4], uint8_t gateway_address[4], uint8_t netmask_address[4])
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W6X_WiFi_StaStateType_e wifi_station_state = W6X_WIFI_STATE_STA_OFF;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the station state. The IP address cannot be set if the Wi-Fi station is off */
   if (W6X_WiFi_Station_GetState(&wifi_station_state, NULL) != W6X_STATUS_OK)
@@ -545,49 +557,50 @@ W6X_Status_t W6X_Net_Station_SetIPAddress(uint8_t Ipaddr[4], uint8_t Gateway_add
   }
 
   /* Set the IP address of the Station */
-  return TranslateErrorStatus(W61_Net_Station_SetIPAddress(p_DrvObj, Ipaddr, Gateway_addr, Netmask_addr));
+  return TranslateErrorStatus(W61_Net_Station_SetIPAddress(W6X_Net_drv_obj, ip_address, gateway_address,
+                                                           netmask_address));
 }
 
-W6X_Status_t W6X_Net_AP_GetIPAddress(uint8_t Ipaddr[4], uint8_t Netmask_addr[4])
+W6X_Status_t W6X_Net_AP_GetIPAddress(uint8_t ip_address[4], uint8_t netmask_address[4])
 {
   W6X_Status_t ret;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the IP address of the Soft-AP */
-  ret = TranslateErrorStatus(W61_Net_AP_GetIPAddress(p_DrvObj));
+  ret = TranslateErrorStatus(W61_Net_AP_GetIPAddress(W6X_Net_drv_obj));
   if (ret == W6X_STATUS_OK)
   {
-    memcpy(Ipaddr, p_DrvObj->NetCtx.Net_ap_info.IP_Addr, 4);
-    memcpy(Netmask_addr, p_DrvObj->NetCtx.Net_ap_info.IP_Mask, 4);
+    (void)memcpy(ip_address, W6X_Net_drv_obj->NetCtx.Net_ap_info.IP_Addr, 4);
+    (void)memcpy(netmask_address, W6X_Net_drv_obj->NetCtx.Net_ap_info.IP_Mask, 4);
   }
   return ret;
 }
 
-W6X_Status_t W6X_Net_AP_SetIPAddress(uint8_t Ipaddr[4], uint8_t Netmask_addr[4])
+W6X_Status_t W6X_Net_AP_SetIPAddress(uint8_t ip_address[4], uint8_t netmask_address[4])
 {
-  uint8_t ip_addr[4] = {0};
+  uint8_t ip_address_local[4] = {0};
   uint8_t gateway_addr[4] = {0};
-  uint8_t netmask_addr[4] = {0};
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  uint8_t netmask_addr_local[4] = {0};
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Check the AP is not started */
-  if (p_DrvObj->WifiCtx.ApState == W61_WIFI_STATE_AP_RUNNING)
+  if (W6X_Net_drv_obj->WifiCtx.ApState == W61_WIFI_STATE_AP_RUNNING)
   {
     NET_LOG_ERROR("Soft-AP is running. Stop it before setting the IP address\n");
     return W6X_STATUS_ERROR;
   }
 
   /* If the station is connected, check that the station and Soft-AP do not have the same subnet IP */
-  if (p_DrvObj->WifiCtx.StaState == W61_WIFI_STATE_STA_GOT_IP)
+  if (W6X_Net_drv_obj->WifiCtx.StaState == W61_WIFI_STATE_STA_GOT_IP)
   {
     /* Get the IP address of the Station */
-    if (W6X_Net_Station_GetIPAddress(ip_addr, gateway_addr, netmask_addr) != W6X_STATUS_OK)
+    if (W6X_Net_Station_GetIPAddress(ip_address_local, gateway_addr, netmask_addr_local) != W6X_STATUS_OK)
     {
       LogInfo("Could not get Station IP address\n");
     }
 
     /* Check if the station and Soft-AP have the same subnet IP */
-    if (memcmp(gateway_addr, Ipaddr, 4) == 0)
+    if (memcmp(gateway_addr, ip_address_local, 4) == 0)
     {
       LogWarn("Station and Soft-AP have the same subnet IP, Soft-AP IP need to be changed\n");
       return W6X_STATUS_ERROR;
@@ -595,21 +608,21 @@ W6X_Status_t W6X_Net_AP_SetIPAddress(uint8_t Ipaddr[4], uint8_t Netmask_addr[4])
   }
 
   /* Set the IP address of the Soft-AP */
-  return TranslateErrorStatus(W61_Net_AP_SetIPAddress(p_DrvObj, Ipaddr, Netmask_addr));
+  return TranslateErrorStatus(W61_Net_AP_SetIPAddress(W6X_Net_drv_obj, ip_address_local, netmask_addr_local));
 }
 
-W6X_Status_t W6X_Net_GetDnsAddress(uint8_t Dns1_addr[4], uint8_t Dns2_addr[4], uint8_t Dns3_addr[4])
+W6X_Status_t W6X_Net_GetDnsAddress(uint8_t dns1_addr[4], uint8_t dns2_addr[4], uint8_t dns3_addr[4])
 {
   W6X_Status_t ret;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the DNS status and DNS addresses */
-  ret = TranslateErrorStatus(W61_Net_GetDnsAddress(p_DrvObj));
+  ret = TranslateErrorStatus(W61_Net_GetDnsAddress(W6X_Net_drv_obj));
   if (ret == W6X_STATUS_OK)
   {
-    memcpy(Dns1_addr, p_DrvObj->NetCtx.Net_sta_info.DNS1, 4);
-    memcpy(Dns2_addr, p_DrvObj->NetCtx.Net_sta_info.DNS2, 4);
-    memcpy(Dns3_addr, p_DrvObj->NetCtx.Net_sta_info.DNS3, 4);
+    (void)memcpy(dns1_addr, W6X_Net_drv_obj->NetCtx.Net_sta_info.DNS1, 4);
+    (void)memcpy(dns2_addr, W6X_Net_drv_obj->NetCtx.Net_sta_info.DNS2, 4);
+    (void)memcpy(dns3_addr, W6X_Net_drv_obj->NetCtx.Net_sta_info.DNS3, 4);
   }
   else
   {
@@ -618,50 +631,51 @@ W6X_Status_t W6X_Net_GetDnsAddress(uint8_t Dns1_addr[4], uint8_t Dns2_addr[4], u
   return ret;
 }
 
-W6X_Status_t W6X_Net_SetDnsAddress(uint8_t Dns1_addr[4], uint8_t Dns2_addr[4], uint8_t Dns3_addr[4])
+W6X_Status_t W6X_Net_SetDnsAddress(uint8_t dns1_addr[4], uint8_t dns2_addr[4], uint8_t dns3_addr[4])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Set the DNS mode and DNS addresses */
-  return TranslateErrorStatus(W61_Net_SetDnsAddress(p_DrvObj, Dns1_addr, Dns2_addr, Dns3_addr));
+  return TranslateErrorStatus(W61_Net_SetDnsAddress(W6X_Net_drv_obj, dns1_addr, dns2_addr, dns3_addr));
 }
 
-W6X_Status_t W6X_Net_GetDhcp(W6X_Net_DhcpType_e *State, uint32_t *lease_time, uint8_t start_ip[4], uint8_t end_ip[4])
+W6X_Status_t W6X_Net_GetDhcp(W6X_Net_DhcpType_e *state, uint32_t *lease_time, uint8_t start_ip[4],
+                             uint8_t end_ip[4])
 {
   W6X_Status_t ret;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the DHCP server configuration */
-  ret = TranslateErrorStatus(W61_Net_GetDhcpsConfig(p_DrvObj, lease_time, start_ip, end_ip));
+  ret = TranslateErrorStatus(W61_Net_GetDhcpsConfig(W6X_Net_drv_obj, lease_time, start_ip, end_ip));
   if (ret == W6X_STATUS_OK)
   {
     /* Get the DHCP configuration */
-    ret = TranslateErrorStatus(W61_Net_GetDhcpConfig(p_DrvObj, (W61_Net_DhcpType_e *)State));
+    ret = TranslateErrorStatus(W61_Net_GetDhcpConfig(W6X_Net_drv_obj, (W61_Net_DhcpType_e *)state));
   }
   return ret;
 }
 
-W6X_Status_t W6X_Net_SetDhcp(W6X_Net_DhcpType_e *State, uint32_t *Operate, uint32_t lease_time)
+W6X_Status_t W6X_Net_SetDhcp(W6X_Net_DhcpType_e *state, uint32_t *operate, uint32_t lease_time)
 {
   W6X_Status_t ret;
-  W61_WiFi_ApStateType_e previous_ap_state = p_DrvObj->WifiCtx.ApState;
+  W61_WiFi_ApStateType_e previous_ap_state = W6X_Net_drv_obj->WifiCtx.ApState;
   uint8_t Reconnect = 1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Set the DHCP global configuration */
-  ret = TranslateErrorStatus(W61_Net_SetDhcpConfig(p_DrvObj, (W61_Net_DhcpType_e *)State, Operate));
+  ret = TranslateErrorStatus(W61_Net_SetDhcpConfig(W6X_Net_drv_obj, (W61_Net_DhcpType_e *)state, operate));
   if (ret != W6X_STATUS_OK)
   {
     goto _err;
   }
 
-  if ((*Operate == 1) && ((*State == W6X_NET_DHCP_AP_ENABLED) || (*State == W6X_NET_DHCP_STA_AP_ENABLED)))
+  if ((*operate == 1U) && ((*state == W6X_NET_DHCP_AP_ENABLED) || (*state == W6X_NET_DHCP_STA_AP_ENABLED)))
   {
     /* Need to switch the Soft-AP OFF before modifying DHCPS configuration */
     if (previous_ap_state == W61_WIFI_STATE_AP_RUNNING)
     {
       /* Stop the Soft-AP. The current configuration will be kept */
-      ret = TranslateErrorStatus(W61_WiFi_AP_Stop(p_DrvObj, Reconnect));
+      ret = TranslateErrorStatus(W61_WiFi_AP_Stop(W6X_Net_drv_obj, Reconnect));
       if (ret != W6X_STATUS_OK)
       {
         goto _err;
@@ -669,7 +683,7 @@ W6X_Status_t W6X_Net_SetDhcp(W6X_Net_DhcpType_e *State, uint32_t *Operate, uint3
     }
 
     /* Set the DHCP server configuration */
-    ret = TranslateErrorStatus(W61_Net_SetDhcpsConfig(p_DrvObj, lease_time));
+    ret = TranslateErrorStatus(W61_Net_SetDhcpsConfig(W6X_Net_drv_obj, lease_time));
     if (ret != W6X_STATUS_OK)
     {
       NET_LOG_ERROR("DHCPS config set failed\n");
@@ -679,7 +693,7 @@ W6X_Status_t W6X_Net_SetDhcp(W6X_Net_DhcpType_e *State, uint32_t *Operate, uint3
     if (previous_ap_state == W61_WIFI_STATE_AP_RUNNING)
     {
       /* Restart the Soft-AP with the previous configuration */
-      ret = TranslateErrorStatus(W61_WiFi_SetDualMode(p_DrvObj));
+      ret = TranslateErrorStatus(W61_WiFi_SetDualMode(W6X_Net_drv_obj));
       if (ret != W6X_STATUS_OK)
       {
         NET_LOG_ERROR("Soft-AP failed to restart after DHCPS config change\n");
@@ -696,10 +710,10 @@ W6X_Status_t W6X_Net_Ping(uint8_t *location, uint16_t length, uint16_t count, ui
 {
   W6X_Status_t ret;
   W61_Net_PingResult_t ping_result;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Execute a ping process */
-  ret = TranslateErrorStatus(W61_Net_Ping(p_DrvObj, (char *)location, length,
+  ret = TranslateErrorStatus(W61_Net_Ping(W6X_Net_drv_obj, (char *)location, length,
                                           count, interval_ms, timeout, &ping_result));
   if (ret == W6X_STATUS_OK)
   {
@@ -709,12 +723,13 @@ W6X_Status_t W6X_Net_Ping(uint8_t *location, uint16_t length, uint16_t count, ui
   return ret;
 }
 
-W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t *ipaddr)
+W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t ip_address[4])
 {
   ip_addr_t temp;
+  (void)memset(&temp, 0, sizeof(temp));
   W6X_Status_t ret;
   /* Use new resolver API for an IPv4 address */
-  ret = W6X_Net_ResolveHostAddressByType(location,  &temp, W6X_NET_DNS_ADDRTYPE_IPV4);
+  ret = W6X_Net_ResolveHostAddressByType(location, &temp, W6X_NET_DNS_ADDRTYPE_IPV4);
   if (ret != W6X_STATUS_OK)
   {
     return ret;
@@ -725,9 +740,9 @@ W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t *ipaddr)
     return W6X_STATUS_ERROR;
   }
   /* Copy binary IPv4 (network order) into legacy uint8_t[4] buffer */
-  for (uint32_t i = 0; i < 4; i++)
+  for (uint32_t i = 0; i < 4U; i++)
   {
-    ipaddr[i] = ((uint8_t *)&temp.u_addr.ip4.addr)[i];
+    ip_address[i] = ((uint8_t *)&temp.u_addr.ip4.addr)[i];
   }
   return W6X_STATUS_OK;
 }
@@ -735,7 +750,7 @@ W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t *ipaddr)
 W6X_Status_t W6X_Net_ResolveHostAddressByType(const char *location, ip_addr_t *out_addr, uint8_t family)
 {
   W61_Status_t ret;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(location, W6X_Location_Null_str);
 
   W61_Net_Ip_addr_t ip_addr_struct;
@@ -756,7 +771,7 @@ W6X_Status_t W6X_Net_ResolveHostAddressByType(const char *location, ip_addr_t *o
   {
     at_family = W61_NET_DNS_IPV4_IPV6;
   }
-  ret = W61_Net_ResolveHostAddress(p_DrvObj, location, &ip_addr_struct, &at_family);
+  ret = W61_Net_ResolveHostAddress(W6X_Net_drv_obj, location, &ip_addr_struct, &at_family);
   if (ret != W61_STATUS_OK)
   {
     return TranslateErrorStatus(ret);
@@ -764,83 +779,84 @@ W6X_Status_t W6X_Net_ResolveHostAddressByType(const char *location, ip_addr_t *o
   /* Copy in the ip_addr_t the IP address obtained and update the family type*/
   if (at_family == W61_NET_DNS_IPV4)
   {
-    memcpy(&out_addr->u_addr.ip4.addr, &ip_addr_struct.u_addr.ip4.addr, sizeof(ip_addr_struct.u_addr.ip4.addr));
+    (void)memcpy(&out_addr->u_addr.ip4.addr, &ip_addr_struct.u_addr.ip4.addr, sizeof(ip_addr_struct.u_addr.ip4.addr));
     out_addr->type = W6X_NET_IPV4;
   }
-#if  W6X_NET_IPV6_ENABLE
+#if (W6X_NET_IPV6_ENABLE == 1)
   else
   {
-    memcpy(&out_addr->u_addr.ip6.addr[0], &ip_addr_struct.u_addr.ip6.addr[0], sizeof(ip_addr_struct.u_addr.ip6.addr));
+    (void)memcpy(&out_addr->u_addr.ip6.addr[0], &ip_addr_struct.u_addr.ip6.addr[0],
+                 sizeof(ip_addr_struct.u_addr.ip6.addr));
     out_addr->type = W6X_NET_IPV6;
   }
 #endif /* W6X_NET_IPV6_ENABLE */
   return W6X_STATUS_OK;
 }
 
-W6X_Status_t W6X_Net_SNTP_GetConfiguration(uint8_t *Enable, int16_t *Timezone, uint8_t *SntpServer1,
-                                           uint8_t *SntpServer2, uint8_t *SntpServer3)
+W6X_Status_t W6X_Net_SNTP_GetConfiguration(uint8_t *enable, int16_t *sntp_timezone, uint8_t *sntp_server1,
+                                           uint8_t *sntp_server2, uint8_t *sntp_server3)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the SNTP configuration */
-  return TranslateErrorStatus(W61_Net_SNTP_GetConfiguration(p_DrvObj, Enable, Timezone, SntpServer1,
-                                                            SntpServer2, SntpServer3));
+  return TranslateErrorStatus(W61_Net_SNTP_GetConfiguration(W6X_Net_drv_obj, enable, sntp_timezone, sntp_server1,
+                                                            sntp_server2, sntp_server3));
 }
 
-W6X_Status_t W6X_Net_SNTP_SetConfiguration(uint8_t Enable, int16_t Timezone, uint8_t *SntpServer1,
-                                           uint8_t *SntpServer2, uint8_t *SntpServer3)
+W6X_Status_t W6X_Net_SNTP_SetConfiguration(uint8_t enable, int16_t sntp_timezone, uint8_t *sntp_server1,
+                                           uint8_t *sntp_server2, uint8_t *sntp_server3)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Set the SNTP configuration */
-  return TranslateErrorStatus(W61_Net_SNTP_SetConfiguration(p_DrvObj, Enable, Timezone, SntpServer1,
-                                                            SntpServer2, SntpServer3));
+  return TranslateErrorStatus(W61_Net_SNTP_SetConfiguration(W6X_Net_drv_obj, enable, sntp_timezone, sntp_server1,
+                                                            sntp_server2, sntp_server3));
 }
 
-W6X_Status_t W6X_Net_SNTP_GetInterval(uint16_t *Interval)
+W6X_Status_t W6X_Net_SNTP_GetInterval(uint16_t *interval)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the time interval to refresh the SNTP time */
-  return TranslateErrorStatus(W61_Net_SNTP_GetInterval(p_DrvObj, Interval));
+  return TranslateErrorStatus(W61_Net_SNTP_GetInterval(W6X_Net_drv_obj, interval));
 }
 
-W6X_Status_t W6X_Net_SNTP_SetInterval(uint16_t Interval)
+W6X_Status_t W6X_Net_SNTP_SetInterval(uint16_t interval)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Set the time interval to refresh the SNTP time */
-  return TranslateErrorStatus(W61_Net_SNTP_SetInterval(p_DrvObj, Interval));
+  return TranslateErrorStatus(W61_Net_SNTP_SetInterval(W6X_Net_drv_obj, interval));
 }
 
-W6X_Status_t W6X_Net_SNTP_GetTime(W6X_Net_Time_t *Time)
+W6X_Status_t W6X_Net_SNTP_GetTime(W6X_Net_Time_t *net_time)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the current time */
-  return TranslateErrorStatus(W61_Net_SNTP_GetTime(p_DrvObj, (W61_Net_Time_t *)Time));
+  return TranslateErrorStatus(W61_Net_SNTP_GetTime(W6X_Net_drv_obj, (W61_Net_Time_t *)net_time));
 }
 
-W6X_Status_t W6X_Net_GetConnectionStatus(uint8_t Socket, uint8_t *Protocol, uint32_t *RemoteIp, uint32_t *RemotePort,
-                                         uint32_t *LocalPort, uint8_t *Type)
+W6X_Status_t W6X_Net_GetConnectionStatus(uint8_t socket, uint8_t *protocol, uint32_t *remote_ip,
+                                         uint32_t *remote_port, uint32_t *local_port, uint8_t *type)
 {
   W6X_Status_t ret;
   W61_Net_Connection_t conn;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
 
   /* Get the socket connection status */
-  ret = TranslateErrorStatus(W61_Net_GetSocketInformation(p_DrvObj, Socket, &conn));
+  ret = TranslateErrorStatus(W61_Net_GetSocketInformation(W6X_Net_drv_obj, socket, &conn));
   if (ret != W6X_STATUS_OK)
   {
     NET_LOG_ERROR("Could not get socket information\n");
     return ret;
   }
-  *Protocol = conn.Protocol;
-  *RemotePort = conn.RemotePort;
-  *LocalPort = conn.LocalPort;
+  *protocol = conn.Protocol;
+  *remote_port = conn.RemotePort;
+  *local_port = conn.LocalPort;
   /* Convert the IP address string to binary format */
-  (void)W6X_Net_Inet_pton(AF_INET, (char *)&conn.RemoteIP, RemoteIp);
-  *Type = conn.TeType;
+  (void)W6X_Net_Inet_pton(AF_INET, (char *)&conn.RemoteIP, remote_ip);
+  *type = conn.TeType;
 
   return ret;
 }
@@ -848,7 +864,7 @@ W6X_Status_t W6X_Net_GetConnectionStatus(uint8_t Socket, uint8_t *Protocol, uint
 int32_t W6X_Net_Socket(int32_t family, int32_t type, int32_t proto)
 {
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   if (family != AF_INET
@@ -865,17 +881,17 @@ int32_t W6X_Net_Socket(int32_t family, int32_t type, int32_t proto)
     int32_t socket_to_use = (i + p_net_ctx->NextSocketToUse) % (W61_NET_MAX_CONNECTIONS + 1);
     if (p_net_ctx->Sockets[socket_to_use].Status == W6X_NET_SOCKET_RESET) /* Check if the socket is available */
     {
-      memset(&p_net_ctx->Sockets[socket_to_use], 0, sizeof(W6X_Net_Socket_t)); /* Reset the socket */
-      if (family == AF_INET)
-      {
-        p_net_ctx->Sockets[socket_to_use].Family = W6X_NET_IPV4;
-      }
+      (void)memset(&p_net_ctx->Sockets[socket_to_use], 0, sizeof(W6X_Net_Socket_t)); /* Reset the socket */
 #if (W6X_NET_IPV6_ENABLE == 1)
-      else
+      if (family == AF_INET6)
       {
         p_net_ctx->Sockets[socket_to_use].Family = W6X_NET_IPV6;
       }
+      else
 #endif /* W6X_NET_IPV6_ENABLE */
+      {
+        p_net_ctx->Sockets[socket_to_use].Family = W6X_NET_IPV4;
+      }
       if ((type == SOCK_STREAM) && (proto == TCP_PROTOCOL)) /* TCP */
       {
         p_net_ctx->Sockets[socket_to_use].Protocol = W6X_NET_TCP_PROTOCOL;
@@ -898,7 +914,7 @@ int32_t W6X_Net_Socket(int32_t family, int32_t type, int32_t proto)
       p_net_ctx->Sockets[socket_to_use].SoLinger = -1;
       p_net_ctx->Sockets[socket_to_use].RecvTimeout = W6X_NET_RECV_TIMEOUT;
       p_net_ctx->Sockets[socket_to_use].RecvBuffSize = W6X_NET_RECV_BUFFER_SIZE;
-      p_net_ctx->Sockets[socket_to_use].Number = W61_NET_MAX_CONNECTIONS + 1;
+      p_net_ctx->Sockets[socket_to_use].Number = W61_NET_MAX_CONNECTIONS + 1U;
 
       /* Set the rotary index for the next socket to use */
       p_net_ctx->NextSocketToUse = (socket_to_use + 1) % (W61_NET_MAX_CONNECTIONS + 1);
@@ -912,7 +928,7 @@ int32_t W6X_Net_Close(int32_t sock)
 {
   W61_Net_Connection_t conn;
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   if ((sock < 0) || (sock >= W61_NET_MAX_CONNECTIONS + 1))
@@ -928,12 +944,12 @@ int32_t W6X_Net_Close(int32_t sock)
     p_net_ctx->Sockets[sock].Status = W6X_NET_SOCKET_CLOSING;
 
     /* Stop the connection */
-    if (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 1)
+    if (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 1U)
     {
       taskENTER_CRITICAL();
       p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].DataAvailableSize = 0;
       taskEXIT_CRITICAL();
-      if (W61_Net_StopClientConnection(p_DrvObj, &conn) != W61_STATUS_OK)
+      if (W61_Net_StopClientConnection(W6X_Net_drv_obj, &conn) != W61_STATUS_OK)
       {
         return ret;
       }
@@ -950,13 +966,13 @@ int32_t W6X_Net_Close(int32_t sock)
   return 0;
 }
 
-int32_t W6X_Net_Shutdown(int32_t sock, int32_t close_connection)
+int32_t W6X_Net_Shutdown(int32_t sock, int32_t how)
 {
   int32_t ret = 0;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
-  if (p_net_ctx->Sockets[sock].IsConnected == 1) /* Check if the socket is a server */
+  if (p_net_ctx->Sockets[sock].IsConnected == 1U) /* Check if the socket is a server */
   {
     NET_LOG_WARN("Given socket is a connection not a server\n");
     return ret;
@@ -965,12 +981,12 @@ int32_t W6X_Net_Shutdown(int32_t sock, int32_t close_connection)
   /* Set the socket status to closing to terminate remaining process */
   p_net_ctx->Sockets[sock].Status = W6X_NET_SOCKET_CLOSING;
 
-  if (close_connection == 1) /* Requested to close all pending connections */
+  if (how == 1) /* Requested to close all pending connections */
   {
     for (int32_t i = 0; i <  W61_NET_MAX_CONNECTIONS + 1; i++)
     {
       /* Check if the socket is used */
-      if ((p_net_ctx->Sockets[i].Status != W6X_NET_SOCKET_RESET) && (i != sock) && (p_net_ctx->Sockets[i].Client == 0))
+      if ((p_net_ctx->Sockets[i].Status != W6X_NET_SOCKET_RESET) && (i != sock) && (p_net_ctx->Sockets[i].Client == 0U))
       {
         ret = W6X_Net_Close(i);
         if (ret != 0) /* Close the connection */
@@ -987,7 +1003,7 @@ int32_t W6X_Net_Shutdown(int32_t sock, int32_t close_connection)
   }
 
   /* Stop the server */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_StopServer(p_DrvObj, close_connection));
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_StopServer(W6X_Net_drv_obj, how));
   if (ret != 0)
   {
     if (ret != -2) /* BUSY */
@@ -1006,7 +1022,7 @@ int32_t W6X_Net_Bind(int32_t sock, const struct sockaddr *addr, socklen_t addrle
 {
   int32_t ret = -1;
   struct sockaddr_in *addr_in = (struct sockaddr_in *) addr;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   /* Check if the socket is allocated */
@@ -1033,7 +1049,7 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
   W61_Net_Connection_t conn;
   int32_t conn_to_use = -1;
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   if (p_net_ctx->Sockets[sock].Status != W6X_NET_SOCKET_ALLOCATED) /* Check if the socket is allocated */
@@ -1041,8 +1057,8 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
     return ret;
   }
 
-  p_net_ctx->Sockets[sock].IsConnected = 1; /* Set the socket as a client */
-  p_net_ctx->Sockets[sock].Client = 1;
+  p_net_ctx->Sockets[sock].IsConnected = 1U; /* Set the socket as a client */
+  p_net_ctx->Sockets[sock].Client = 1U;
 
   /* Set the remote port and IP address */
   if (addr_in->sin_family == AF_INET)
@@ -1054,19 +1070,19 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
   else
   {
     p_net_ctx->Sockets[sock].RemotePort = PP_NTOHS(addr_in6->sin6_port);
-    memcpy(p_net_ctx->Sockets[sock].RemoteIP, addr_in6->sin6_addr.un.u32_addr,
-           sizeof(p_net_ctx->Sockets[sock].RemoteIP));
+    (void)memcpy(p_net_ctx->Sockets[sock].RemoteIP, addr_in6->sin6_addr.un.u32_addr,
+                 sizeof(p_net_ctx->Sockets[sock].RemoteIP));
   }
 #endif /* W6X_NET_IPV6_ENABLE */
 
   /* Find an available connection */
-  for (int32_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
+  for (uint8_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
   {
     /* Check if the connection is available */
     int32_t found = 0;
-    if (p_net_ctx->Connection[i].SocketConnected == 0) /* Check if the socket is connected */
+    if (p_net_ctx->Connection[i].SocketConnected == 0U) /* Check if the socket is connected */
     {
-      for (int32_t j = 0; j < W61_NET_MAX_CONNECTIONS + 1; j++)
+      for (uint8_t j = 0; j < (W61_NET_MAX_CONNECTIONS + 1U); j++)
       {
         /* Check if the connection found is already in use */
         if ((p_net_ctx->Sockets[j].Number == i) && (p_net_ctx->Sockets[j].Status != W6X_NET_SOCKET_RESET))
@@ -1077,7 +1093,7 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
       }
       if (found == 0)
       {
-        conn_to_use = i;
+        conn_to_use = (int32_t)i;
         break;
       }
     }
@@ -1092,145 +1108,150 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
   /* Set the connection parameters */
   conn.Number = p_net_ctx->Sockets[sock].Number;
   conn.RemotePort = p_net_ctx->Sockets[sock].RemotePort;
-  switch (p_net_ctx->Sockets[sock].Protocol)
+
+  if (p_net_ctx->Sockets[sock].Protocol == W6X_NET_TCP_PROTOCOL)
   {
-    case W6X_NET_TCP_PROTOCOL:
-      if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4 && addr_in->sin_family == AF_INET)
-      {
-        conn.Protocol = W61_NET_TCP_CONNECTION;
-      }
+    if ((p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4) && (addr_in->sin_family == AF_INET))
+    {
+      conn.Protocol = W61_NET_TCP_CONNECTION;
+    }
 #if (W6X_NET_IPV6_ENABLE == 1)
-      else if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV6 && addr_in6->sin6_family == AF_INET6)
-      {
-        conn.Protocol = W61_NET_TCPV6_CONNECTION;
-      }
+    else if ((p_net_ctx->Sockets[sock].Family == W6X_NET_IPV6) && (addr_in6->sin6_family == AF_INET6))
+    {
+      conn.Protocol = W61_NET_TCPV6_CONNECTION;
+    }
 #endif /* W6X_NET_IPV6_ENABLE */
-      else
-      {
-        LogError("IP address family mismatch");
-        return ret;
-      }
-      break;
-    case W6X_NET_UDP_PROTOCOL:
-      if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4 && addr_in->sin_family == AF_INET)
-      {
-        conn.Protocol = W61_NET_UDP_CONNECTION;
-      }
-#if (W6X_NET_IPV6_ENABLE == 1)
-      else if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV6 && addr_in6->sin6_family == AF_INET6)
-      {
-        conn.Protocol = W61_NET_UDPV6_CONNECTION;
-      }
-#endif /* W6X_NET_IPV6_ENABLE */
-      else
-      {
-        LogError("IP address family mismatch");
-        return ret;
-      }
-      break;
-    case W6X_NET_SSL_PROTOCOL:
-      if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4 && addr_in->sin_family == AF_INET)
-      {
-        conn.Protocol = W61_NET_TCP_SSL_CONNECTION;
-      }
-#if (W6X_NET_IPV6_ENABLE == 1)
-      else if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV6 && addr_in6->sin6_family == AF_INET6)
-      {
-        conn.Protocol = W61_NET_TCPV6_SSL_CONNECTION;
-      }
-#endif /* W6X_NET_IPV6_ENABLE */
-      else
-      {
-        LogError("IP address family mismatch");
-        return ret;
-      }
-      int32_t auth_mode = 0; /* Set the authentication mode. Can be client, server or both */
-      if (p_net_ctx->Sockets[sock].Ca_Cert != NULL) /* Check if the CA certificate is used */
-      {
-        auth_mode += 2; /* Server authentication */
-      }
-      /* Check if the client certificate and private key are used */
-      if ((p_net_ctx->Sockets[sock].Certificate != NULL) && (p_net_ctx->Sockets[sock].Private_Key != NULL))
-      {
-        auth_mode++; /* Client authentication */
-      }
-      ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetConfiguration(p_DrvObj, p_net_ctx->Sockets[sock].Number,
-                                                                      auth_mode,
-                                                                      (uint8_t *)p_net_ctx->Sockets[sock].Certificate,
-                                                                      (uint8_t *)p_net_ctx->Sockets[sock].Private_Key,
-                                                                      (uint8_t *)p_net_ctx->Sockets[sock].Ca_Cert));
-      if (ret != 0)
-      {
-        if (ret != -2) /* BUSY */
-        {
-          NET_LOG_ERROR("Could not set SSL Client configuration\n");
-        }
-        return ret;
-      }
+    else
+    {
+      LogError("IP address family mismatch");
+      return ret;
+    }
+  }
 
-      if (auth_mode == 0) /* Setup PSK if no certificate is used */
+  if (p_net_ctx->Sockets[sock].Protocol == W6X_NET_UDP_PROTOCOL)
+  {
+    if ((p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4) && (addr_in->sin_family == AF_INET))
+    {
+      conn.Protocol = W61_NET_UDP_CONNECTION;
+    }
+#if (W6X_NET_IPV6_ENABLE == 1)
+    else if ((p_net_ctx->Sockets[sock].Family == W6X_NET_IPV6) && (addr_in6->sin6_family == AF_INET6))
+    {
+      conn.Protocol = W61_NET_UDPV6_CONNECTION;
+    }
+#endif /* W6X_NET_IPV6_ENABLE */
+    else
+    {
+      LogError("IP address family mismatch");
+      return ret;
+    }
+  }
+
+  if (p_net_ctx->Sockets[sock].Protocol == W6X_NET_SSL_PROTOCOL)
+  {
+    if ((p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4) && (addr_in->sin_family == AF_INET))
+    {
+      conn.Protocol = W61_NET_TCP_SSL_CONNECTION;
+    }
+#if (W6X_NET_IPV6_ENABLE == 1)
+    else if ((p_net_ctx->Sockets[sock].Family == W6X_NET_IPV6) && (addr_in6->sin6_family == AF_INET6))
+    {
+      conn.Protocol = W61_NET_TCPV6_SSL_CONNECTION;
+    }
+#endif /* W6X_NET_IPV6_ENABLE */
+    else
+    {
+      LogError("IP address family mismatch");
+      return ret;
+    }
+    int32_t auth_mode = 0; /* Set the authentication mode. Can be client, server or both */
+    if (p_net_ctx->Sockets[sock].Ca_Cert != NULL) /* Check if the CA certificate is used */
+    {
+      auth_mode += 2; /* Server authentication */
+    }
+    /* Check if the client certificate and private key are used */
+    if ((p_net_ctx->Sockets[sock].Certificate != NULL) && (p_net_ctx->Sockets[sock].Private_Key != NULL))
+    {
+      auth_mode++; /* Client authentication */
+    }
+    ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetConfiguration(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
+                                                                    auth_mode,
+                                                                    (uint8_t *)p_net_ctx->Sockets[sock].Certificate,
+                                                                    (uint8_t *)p_net_ctx->Sockets[sock].Private_Key,
+                                                                    (uint8_t *)p_net_ctx->Sockets[sock].Ca_Cert));
+    if (ret != 0)
+    {
+      if (ret != -2) /* BUSY */
       {
-        if (p_net_ctx->Sockets[sock].PSK != NULL && p_net_ctx->Sockets[sock].PSK_Identity != NULL)
+        NET_LOG_ERROR("Could not set SSL Client configuration\n");
+      }
+      return ret;
+    }
+
+    if (auth_mode == 0U) /* Setup PSK if no certificate is used */
+    {
+      if ((p_net_ctx->Sockets[sock].PSK != NULL) && (p_net_ctx->Sockets[sock].PSK_Identity != NULL))
+      {
+        /* Set the PSK configuration */
+        ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetPSK(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
+                                                              (uint8_t *)p_net_ctx->Sockets[sock].PSK,
+                                                              (uint8_t *)p_net_ctx->Sockets[sock].PSK_Identity));
+        if (ret != 0)
         {
-          /* Set the PSK configuration */
-          ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetPSK(p_DrvObj, p_net_ctx->Sockets[sock].Number,
-                                                                (uint8_t *)p_net_ctx->Sockets[sock].PSK,
-                                                                (uint8_t *)p_net_ctx->Sockets[sock].PSK_Identity));
-          if (ret != 0)
+          if (ret != -2) /* BUSY */
           {
-            if (ret != -2) /* BUSY */
-            {
-              NET_LOG_ERROR("Could not set SSL Client PSK configuration\n");
-            }
-            return ret;
+            NET_LOG_ERROR("Could not set SSL Client PSK configuration\n");
           }
+          return ret;
         }
       }
+    }
 
-      /* Set the ALPN */
-      ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetALPN(p_DrvObj, p_net_ctx->Sockets[sock].Number,
-                                                             (uint8_t *)p_net_ctx->Sockets[sock].ALPN[0],
-                                                             (uint8_t *)p_net_ctx->Sockets[sock].ALPN[1],
-                                                             (uint8_t *)p_net_ctx->Sockets[sock].ALPN[2]));
-      if (ret != 0)
+    /* Set the ALPN */
+    ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetALPN(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
+                                                           (uint8_t *)p_net_ctx->Sockets[sock].ALPN[0],
+                                                           (uint8_t *)p_net_ctx->Sockets[sock].ALPN[1],
+                                                           (uint8_t *)p_net_ctx->Sockets[sock].ALPN[2]));
+    if (ret != 0)
+    {
+      if (ret != -2) /* BUSY */
       {
-        if (ret != -2) /* BUSY */
-        {
-          NET_LOG_ERROR("Could not set SSL ALPN\n");
-        }
-        return ret;
+        NET_LOG_ERROR("Could not set SSL ALPN\n");
       }
+      return ret;
+    }
 
-      /* Set the Server Name Indication */
-      ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetServerName(p_DrvObj, p_net_ctx->Sockets[sock].Number,
-                                                                   (uint8_t *)p_net_ctx->Sockets[sock].SNI));
-      if (ret != 0)
+    /* Set the Server Name Indication */
+    ret = W6X_Net_TranslateErrorStatus(W61_Net_SSL_SetServerName(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
+                                                                 (uint8_t *)p_net_ctx->Sockets[sock].SNI));
+    if (ret != 0)
+    {
+      if (ret != -2) /* BUSY */
       {
-        if (ret != -2) /* BUSY */
-        {
-          NET_LOG_ERROR("Could not set SSL ALPN\n");
-        }
-        return ret;
+        NET_LOG_ERROR("Could not set SSL ALPN\n");
       }
-      break;
+      return ret;
+    }
   }
 
   /* Set the remote IP address */
   if (addr_in->sin_family == AF_INET)
   {
-    W6X_Net_Inet_ntop(addr_in->sin_family, &p_net_ctx->Sockets[sock].RemoteIP, conn.RemoteIP, sizeof(conn.RemoteIP));
+    (void)W6X_Net_Inet_ntop(addr_in->sin_family, &p_net_ctx->Sockets[sock].RemoteIP, conn.RemoteIP,
+                            sizeof(conn.RemoteIP));
   }
 #if (W6X_NET_IPV6_ENABLE == 1)
   else
   {
-    W6X_Net_Inet_ntop(addr_in6->sin6_family, &p_net_ctx->Sockets[sock].RemoteIP, conn.RemoteIP, sizeof(conn.RemoteIP));
+    (void)W6X_Net_Inet_ntop(addr_in6->sin6_family, &p_net_ctx->Sockets[sock].RemoteIP, conn.RemoteIP,
+                            sizeof(conn.RemoteIP));
   }
 #endif /* W6X_NET_IPV6_ENABLE */
   /* Set the keep alive idle time */
   conn.KeepAlive = p_net_ctx->Sockets[sock].SoKeepAlive;
 
   /* Set the TCP options */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_SetTCPOpt(p_DrvObj, p_net_ctx->Sockets[sock].Number,
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_SetTCPOpt(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
                                                        p_net_ctx->Sockets[sock].SoLinger,
                                                        p_net_ctx->Sockets[sock].TcpNoDelay,
                                                        p_net_ctx->Sockets[sock].SoSndTimeo,
@@ -1245,7 +1266,7 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
   }
 
   /* Set the Net Receive buffer length */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_SetReceiveBufferLen(p_DrvObj, p_net_ctx->Sockets[sock].Number,
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_SetReceiveBufferLen(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
                                                                  p_net_ctx->Sockets[sock].RecvBuffSize));
   if (ret != 0)
   {
@@ -1257,7 +1278,7 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
   }
 
   /* Start the connection */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_StartClientConnection(p_DrvObj, &conn));
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_StartClientConnection(W6X_Net_drv_obj, &conn));
   if (ret != 0)
   {
     if (ret != -2) /* BUSY */
@@ -1267,11 +1288,11 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
     return ret;
   }
 
-  if (p_net_ctx->Connection[conn_to_use].SocketConnected == 0) /* Normally it arrives before SEND OK msg */
+  if (p_net_ctx->Connection[conn_to_use].SocketConnected == 0U) /* Normally it arrives before SEND OK msg */
   {
     NET_LOG_DEBUG("Wait a bit more Connect Callback\n");
-    vTaskDelay(10);
-    if (p_net_ctx->Connection[conn_to_use].SocketConnected == 0) /* To check if semaphore if needed */
+    vTaskDelay(pdMS_TO_TICKS(10));
+    if (p_net_ctx->Connection[conn_to_use].SocketConnected == 0U) /* To check if semaphore if needed */
     {
       NET_LOG_ERROR("Could not connect\n");
       return ret;
@@ -1286,76 +1307,78 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
 int32_t W6X_Net_Listen(int32_t sock, int32_t backlog)
 {
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   /* Check if the socket is a server and in bind mode */
-  if ((p_net_ctx->Sockets[sock].IsConnected != 0) || (p_net_ctx->Sockets[sock].Status != W6X_NET_SOCKET_BIND))
+  if ((p_net_ctx->Sockets[sock].IsConnected != 0U) || (p_net_ctx->Sockets[sock].Status != W6X_NET_SOCKET_BIND))
   {
     return ret;
   }
 
   if (backlog > W61_NET_MAX_CONNECTIONS) /* Check if the backlog is in socket limits */
   {
-    return ret;
+    return ret; /* Backlog exceeds maximum connections */
   }
   else if (backlog == 0)
   {
     backlog = W61_NET_MAX_CONNECTIONS; /* When set to 0, use maximum amount available */
   }
+  else
+  {
+    /* Normal case. nothing to do */
+  }
 
   /* Set the server maximum connections */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_SetServerMaxConnections(p_DrvObj, (uint8_t)backlog));
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_SetServerMaxConnections(W6X_Net_drv_obj, (uint8_t)backlog));
   if (ret != 0)
   {
     return ret;
   }
   /* Translate the protocol */
   W61_Net_Protocol_e protocol = W61_NET_TCP_CONNECTION;
-  switch (p_net_ctx->Sockets[sock].Protocol)
+  if (p_net_ctx->Sockets[sock].Protocol == W6X_NET_TCP_PROTOCOL)
   {
-    case W6X_NET_TCP_PROTOCOL:
-      if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4)
-      {
-        protocol = W61_NET_TCP_CONNECTION;
-      }
+    if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4)
+    {
+      protocol = W61_NET_TCP_CONNECTION;
+    }
 #if (W6X_NET_IPV6_ENABLE == 1)
-      else
-      {
-        protocol = W61_NET_TCPV6_CONNECTION;
-      }
+    else
+    {
+      protocol = W61_NET_TCPV6_CONNECTION;
+    }
 #endif /* W6X_NET_IPV6_ENABLE */
-      break;
-    case W6X_NET_UDP_PROTOCOL:
-      if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4)
-      {
-        protocol = W61_NET_UDP_CONNECTION;
-      }
+  }
+  if (p_net_ctx->Sockets[sock].Protocol == W6X_NET_UDP_PROTOCOL)
+  {
+    if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4)
+    {
+      protocol = W61_NET_UDP_CONNECTION;
+    }
 #if (W6X_NET_IPV6_ENABLE == 1)
-      else
-      {
-        protocol = W61_NET_UDPV6_CONNECTION;
-      }
+    else
+    {
+      protocol = W61_NET_UDPV6_CONNECTION;
+    }
 #endif /* W6X_NET_IPV6_ENABLE */
-      break;
-    case W6X_NET_SSL_PROTOCOL:
-      if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4)
-      {
-        protocol = W61_NET_TCP_SSL_CONNECTION;
-      }
+  }
+  if (p_net_ctx->Sockets[sock].Protocol == W6X_NET_SSL_PROTOCOL)
+  {
+    if (p_net_ctx->Sockets[sock].Family == W6X_NET_IPV4)
+    {
+      protocol = W61_NET_TCP_SSL_CONNECTION;
+    }
 #if (W6X_NET_IPV6_ENABLE == 1)
-      else
-      {
-        protocol = W61_NET_TCPV6_SSL_CONNECTION;
-      }
+    else
+    {
+      protocol = W61_NET_TCPV6_SSL_CONNECTION;
+    }
 #endif /* W6X_NET_IPV6_ENABLE */
-      break;
-    default:
-      break;
   }
 
   /* Start the server */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_StartServer(p_DrvObj, p_net_ctx->Sockets[sock].LocalPort,
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_StartServer(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].LocalPort,
                                                          protocol, 0, p_net_ctx->Sockets[sock].SoKeepAlive));
   if (ret != 0)
   {
@@ -1378,7 +1401,7 @@ int32_t W6X_Net_Accept(int32_t sock, struct sockaddr *addr, socklen_t *addrlen)
 #if (W6X_NET_IPV6_ENABLE == 1)
   struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)addr;
 #endif /* W6X_NET_IPV6_ENABLE */
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
 #if (W6X_NET_IPV6_ENABLE == 1)
@@ -1418,9 +1441,9 @@ int32_t W6X_Net_Accept(int32_t sock, struct sockaddr *addr, socklen_t *addrlen)
     for (int32_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
     {
       int32_t found = 0;
-      if (p_net_ctx->Connection[i].SocketConnected == 1) /* Check if the socket is connected */
+      if (p_net_ctx->Connection[i].SocketConnected == 1U) /* Check if the socket is connected */
       {
-        for (int32_t j = 0; j < W61_NET_MAX_CONNECTIONS + 1; j++)
+        for (int32_t j = 0; j < (W61_NET_MAX_CONNECTIONS + 1U); j++)
         {
           /* Check if the connected socket found is already in use */
           if ((p_net_ctx->Sockets[j].Number == i) && ((p_net_ctx->Sockets[j].Status == W6X_NET_SOCKET_CONNECTED) ||
@@ -1432,29 +1455,29 @@ int32_t W6X_Net_Accept(int32_t sock, struct sockaddr *addr, socklen_t *addrlen)
         }
         if (found == 0) /* If the connected socket is not in use */
         {
-          ret = W6X_Net_TranslateErrorStatus(W61_Net_GetSocketInformation(p_DrvObj, i, &conn));
+          ret = W6X_Net_TranslateErrorStatus(W61_Net_GetSocketInformation(W6X_Net_drv_obj, i, &conn));
           if (ret == 0)
           {
-            if (conn.TeType == 0) /* Server connection */
+            if (conn.TeType == 0U) /* Server connection */
             {
               NET_LOG_ERROR("Found an unregistered connection that is not flagged as server connection\n");
               p_net_ctx->Sockets[new_socket].Status = W6X_NET_SOCKET_RESET;
               return -1;
             }
-            if (family == AF_INET)
-            {
-              addr_in->sin_port = PP_HTONS(conn.RemotePort); /* Set the remote port */
-              /* Convert the IP address to binary format */
-              (void)W6X_Net_Inet_pton(family, conn.RemoteIP, (void *)&addr_in->sin_addr.s_addr);
-            }
 #if (W6X_NET_IPV6_ENABLE == 1)
-            else
+            if (family == AF_INET6)
             {
               addr_in6->sin6_port = PP_HTONS(conn.RemotePort); /* Set the remote port */
               /* Convert the IP address to binary format */
               (void)W6X_Net_Inet_pton(family, conn.RemoteIP, (void *)addr_in6->sin6_addr.un.u32_addr);
             }
+            else
 #endif /* W6X_NET_IPV6_ENABLE */
+            {
+              addr_in->sin_port = PP_HTONS(conn.RemotePort); /* Set the remote port */
+              /* Convert the IP address to binary format */
+              (void)W6X_Net_Inet_pton(family, conn.RemoteIP, (void *)&addr_in->sin_addr.s_addr);
+            }
           }
           /* Set the new socket parameters */
           p_net_ctx->Sockets[new_socket].Number = i;
@@ -1466,7 +1489,7 @@ int32_t W6X_Net_Accept(int32_t sock, struct sockaddr *addr, socklen_t *addrlen)
         }
       }
     }
-    vTaskDelay(100); /* Wait a bit before checking again */
+    vTaskDelay(pdMS_TO_TICKS(100)); /* Wait a bit before checking again */
   }
   return ret;
 }
@@ -1476,22 +1499,22 @@ ssize_t W6X_Net_Send(int32_t sock, const void *buf, size_t len, int32_t flags)
   /* Send data over a network socket, checking connection state and handling errors */
   uint32_t SentDataLen = 0;
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
   NULL_ASSERT(buf, W6X_Buf_Null_str);
 
   /* Check if the socket is connected */
   if ((p_net_ctx->Sockets[sock].Status != W6X_NET_SOCKET_CONNECTED) ||
-      (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 0))
+      (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 0U))
   {
     NET_LOG_ERROR("Socket state is not connected\n");
     return ret;
   }
 
   /* Send the data */
-  ret = W6X_Net_TranslateErrorStatus(W61_Net_SendData(p_DrvObj, p_net_ctx->Sockets[sock].Number,
+  ret = W6X_Net_TranslateErrorStatus(W61_Net_SendData(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
                                                       (uint8_t *)buf, (uint32_t)len, &SentDataLen,
-                                                      p_net_ctx->Sockets[sock].SoSndTimeo + 1000));
+                                                      p_net_ctx->Sockets[sock].SoSndTimeo + 1000U));
   if (ret != 0)
   {
     return (ssize_t)ret;
@@ -1503,7 +1526,7 @@ ssize_t W6X_Net_Send(int32_t sock, const void *buf, size_t len, int32_t flags)
 ssize_t W6X_Net_Recv(int32_t sock, void *buf, size_t max_len, int32_t flags)
 {
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
   NULL_ASSERT(buf, W6X_Buf_Null_str);
 
@@ -1512,8 +1535,8 @@ ssize_t W6X_Net_Recv(int32_t sock, void *buf, size_t max_len, int32_t flags)
     NET_LOG_ERROR("Socket state is not connected\n");
     return ret;
   }
-  if ((p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 0) &&
-      (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].DataAvailableSize == 0))
+  if ((p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 0U) &&
+      (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].DataAvailableSize == 0U))
   {
     return -1;
   }
@@ -1526,10 +1549,14 @@ ssize_t W6X_Net_Recv(int32_t sock, void *buf, size_t max_len, int32_t flags)
   else if (ret == 0)
   {
     /* Check if the socket is still connected */
-    if (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 0)
+    if (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].SocketConnected == 0U)
     {
       return -1;
     }
+  }
+  else
+  {
+    /* Timeout or data received successfully */
   }
 
   return (ssize_t)ret;
@@ -1543,13 +1570,13 @@ ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
   int32_t connection_id;
   uint32_t SentDataLen = 0;
   /* Support both IPv4 and IPv6. Allocate buffer large enough for IPv6 textual form */
-  char ipaddr[INET6_ADDRSTRLEN] = {0};
+  char ip_address[INET6_ADDRSTRLEN] = {0};
   const sa_family_t fam = dest_addr->sa_family;
   const struct sockaddr_in  *addr_in  = (const struct sockaddr_in *)dest_addr;
 #if (W6X_NET_IPV6_ENABLE == 1)
   const struct sockaddr_in6 *addr_in6 = (const struct sockaddr_in6 *)dest_addr;
 #endif /* W6X_NET_IPV6_ENABLE */
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
   NULL_ASSERT(buf, W6X_Buf_Null_str);
 
@@ -1563,7 +1590,7 @@ ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
   {
     p_net_ctx->Sockets[sock].RemotePort = PP_NTOHS(addr_in->sin_port);
     /* Convert IPv4 address (stored as uint32_t in sin_addr.s_addr) to dotted string */
-    if (W6X_Net_Inet_ntop(AF_INET, (const void *)&addr_in->sin_addr.s_addr, ipaddr, INET_ADDRSTRLEN) == NULL)
+    if (W6X_Net_Inet_ntop(AF_INET, (const void *)&addr_in->sin_addr.s_addr, ip_address, INET_ADDRSTRLEN) == NULL)
     {
       NET_LOG_ERROR("Could not encode IPv4 address\n");
       return ret;
@@ -1576,14 +1603,15 @@ ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
   {
     p_net_ctx->Sockets[sock].RemotePort = PP_NTOHS(addr_in6->sin6_port);
     /* Convert host-order 4 word IPv6 representation to compressed textual form */
-    if (W6X_Net_Inet_ntop(AF_INET6, (const void *)addr_in6->sin6_addr.un.u32_addr, ipaddr, INET6_ADDRSTRLEN) == NULL)
+    if (W6X_Net_Inet_ntop(AF_INET6, (const void *)addr_in6->sin6_addr.un.u32_addr,
+                          ip_address, INET6_ADDRSTRLEN) == NULL)
     {
       NET_LOG_ERROR("Could not encode IPv6 address\n");
       return ret;
     }
     /* Store host-order words */
-    memcpy(p_net_ctx->Sockets[sock].RemoteIP, addr_in6->sin6_addr.un.u32_addr,
-           sizeof(p_net_ctx->Sockets[sock].RemoteIP));
+    (void)memcpy(p_net_ctx->Sockets[sock].RemoteIP, addr_in6->sin6_addr.un.u32_addr,
+                 sizeof(p_net_ctx->Sockets[sock].RemoteIP));
   }
 #endif /* W6X_NET_IPV6_ENABLE */
   else
@@ -1598,7 +1626,7 @@ ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
     for (int32_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
     {
       /* Check if the connection is available */
-      if (p_net_ctx->Connection[i].SocketConnected == 0)
+      if (p_net_ctx->Connection[i].SocketConnected == 0U)
       {
         conn_to_use = i; /* Set the connection to use */
         break;
@@ -1618,10 +1646,10 @@ ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
   if (p_net_ctx->Sockets[sock].Status == W6X_NET_SOCKET_CONNECTED)
   {
     /* Send the data */
-    ret = W6X_Net_TranslateErrorStatus(W61_Net_SendData_Non_Connected(p_DrvObj, p_net_ctx->Sockets[sock].Number,
-                                                                      ipaddr, p_net_ctx->Sockets[sock].RemotePort,
+    ret = W6X_Net_TranslateErrorStatus(W61_Net_SendData_Non_Connected(W6X_Net_drv_obj, p_net_ctx->Sockets[sock].Number,
+                                                                      ip_address, p_net_ctx->Sockets[sock].RemotePort,
                                                                       (uint8_t *)buf, (uint32_t)len, &SentDataLen,
-                                                                      p_net_ctx->Sockets[sock].SoSndTimeo + 1000));
+                                                                      p_net_ctx->Sockets[sock].SoSndTimeo + 1000U));
     if (ret == 0)
     {
       return (ssize_t) SentDataLen;
@@ -1630,17 +1658,21 @@ ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
   else if (p_net_ctx->Sockets[sock].Status == W6X_NET_SOCKET_LISTENING)
   {
     /* Check if the socket is a server */
-    connection_id = W6X_Net_Find_Connection(ipaddr, p_net_ctx->Sockets[sock].RemotePort);
+    connection_id = W6X_Net_Find_Connection(ip_address, p_net_ctx->Sockets[sock].RemotePort);
     if (connection_id >= 0) /* Check if the connection is found */
     {
       /* Send the data */
-      ret = W6X_Net_TranslateErrorStatus(W61_Net_SendData(p_DrvObj, connection_id, (uint8_t *)buf, (uint32_t)len,
+      ret = W6X_Net_TranslateErrorStatus(W61_Net_SendData(W6X_Net_drv_obj, connection_id, (uint8_t *)buf, (uint32_t)len,
                                                           &SentDataLen, p_net_ctx->Sockets[sock].SoSndTimeo + 1000));
       if (ret == 0)
       {
         return (ssize_t) SentDataLen;
       }
     }
+  }
+  else
+  {
+    /* Status not supported */
   }
   return ret;
 }
@@ -1651,9 +1683,9 @@ ssize_t W6X_Net_Recvfrom(int32_t sock, void *buf, size_t max_len, int32_t flags,
   /* If the socket do not need to connect to peer then ret will not be updated so initialize to 0 */
   int32_t ret = -1;
   int32_t udp_connection;
-  TickType_t startTime = xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
+  TickType_t startTime = xTaskGetTickCount();
   TickType_t currentTime;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
   NULL_ASSERT(buf, W6X_Buf_Null_str);
 
@@ -1690,7 +1722,7 @@ ssize_t W6X_Net_Recvfrom(int32_t sock, void *buf, size_t max_len, int32_t flags,
   /* If the socket is a server, receive data from the client */
   if (p_net_ctx->Sockets[sock].Status == W6X_NET_SOCKET_LISTENING)
   {
-    while (1)
+    while (true)
     {
       udp_connection = W6X_Net_Poll_UDP_Sockets(src_addr); /* Poll the UDP sockets */
       if (udp_connection != -1)
@@ -1698,12 +1730,12 @@ ssize_t W6X_Net_Recvfrom(int32_t sock, void *buf, size_t max_len, int32_t flags,
         break;
       }
 
-      vTaskDelay(1); /* Wait a bit before polling again */
-      currentTime = xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
+      vTaskDelay(pdMS_TO_TICKS(1)); /* Wait a bit before polling again */
+      currentTime = xTaskGetTickCount();
       /* Check if time to receive data has elapsed */
       if ((currentTime - startTime) > (TickType_t) p_net_ctx->Sockets[sock].RecvTimeout)
       {
-        NET_LOG_ERROR("No data received within %" PRIu32 " s\n", p_net_ctx->Sockets[sock].RecvTimeout / 1000);
+        NET_LOG_ERROR("No data received within %" PRIu32 " s\n", p_net_ctx->Sockets[sock].RecvTimeout / 1000U);
         return 0;
       }
     }
@@ -1717,6 +1749,10 @@ ssize_t W6X_Net_Recvfrom(int32_t sock, void *buf, size_t max_len, int32_t flags,
     {
       /* Check if the socket is still connected */
       NET_LOG_DEBUG("No Data available to read in connection %" PRIi32 "\n", udp_connection);
+    }
+    else
+    {
+      /* Timeout or data received successfully */
     }
   }
   else
@@ -1732,7 +1768,7 @@ int32_t W6X_Net_Getsockopt(int32_t sock, int32_t level, int32_t optname, void *o
 {
   int32_t value = 0;
   int32_t ret = -1;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   if (level == SOL_SOCKET)
@@ -1777,7 +1813,7 @@ int32_t W6X_Net_Setsockopt(int32_t sock, int32_t level, int32_t optname, const v
   int8_t *tags = (int8_t *)optval;
   char *alpn_start;
   char *alpn_end;
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   /* Check if the socket is initialized but not yet used */
@@ -1844,124 +1880,129 @@ int32_t W6X_Net_Setsockopt(int32_t sock, int32_t level, int32_t optname, const v
   /* Check if the socket option is for TLS */
   else if ((level == SOL_TLS) && (p_net_ctx->Sockets[sock].Protocol == W6X_NET_SSL_PROTOCOL))
   {
-    switch (optname)
+    if (optname == TLS_SEC_TAG_LIST)
     {
-      case TLS_SEC_TAG_LIST: /* Store the certificates, keys filenames or PSK identifiers */
-        for (uint8_t i = 0; i < optlen; i++)
+      /* Store the certificates, keys filenames or PSK identifiers */
+      for (socklen_t i = 0; i < optlen; i++)
+      {
+        char *credential = p_net_ctx->Credentials[tags[i]].name;
+        if (credential == NULL) /* Check if the credential is valid */
         {
-          char *credential = p_net_ctx->Credentials[tags[i]].name;
-          if (credential == NULL) /* Check if the credential is valid */
-          {
-            NET_LOG_ERROR("Invalid TLS credential\n");
-            return -1;
-          }
-          uint32_t credential_len = strlen(credential) + 1;
+          NET_LOG_ERROR("Invalid TLS credential\n");
+          return -1;
+        }
+        uint32_t credential_len = strlen(credential) + 1U;
 
-          switch (p_net_ctx->Credentials[tags[i]].type)
-          {
-            case W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE:
-              if (p_net_ctx->Sockets[sock].Ca_Cert != NULL) /* Check if the CA Certificate is already set */
-              {
-                vPortFree(p_net_ctx->Sockets[sock].Ca_Cert);
-              }
+        switch (p_net_ctx->Credentials[tags[i]].type)
+        {
+          case W6X_NET_TLS_CREDENTIAL_CA_CERTIFICATE:
+            if (p_net_ctx->Sockets[sock].Ca_Cert != NULL) /* Check if the CA Certificate is already set */
+            {
+              vPortFree(p_net_ctx->Sockets[sock].Ca_Cert);
+            }
 
-              p_net_ctx->Sockets[sock].Ca_Cert = (char *) pvPortMalloc(credential_len);
-              if (p_net_ctx->Sockets[sock].Ca_Cert == NULL)
-              {
-                NET_LOG_ERROR("Malloc failed\n");
-                return -1;
-              }
-              /* Store the CA Certificate filename */
-              strncpy(p_net_ctx->Sockets[sock].Ca_Cert, credential, credential_len);
-              break;
-            case W6X_NET_TLS_CREDENTIAL_SERVER_CERTIFICATE:
-              if (p_net_ctx->Sockets[sock].Certificate != NULL) /* Check if the Certificate is already set */
-              {
-                vPortFree(p_net_ctx->Sockets[sock].Certificate);
-              }
-
-              p_net_ctx->Sockets[sock].Certificate = (char *) pvPortMalloc(credential_len);
-              if (p_net_ctx->Sockets[sock].Certificate == NULL)
-              {
-                NET_LOG_ERROR("Malloc failed\n");
-                return -1;
-              }
-              /* Store the Certificate filename */
-              strncpy(p_net_ctx->Sockets[sock].Certificate, credential, credential_len);
-              break;
-            case W6X_NET_TLS_CREDENTIAL_PRIVATE_KEY:
-              if (p_net_ctx->Sockets[sock].Private_Key != NULL) /* Check if the Private Key is already set */
-              {
-                vPortFree(p_net_ctx->Sockets[sock].Private_Key);
-              }
-
-              p_net_ctx->Sockets[sock].Private_Key = (char *) pvPortMalloc(credential_len);
-              if (p_net_ctx->Sockets[sock].Private_Key == NULL)
-              {
-                NET_LOG_ERROR("Malloc failed\n");
-                return -1;
-              }
-              /* Store the Private Key filename */
-              strncpy(p_net_ctx->Sockets[sock].Private_Key, credential, credential_len);
-              break;
-            case W6X_NET_TLS_CREDENTIAL_PSK:
-              if (p_net_ctx->Sockets[sock].PSK != NULL) /* Check if the PSK is already set */
-              {
-                vPortFree(p_net_ctx->Sockets[sock].PSK);
-              }
-
-              p_net_ctx->Sockets[sock].PSK = (char *) pvPortMalloc(credential_len);
-              if (p_net_ctx->Sockets[sock].PSK == NULL)
-              {
-                NET_LOG_ERROR("Malloc failed\n");
-                return -1;
-              }
-              /* Store the PSK key string */
-              strncpy(p_net_ctx->Sockets[sock].PSK, credential, credential_len);
-              break;
-            case W6X_NET_TLS_CREDENTIAL_PSK_ID:
-              if (p_net_ctx->Sockets[sock].PSK_Identity != NULL) /* Check if the PSK Identity is already set */
-              {
-                vPortFree(p_net_ctx->Sockets[sock].PSK_Identity);
-              }
-
-              p_net_ctx->Sockets[sock].PSK_Identity = (char *) pvPortMalloc(credential_len);
-              if (p_net_ctx->Sockets[sock].PSK_Identity == NULL)
-              {
-                NET_LOG_ERROR("Malloc failed\n");
-                return -1;
-              }
-              /* Store the PSK Identity (hint) */
-              strncpy(p_net_ctx->Sockets[sock].PSK_Identity, credential, credential_len);
-              break;
-            default:
+            p_net_ctx->Sockets[sock].Ca_Cert = (char *) pvPortMalloc(credential_len);
+            if (p_net_ctx->Sockets[sock].Ca_Cert == NULL)
+            {
+              NET_LOG_ERROR("Malloc failed\n");
               return -1;
-          }
-        }
-
-        break;
-      case TLS_ALPN_LIST: /* Set the Client Application Layer Protocol Negotiation */
-        memset(p_net_ctx->Sockets[sock].ALPN, 0, sizeof(p_net_ctx->Sockets[sock].ALPN));
-        alpn_start = (char *) optval; /* Set the ALPN. The optval is a comma separated list of ALPNs */
-        for (int32_t i = 0; i < 3; i++)
-        {
-          alpn_end = strstr(alpn_start, ",");
-          if (alpn_end == NULL)
-          {
-            /* Copy the last ALPN */
-            strncpy(p_net_ctx->Sockets[sock].ALPN[i], alpn_start, sizeof(p_net_ctx->Sockets[sock].ALPN[i]) - 1);
+            }
+            /* Store the CA Certificate filename */
+            (void)strncpy(p_net_ctx->Sockets[sock].Ca_Cert, credential, credential_len);
             break;
-          }
-          strncpy(p_net_ctx->Sockets[sock].ALPN[i], alpn_start, alpn_end - alpn_start);
-          alpn_start = alpn_end + 1;
+          case W6X_NET_TLS_CREDENTIAL_SERVER_CERTIFICATE:
+            if (p_net_ctx->Sockets[sock].Certificate != NULL) /* Check if the Certificate is already set */
+            {
+              vPortFree(p_net_ctx->Sockets[sock].Certificate);
+            }
+
+            p_net_ctx->Sockets[sock].Certificate = (char *) pvPortMalloc(credential_len);
+            if (p_net_ctx->Sockets[sock].Certificate == NULL)
+            {
+              NET_LOG_ERROR("Malloc failed\n");
+              return -1;
+            }
+            /* Store the Certificate filename */
+            (void)strncpy(p_net_ctx->Sockets[sock].Certificate, credential, credential_len);
+            break;
+          case W6X_NET_TLS_CREDENTIAL_PRIVATE_KEY:
+            if (p_net_ctx->Sockets[sock].Private_Key != NULL) /* Check if the Private Key is already set */
+            {
+              vPortFree(p_net_ctx->Sockets[sock].Private_Key);
+            }
+
+            p_net_ctx->Sockets[sock].Private_Key = (char *) pvPortMalloc(credential_len);
+            if (p_net_ctx->Sockets[sock].Private_Key == NULL)
+            {
+              NET_LOG_ERROR("Malloc failed\n");
+              return -1;
+            }
+            /* Store the Private Key filename */
+            (void)strncpy(p_net_ctx->Sockets[sock].Private_Key, credential, credential_len);
+            break;
+          case W6X_NET_TLS_CREDENTIAL_PSK:
+            if (p_net_ctx->Sockets[sock].PSK != NULL) /* Check if the PSK is already set */
+            {
+              vPortFree(p_net_ctx->Sockets[sock].PSK);
+            }
+
+            p_net_ctx->Sockets[sock].PSK = (char *) pvPortMalloc(credential_len);
+            if (p_net_ctx->Sockets[sock].PSK == NULL)
+            {
+              NET_LOG_ERROR("Malloc failed\n");
+              return -1;
+            }
+            /* Store the PSK key string */
+            (void)strncpy(p_net_ctx->Sockets[sock].PSK, credential, credential_len);
+            break;
+          case W6X_NET_TLS_CREDENTIAL_PSK_ID:
+            if (p_net_ctx->Sockets[sock].PSK_Identity != NULL) /* Check if the PSK Identity is already set */
+            {
+              vPortFree(p_net_ctx->Sockets[sock].PSK_Identity);
+            }
+
+            p_net_ctx->Sockets[sock].PSK_Identity = (char *) pvPortMalloc(credential_len);
+            if (p_net_ctx->Sockets[sock].PSK_Identity == NULL)
+            {
+              NET_LOG_ERROR("Malloc failed\n");
+              return -1;
+            }
+            /* Store the PSK Identity (hint) */
+            (void)strncpy(p_net_ctx->Sockets[sock].PSK_Identity, credential, credential_len);
+            break;
+          default:
+            return -1;
+            break;
         }
-        break;
-      case TLS_HOSTNAME: /* Set the Server Name Indication */
-        strncpy(p_net_ctx->Sockets[sock].SNI, (char *)optval, sizeof(p_net_ctx->Sockets[sock].SNI) - 1);
-        break;
-      default:
-        NET_LOG_ERROR("Unsupported TLS option");
-        return ret;
+      }
+    }
+    else if (optname == TLS_ALPN_LIST)
+    {
+      /* Set the Client Application Layer Protocol Negotiation */
+      (void)memset(p_net_ctx->Sockets[sock].ALPN, 0, sizeof(p_net_ctx->Sockets[sock].ALPN));
+      alpn_start = (char *) optval; /* Set the ALPN. The optval is a comma separated list of ALPNs */
+      for (int32_t i = 0; i < 3; i++)
+      {
+        alpn_end = strstr(alpn_start, ",");
+        if (alpn_end == NULL)
+        {
+          /* Copy the last ALPN */
+          (void)strncpy(p_net_ctx->Sockets[sock].ALPN[i], alpn_start, sizeof(p_net_ctx->Sockets[sock].ALPN[i]) - 1U);
+          break;
+        }
+        (void)strncpy(p_net_ctx->Sockets[sock].ALPN[i], alpn_start, alpn_end - alpn_start);
+        alpn_start = alpn_end + 1;
+      }
+    }
+    else if (optname == TLS_HOSTNAME)
+    {
+      /* Set the Server Name Indication */
+      (void)strncpy(p_net_ctx->Sockets[sock].SNI, (char *)optval, sizeof(p_net_ctx->Sockets[sock].SNI) - 1U);
+    }
+    else
+    {
+      NET_LOG_ERROR("Unsupported TLS option");
+      return ret;
     }
   }
   else
@@ -1980,36 +2021,40 @@ int32_t W6X_Net_TLS_Credential_AddByName(uint32_t tag, W6X_Net_Tls_Credential_e 
 int32_t W6X_Net_TLS_Credential_AddByContent(uint32_t tag, W6X_Net_Tls_Credential_e type,
                                             const char *name, const char *content, uint32_t len)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  size_t name_strlen;
+  int32_t ret = -1;
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
   /* Check if the name is valid to be used as filename in the filesystem of the NCP */
-  if ((name == NULL) || (strlen(name) == 0))
+  if ((name == NULL) || (strlen(name) == 0U))
   {
     NET_LOG_ERROR("Invalid name\n");
     return -1;
   }
+  name_strlen = strlen(name);
 
-  if (tag >= W61_NET_MAX_CONNECTIONS * 3) /* Check if the tag is in valid range */
+  if (tag >= (W61_NET_MAX_CONNECTIONS * 3U)) /* Check if the tag is in valid range */
   {
     NET_LOG_ERROR("Tag cannot be higher than %" PRIu32 ", value is %" PRIu32 "\n",
-                  (uint32_t)W61_NET_MAX_CONNECTIONS * 3, tag);
+                  (uint32_t)W61_NET_MAX_CONNECTIONS * 3U, tag);
     return -1;
   }
-  if (p_net_ctx->Credentials[tag].is_valid == 1) /* Check if the tag is already defined */
+  if (p_net_ctx->Credentials[tag].is_valid == 1U) /* Check if the tag is already defined */
   {
     NET_LOG_ERROR("Tag %" PRIu32 " already in use\n", tag);
     return -1; /* Tag already used */
   }
   /* Store the credential information */
   p_net_ctx->Credentials[tag].type = type;
-  p_net_ctx->Credentials[tag].name = (char *) pvPortMalloc(strlen(name) + 1);
+  p_net_ctx->Credentials[tag].name = (char *) pvPortMalloc(name_strlen + 1U);
   if (p_net_ctx->Credentials[tag].name == NULL)
   {
     NET_LOG_ERROR("Malloc failed\n");
     return -1;
   }
-  strncpy(p_net_ctx->Credentials[tag].name, (char *)name, strlen(name) + 1);
+  (void)strncpy(p_net_ctx->Credentials[tag].name, name, name_strlen);
+  p_net_ctx->Credentials[tag].name[name_strlen] = '\0';
 
   if ((type == W6X_NET_TLS_CREDENTIAL_PSK) || (type == W6X_NET_TLS_CREDENTIAL_PSK_ID))
   {
@@ -2024,7 +2069,7 @@ int32_t W6X_Net_TLS_Credential_AddByContent(uint32_t tag, W6X_Net_Tls_Credential
     if (W6X_FS_WriteFileByContent(p_net_ctx->Credentials[tag].name, content, len) != W6X_STATUS_OK)
     {
       NET_LOG_ERROR("Writing file %s into the NCP failed\n", p_net_ctx->Credentials[tag].name);
-      return -1;
+      goto _err;
     }
   }
   else
@@ -2033,23 +2078,31 @@ int32_t W6X_Net_TLS_Credential_AddByContent(uint32_t tag, W6X_Net_Tls_Credential
     if (W6X_FS_WriteFileByName(p_net_ctx->Credentials[tag].name) != W6X_STATUS_OK)
     {
       NET_LOG_ERROR("Writing file %s into the NCP failed\n", p_net_ctx->Credentials[tag].name);
-      return -1;
+      goto _err;
     }
   }
   p_net_ctx->Credentials[tag].is_valid = 1; /* Mark the tag as valid */
-  return 0;
+  ret = 0;
+
+_err:
+  if ((ret != 0) && (p_net_ctx->Credentials[tag].name != NULL))
+  {
+    vPortFree(p_net_ctx->Credentials[tag].name);
+    p_net_ctx->Credentials[tag].name = NULL;
+  }
+  return ret;
 }
 
 int32_t W6X_Net_TLS_Credential_Delete(uint32_t tag, W6X_Net_Tls_Credential_e type)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Net_Uninit_str);
+  NULL_ASSERT(W6X_Net_drv_obj, W6X_Net_Uninit_str);
   NULL_ASSERT(p_net_ctx, W6X_Ctx_Null_str);
 
-  if (tag >= W61_NET_MAX_CONNECTIONS * 3)
+  if (tag >= (W61_NET_MAX_CONNECTIONS * 3U))
   {
     return -1;
   }
-  if (p_net_ctx->Credentials[tag].is_valid == 0)
+  if (p_net_ctx->Credentials[tag].is_valid == 0U)
   {
     return -1; /* No such tag is registered */
   }
@@ -2081,27 +2134,28 @@ char *W6X_Net_Inet_ntop(int32_t af, const void *src, char *dst, socklen_t size)
     case AF_INET:
     {
       uint32_t src_addr = *((uint32_t *) src);
-      uint8_t ip_addr[4] = {0};
-      NTOA_R(src_addr, ip_addr);
-      snprintf(dst, size, "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16,
-               ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]);
+      uint8_t ip_address[4] = {0};
+      NTOA_R(src_addr, ip_address);
+      (void)snprintf(dst, size, "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16,
+                     ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
       ret = dst;
       break;
     }
 #if (W6X_NET_IPV6_ENABLE == 1)
     case AF_INET6: /* IPv6 */
       /* Copy each uint32_t into the 16-byte array, converting to network byte order */
-      for (uint8_t i = 0; i < 4; ++i)
+      for (uint8_t i = 0; i < 4U; ++i)
       {
         uint32_t net = PP_HTONL(((uint32_t *)src)[i]);
-        memcpy(&in6.un.u32_addr[i], &net, 4);
+        (void)memcpy(&in6.un.u32_addr[i], &net, 4);
       }
       /* Convert to string */
-      inet_ntop6(in6.un.u8_addr, dst, size);
+      (void)inet_ntop6(in6.un.u8_addr, dst, size);
       ret = dst;
       break;
 #endif /* W6X_NET_IPV6_ENABLE */
     default:
+      /* Family undefined */
       break;
   }
   return ret;
@@ -2132,13 +2186,13 @@ int32_t W6X_Net_Inet_pton(int32_t af, char *src, const void *dst)
       uint32_t *words = (uint32_t *)dst;
       if (W61_Net_Inet6_aton(src, words) == 1)
       {
-        /* set_errno(ENOSPC); */
         ret = 1;
       }
       break;
     }
 #endif /* W6X_NET_IPV6_ENABLE */
     default:
+      /* Family undefined */
       break;
   }
   return ret;
@@ -2180,7 +2234,7 @@ static void W6X_Net_cb(W61_event_id_t event_id, void *event_args)
       p_net_ctx->Connection[p_param_net_data->socket_id].DataAvailableSize += p_param_net_data->available_data_length;
       taskEXIT_CRITICAL();
       p_net_ctx->Connection[p_param_net_data->socket_id].RemotePort = p_param_net_data->remote_port;
-      /* Update Remote IP family using pton return status and update the connection RemotIP */
+      /* Update Remote IP family using pton return status and update the connection Remote IP */
       if (W6X_Net_Inet_pton(AF_INET, p_param_net_data->remote_ip,
                             &p_net_ctx->Connection[p_param_net_data->socket_id].RemoteIP) != -1)
       {
@@ -2190,6 +2244,10 @@ static void W6X_Net_cb(W61_event_id_t event_id, void *event_args)
                                  &p_net_ctx->Connection[p_param_net_data->socket_id].RemoteIP) != -1)
       {
         p_net_ctx->Connection[p_param_net_data->socket_id].Family = W6X_NET_IPV6;
+      }
+      else
+      {
+        /* Invalid IP address */
       }
 
       if (p_net_ctx->Connection[p_param_net_data->socket_id].DataAvailable != NULL)
@@ -2212,6 +2270,7 @@ static void W6X_Net_cb(W61_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Network events unmanaged */
       break;
   }
 }
@@ -2219,31 +2278,36 @@ static void W6X_Net_cb(W61_event_id_t event_id, void *event_args)
 static int32_t W6X_Net_TranslateErrorStatus(W61_Status_t ret61)
 {
   /* Translate the W61 status to the W6X status */
+  int32_t ret;
   switch (ret61)
   {
     case W61_STATUS_OK:
-      return 0;
+      ret = 0;
+      break;
     case W61_STATUS_BUSY:
-      return -2;
+      ret = -2;
+      break;
     default:
-      return -1;
+      ret = -1;
+      break;
   }
+  return ret;
 }
 
 static int32_t W6X_Net_Find_Connection(char *remote_ip, uint32_t remoteport)
 {
   int32_t ret = -1;
-  uint8_t ip_addr[4];
+  uint8_t ip_address[4];
   W61_Net_Connection_t conn;
 
-  Parser_StrToIP(remote_ip, ip_addr);
+  Parser_StrToIP(remote_ip, ip_address);
 
-  for (int32_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
+  for (uint8_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
   {
     int32_t found = 0;
-    if (p_net_ctx->Connection[i].SocketConnected == 1)
+    if (p_net_ctx->Connection[i].SocketConnected == 1U)
     {
-      for (int32_t j = 0; j < W61_NET_MAX_CONNECTIONS + 1; j++)
+      for (uint8_t j = 0; j < (W61_NET_MAX_CONNECTIONS + 1U); j++)
       {
         if ((p_net_ctx->Sockets[j].Number == i) && (p_net_ctx->Sockets[j].Status == W6X_NET_SOCKET_CONNECTED))
         {
@@ -2254,14 +2318,14 @@ static int32_t W6X_Net_Find_Connection(char *remote_ip, uint32_t remoteport)
       if (found == 0)
       {
         /* Get the socket information */
-        ret = W6X_Net_TranslateErrorStatus(W61_Net_GetSocketInformation(p_DrvObj, i, &conn));
+        ret = W6X_Net_TranslateErrorStatus(W61_Net_GetSocketInformation(W6X_Net_drv_obj, i, &conn));
 
         if (ret == 0)
         {
           /* Check if IP Address and port match with the current connection */
           if ((strncmp(conn.RemoteIP, remote_ip, sizeof(conn.RemoteIP)) == 0) && (remoteport == conn.RemotePort))
           {
-            return i; /* Found the connection */
+            return (int32_t)i; /* Found the connection */
           }
         }
       }
@@ -2277,16 +2341,16 @@ static int32_t W6X_Net_Poll_UDP_Sockets(struct sockaddr *remote_addr)
 #if (W6X_NET_IPV6_ENABLE == 1)
   struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)remote_addr;
 #endif /* W6X_NET_IPV6_ENABLE */
-  for (int32_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
+  for (uint8_t i = 0; i < W61_NET_MAX_CONNECTIONS; i++)
   {
     /* Find the first active connection with pending data */
-    if ((p_net_ctx->Connection[i].SocketConnected != 1) || (p_net_ctx->Connection[i].DataAvailableSize == 0))
+    if ((p_net_ctx->Connection[i].SocketConnected != 1U) || (p_net_ctx->Connection[i].DataAvailableSize == 0U))
     {
       continue; /* Connection not active or no data available */
     }
     /* Since this function is used for UDP server to look for data to read,
      * skip a connection if used by an existing socket (which would be a client) */
-    for (int32_t j = 0; j < W61_NET_MAX_CONNECTIONS + 1; j++)
+    for (uint8_t j = 0; j < (W61_NET_MAX_CONNECTIONS + 1U); j++)
     {
       if (p_net_ctx->Sockets[j].Number == i)
       {
@@ -2301,17 +2365,18 @@ static int32_t W6X_Net_Poll_UDP_Sockets(struct sockaddr *remote_addr)
       {
         addr6->sin6_family = AF_INET6;
         addr6->sin6_port = PP_HTONS(p_net_ctx->Connection[i].RemotePort);
-        memcpy(addr6->sin6_addr.un.u32_addr, p_net_ctx->Connection[i].RemoteIP, sizeof(addr6->sin6_addr.un.u32_addr));
+        (void)memcpy(addr6->sin6_addr.un.u32_addr, p_net_ctx->Connection[i].RemoteIP,
+                     sizeof(addr6->sin6_addr.un.u32_addr));
       }
       else
 #endif /* W6X_NET_IPV6_ENABLE */
       {
         addr->sin_family = AF_INET;
         addr->sin_port = PP_HTONS(p_net_ctx->Connection[i].RemotePort);
-        memcpy(&(addr->sin_addr.s_addr), &(p_net_ctx->Connection[i].RemoteIP[0]), sizeof(addr->sin_addr.s_addr));
+        (void)memcpy(&(addr->sin_addr.s_addr), &(p_net_ctx->Connection[i].RemoteIP[0]), sizeof(addr->sin_addr.s_addr));
 
       }
-      return i;
+      return (int32_t)i;
     }
   }
   return -1;
@@ -2327,8 +2392,8 @@ static int32_t W6X_Net_Wait_Pull_Data(int32_t sock, int32_t connection_id, void 
   BaseType_t sem_taken = pdFALSE;
   do
   {
-    if ((p_net_ctx->Connection[connection_id].SocketConnected == 1) ||
-        (p_net_ctx->Connection[connection_id].DataAvailableSize > 0))
+    if ((p_net_ctx->Connection[connection_id].SocketConnected == 1U) ||
+        (p_net_ctx->Connection[connection_id].DataAvailableSize > 0U))
     {
       if (p_net_ctx->Connection[connection_id].DataAvailable != NULL)
       {
@@ -2336,11 +2401,11 @@ static int32_t W6X_Net_Wait_Pull_Data(int32_t sock, int32_t connection_id, void 
                                    (TickType_t)(100));
       }
     }
-    cpt ++;
-  } while (sem_taken != pdTRUE && cpt < (p_net_ctx->Sockets[sock].RecvTimeout / 100));
+    cpt++;
+  } while ((sem_taken != pdTRUE) && (cpt < (p_net_ctx->Sockets[sock].RecvTimeout / 100U)));
 
-  /* Check recv len before semaphore take (in case previous set of data was not completely read) */
-  if (sem_taken == pdTRUE)
+  /* Check DataAvailableSize */
+  if (p_net_ctx->Connection[connection_id].DataAvailableSize > 0U)
   {
     if (max_len > p_net_ctx->Sockets[sock].RecvBuffSize) /* Attempt read */
     {
@@ -2362,7 +2427,7 @@ static int32_t W6X_Net_Wait_Pull_Data(int32_t sock, int32_t connection_id, void 
       max_len = p_net_ctx->Connection[connection_id].DataAvailableSize;
     }
     /* Request data from the socket */
-    ret = W6X_Net_TranslateErrorStatus(W61_Net_PullDataFromSocket(p_DrvObj, connection_id,
+    ret = W6X_Net_TranslateErrorStatus(W61_Net_PullDataFromSocket(W6X_Net_drv_obj, connection_id,
                                                                   (uint32_t)max_len, (uint8_t *)buf,
                                                                   &received_data_len, W6X_NET_PULL_DATA_TIMEOUT));
     if (ret != 0)
@@ -2387,7 +2452,7 @@ static int32_t W6X_Net_Wait_Pull_Data(int32_t sock, int32_t connection_id, void 
 
     /* Check if remaining data is available */
     /* Notify the user if remaining data is available */
-    if (p_net_ctx->Connection[connection_id].DataAvailableSize > 0)
+    if (p_net_ctx->Connection[connection_id].DataAvailableSize > 0U)
     {
       if (p_net_ctx->Connection[connection_id].DataAvailable != NULL)
       {
@@ -2412,13 +2477,13 @@ static const char *inet_ntop6(const uint8_t src[16], char *dst, size_t size)
   /* Convert the 16-byte IPv6 address into 8 16-bit words */
   for (int32_t word_cnt = 0; word_cnt < 8; ++word_cnt)
   {
-    words[word_cnt] = (src[2 * word_cnt] << 8) | src[2 * word_cnt + 1];
+    words[word_cnt] = (src[2 * word_cnt] << 8U) | src[2 * word_cnt + 1];
   }
 
   /* Find the longest sequence of zero words for possible '::' compression */
   for (int32_t word_cnt = 0; word_cnt < 8; ++word_cnt)
   {
-    if (words[word_cnt] == 0)
+    if (words[word_cnt] == 0U)
     {
       /* Start a new zero run if not already in one */
       if (cur_base == -1)
@@ -2461,7 +2526,8 @@ static const char *inet_ntop6(const uint8_t src[16], char *dst, size_t size)
   /* Build the output string, applying '::' compression if found */
   char *ptr = dst;
   size_t left = size;
-  for (int32_t word_cnt = 0; word_cnt < 8;)
+  int32_t word_cnt = 0;
+  while (word_cnt < 8)
   {
     /* Check if we are at the start of the best zero run for compression */
     if (word_cnt == best_base)
@@ -2503,15 +2569,15 @@ static const char *inet_ntop6(const uint8_t src[16], char *dst, size_t size)
 
 static void W6X_Net_Clean_Socket(int32_t sock)
 {
-  for (int32_t i = 0; i < W61_NET_MAX_CONNECTIONS + 1; i++)
+  for (uint8_t i = 0; i < (W61_NET_MAX_CONNECTIONS + 1U); i++)
   {
     if (p_net_ctx->Sockets[i].Number == sock)
     {
-      if (p_net_ctx->Connection[sock].DataAvailableSize == 0)
+      if (p_net_ctx->Connection[sock].DataAvailableSize == 0U)
       {
         if (p_net_ctx->Connection[p_net_ctx->Sockets[sock].Number].DataAvailable != NULL)
         {
-          (void)xSemaphoreTake(p_net_ctx->Connection[sock].DataAvailable, (TickType_t) 0);
+          (void)xSemaphoreTake(p_net_ctx->Connection[sock].DataAvailable, (TickType_t)0);
         }
 
         /* Free credentials that were allocated */
@@ -2536,9 +2602,9 @@ static void W6X_Net_Clean_Socket(int32_t sock)
           vPortFree(p_net_ctx->Sockets[i].PSK_Identity);
         }
 
-        memset(&p_net_ctx->Sockets[i], 0, sizeof(W6X_Net_Socket_t)); /* Erase the socket context */
+        (void)memset(&p_net_ctx->Sockets[i], 0, sizeof(W6X_Net_Socket_t)); /* Erase the socket context */
         /* Set the socket number to an invalid value */
-        p_net_ctx->Sockets[i].Number = W61_NET_MAX_CONNECTIONS + 1;
+        p_net_ctx->Sockets[i].Number = W61_NET_MAX_CONNECTIONS + 1U;
       }
     }
   }

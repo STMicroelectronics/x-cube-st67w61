@@ -515,9 +515,14 @@
               <FilePath>../../Appli/LWIP/App/dhcp_server_raw.c</FilePath>
             </File>
             <File>
-              <FileName>altcp_tls_mbedtls.c</FileName>
+              <FileName>http_client.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../Appli/LWIP/App/altcp_tls_mbedtls.c</FilePath>
+              <FilePath>../../Appli/LWIP/App/http_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>altls_mbedtls.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../Appli/LWIP/App/altls_mbedtls.c</FilePath>
             </File>
             <File>
               <FileName>sntp.c</FileName>

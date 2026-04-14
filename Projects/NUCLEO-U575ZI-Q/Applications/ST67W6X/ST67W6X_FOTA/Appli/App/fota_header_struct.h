@@ -1,13 +1,13 @@
 /**
   ******************************************************************************
   * @file    fota_header_struct.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   FOTA header structure definition
   * @note    Auto generated file, DO NOT MODIFY
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -30,7 +30,6 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 #define MAGIC_NUMBER                    "ST67W611"
-#define FOTA_HEADER_SIZE                512
 #define FOTA_PROTOCOL_VERSION           "1.0.0"
 
 #define MAGIC_NUM                       "magic_num"
@@ -56,7 +55,6 @@ typedef struct
   uint8_t stm32_app_ver[16];
   uint8_t st67_ver[16];
   uint8_t file_hash[32];
-  uint8_t reserved[];
 } FotaHeader_t;
 
 #ifdef __cplusplus

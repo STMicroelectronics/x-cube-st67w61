@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    sha256.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file is part of mbed TLS and used for sha256 computation.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    lfs_flash.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Host flash interface
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -44,7 +44,7 @@
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 /** This value must be aligned with prebuild script argument */
-#define LITTLEFS_SECTION_SIZE 0x4000
+#define LITTLEFS_SECTION_SIZE 0x7000
 
 /* USER CODE END PD */
 

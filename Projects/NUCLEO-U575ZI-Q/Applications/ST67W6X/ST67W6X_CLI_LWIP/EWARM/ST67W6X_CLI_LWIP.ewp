@@ -1216,13 +1216,16 @@
                 <group>
                     <name>App</name>
                     <file>
-                        <name>$PROJ_DIR$\..\LWIP\App\altcp_tls_mbedtls.c</name>
+                        <name>$PROJ_DIR$\..\LWIP\App\altls_mbedtls.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\dhcp_server_raw.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\echo.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\http_client.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\lwip.c</name>

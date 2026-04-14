@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    app_st67w6x.c
-  * @author  GPM Application Team
-  * @brief   This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.
+  * @author  ST67 Application Team
+  * @brief   This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.3.0 instances.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -46,12 +46,12 @@ static void ST67W6X_Task(void *argument);
 /* Private defines -----------------------------------------------------------*/
 #ifndef ST67W6X_TASK_STACK_SIZE
 /** ST67W6X stack size */
-#define ST67W6X_TASK_STACK_SIZE        4096
+#define ST67W6X_TASK_STACK_SIZE        4096U
 #endif /* ST67W6X_TASK_STACK_SIZE */
 
 #ifndef ST67W6X_TASK_PRIO
 /** ST67W6X priority */
-#define ST67W6X_TASK_PRIO              24
+#define ST67W6X_TASK_PRIO              24U
 #endif /* ST67W6X_TASK_PRIO */
 
 /* USER CODE BEGIN PD */
@@ -65,7 +65,7 @@ void MX_ST67W6X_Init(void)
   /* USER CODE END ST67W6X_Init_1 */
   (void)xTaskCreate(ST67W6X_Task,
                     "ST67W6XTask",
-                    ST67W6X_TASK_STACK_SIZE >> 2,
+                    ST67W6X_TASK_STACK_SIZE >> 2U,
                     NULL,
                     ST67W6X_TASK_PRIO,
                     NULL);

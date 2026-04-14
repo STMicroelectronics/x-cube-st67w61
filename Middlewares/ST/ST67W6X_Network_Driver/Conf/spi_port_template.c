@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    spi_port_template.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   SPI bus interface porting layer implementation
   ******************************************************************************
   * @attention
@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "spi_port_conf.h"
+#include "bsp_conf.h"
 #include "spi_port.h"
 #include "main.h"
 
@@ -62,6 +62,7 @@ extern SPI_HandleTypeDef NCP_SPI_HANDLE;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+/** SPI transaction complete callback */
 static spi_transaction_complete_t spi_port_transaction_complete_cb = NULL;
 
 /* USER CODE BEGIN PV */
@@ -83,7 +84,7 @@ void *spi_port_memcpy(void *dest, const void *src, unsigned int len)
   const uint8_t *s = (const uint8_t *)src;
 
   /* Copy bytes until the destination address is aligned to 4 bytes */
-  while (((uint32_t) d % 4 != 0) && len > 0)
+  while ((((uint32_t)d & 3U) != 0U) && (len > 0U))
   {
     *d++ = *s++;
     len--;
@@ -92,16 +93,16 @@ void *spi_port_memcpy(void *dest, const void *src, unsigned int len)
   /* Copy 4-byte blocks */
   uint32_t *d32 = (uint32_t *)d;
   const uint32_t *s32 = (const uint32_t *)s;
-  while (len >= 4)
+  while (len >= 4U)
   {
     *d32++ = *s32++;
-    len -= 4;
+    len -= 4U;
   }
 
   /* Copy remaining bytes */
   d = (uint8_t *)d32;
   s = (const uint8_t *)s32;
-  while (len > 0)
+  while (len > 0U)
   {
     *d++ = *s++;
     len--;
@@ -178,13 +179,15 @@ int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t tim
   }
   else
   {
-    status = HAL_SPI_Receive(&NCP_SPI_HANDLE, rx_buf, len, timeout);
+    assert_param(len <= SPI_DMA_XFER_SIZE_THRESHOLD);
+    uint8_t tx_dummy[SPI_DMA_XFER_SIZE_THRESHOLD] = {0};
+    status = HAL_SPI_TransmitReceive(&NCP_SPI_HANDLE, tx_dummy, rx_buf, len, timeout);
   }
   /* USER CODE BEGIN spi_port_transfer_2 */
 
   /* USER CODE END spi_port_transfer_2 */
 
-  return (status == HAL_OK ? 0 : -1);
+  return ((status == HAL_OK) ? 0 : -1);
   /* USER CODE BEGIN spi_port_transfer_End */
 
   /* USER CODE END spi_port_transfer_End */
@@ -207,17 +210,21 @@ int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len)
 #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_CleanDCache_by_Addr(tx_buf, len);
 #endif /* __DCACHE_PRESENT */
+    /* USER CODE BEGIN spi_port_transfer_dma_trx */
     status = HAL_SPI_TransmitReceive_DMA(&NCP_SPI_HANDLE, tx_buf, rx_buf, len);
+    /* USER CODE END spi_port_transfer_dma_trx */
   }
   else
   {
+    /* USER CODE BEGIN spi_port_transfer_dma_rx */
     status = HAL_SPI_Receive_DMA(&NCP_SPI_HANDLE, rx_buf, len);
+    /* USER CODE END spi_port_transfer_dma_rx */
   }
   /* USER CODE BEGIN spi_port_transfer_dma_2 */
 
   /* USER CODE END spi_port_transfer_dma_2 */
 
-  return (status == HAL_OK ? 0 : -1);
+  return ((status == HAL_OK) ? 0 : -1);
   /* USER CODE BEGIN spi_port_transfer_dma_End */
 
   /* USER CODE END spi_port_transfer_dma_End */
@@ -240,7 +247,7 @@ int32_t spi_port_set_cs(int32_t state)
   /* USER CODE BEGIN spi_port_set_cs_1 */
 
   /* USER CODE END spi_port_set_cs_1 */
-  if (state)
+  if (state == 1)
   {
     /* Activate Chip Select before starting transfer */
     HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
@@ -270,7 +277,10 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_TxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_TxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_TxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_TxCpltCallback_End */
@@ -281,7 +291,10 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_RxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_RxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_RxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_RxCpltCallback_End */
@@ -292,10 +305,27 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   /* USER CODE BEGIN HAL_SPI_TxRxCpltCallback_1 */
 
   /* USER CODE END HAL_SPI_TxRxCpltCallback_1 */
-  spi_port_transaction_complete_cb();
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    spi_port_transaction_complete_cb();
+  }
   /* USER CODE BEGIN HAL_SPI_TxRxCpltCallback_End */
 
   /* USER CODE END HAL_SPI_TxRxCpltCallback_End */
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+  /* USER CODE BEGIN HAL_SPI_ErrorCallback_1 */
+
+  /* USER CODE END HAL_SPI_ErrorCallback_1 */
+  if (hspi == &NCP_SPI_HANDLE)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN HAL_SPI_ErrorCallback_End */
+
+  /* USER CODE END HAL_SPI_ErrorCallback_End */
 }
 
 /* USER CODE BEGIN WFR */

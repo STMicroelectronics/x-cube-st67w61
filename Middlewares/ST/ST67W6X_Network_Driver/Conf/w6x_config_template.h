@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    w6x_config_template.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W6X configuration module
   ******************************************************************************
   * @attention
@@ -49,7 +49,7 @@ extern "C" {
 #define W6X_POWER_SAVE_AUTO                     1
 
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
-#define W6X_CLOCK_MODE                          1
+#define W6X_CLOCK_MODE                          1U
 
 /** Enable/Disable NULL pointer check in the API functions.
   * 0: Disabled, 1: Enabled */
@@ -97,7 +97,7 @@ extern "C" {
   */
 
 /** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_NET_DHCP                            1
+#define W6X_NET_DHCP                            1U
 
 /** String defining Soft-AP subnet to use.
   *  Last digit of IP address automatically set to 1 */
@@ -107,16 +107,16 @@ extern "C" {
 #define W6X_NET_HOSTNAME                        "ST67W61_WiFi"
 
 /** Timeout in ticks when calling W6X_Net_Recv() */
-#define W6X_NET_RECV_TIMEOUT                    5000
+#define W6X_NET_RECV_TIMEOUT                    5000U
 
 /** Timeout in ticks when calling W6X_Net_Send() */
-#define W6X_NET_SEND_TIMEOUT                    5000
+#define W6X_NET_SEND_TIMEOUT                    5000U
 
 /** Default Net socket receive buffer size
   * @note In the NCP, the LWIP recv function is used with a static buffer with
   * a fixed length of 4608 (3 * 1536). The data is read in chunks of 4608 bytes
   * So in order to get optimal performances, the buffer on NCP side should be twice as big */
-#define W6X_NET_RECV_BUFFER_SIZE                (2 * 3 * 1536)
+#define W6X_NET_RECV_BUFFER_SIZE                9216U
 
 /** ============================
   * HTTP
@@ -126,13 +126,13 @@ extern "C" {
   * ============================
   */
 /** HTTP Client thread stack size */
-#define W6X_HTTP_CLIENT_THREAD_STACK_SIZE       1536
+#define W6X_HTTP_CLIENT_THREAD_STACK_SIZE       1536U
 
 /** HTTP Client thread priority */
 #define W6X_HTTP_CLIENT_THREAD_PRIO             30
 
 /** HTTP data receive buffer size */
-#define W6X_HTTP_CLIENT_DATA_RECV_SIZE          2048U
+#define W6X_HTTP_CLIENT_DATA_RECV_SIZE          1024U
 
 /** Timeout value in millisecond for receiving data via TCP socket used by the HTTP client.
   * This value is set to compensate for when the NCP get stuck for a long time (1 second or more)
@@ -143,6 +143,19 @@ extern "C" {
   * 0x2000 is the value used in the SPI host project for Firmware updates,
   * which retrieves around 1 mega bytes of data. */
 #define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         0x3000
+
+/** ============================
+  * Netif
+  *
+  * All available configuration defines in
+  * Middlewares\ST\ST67W6X_Network_Driver\Core\w6x_default_config.h
+  * ============================
+  */
+/** RX queue depth (number of pending frames) for Network STA traffic */
+#define W6X_NETIF_STA_RXQ_DEPTH                16
+
+/** RX queue depth (number of pending frames) for Network AP traffic */
+#define W6X_NETIF_AP_RXQ_DEPTH                 8
 
 /** ============================
   * Utility Performance network wrapper functions
@@ -211,13 +224,13 @@ extern "C" {
 #define IPERF_DUAL_MODE                         0
 
 /** Iperf traffic task priority */
-#define IPERF_TRAFFIC_TASK_PRIORITY             40
+#define IPERF_TRAFFIC_TASK_PRIORITY             40U
 
 /** Iperf traffic task stack size */
-#define IPERF_TRAFFIC_TASK_STACK                1024
+#define IPERF_TRAFFIC_TASK_STACK                2048U
 
 /** Iperf report task stack size */
-#define IPERF_REPORT_TASK_STACK                 1024
+#define IPERF_REPORT_TASK_STACK                 1024U
 
 /** Iperf memory allocator */
 #define IPERF_MALLOC                            pvPortMalloc
@@ -234,12 +247,14 @@ extern "C" {
   * @note: This feature requires to call the hook functions in the FreeRTOS.
   *        Add the following lines in the FreeRTOSConfig.h file:
   *
+  *        \code
   *        #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__)
   *        void mem_perf_malloc_hook(void *pvAddress, size_t uiSize);
   *        void mem_perf_free_hook(void *pvAddress, size_t uiSize);
   *        #endif
   *        #define traceMALLOC mem_perf_malloc_hook
   *        #define traceFREE mem_perf_free_hook
+  *        \endcode
   *
   * ============================
   */
@@ -261,12 +276,14 @@ extern "C" {
   * @note: This feature requires to call the hook functions in the FreeRTOS.
   *        Add the following lines in the FreeRTOSConfig.h file:
   *
+  *        \code
   *        #if defined(__ICCARM__) || defined(__ARMCC_VERSION) || defined(__GNUC__)
   *        void task_perf_in_hook(void);
   *        void task_perf_out_hook(void);
   *        #endif
   *        #define traceTASK_SWITCHED_IN task_perf_in_hook
   *        #define traceTASK_SWITCHED_OUT task_perf_out_hook
+  *        \endcode
   *
   * ============================
   */

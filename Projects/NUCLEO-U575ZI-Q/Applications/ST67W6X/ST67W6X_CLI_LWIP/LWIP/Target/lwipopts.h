@@ -2,13 +2,13 @@
 /**
   ******************************************************************************
   * @file    lwipopts.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file overrides LwIP stack default configuration
              done in opt.h file.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -20,8 +20,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion --------------------------------------*/
-#ifndef __LWIPOPTS_H
-#define __LWIPOPTS_H
+#ifndef LWIPOPTS_H
+#define LWIPOPTS_H
 
 /*-----------------------------------------------------------------------------*/
 /* Current version of LwIP supported by CubeMx: 2.2.0 -*/
@@ -35,7 +35,13 @@ extern "C" {
 
 /* USER CODE END Options */
 
+#define LWIP_STATS                    1
 #define LWIP_STATS_DISPLAY            1
+#define TCP_STATS                     0
+#define IP_STATS                      0
+#define MEM_STATS                     0
+#define MEMP_STATS                    0
+#define PBUF_STATS                    0
 #define LWIP_MULTICAST_PING           1
 #define LWIP_BROADCAST_PING           1
 
@@ -58,18 +64,13 @@ extern "C" {
 #define LWIP_LOOPBACK_MAX_PBUFS       0
 #define LWIP_DHCP_DOES_ACD_CHECK      0
 
-#define LWIP_ALTCP_TLS_MBEDTLS        1
-#define LWIP_ALTCP                    1
-#define LWIP_ALTCP_TLS                1
 #define LWIP_CHKSUM_ALGORITHM         3
 #define LWIP_TCPIP_CORE_LOCKING       1
 #define LWIP_TCPIP_CORE_LOCKING_INPUT 1
 
 #define PBUF_LINK_ENCAPSULATION_HLEN  388
 
-#define CONFIG_MAC_RXQ_DEPTH          12
-#define CONFIG_MAC_TXQ_DEPTH          32
-#define IP_REASS_MAX_PBUFS            (2 * CONFIG_MAC_RXQ_DEPTH - 2)
+#define IP_REASS_MAX_PBUFS            22
 
 #define MEMP_NUM_NETBUF               28
 #define MEMP_NUM_ALTCP_PCB            2
@@ -79,12 +80,9 @@ extern "C" {
 #define MEMP_NUM_NETCONN              (MEMP_NUM_TCP_PCB + MEMP_NUM_TCP_PCB_LISTEN)
 #define MEMP_NUM_REASSDATA            LWIP_MIN((IP_REASS_MAX_PBUFS), 5)
 
-#define MAC_TXQ_DEPTH                 CONFIG_MAC_TXQ_DEPTH
-#define MAC_RXQ_DEPTH                 CONFIG_MAC_RXQ_DEPTH
-
 #define TCP_MSS                       (1500 - 40)
-#define TCP_WND                       ((2 * MAC_RXQ_DEPTH) * TCP_MSS)
-#define TCP_SND_BUF                   (2 * MAC_TXQ_DEPTH * TCP_MSS)
+#define TCP_WND                       (22 * TCP_MSS)
+#define TCP_SND_BUF                   (16 * TCP_MSS)
 
 #define TCP_QUEUE_OOSEQ               1
 #define TCP_SND_QUEUELEN              ((2 * TCP_SND_BUF) / TCP_MSS)
@@ -94,9 +92,9 @@ extern "C" {
 #define LWIP_WND_SCALE                1
 #define TCP_RCV_SCALE                 2
 #define TCP_SNDLOWAT                  LWIP_MIN(LWIP_MAX(((TCP_SND_BUF) / 4), (2 * TCP_MSS) + 1), (TCP_SND_BUF)-1)
+#define FACTOR                        64
 
-#define MEM_MIN_TCP                   (2300 + MEMP_NUM_PBUF * (100 + PBUF_LINK_ENCAPSULATION_HLEN))
-#define MEM_MIN                       MEM_MIN_TCP
+#define MEM_MIN                       (2300 + FACTOR * (100 + PBUF_LINK_ENCAPSULATION_HLEN))
 #define MEM_ALIGNMENT                 4
 
 #define MEMP_NUM_SYS_TIMEOUT          (LWIP_NUM_SYS_TIMEOUT_INTERNAL + 8 + 3)
@@ -104,7 +102,7 @@ extern "C" {
 #ifdef LWIP_HEAP_SIZE
 #define MEM_SIZE                      LWIP_HEAP_SIZE
 #else
-#if MEM_MIN > 8192
+#if (MEM_MIN > 8192)
 #define MEM_SIZE                      (MEM_MIN)
 #else
 #define MEM_SIZE                      8192
@@ -134,7 +132,9 @@ extern "C" {
   * By default enable debug printing for debug build, but set level to off
   * This allows user to change any desired debug level to on.
  */
-/* #define LWIP_DEBUG */
+#if (0)
+#define LWIP_DEBUG
+#endif /* 0 */
 
 #ifdef LWIP_DEBUG
 
@@ -212,4 +212,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /*__LWIPOPTS_H */
+#endif /* LWIPOPTS_H */

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    main_app.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header for main_app.c
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -19,8 +19,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_APP_H
-#define __MAIN_APP_H
+#ifndef MAIN_APP_H
+#define MAIN_APP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
-#include <stdbool.h>
 
 /* USER CODE BEGIN Includes */
 
@@ -41,7 +40,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 #define HOST_APP_VERSION_MAIN   1   /*!< [31:24] main version */
-#define HOST_APP_VERSION_SUB1   2   /*!< [23:16] sub1 version */
+#define HOST_APP_VERSION_SUB1   3   /*!< [23:16] sub1 version */
 #define HOST_APP_VERSION_SUB2   0   /*!< [15:8]  sub2 version */
 
 #define HOST_APP_MAIN_SHIFT     24  /*!< main version shift */
@@ -77,13 +76,13 @@ void main_app(void);
   * @brief  Send BLE notification for Wi-Fi scan characteristic
   * @param  conn_handle: Connection handle
   */
-void BLE_Send_Wifi_Scan_Report_Notification(uint8_t conn_handle);
+void APP_ble_send_wifi_scan_report_notification(uint8_t conn_handle);
 
 /**
   * @brief  Send BLE notification for Wi-Fi monitoring characteristic
   * @param  conn_handle: Connection handle
   */
-void BLE_Send_Wifi_Monitoring_Notification(uint8_t conn_handle);
+void APP_ble_send_wifi_monitoring_notification(uint8_t conn_handle);
 
 /* USER CODE BEGIN EF */
 
@@ -93,4 +92,4 @@ void BLE_Send_Wifi_Monitoring_Notification(uint8_t conn_handle);
 }
 #endif /* __cplusplus */
 
-#endif /* __MAIN_APP_H */
+#endif /* MAIN_APP_H */

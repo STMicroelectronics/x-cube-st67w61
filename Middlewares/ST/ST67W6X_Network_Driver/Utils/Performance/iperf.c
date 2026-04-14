@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    iperf.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Iperf implementation
   ******************************************************************************
   * @attention
@@ -45,7 +45,7 @@
 #else
 #if (IPERF_V6 == 1) && (W6X_NET_IPV6_ENABLE == 0)
 #error "IPv6 support must be enabled for IPERF_V6"
-#endif /* IPERF_V6 && W6X_NET_IPV6 */
+#endif /* IPERF_V6 && W6X_NET_IPV6_ENABLE */
 #endif /* ST67_ARCH */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,7 +59,7 @@
 typedef struct
 {
   iperf_cfg_t cfg;        /*!< Iperf configuration */
-  bool finish;            /*!< Iperf execution done status */
+  volatile bool finish;   /*!< Iperf execution done status */
   uint64_t actual_len;    /*!< Actual length of data */
   uint64_t tot_len;       /*!< Total length of data */
   uint32_t buffer_len;    /*!< Buffer length */
@@ -122,13 +122,13 @@ typedef struct
   int32_t cntOutofOrder;  /*!< Out of order count */
   int32_t cntDatagrams;   /*!< Number of datagrams */
   uint64_t TotalLen;      /*!< Total length */
-  int32_t jitter;          /*!< Jitter */
-  int32_t startTime;       /*!< Start time */
-  int32_t endTime;         /*!< End time */
-  char   mFormat;         /*!< Format */
+  int32_t jitter;         /*!< Jitter */
+  int32_t startTime;      /*!< Start time */
+  int32_t endTime;        /*!< End time */
+  char mFormat;           /*!< Format */
   unsigned char mTTL;     /*!< Time to live */
-  char   mUDP;            /*!< UDP */
-  char   free;            /*!< Free */
+  char mUDP;              /*!< UDP */
+  char reserved;          /*!< Free */
 } Transfer_Info_t;
 
 /**
@@ -163,18 +163,18 @@ typedef struct
 
 #define PERCENT_MULTIPLIER    100         /*!< Percentage multiplier for summary */
 
-#define HEADER_VERSION1       0x80000000  /*!< Header version 1 mask */
+#define HEADER_VERSION1       0x80000000U /*!< Header version 1 mask */
 
-#define RUN_NOW               0x00000001  /*!< Run now mask */
+#define RUN_NOW               0x00000001U /*!< Run now mask */
 
 /** UDP packet size refers to the UDP payload size.
   * By default iperf2 has a UDP payload size of 1470 bytes in IPv4 and 1450 bytes in IPv6 for the client
   * Because of the current iperf implementation, UDPv6 packet should be 1450 */
-#define UDP_PACKET_SIZE       1470        /*!< UDP default packet size */
+#define UDP_PACKET_SIZE       1470U       /*!< UDP default packet size */
 
-#define UDPV6_PACKET_SIZE     1450        /*!< UDP default IPv6 packet size */
+#define UDPV6_PACKET_SIZE     1450U       /*!< UDP default IPv6 packet size */
 
-#define MIN_BUF_SIZE          512         /*!< Minimum buffer size */
+#define MIN_BUF_SIZE          512U        /*!< Minimum buffer size */
 
 #define JITTER_RX             0           /*!< Enable jitter calculation */
 
@@ -322,7 +322,7 @@ int32_t iperf_start(iperf_cfg_t *cfg)
 #if (IPERF_ENABLE == 1)
 
   /* Start the iperf test with the provided configuration */
-  if (!cfg)
+  if (cfg == NULL)
   {
     /* Configuration pointer is null, cannot start */
     return IPERF_FAIL;
@@ -336,28 +336,28 @@ int32_t iperf_start(iperf_cfg_t *cfg)
   }
 
   /* Initialize control structure and copy configuration */
-  memset(&s_iperf_ctrl, 0, sizeof(s_iperf_ctrl));
-  memcpy(&s_iperf_ctrl.cfg, cfg, sizeof(*cfg));
+  (void)memset(&s_iperf_ctrl, 0, sizeof(s_iperf_ctrl));
+  (void)memcpy(&s_iperf_ctrl.cfg, cfg, sizeof(*cfg));
 
   s_iperf_is_running = true;
   s_iperf_ctrl.finish = false;
   /* Mark iperf as running and not finished */
 
   /* Calculate the buffer length depending on the configuration */
-  if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP))
+  if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP) != 0U))
   {
     /* UDP client: use default or configured buffer length for TX */
-    s_iperf_ctrl.buffer_len = (s_iperf_ctrl.cfg.len_buf == 0 ? IPERF_UDP_TX_LEN : s_iperf_ctrl.cfg.len_buf);
+    s_iperf_ctrl.buffer_len = ((s_iperf_ctrl.cfg.len_buf == 0U) ? IPERF_UDP_TX_LEN : s_iperf_ctrl.cfg.len_buf);
   }
-  else if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP)))
+  else if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP) != 0U))
   {
     /* UDP server: use default or configured buffer length for RX */
-    s_iperf_ctrl.buffer_len = (s_iperf_ctrl.cfg.len_buf == 0 ? IPERF_UDP_RX_LEN : s_iperf_ctrl.cfg.len_buf);
+    s_iperf_ctrl.buffer_len = ((s_iperf_ctrl.cfg.len_buf == 0U) ? IPERF_UDP_RX_LEN : s_iperf_ctrl.cfg.len_buf);
   }
-  else if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP))
+  else if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP) != 0U))
   {
     /* TCP client: use default or configured buffer length for TX, with max check */
-    if ((s_iperf_ctrl.cfg.len_buf == 0) || (s_iperf_ctrl.cfg.len_buf > IPERF_TCP_TX_LEN))
+    if ((s_iperf_ctrl.cfg.len_buf == 0U) || (s_iperf_ctrl.cfg.len_buf > IPERF_TCP_TX_LEN))
     {
       s_iperf_ctrl.buffer_len = IPERF_TCP_TX_LEN;
     }
@@ -369,7 +369,7 @@ int32_t iperf_start(iperf_cfg_t *cfg)
   else
   {
     /* TCP server: use default or configured buffer length for RX, with max check */
-    if ((s_iperf_ctrl.cfg.len_buf == 0) || (s_iperf_ctrl.cfg.len_buf > IPERF_TCP_RX_LEN))
+    if ((s_iperf_ctrl.cfg.len_buf == 0U) || (s_iperf_ctrl.cfg.len_buf > IPERF_TCP_RX_LEN))
     {
       s_iperf_ctrl.buffer_len = IPERF_TCP_RX_LEN;
     }
@@ -382,7 +382,7 @@ int32_t iperf_start(iperf_cfg_t *cfg)
   /* Allocate the buffer for data transmission/reception */
   uint32_t mem_size = MAX(s_iperf_ctrl.buffer_len, MIN_BUF_SIZE);
   s_iperf_ctrl.buffer = (uint8_t *)IPERF_MALLOC(mem_size);
-  if (!s_iperf_ctrl.buffer)
+  if (s_iperf_ctrl.buffer == NULL)
   {
     /* Memory allocation failed */
     LogError("[iperf] create buffer: not enough memory\n");
@@ -390,10 +390,10 @@ int32_t iperf_start(iperf_cfg_t *cfg)
   }
 
   /* Clear the buffer before use */
-  memset(s_iperf_ctrl.buffer, 0, s_iperf_ctrl.buffer_len);
+  (void)memset(s_iperf_ctrl.buffer, 0, s_iperf_ctrl.buffer_len);
 
   /* Create the iperf traffic task (FreeRTOS) */
-  if (pdPASS != xTaskCreate(iperf_task_traffic, IPERF_TRAFFIC_TASK_NAME, IPERF_TRAFFIC_TASK_STACK >> 2,
+  if (pdPASS != xTaskCreate(iperf_task_traffic, IPERF_TRAFFIC_TASK_NAME, IPERF_TRAFFIC_TASK_STACK >> 2U,
                             NULL, s_iperf_ctrl.cfg.traffic_task_priority, NULL))
   {
     /* Task creation failed, clean up and return error */
@@ -433,7 +433,7 @@ int32_t iperf_stop(void)
 static void iperf_timer_get_time(iperf_time_struct_t *pT)
 {
   uint32_t system_tick;
-  system_tick = xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
+  system_tick = xTaskGetTickCount();
 
   pT->sec = system_tick / configTICK_RATE_HZ;
   pT->usec = (system_tick % configTICK_RATE_HZ) * 1000;
@@ -452,82 +452,89 @@ static int32_t iperf_show_socket_error_reason(const char *str, int32_t sockfd)
 
 static void iperf_report_task(void *arg)
 {
-  uint32_t time = s_iperf_ctrl.cfg.time;
+  uint32_t duration = s_iperf_ctrl.cfg.duration;
   uint32_t interval_sec = s_iperf_ctrl.cfg.interval;
   uint32_t start_time = 0;
   uint32_t elapsed_time = 0;
-  volatile int32_t average = 0;
-  int32_t actual_bandwidth = 0;
-  volatile int32_t actual_transfer = 0;
+  volatile uint32_t actual_average = 0;
+  volatile uint32_t actual_bandwidth = 0;
+  volatile uint32_t actual_transfer = 0;
 
-  vTaskDelay(1000);
+  vTaskDelay(pdMS_TO_TICKS(1000));
   LogInfo("[ ID] Interval       Transfer        Bandwidth\n");
 
   /* Report the bandwidth every interval seconds */
-  uint32_t count = 0;
+  uint32_t count = 0U;
   while (!s_iperf_ctrl.finish)
   {
-    if ((count % 10) == 0)
+    if ((count % 10U) == 0U)
     {
       elapsed_time ++;
-      count = 0;
-      if ((!s_iperf_ctrl.finish) && (interval_sec != 0) && (elapsed_time % interval_sec == 0))
+      count = 0U;
+      if ((!s_iperf_ctrl.finish) && (interval_sec != 0U) && ((elapsed_time % interval_sec) == 0U))
       {
         /* The following values used for display are by 10 or 100 depending on the desired precision
            so that the decimal part can be displayed without using float */
         /* Calculate the actual bytes transferred */
-        actual_transfer = (s_iperf_ctrl.actual_len * 100) / (1024 * 1024);
+        actual_transfer = (uint32_t)((s_iperf_ctrl.actual_len * 100U) / (1024U * 1024U));
         /* Calculate the actual bandwidth
            Formula is: (Bytes * 8 * 10 / (1000 * 1000)) / interval duration */
-        actual_bandwidth = (s_iperf_ctrl.actual_len * 8 / 100000) / interval_sec;
-        /* Calculate the average bandwidth from the start */
-        average = ((average * (elapsed_time - 1) / elapsed_time) + (actual_bandwidth / elapsed_time));
+        actual_bandwidth = (uint32_t)((s_iperf_ctrl.actual_len * 8U / 100000U) / interval_sec);
 
-        LogInfo("[%3" PRIu32 "] %" PRIu32 ".0-%" PRIu32 ".0 sec  %2" PRIu32 ".%02" PRIu32 " MBytes    %2"
+        /* Calculate the average bandwidth from the start */
+        uint32_t bandwidth = actual_bandwidth;
+        actual_average = (uint32_t)(((actual_average * (elapsed_time - 1U) / elapsed_time) +
+                                     (bandwidth / elapsed_time)));
+
+        uint32_t transfer = actual_transfer;
+        LogInfo("[%3" PRIi32 "] %" PRIu32 ".0-%" PRIu32 ".0 sec  %2" PRIu32 ".%02" PRIu32 " MBytes    %2"
                 PRIu32 ".%" PRIu32 " Mbits/sec\n",
                 s_iperf_ctrl.sockfd, start_time, start_time + interval_sec,
-                (int32_t)actual_transfer / 100, actual_transfer % 100,
-                (int32_t)actual_bandwidth / 10, actual_bandwidth % 10);
+                (transfer / 100U), (transfer % 100U),
+                (bandwidth / 10U), (bandwidth % 10U));
         start_time += interval_sec; /* Update the start time for the next interval */
-        s_iperf_ctrl.actual_len = 0; /* Reset the actual length for the next interval */
+        s_iperf_ctrl.actual_len = 0U; /* Reset the actual length for the next interval */
       }
-      if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (elapsed_time >= time)) /* Check if the time is over */
+      /* Check if the time is over */
+      if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U) && (elapsed_time >= duration))
       {
         s_iperf_ctrl.finish = true;
         break;
       }
     }
-    vTaskDelay(100);
+    vTaskDelay(pdMS_TO_TICKS(100));
     count++;
   }
 
-  if (((count > 0) || (elapsed_time > 0)) &&
-      (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (elapsed_time >= time)) ||
-       ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP))))
+  if (((count > 0U) || (elapsed_time > 0U)) &&
+      ((((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U) && (elapsed_time >= duration)) ||
+       (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP) != 0U))))
   {
     /* The following values used for display are by 10 or 100 depending on the desired precision
        so that the decimal part can be displayed without using float */
     /* Convert the total bytes transferred to MBytes */
-    actual_transfer = (s_iperf_ctrl.tot_len * 100) / (1024 * 1024);
+    actual_transfer = (uint32_t)((s_iperf_ctrl.tot_len * 100U) / (1024U * 1024U));
 
     /* Calculate the average bandwidth from the start
        Formula is: (Total bytes * 8 * 10) / (1000 * 1000) / ((10 * seconds + count) / 10) */
-    average = ((s_iperf_ctrl.tot_len * 8 / 10000)) / (10 * elapsed_time + count);
+    actual_average = (uint32_t)((((s_iperf_ctrl.tot_len * 8U) / 10000U)) / ((10U * elapsed_time) + count));
 
-    LogInfo("[%3" PRIu32 "]  0.0-%" PRIu32 ".%" PRIu32 " sec  %2" PRIu32 ".%02" PRIu32
+    uint32_t average = actual_average;
+    uint32_t transfer = actual_transfer;
+    LogInfo("[%3" PRIi32 "]  0.0-%" PRIu32 ".%" PRIu32 " sec  %2" PRIu32 ".%02" PRIu32
             " MBytes    %2" PRIu32 ".%" PRIu32 " Mbits/sec\n",
-            s_iperf_ctrl.sockfd, elapsed_time + count / 10, count % 10,
-            (int32_t)actual_transfer / 100, actual_transfer % 100,
-            (int32_t)(average / 10), average % 10);
+            s_iperf_ctrl.sockfd, elapsed_time + (count / 10U), count % 10U,
+            (transfer / 100U), (transfer % 100U),
+            (average / 10U), (average % 10U));
   }
 
-  ulTaskNotifyTake(pdTRUE, 500);
+  (void)ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(500));
   vTaskDelete(NULL);
 }
 
 static iperf_err_t iperf_start_report(void)
 {
-  if (pdPASS != xTaskCreate(iperf_report_task, IPERF_REPORT_TASK_NAME, IPERF_REPORT_TASK_STACK >> 2,
+  if (pdPASS != xTaskCreate(iperf_report_task, IPERF_REPORT_TASK_NAME, IPERF_REPORT_TASK_STACK >> 2U,
                             NULL, s_iperf_ctrl.cfg.traffic_task_priority, &report_task_handle))
   {
     LogError("[iperf] create task %s failed\n", IPERF_REPORT_TASK_NAME);
@@ -545,12 +552,15 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
   int32_t want_recv = 0;
   int32_t actual_recv = 0;
   int32_t datagramID;
+#if (ST67_ARCH == W6X_ARCH_T01)
 #if (IPERF_V6 == 1)
   uint32_t udp_payload_size = (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV6) ? \
                               UDPV6_PACKET_SIZE : UDP_PACKET_SIZE;
 #else
   uint32_t udp_payload_size = UDP_PACKET_SIZE;
 #endif /* IPERF_V6 & LWIP_IPV6 */
+#endif /* ST67_ARCH */
+
   iperf_time_struct_t lastPacketTime;
   iperf_time_struct_t firstPacketTime;
 #if JITTER_RX
@@ -571,15 +581,21 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
   s_iperf_ctrl.sockfd = recv_socket;
   want_recv = s_iperf_ctrl.buffer_len;
 
-  memset(&stats, 0, sizeof(Transfer_Info_t));
+  (void)memset(&stats, 0, sizeof(Transfer_Info_t));
 
+#if (ST67_ARCH == W6X_ARCH_T01)
   uint32_t leftover_data = 0;
+#endif /* ST67_ARCH */
   while (!s_iperf_ctrl.finish) /* Start the iperf traffic task in server mode */
   {
     /* Receive data */
     if (type == IPERF_TRANS_TYPE_UDP)
     {
+#if (ST67_ARCH == W6X_ARCH_T01)
       actual_recv = NET_RECVFROM(recv_socket, s_iperf_ctrl.buffer + leftover_data, want_recv - leftover_data, 0,
+#else
+      actual_recv = NET_RECVFROM(recv_socket, s_iperf_ctrl.buffer, want_recv, 0,
+#endif /* ST67_ARCH */
                                  (struct sockaddr *)&listen_addr, &socklen);
     }
     else
@@ -591,35 +607,35 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
     {
       if (!s_iperf_ctrl.finish)
       {
-        iperf_show_socket_error_reason(error_log, recv_socket);
+        (void)iperf_show_socket_error_reason(error_log, recv_socket);
         s_iperf_ctrl.finish = true; /* Stop the iperf traffic task */
         break;
       }
     }
-    else if (!iperf_recv_running && (actual_recv == 0) && (timeout_count > 0)) /* Wait for the first packet */
+    else if (!iperf_recv_running && (actual_recv == 0) && (timeout_count > 0U)) /* Wait for the first packet */
     {
       timeout_count--;
-      if (timeout_count == 0) /* No data received after 10s (2*5s of RecvTimeout). */
+      if (timeout_count == 0U) /* No data received after 10s (2*5s of RecvTimeout). */
       {
         s_iperf_ctrl.finish = true; /* Stop the iperf traffic task */
         break;
       }
     }
-    else if (s_iperf_ctrl.finish)
+    else
     {
-      break;
+      /* Normal data received */
     }
 
     if (s_iperf_ctrl.finish)
     {
       break;
     }
-    else if (actual_recv > 0) /* Data received */
+    if (actual_recv > 0) /* Data received */
     {
       if (!iperf_recv_running) /* Start the iperf report task on first packet received */
       {
         iperf_timer_get_time(&firstPacketTime);
-        iperf_start_report();
+        (void)iperf_start_report();
         iperf_recv_running = true;
       }
 
@@ -628,15 +644,20 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
       s_iperf_ctrl.tot_len += actual_recv;
 
       /* Check if the total length is reached */
-      if ((s_iperf_ctrl.cfg.num_bytes > 0) && (s_iperf_ctrl.tot_len > s_iperf_ctrl.cfg.num_bytes))
+      if ((s_iperf_ctrl.cfg.num_bytes > 0U) && (s_iperf_ctrl.tot_len > s_iperf_ctrl.cfg.num_bytes))
       {
         break;
       }
 
       if (type == IPERF_TRANS_TYPE_UDP)
       {
+#if (ST67_ARCH == W6X_ARCH_T01)
         uint32_t datagrams_counter = 0;
         while (actual_recv + leftover_data >= udp_payload_size * (datagrams_counter + 1))
+#else
+        /* Single-datagram path: treat each recv as at most one datagram. */
+        if (actual_recv >= (int32_t)sizeof(UDP_datagram_t))
+#endif /* ST67_ARCH */
         {
           if (s_iperf_ctrl.buffer == NULL)
           {
@@ -646,7 +667,11 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
           stats.cntDatagrams++;
 
           /* Get the datagram ID from the received packet */
+#if (ST67_ARCH == W6X_ARCH_T01)
           datagramID = PP_HTONL(((UDP_datagram_t *)(s_iperf_ctrl.buffer + (udp_payload_size * datagrams_counter)))->id);
+#else
+          datagramID = PP_HTONL(((UDP_datagram_t *)s_iperf_ctrl.buffer)->id);
+#endif /* ST67_ARCH */
 
           if (datagramID >= 0) /* If the datagram ID is negative, it means the end of the test */
           {
@@ -678,9 +703,9 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
 #endif /* JITTER_RX */
 
             /* Packet loss occurred if the datagram numbers aren't sequential */
-            if (datagramID != lastPacketID + 1)
+            if (datagramID != (lastPacketID + 1))
             {
-              if (datagramID < lastPacketID + 1)
+              if (datagramID < (lastPacketID + 1))
               {
                 stats.cntOutofOrder++;
               }
@@ -760,8 +785,9 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
 #endif /* JITTER_RX */
             }
             /* Send the report packet */
-            NET_SENDTO(recv_socket, s_iperf_ctrl.buffer, want_recv, 0, (struct sockaddr *)&listen_addr, socklen);
+            (void)NET_SENDTO(recv_socket, s_iperf_ctrl.buffer, want_recv, 0, (struct sockaddr *)&listen_addr, socklen);
 
+#if (ST67_ARCH == W6X_ARCH_T01)
             /* Limits to to 1 sec */
 
             int32_t to = LAST_SOCKET_TIMEOUT;
@@ -772,7 +798,16 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
             /* Wait for the last packet to flush remaining data */
             (void)NET_RECVFROM(recv_socket, s_iperf_ctrl.buffer, want_recv, 0,
                                (struct sockaddr *)&listen_addr, &socklen);
+#else
+            /* Test finished: exit immediately without extra blocking recv */
+            break;
+#endif /* ST67_ARCH */
           }
+          else
+          {
+            /* Invalid datagram ID, ignore the packet */
+          }
+#if (ST67_ARCH == W6X_ARCH_T01)
           datagrams_counter++;
         }
         if (s_iperf_ctrl.buffer == NULL)
@@ -785,14 +820,15 @@ static void socket_recv(int32_t recv_socket, struct sockaddr_storage listen_addr
         for (uint32_t i = 0; i < leftover_data; i++)
         {
           s_iperf_ctrl.buffer[i] = s_iperf_ctrl.buffer[data_start + i];
+#endif /* ST67_ARCH */
         }
       }
     }
   }
 
-  if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP))
+  if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP) != 0U))
   {
-    vTaskDelay(1000); /* Wait for the last report trace to be printed */
+    vTaskDelay(pdMS_TO_TICKS(1000)); /* Wait for the last report trace to be printed */
   }
 
   s_iperf_ctrl.finish = true;
@@ -808,7 +844,7 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
   int32_t delay_us = 0;
   int64_t adjust = 0;
   iperf_time_struct_t lastPacketTime;
-  iperf_time_struct_t time = {0};
+  iperf_time_struct_t current_time = {0};
 #if (IPERF_V6 == 1)
   uint32_t udp_payload_size = (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV6) ? \
                               UDPV6_PACKET_SIZE : UDP_PACKET_SIZE;
@@ -826,7 +862,7 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
   s_iperf_ctrl.sockfd = send_socket;
   hdr = (UDP_datagram_t *)s_iperf_ctrl.buffer;
   want_send = s_iperf_ctrl.buffer_len;
-  iperf_start_report();
+  (void)iperf_start_report();
 
   if (bw_lim > 0)
   {
@@ -847,9 +883,10 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
   {
     if (delay_target > 0) /* Calculate the delay between each packet if the bandwidth limit is set */
     {
-      iperf_timer_get_time(&time);
-      adjust = delay_target + (int64_t)(lastPacketTime.sec - time.sec) * 1000000 + (lastPacketTime.usec - time.usec);
-      lastPacketTime = time;
+      iperf_timer_get_time(&current_time);
+      adjust = delay_target + ((int64_t)(lastPacketTime.sec - current_time.sec) * 1000000) +
+               lastPacketTime.usec - current_time.usec;
+      lastPacketTime = current_time;
       /* If the delay is positive,
          it means that the received packet is ahead of schedule and the loop needs to be delayed */
       if ((adjust > 0) || (delay_us > 0))
@@ -866,11 +903,11 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
     }
     /* Make sure the datagram header will fit within the remaining space */
     hdr = (UDP_datagram_t *)s_iperf_ctrl.buffer;
-    hdr->tv_sec = PP_HTONL(time.sec);
-    hdr->tv_usec = PP_HTONL(time.usec);
+    hdr->tv_sec = PP_HTONL(current_time.sec);
+    hdr->tv_usec = PP_HTONL(current_time.usec);
     while ((subpacket_count * udp_payload_size + sizeof(UDP_datagram_t)) < want_send)
     {
-      hdr = (UDP_datagram_t *)(s_iperf_ctrl.buffer + subpacket_count * udp_payload_size);
+      hdr = (UDP_datagram_t *)(s_iperf_ctrl.buffer + (subpacket_count * udp_payload_size));
       hdr->id = PP_HTONL(pkt_cnt); /* Datagrams need to be sequentially numbered */
       hdr->tv_sec = ((UDP_datagram_t *)(s_iperf_ctrl.buffer))->tv_sec;
       hdr->tv_usec = ((UDP_datagram_t *)(s_iperf_ctrl.buffer))->tv_usec;
@@ -887,7 +924,7 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
     uint32_t buffer_len = want_send;
     long currLen = 0;
 
-    while (buffer_len) /* Send data */
+    while (buffer_len > 0U) /* Send data */
     {
       if (type == IPERF_TRANS_TYPE_UDP)
       {
@@ -913,7 +950,7 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
     {
       if (type == IPERF_TRANS_TYPE_UDP)
       {
-        iperf_show_socket_error_reason(error_log, send_socket);
+        (void)iperf_show_socket_error_reason(error_log, send_socket);
 #if (ST67_ARCH == W6X_ARCH_T02)
         s_iperf_ctrl.finish = true; /* Stop the iperf traffic task */
         break;
@@ -921,8 +958,12 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
       }
       else if (type == IPERF_TRANS_TYPE_TCP)
       {
-        iperf_show_socket_error_reason(error_log, send_socket);
+        (void)iperf_show_socket_error_reason(error_log, send_socket);
         break;
+      }
+      else
+      {
+        /* Unknown type, should not happen */
       }
     }
 
@@ -930,7 +971,7 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
     s_iperf_ctrl.tot_len += want_send;
 
     /* Check if the total length is reached */
-    if (s_iperf_ctrl.cfg.num_bytes > 0 && s_iperf_ctrl.tot_len >= s_iperf_ctrl.cfg.num_bytes)
+    if ((s_iperf_ctrl.cfg.num_bytes > 0U) && (s_iperf_ctrl.tot_len >= s_iperf_ctrl.cfg.num_bytes))
     {
       break;
     }
@@ -956,8 +997,8 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
     }
     hdr = (UDP_datagram_t *)s_iperf_ctrl.buffer;
     hdr->id = (int32_t)PP_HTONL(-pkt_cnt);
-    hdr->tv_sec = PP_HTONL(time.sec);
-    hdr->tv_usec = PP_HTONL(time.usec);
+    hdr->tv_sec = PP_HTONL(current_time.sec);
+    hdr->tv_usec = PP_HTONL(current_time.usec);
 
     int32_t count = 0;
     int32_t rc;
@@ -977,12 +1018,20 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
       socklen_t rxsocklen = socklen;
       rc = NET_RECVFROM(send_socket, s_iperf_ctrl.buffer, want_send, 0,
                         (struct sockaddr *)&source_addr, &rxsocklen);
+      if (rc < 0)
+      {
+        break;
+      }
+
       if (rc > 0)
       {
         /* Check if the receive packet is the report packet */
         if (rc >= (int)(sizeof(UDP_datagram_t) + sizeof(iperf_server_hdr_t)))
         {
-          while (!s_iperf_ctrl.finish); /* Wait the end of report task */
+          while (!s_iperf_ctrl.finish) /* Wait the end of report task */
+          {
+            vTaskDelay(pdMS_TO_TICKS(100));
+          }
 
           /* Process and print the report packet */
           iperf_server_hdr_t *server_hdr = (iperf_server_hdr_t *)&s_iperf_ctrl.buffer[sizeof(UDP_datagram_t)];
@@ -1001,10 +1050,6 @@ static void socket_send(int32_t send_socket, struct sockaddr_storage dest_addr, 
                   (uint32_t)error_count, (uint32_t)datagram_count, percent_error);
         }
         return;
-      }
-      else if (rc < 0)
-      {
-        break;
       }
     }
   }
@@ -1042,7 +1087,7 @@ static iperf_err_t iperf_run_tcp_server(void)
 #if (ST67_ARCH == W6X_ARCH_T01)
     (void)NET_INET6_ATON("::", &listen_addr6.sin6_addr);
 #elif (ST67_ARCH == W6X_ARCH_T02)
-    inet6_aton("::", &listen_addr6.sin6_addr);
+    (void)inet6_aton("::", &listen_addr6.sin6_addr);
 #endif /* ST67_ARCH */
     listen_addr6.sin6_family = AF_INET6;
     listen_addr6.sin6_port = PP_HTONS(s_iperf_ctrl.cfg.sport);
@@ -1081,9 +1126,9 @@ static iperf_err_t iperf_run_tcp_server(void)
     timeout = IPERF_SOCKET_RX_TIMEOUT * 1000;
     (void)NET_SETSOCKOPT(listen_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
-    memcpy(&listen_addr, &listen_addr6, sizeof(listen_addr6));
+    (void)memcpy(&listen_addr, &listen_addr6, sizeof(listen_addr6));
   }
-  else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4)
+  else /* IPERF_IP_TYPE_IPV4 */
 #endif /* IPERF_V6 */
   {
     listen_addr4.sin_family = AF_INET;
@@ -1114,7 +1159,7 @@ static iperf_err_t iperf_run_tcp_server(void)
       LogError("[iperf] Error occurred during listen: errno %" PRIi32 "\n", (int32_t)errno);
       goto exit;
     }
-    memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
+    (void)memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
   }
 
   client_socket = NET_ACCEPT(listen_socket, (struct sockaddr *)&remote_addr, &addr_len);
@@ -1132,13 +1177,13 @@ static iperf_err_t iperf_run_tcp_server(void)
 exit:
   if (client_socket != -1)
   {
-    NET_CLOSE(client_socket);
+    (void)NET_CLOSE(client_socket);
   }
 
   if (listen_socket != -1)
   {
-    NET_SHUTDOWN(listen_socket, 1);
-    NET_CLOSE(listen_socket);
+    (void)NET_SHUTDOWN(listen_socket, 1);
+    (void)NET_CLOSE(listen_socket);
   }
   s_iperf_ctrl.finish = true;
   return ret;
@@ -1167,8 +1212,8 @@ static iperf_err_t iperf_run_tcp_client(void)
   if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP)
       && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_DUAL))
   {
-    xTaskCreate(iperf_tcp_dual_server_task, "dual_rx", IPERF_TRAFFIC_TASK_STACK >> 2,
-                NULL, s_iperf_ctrl.cfg.traffic_task_priority, NULL);
+    (void)xTaskCreate(iperf_tcp_dual_server_task, "dual_rx", IPERF_TRAFFIC_TASK_STACK >> 2U,
+                      NULL, s_iperf_ctrl.cfg.traffic_task_priority, NULL);
     vTaskDelay(pdMS_TO_TICKS(100));
   }
 #endif /* IPERF_DUAL_MODE */
@@ -1179,7 +1224,7 @@ static iperf_err_t iperf_run_tcp_client(void)
 
 #if (ST67_ARCH == W6X_ARCH_T02)
     int32_t opt = s_iperf_ctrl.cfg.tos;
-    struct netif *netif = netif_get_interface(NETIF_STA);
+    struct netif *netif_instance = netif_get_interface(NETIF_STA);
 #endif /* ST67_ARCH */
 
 #if (ST67_ARCH == W6X_ARCH_T01)
@@ -1194,7 +1239,7 @@ static iperf_err_t iperf_run_tcp_client(void)
       goto exit;
     }
 #if (ST67_ARCH == W6X_ARCH_T02)
-    ip6_addr_t const *src_ip6 = netif_ip6_addr(netif, 0);
+    ip6_addr_t const *src_ip6 = netif_ip6_addr(netif_instance, 0);
     if ((src_ip6 == NULL) || ip6_addr_isany(src_ip6))
     {
       LogError("No valid IPv6 address assigned to default interface\n");
@@ -1203,20 +1248,20 @@ static iperf_err_t iperf_run_tcp_client(void)
 
     struct sockaddr_in6 src_addr = {0};
     src_addr.sin6_family = AF_INET6;
-    memcpy(&src_addr.sin6_addr, src_ip6, sizeof(src_addr.sin6_addr));
+    (void)memcpy(&src_addr.sin6_addr, src_ip6, sizeof(src_addr.sin6_addr));
     src_addr.sin6_port = 0;
 
     if (NET_BIND(client_socket, (struct sockaddr *)&src_addr, sizeof(src_addr)) < 0)
     {
       LogError("Failed to bind socket to source address: %d\n", errno);
-      NET_CLOSE(client_socket);
+      (void)NET_CLOSE(client_socket);
       goto exit;
     }
 
     (void)NET_SETSOCKOPT(client_socket, IPPROTO_IP, IP_TOS, &opt, sizeof(opt));
 #endif  /* ST67_ARCH */
 
-    memcpy(&dest_addr6.sin6_addr, s_iperf_ctrl.cfg.destination_ip6, sizeof(dest_addr6.sin6_addr));
+    (void)memcpy(&dest_addr6.sin6_addr, s_iperf_ctrl.cfg.destination_ip6, sizeof(dest_addr6.sin6_addr));
     dest_addr6.sin6_family = AF_INET6;
     dest_addr6.sin6_port = PP_HTONS(s_iperf_ctrl.cfg.dport);
 
@@ -1227,9 +1272,9 @@ static iperf_err_t iperf_run_tcp_client(void)
       LogError("[iperf] Socket unable to connect: errno %" PRIi32 "\n", (int32_t)errno);
       goto exit;
     }
-    memcpy(&dest_addr, &dest_addr6, sizeof(dest_addr6));
+    (void)memcpy(&dest_addr, &dest_addr6, sizeof(dest_addr6));
   }
-  else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4)
+  else /* IPERF_IP_TYPE_IPV4 */
 #endif /* IPERF_V6 */
   {
     client_socket = NET_SOCKET(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -1251,15 +1296,15 @@ static iperf_err_t iperf_run_tcp_client(void)
       LogError("[iperf] Socket unable to connect: errno %" PRIi32 "\n", (int32_t)errno);
       goto exit;
     }
-    memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
+    (void)memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
   }
 
   socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_TCP, s_iperf_ctrl.cfg.bw_lim);
 exit:
   if (client_socket != -1)
   {
-    NET_SHUTDOWN(client_socket, 0);
-    NET_CLOSE(client_socket);
+    (void)NET_SHUTDOWN(client_socket, 0);
+    (void)NET_CLOSE(client_socket);
   }
   s_iperf_ctrl.finish = true;
   return ret;
@@ -1304,7 +1349,7 @@ static iperf_err_t iperf_run_udp_server(void)
 #if (ST67_ARCH == W6X_ARCH_T01)
     (void)NET_INET6_ATON("::", &listen_addr6.sin6_addr);
 #elif (ST67_ARCH == W6X_ARCH_T02)
-    inet6_aton("::", &listen_addr6.sin6_addr);
+    (void)inet6_aton("::", &listen_addr6.sin6_addr);
 #endif /* ST67_ARCH */
     listen_addr6.sin6_family = AF_INET6;
     listen_addr6.sin6_port = PP_HTONS(s_iperf_ctrl.cfg.sport);
@@ -1331,9 +1376,9 @@ static iperf_err_t iperf_run_udp_server(void)
       goto exit;
     }
 
-    memcpy(&listen_addr, &listen_addr6, sizeof(listen_addr6));
+    (void)memcpy(&listen_addr, &listen_addr6, sizeof(listen_addr6));
   }
-  else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4)
+  else /* IPERF_IP_TYPE_IPV4 */
 #endif /* IPERF_V6 */
   {
     listen_addr4.sin_family = AF_INET;
@@ -1361,19 +1406,19 @@ static iperf_err_t iperf_run_udp_server(void)
       LogError("[iperf] Socket unable to bind: errno %" PRIi32 "\n", (int32_t)errno);
       goto exit;
     }
-    memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
+    (void)memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
   }
 
 #if (ST67_ARCH == W6X_ARCH_T02)
-  (void)NET_SETSOCKOPT(listen_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+  (void)NET_SETSOCKOPT(listen_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 #endif /* ST67_ARCH */
 
   socket_recv(listen_socket, listen_addr, IPERF_TRANS_TYPE_UDP);
 exit:
   if (listen_socket != -1)
   {
-    NET_SHUTDOWN(listen_socket, 1);
-    NET_CLOSE(listen_socket);
+    (void)NET_SHUTDOWN(listen_socket, 1);
+    (void)NET_CLOSE(listen_socket);
   }
   s_iperf_ctrl.finish = true;
   return ret;
@@ -1402,7 +1447,7 @@ static iperf_err_t iperf_run_udp_client(void)
   {
 #if (ST67_ARCH == W6X_ARCH_T02)
     int32_t opt = 1;
-    struct netif *netif = netif_get_interface(NETIF_STA);
+    struct netif *netif_instance = netif_get_interface(NETIF_STA);
 #endif  /* ST67_ARCH */
     client_socket = NET_SOCKET(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
     if (client_socket < 0)
@@ -1413,7 +1458,7 @@ static iperf_err_t iperf_run_udp_client(void)
     }
 
 #if (ST67_ARCH == W6X_ARCH_T02)
-    ip6_addr_t const *src_ip6 = netif_ip6_addr(netif, 0);
+    ip6_addr_t const *src_ip6 = netif_ip6_addr(netif_instance, 0);
     if ((src_ip6 == NULL) || ip6_addr_isany(src_ip6))
     {
       LogError("No valid IPv6 address assigned to default interface\n");
@@ -1422,13 +1467,13 @@ static iperf_err_t iperf_run_udp_client(void)
 
     struct sockaddr_in6 src_addr = {0};
     src_addr.sin6_family = AF_INET6;
-    memcpy(&src_addr.sin6_addr, src_ip6, sizeof(src_addr.sin6_addr));
+    (void)memcpy(&src_addr.sin6_addr, src_ip6, sizeof(src_addr.sin6_addr));
     src_addr.sin6_port = 0;
 
     if (NET_BIND(client_socket, (struct sockaddr *)&src_addr, sizeof(src_addr)) < 0)
     {
       LogError("Failed to bind socket to source address: %d\n", errno);
-      NET_CLOSE(client_socket);
+      (void)NET_CLOSE(client_socket);
       goto exit;
     }
     (void)NET_SETSOCKOPT(client_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -1451,13 +1496,15 @@ static iperf_err_t iperf_run_udp_client(void)
     (void)NET_SETSOCKOPT(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 #endif /* ST67_ARCH */
 
-    /* NET_SETSOCKOPT(client_socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)); */
+#if 0
+    NET_SETSOCKOPT(client_socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
+#endif /* 0 */
 
-    memcpy(&dest_addr6.sin6_addr, s_iperf_ctrl.cfg.destination_ip6, sizeof(dest_addr6.sin6_addr));
+    (void)memcpy(&dest_addr6.sin6_addr, s_iperf_ctrl.cfg.destination_ip6, sizeof(dest_addr6.sin6_addr));
     dest_addr6.sin6_family = AF_INET6;
     dest_addr6.sin6_port = PP_HTONS(s_iperf_ctrl.cfg.dport);
 
-    memcpy(&dest_addr, &dest_addr6, sizeof(dest_addr6));
+    (void)memcpy(&dest_addr, &dest_addr6, sizeof(dest_addr6));
 
     if (dest_addr.ss_family == AF_INET6)
     {
@@ -1475,7 +1522,7 @@ static iperf_err_t iperf_run_udp_client(void)
       LogError("[iperf] Address is not of type AF_INET6.\n");
     }
   }
-  else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4)
+  else /* IPERF_IP_TYPE_IPV4 */
 #endif /* IPERF_V6 */
   {
     dest_addr4.sin_family = AF_INET;
@@ -1490,15 +1537,17 @@ static iperf_err_t iperf_run_udp_client(void)
       goto exit;
     }
 
-    memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
+    (void)memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
   }
 
   socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_UDP, s_iperf_ctrl.cfg.bw_lim);
 exit:
   if (client_socket != -1)
   {
-    /* NET_SHUTDOWN(client_socket, 0); */
-    NET_CLOSE(client_socket);
+#if 0
+    (void)NET_SHUTDOWN(client_socket, 0);
+#endif /* 0 */
+    (void)NET_CLOSE(client_socket);
   }
   s_iperf_ctrl.finish = true;
   return ret;
@@ -1515,20 +1564,24 @@ void iperf_task_traffic(void *arg)
   }
 
   LogInfo("------------------------------------------------------------\n");
-  if (s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP)
+  if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP) != 0U)
   {
     LogInfo("[UDP]");
   }
-  else if (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP)
+  else if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP) != 0U)
   {
     LogInfo("[TCP]");
   }
+  else
+  {
+    /* Unknown transport type */
+  }
 
-  if (s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER)
+  if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) != 0U)
   {
     LogInfo(" Server listening on port %" PRIu16 "\n", s_iperf_ctrl.cfg.sport);
   }
-  else if (s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT)
+  else if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U)
   {
     char ipaddr[INET6_ADDRSTRLEN] = {0};
     if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV4)
@@ -1539,33 +1592,41 @@ void iperf_task_traffic(void *arg)
     {
       (void)NET_INET_NTOP(AF_INET6, (void *) & (s_iperf_ctrl.cfg.destination_ip6), ipaddr, INET6_ADDRSTRLEN);
     }
+    else
+    {
+      /* Unknown IP type */
+    }
     LogInfo(" Client connecting to %s, port %" PRIu16 "\n", ipaddr, s_iperf_ctrl.cfg.dport);
-    if (s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP)
+    if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP) != 0U)
     {
       LogInfo("Sending %" PRIu16 " bytes datagrams\n",
-              s_iperf_ctrl.cfg.len_buf == 0 ? IPERF_UDP_TX_LEN : s_iperf_ctrl.cfg.len_buf);
+              (s_iperf_ctrl.cfg.len_buf == 0U) ? IPERF_UDP_TX_LEN : s_iperf_ctrl.cfg.len_buf);
     }
-  }
-  LogInfo("------------------------------------------------------------\n");
-
-  if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP))
-  {
-    iperf_run_udp_client();
-  }
-  else if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP))
-  {
-    iperf_run_udp_server();
-  }
-  else if ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP))
-  {
-    iperf_run_tcp_client();
   }
   else
   {
-    iperf_run_tcp_server();
+    /* Unknown mode */
+  }
+  LogInfo("------------------------------------------------------------\n");
+
+  if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP) != 0U))
+  {
+    (void)iperf_run_udp_client();
+  }
+  else if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_UDP) != 0U))
+  {
+    (void)iperf_run_udp_server();
+  }
+  else if (((s_iperf_ctrl.cfg.flag & IPERF_FLAG_CLIENT) != 0U) && ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP) != 0U))
+  {
+    (void)iperf_run_tcp_client();
+  }
+  else
+  {
+    (void)iperf_run_tcp_server();
   }
 
-  if (s_iperf_ctrl.buffer) /* Free the buffer at the end of the task */
+  if (s_iperf_ctrl.buffer != NULL) /* Free the buffer at the end of the task */
   {
     IPERF_FREE(s_iperf_ctrl.buffer);
     s_iperf_ctrl.buffer = NULL;
@@ -1577,9 +1638,9 @@ void iperf_task_traffic(void *arg)
 _err1:
   s_iperf_is_running = false;
   LogInfo("iperf exit\n");
-  if (report_task_handle)
+  if (report_task_handle != NULL)
   {
-    xTaskNotifyGive(report_task_handle);
+    (void)xTaskNotifyGive(report_task_handle);
     report_task_handle = NULL;
   }
 
@@ -1596,11 +1657,11 @@ static void socket_recv_dual(int32_t recv_socket, struct sockaddr_storage listen
 
   buffer = IPERF_MALLOC(RECV_DUAL_BUF_LEN);
   want_recv = RECV_DUAL_BUF_LEN;
-  if (!buffer)
+  if (buffer == NULL)
   {
     return;
   }
-  while (1)
+  while (true)
   {
     actual_recv = NET_RECVFROM(recv_socket, buffer, want_recv, 0, (struct sockaddr *)&listen_addr, &socklen);
     if (actual_recv <= 0)
@@ -1672,7 +1733,7 @@ static void iperf_tcp_dual_server_task(void *pvParameters)
       LogError("[iperf] Error occurred during listen: errno %" PRIi32 "\n", (int32_t)errno);
       goto exit;
     }
-    memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
+    (void)memcpy(&listen_addr, &listen_addr4, sizeof(listen_addr4));
   }
 
   client_socket = NET_ACCEPT(listen_socket, (struct sockaddr *)&remote_addr, &addr_len);

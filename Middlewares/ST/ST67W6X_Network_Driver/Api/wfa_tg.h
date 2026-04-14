@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    wfa_tg.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Definitions used in Traffic Generator Modules
   ******************************************************************************
   * @attention
@@ -186,7 +186,8 @@ int32_t wfa_tg_recv_stop(int32_t stream_id);
 int32_t wfa_tg_send_start(int32_t stream_id, tg_send_done_cb_t done_cb);
 
 /**
-  * @brief  Get statistics from the current session. Call this after wfa_tg_recv_stop or wfa_tg_send is finished
+  * @brief  Get statistics from the current session.
+  *         Call this after wfa_tg_recv_stop or after the send operation is finished
   * @param  stream_id: Stream ID
   * @return Statistics
   */

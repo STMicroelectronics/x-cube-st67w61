@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    iperf.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header for iperf module
   ******************************************************************************
   * @attention
@@ -17,8 +17,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __IPERF_H__
-#define __IPERF_H__
+#ifndef IPERF_H
+#define IPERF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +54,7 @@ typedef struct
   uint16_t dport;                   /*!< destination port */
   uint16_t sport;                   /*!< source port */
   uint32_t interval;                /*!< interval between each frame */
-  uint32_t time;                    /*!< duration of the test */
+  uint32_t duration;                /*!< duration of the test */
   uint16_t len_buf;                 /*!< length of the buffer */
   int32_t bw_lim;                   /*!< bandwidth limit */
   uint8_t tos;                      /*!< type of service */
@@ -87,17 +87,17 @@ typedef struct
 
 #ifndef IPERF_TRAFFIC_TASK_PRIORITY
 /** Iperf traffic task priority */
-#define IPERF_TRAFFIC_TASK_PRIORITY 40
+#define IPERF_TRAFFIC_TASK_PRIORITY 40U
 #endif /* IPERF_TRAFFIC_TASK_PRIORITY */
 
 #ifndef IPERF_TRAFFIC_TASK_STACK
 /** Iperf traffic task stack size */
-#define IPERF_TRAFFIC_TASK_STACK    2048
+#define IPERF_TRAFFIC_TASK_STACK    2048U
 #endif /* IPERF_TRAFFIC_TASK_STACK */
 
 #ifndef IPERF_REPORT_TASK_STACK
 /** Iperf report task stack size */
-#define IPERF_REPORT_TASK_STACK     1024
+#define IPERF_REPORT_TASK_STACK     1024U
 #endif /* IPERF_REPORT_TASK_STACK */
 
 /* Memory allocator */
@@ -114,25 +114,25 @@ typedef struct
 #define IPERF_TRAFFIC_TASK_NAME     "iperf_traffic" /*!< iperf traffic task name */
 #define IPERF_REPORT_TASK_NAME      "iperf_report"  /*!< iperf report task name */
 
-#define IPERF_IP_TYPE_IPV4          0               /*!< IPv4 type */
-#define IPERF_IP_TYPE_IPV6          1               /*!< IPv6 type */
-#define IPERF_TRANS_TYPE_TCP        0               /*!< TCP type */
-#define IPERF_TRANS_TYPE_UDP        1               /*!< UDP type */
+#define IPERF_IP_TYPE_IPV4          0U              /*!< IPv4 type */
+#define IPERF_IP_TYPE_IPV6          1U              /*!< IPv6 type */
+#define IPERF_TRANS_TYPE_TCP        0U              /*!< TCP type */
+#define IPERF_TRANS_TYPE_UDP        1U              /*!< UDP type */
 
-#define IPERF_FLAG_CLIENT           (1)             /*!< Client flag bitmask */
-#define IPERF_FLAG_SERVER           (1 << 1)        /*!< Server flag bitmask */
-#define IPERF_FLAG_TCP              (1 << 2)        /*!< TCP flag bitmask */
-#define IPERF_FLAG_UDP              (1 << 3)        /*!< UDP flag bitmask */
-#define IPERF_FLAG_DUAL             (1 << 4)        /*!< Dual flag bitmask */
+#define IPERF_FLAG_CLIENT           (1UL << 0U)     /*!< Client flag bitmask */
+#define IPERF_FLAG_SERVER           (1UL << 1U)     /*!< Server flag bitmask */
+#define IPERF_FLAG_TCP              (1UL << 2U)     /*!< TCP flag bitmask */
+#define IPERF_FLAG_UDP              (1UL << 3U)     /*!< UDP flag bitmask */
+#define IPERF_FLAG_DUAL             (1UL << 4U)     /*!< Dual flag bitmask */
 
-#define IPERF_UDP_TX_LEN            1470                   /*!< UDP transmit length */
-#define IPERF_UDP_RX_LEN            1470                   /*!< UDP receive length */
+#define IPERF_UDP_TX_LEN            1470U                  /*!< UDP transmit length */
+#define IPERF_UDP_RX_LEN            1470U                  /*!< UDP receive length */
 #define IPERF_TCP_TX_LEN            W61_MAX_SPI_XFER       /*!< TCP transmit length */
-#define IPERF_TCP_RX_LEN            W61_MAX_SPI_XFER - 64  /*!< TCP receive length (64 bytes for AT Response header length) */
+#define IPERF_TCP_RX_LEN            (W61_MAX_SPI_XFER - 64U) /*!< TCP receive length (64 bytes for AT Response header length) */
 
-#define IPERF_MAX_DELAY             64              /*!< Maximum delay */
+#define IPERF_MAX_DELAY             64U             /*!< Maximum delay */
 
-#define IPERF_SOCKET_RX_TIMEOUT     5               /*!< Socket receive timeout */
+#define IPERF_SOCKET_RX_TIMEOUT     5U              /*!< Socket receive timeout */
 
 /** @} */
 
@@ -163,4 +163,4 @@ int32_t iperf_stop(void);
 }
 #endif
 
-#endif /* __IPERF_H__ */
+#endif /* IPERF_H */

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    logging_levels.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Defines the configuration constants for all logging verbosity levels
   ******************************************************************************
   * @attention

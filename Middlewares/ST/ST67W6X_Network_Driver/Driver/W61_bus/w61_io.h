@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_io.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the common defines and functions prototypes for
   *          the ST67W611M IO operations.
   ******************************************************************************
@@ -26,13 +26,14 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdio.h>
 #include <stdint.h>
 #include "spi_iface.h"  /* Needed for SPI_XFER_MTU_BYTES */
 
 /* Exported types ------------------------------------------------------------*/
+/** @brief  Callback function prototype called when new data are received */
 typedef void (*BusIo_SPI_rxd_notify_func_t)(void *arg);
 
-/* Exported constants --------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
@@ -40,7 +41,6 @@ typedef void (*BusIo_SPI_rxd_notify_func_t)(void *arg);
   * @brief  ST67W611M IO Initialization.
   *         This function initialize the SPI interface to deal with the w61,
   *         then starts asynchronous listening on the RX port.
-  * @param  type: Traffic type to bind (must be < SPI_MSG_CTRL_TRAFFIC_TYPE_MAX)
   * @retval forward spisync_init ret
   */
 int32_t BusIo_SPI_Init(void);
@@ -58,6 +58,8 @@ int32_t BusIo_SPI_DeInit(void);
   *         This function bind the SPI interface to deal with the w61,
   *         then starts asynchronous listening on the RX port.
   * @param  type: Traffic type to bind (must be < SPI_MSG_CTRL_TRAFFIC_TYPE_MAX)
+  * @param  rxq_size: size of the RX queue
+  * @param  cb: callback function to be called when new data are received
   * @retval forward spisync_init ret
   */
 int32_t BusIo_SPI_Bind(uint8_t type, int32_t rxq_size, BusIo_SPI_rxd_notify_func_t cb);

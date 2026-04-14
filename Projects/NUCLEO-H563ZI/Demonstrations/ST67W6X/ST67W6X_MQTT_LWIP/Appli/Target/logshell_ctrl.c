@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    logshell_ctrl.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   logshell_ctrl (uart interface)
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -42,15 +42,13 @@
 
 /* USER CODE END Includes */
 
-/* Global variables ----------------------------------------------------------*/
 #ifndef UART_HANDLE
 #if (LOG_OUTPUT_MODE == LOG_OUTPUT_UART)
 #error "UART instance not selected. Please use platform settings panel in STM32CubeMX GUI."
 #endif /* LOG_OUTPUT_MODE */
-#else
-/** UART handle */
-extern UART_HandleTypeDef UART_HANDLE;
 #endif /* UART_HANDLE */
+
+/* Global variables ----------------------------------------------------------*/
 
 /* USER CODE BEGIN GV */
 
@@ -140,6 +138,7 @@ QueueHandle_t xLogQueue = NULL;
   * @param  len: length of the data to write in bytes
   * @retval length of the written data in bytes
   */
+/* coverity[misra_c_2012_rule_21_2_violation : FALSE] */
 size_t __write(int file, unsigned char const *ptr, size_t len)
 {
   size_t idx;
@@ -150,7 +149,7 @@ size_t __write(int file, unsigned char const *ptr, size_t len)
 
   for (idx = 0; idx < len; idx++)
   {
-    iar_fputc((int)*pdata);
+    (void)iar_fputc((int)*pdata);
     pdata++;
   }
   return len;
@@ -165,7 +164,7 @@ PUTCHAR_PROTOTYPE
   /* USER CODE BEGIN PUTCHAR_PROTOTYPE_1 */
 
   /* USER CODE END PUTCHAR_PROTOTYPE_1 */
-  HAL_UART_Transmit(&UART_HANDLE, (unsigned char *)&ch, 1, 1000);
+  (void)HAL_UART_Transmit(&UART_HANDLE, (unsigned char *)&ch, 1, 1000);
   return ch;
   /* USER CODE BEGIN PUTCHAR_PROTOTYPE_End */
 
@@ -196,7 +195,7 @@ void LogOutput(const char *message)
   /* USER CODE END LogOutput_1 */
 #if (LOG_OUTPUT_MODE == LOG_OUTPUT_PRINTF) /* Direct printf via putchar */
   /* Transmit if bytes available to transmit */
-  printf("%s", message);
+  (void)printf("%s", message);
 
 #elif (LOG_OUTPUT_MODE == LOG_OUTPUT_UART) /* UART in interrupt mode */
   HAL_StatusTypeDef hal_status = HAL_OK;
@@ -204,12 +203,11 @@ void LogOutput(const char *message)
   LogOutputTaskHandle = xTaskGetCurrentTaskHandle();
 
   hal_status = HAL_UART_Transmit_IT(&UART_HANDLE, (uint8_t *) message, (uint16_t) strlen(message));
-  /* configASSERT( xHalStatus == HAL_OK ); */
 
   if (hal_status == HAL_OK)
   {
     /* Wait for completion event (should be within 1 or 2 ms) */
-    (void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    (void)ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
   }
 #elif (LOG_OUTPUT_MODE == LOG_OUTPUT_ITM) /* ITM */
   /* Transmit if bytes available to transmit */

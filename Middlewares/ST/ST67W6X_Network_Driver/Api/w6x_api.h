@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_api.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the different W6x core resources definitions
   ******************************************************************************
   * @attention
@@ -106,7 +106,8 @@ extern "C" {
   */
 /* ===================================================================== */
 /**
-  * @brief  Initialize the LL part of the W6X core
+  * @brief  Initialize the LL part of the W6X core (call once at startup before any other W6X_* API;
+  *         then register callbacks with ::W6X_RegisterAppCb)
   * @return Operation status
   */
 W6X_Status_t W6X_Init(void);
@@ -117,11 +118,12 @@ W6X_Status_t W6X_Init(void);
 void W6X_DeInit(void);
 
 /**
-  * @brief  Register Upper Layer callbacks
-  * @param  App_cb: Callback for Applicative events
+  * @brief  Register Upper Layer callbacks (used for asynchronous events; callback table must
+  *         remain valid while driver is initialized)
+  * @param  app_cb: callback for Applicative events
   * @return Operation status
   */
-W6X_Status_t W6X_RegisterAppCb(W6X_App_Cb_t *App_cb);
+W6X_Status_t W6X_RegisterAppCb(W6X_App_Cb_t *app_cb);
 
 /**
   * @brief  Get the W6X Callback handler
@@ -142,7 +144,7 @@ W6X_ModuleInfo_t *W6X_GetModuleInfo(void);
 W6X_Status_t W6X_ModuleInfoDisplay(void);
 
 /**
-  * @brief  Configure Power mode
+  * @brief  Configure Power mode (sets the NCP power-save mode)
   * @param  ps_mode: power save mode to set (0: normal mode, 1: standby mode)
   * @return Operation Status
   */
@@ -150,55 +152,58 @@ W6X_Status_t W6X_SetPowerMode(uint32_t ps_mode);
 
 /**
   * @brief  Get Power mode
-  * @param  ps_mode: power save mode to set (0: normal mode, 1: standby mode)
+  * @param  ps_mode: output pointer receiving the current power save mode (0: normal mode, 1: standby mode)
   * @return Operation Status
   */
 W6X_Status_t W6X_GetPowerMode(uint32_t *ps_mode);
 
 /**
-  * @brief  Write a file from the Host file system to the NCP file system
-  * @param  filename: File name
+  * @brief  Write a file from the Host file system to the NCP file system (sends the host file
+  *         identified by filename to the NCP filesystem)
+  * @param  filename: file name (null-terminated). Maximum filename size is ::W6X_SYS_FS_FILENAME_SIZE
   * @return Operation status
   */
-W6X_Status_t W6X_FS_WriteFileByName(char *filename);
+W6X_Status_t W6X_FS_WriteFileByName(char filename[W6X_SYS_FS_FILENAME_SIZE]);
 
 /**
-  * @brief  Write a file from the local memory to the NCP file system
-  * @param  filename: File name
-  * @param  file: File content
-  * @param  len: File len
+  * @brief  Write a file from the local memory to the NCP file system (writes a new NCP file using
+  *         a RAM buffer as source)
+  * @param  filename: file name (null-terminated). Maximum filename size is ::W6X_SYS_FS_FILENAME_SIZE
+  * @param  file: file content buffer
+  * @param  len: file length in bytes
   * @return Operation status
   */
-W6X_Status_t W6X_FS_WriteFileByContent(char *filename, const char *file, uint32_t len);
+W6X_Status_t W6X_FS_WriteFileByContent(char filename[W6X_SYS_FS_FILENAME_SIZE], const char *file, uint32_t len);
 
 /**
-  * @brief  Read a file from the NCP file system
-  * @param  filename: File name
-  * @param  offset: Offset in the file
-  * @param  data: Data to read
-  * @param  len: Length of the data buffer
+  * @brief  Read a file from the NCP file system (reads len bytes starting at the given offset)
+  * @param  filename: file name (null-terminated). Maximum filename size is ::W6X_SYS_FS_FILENAME_SIZE
+  * @param  offset: offset in the file, in bytes
+  * @param  data: output buffer receiving the data
+  * @param  len: Length of the data buffer, in bytes
   * @return Operation status
   */
-W6X_Status_t W6X_FS_ReadFile(char *filename, uint32_t offset, uint8_t *data, uint32_t len);
+W6X_Status_t W6X_FS_ReadFile(char filename[W6X_SYS_FS_FILENAME_SIZE], uint32_t offset, uint8_t *data, uint32_t len);
 
 /**
-  * @brief  Delete a file from the NCP file system
-  * @param  filename: File name
+  * @brief  Delete a file from the NCP file system (deletes a file from the NCP filesystem)
+  * @param  filename: file name (null-terminated). Maximum filename size is ::W6X_SYS_FS_FILENAME_SIZE
   * @return Operation status
   */
-W6X_Status_t W6X_FS_DeleteFile(char *filename);
+W6X_Status_t W6X_FS_DeleteFile(char filename[W6X_SYS_FS_FILENAME_SIZE]);
 
 /**
   * @brief  Get the size of a file in the NCP file system
-  * @param  filename: File name
-  * @param  size: Size of the file
+  * @param  filename: file name (null-terminated). Maximum filename size is ::W6X_SYS_FS_FILENAME_SIZE
+  * @param  size: output pointer receiving the file size, in bytes
   * @return Operation status
   */
-W6X_Status_t W6X_FS_GetSizeFile(char *filename, uint32_t *size);
+W6X_Status_t W6X_FS_GetSizeFile(char filename[W6X_SYS_FS_FILENAME_SIZE], uint32_t *size);
 
 /**
-  * @brief  List files in the file system (NCP and Host if LFS is enabled)
-  * @param  files_list: List of files
+  * @brief  List files in the file system (NCP and Host if LFS is enabled) (maximum number of
+  *         files is ::W6X_SYS_FS_MAX_FILES)
+  * @param  files_list: output pointer receiving the list of files
   * @return Operation status
   */
 W6X_Status_t W6X_FS_ListFiles(W6X_FS_FilesListFull_t **files_list);
@@ -207,14 +212,14 @@ W6X_Status_t W6X_FS_ListFiles(W6X_FS_FilesListFull_t **files_list);
   * @brief  Reset module
   * @note   If the ::W6X_WIFI_AUTOCONNECT is enabled, the Wi-Fi station credentials must be reconfigured
   *         through the ::W6X_WiFi_Connect function
-  * @param  restore: If set to 1, all user configurations are erased and the module is set to factory default
+  * @param  restore: if set to 1, all user configurations are erased and the module is set to factory default
   * @return Operation status
   */
 W6X_Status_t W6X_Reset(uint8_t restore);
 
 /**
-  * @brief  Execute AT command
-  * @param  at_cmd: AT command string
+  * @brief  Execute AT command (sends a raw AT command string to the NCP)
+  * @param  at_cmd: AT command string (null-terminated)
   * @return Operation status
   */
 W6X_Status_t W6X_ExeATCommand(char *at_cmd);
@@ -235,9 +240,9 @@ const char *W6X_ModelToStr(W6X_ModuleID_e module_id);
 
 /**
   * @brief  Check that the SDK version is at least the specified version
-  * @param  major: Major version
-  * @param  sub1: Sub1 version
-  * @param  sub2: Sub2 version
+  * @param  major: major version
+  * @param  sub1: sub1 version
+  * @param  sub2: sub2 version
   * @return Operation status
   */
 W6X_Status_t W6X_SdkMinVersion(uint8_t major, uint8_t sub1, uint8_t sub2);
@@ -251,7 +256,7 @@ W6X_Status_t W6X_SdkMinVersion(uint8_t major, uint8_t sub1, uint8_t sub2);
   */
 /* ===================================================================== */
 /**
-  * @brief  Init the Wi-Fi module
+  * @brief  Init the Wi-Fi module (initializes the Wi-Fi subsystem; call after ::W6X_Init)
   * @return Operation status
   */
 W6X_Status_t W6X_WiFi_Init(void);
@@ -262,22 +267,23 @@ W6X_Status_t W6X_WiFi_Init(void);
 void W6X_WiFi_DeInit(void);
 
 /**
-  * @brief  List a defined number of available access points
-  * @param  Opts: Scan options
-  * @param  cb: Callback to handle scan results
+  * @brief  List a defined number of available access points (starts a scan and reports results
+  *         through the provided callback)
+  * @param  opts: scan options
+  * @param  scan_result_cb: callback to handle scan results
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_Scan(W6X_WiFi_Scan_Opts_t *Opts, W6X_WiFi_Scan_Result_cb_t cb);
+W6X_Status_t W6X_WiFi_Scan(W6X_WiFi_Scan_Opts_t *opts, W6X_WiFi_Scan_Result_cb_t scan_result_cb);
 
 /**
   * @brief  Print the scan results
-  * @param  Results: Scan results
+  * @param  results: scan results
   */
-void W6X_WiFi_PrintScan(W6X_WiFi_Scan_Result_t *Results);
+void W6X_WiFi_PrintScan(W6X_WiFi_Scan_Result_t *results);
 
 /**
-  * @brief  Join an Access Point
-  * @param  ConnectOpts: Connection options
+  * @brief  Join an Access Point (connects the station interface using the provided options)
+  * @param  connect_opts: connection options
   * @note   It is not recommended to use the characters , " and \ in the SSID and password.
   *         If needed, they must be preceded by a \ to be interpreted correctly.
   * @note   If the connection is successful, the Wi-Fi station credentials are stored in the NCP
@@ -285,11 +291,11 @@ void W6X_WiFi_PrintScan(W6X_WiFi_Scan_Result_t *Results);
   *         at the next power on
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts);
+W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *connect_opts);
 
 /**
-  * @brief  Disconnect from a Wi-Fi Network
-  * @param  restore: Remove the stored connection information in the NCP
+  * @brief  Disconnect from a Wi-Fi Network (disconnects the station interface from the current AP)
+  * @param  restore: remove the stored connection information in the NCP
   * @note   The ::W6X_WIFI_AUTOCONNECT won't be executed if the restore parameter is set to 1.
   *         The Wi-Fi credentials must be reconfigured through the ::W6X_WiFi_Connect function
   * @return Operation status
@@ -297,27 +303,58 @@ W6X_Status_t W6X_WiFi_Connect(W6X_WiFi_Connect_Opts_t *ConnectOpts);
 W6X_Status_t W6X_WiFi_Disconnect(uint32_t restore);
 
 /**
-  * @brief  Retrieve auto connect state
-  * @param  OnOff: return the module state (enable = 1 / disable = 0) auto connect
+  * @brief  Add Wi-Fi station credentials in the NCP (stores an SSID/password pair in the NCP
+  *         credential store; can later be used by ::W6X_WiFi_Connect and auto-connect)
+  * @param  ssid: SSID of the Wi-Fi network as a null-terminated string buffer.
+  *               Buffer size must be (W6X_WIFI_MAX_SSID_SIZE + 1) bytes.
+  *               Maximum SSID length is ::W6X_WIFI_MAX_SSID_SIZE.
+  * @param  password: password as a null-terminated string buffer.
+  *                  Buffer size must be (W6X_WIFI_MAX_PASSWORD_SIZE + 1) bytes.
+  *                  Maximum password length is ::W6X_WIFI_MAX_PASSWORD_SIZE.
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_GetAutoConnect(uint32_t *OnOff);
+W6X_Status_t W6X_WiFi_AddCredentials(uint8_t ssid[W6X_WIFI_MAX_SSID_SIZE + 1],
+                                     uint8_t password[W6X_WIFI_MAX_PASSWORD_SIZE + 1]);
+
+/**
+  * @brief  Delete Wi-Fi station credentials from the NCP (removes a previously stored SSID from
+  *         the NCP credential store)
+  * @param  ssid: SSID of the Wi-Fi network as a null-terminated string buffer
+  *               Buffer size must be (W6X_WIFI_MAX_SSID_SIZE + 1) bytes.
+  * @return Operation status
+  */
+W6X_Status_t W6X_WiFi_DeleteCredentials(uint8_t ssid[W6X_WIFI_MAX_SSID_SIZE + 1]);
+
+/**
+  * @brief  List the stored Wi-Fi station credentials in the NCP (contains up to
+  *         ::W6X_WIFI_MAX_SSID_LIST_SIZE entries)
+  * @param  credentials_list: list of stored credentials
+  * @return Operation status
+  */
+W6X_Status_t W6X_WiFi_GetCredentials(W6X_WiFi_CredentialsList_t *credentials_list);
+
+/**
+  * @brief  Retrieve auto connect state
+  * @param  on_off: return the module state (enable = 1 / disable = 0) auto connect
+  * @return Operation status
+  */
+W6X_Status_t W6X_WiFi_GetAutoConnect(uint32_t *on_off);
 
 /**
   * @brief  This function retrieves the country code configuration
-  * @param  Policy: value to specify if the country code align on AP's one
-  * @param  CountryString: pointer to Country code string
+  * @param  policy: value to specify if the country code align on AP's one
+  * @param  country_string: pointer to country code string
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_GetCountryCode(uint32_t *Policy, char *CountryString);
+W6X_Status_t W6X_WiFi_GetCountryCode(uint32_t *policy, char *country_string);
 
 /**
   * @brief  This function set the country code configuration
-  * @param  Policy: value to specify if the country code align on AP's one
-  * @param  CountryString: pointer to Country code string
+  * @param  policy: value to specify if the country code align on AP's one
+  * @param  country_string: pointer to country code string
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_SetCountryCode(uint32_t *Policy, char *CountryString);
+W6X_Status_t W6X_WiFi_SetCountryCode(uint32_t *policy, char *country_string);
 
 /**
   * @brief  Set the module in station mode
@@ -326,19 +363,20 @@ W6X_Status_t W6X_WiFi_SetCountryCode(uint32_t *Policy, char *CountryString);
 W6X_Status_t W6X_WiFi_Station_Start(void);
 
 /**
-  * @brief  This function retrieves the Wi-Fi station state
-  * @param  State: Station state
-  * @param  ConnectData: Connection data
+  * @brief  This function retrieves the Wi-Fi station state (can be used to poll station status and
+  *         retrieve the latest connection data)
+  * @param  state: station state
+  * @param  connect_data: connection data
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_Station_GetState(W6X_WiFi_StaStateType_e *State, W6X_WiFi_Connect_t *ConnectData);
+W6X_Status_t W6X_WiFi_Station_GetState(W6X_WiFi_StaStateType_e *state, W6X_WiFi_Connect_t *connect_data);
 
 /**
   * @brief  This function retrieves the Wi-Fi station MAC address
-  * @param  Mac: MAC address of the interface
+  * @param  mac: MAC Address of the interface
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_Station_GetMACAddress(uint8_t Mac[6]);
+W6X_Status_t W6X_WiFi_Station_GetMACAddress(uint8_t mac[6]);
 
 /**
   * @brief  Configure a Soft-AP
@@ -361,25 +399,26 @@ W6X_Status_t W6X_WiFi_AP_Stop(void);
 W6X_Status_t W6X_WiFi_AP_GetConfig(W6X_WiFi_ApConfig_t *ap_config);
 
 /**
-  * @brief  List the connected stations
-  * @param  ConnectedSta: Connected stations structure
+  * @brief  List the connected stations (maximum number of connected stations is
+  *         ::W6X_WIFI_MAX_CONNECTED_STATIONS)
+  * @param  connected_sta: Connected stations structure
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_AP_ListConnectedStations(W6X_WiFi_Connected_Sta_t *ConnectedSta);
+W6X_Status_t W6X_WiFi_AP_ListConnectedStations(W6X_WiFi_Connected_Sta_t *connected_sta);
 
 /**
   * @brief  Disconnect station from the Soft-AP
-  * @param  MAC: MAC address of the station to disconnect
+  * @param  mac: MAC Address of the station to disconnect
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_AP_DisconnectStation(uint8_t MAC[6]);
+W6X_Status_t W6X_WiFi_AP_DisconnectStation(uint8_t mac[6]);
 
 /**
   * @brief  This function retrieves the Wi-Fi Soft-AP MAC address
-  * @param  Mac: MAC address of the interface
+  * @param  mac: MAC Address of the interface
   * @return Operation status
   */
-W6X_Status_t W6X_WiFi_AP_GetMACAddress(uint8_t Mac[6]);
+W6X_Status_t W6X_WiFi_AP_GetMACAddress(uint8_t mac[6]);
 
 /**
   * @brief  Set Low Power Wi-Fi DTIM (Delivery Traffic Indication Message)
@@ -391,9 +430,11 @@ W6X_Status_t W6X_WiFi_AP_GetMACAddress(uint8_t Mac[6]);
 W6X_Status_t W6X_WiFi_SetDTIM(uint32_t dtim_factor);
 
 /**
-  * @brief  Get Low Power Wi-Fi DTIM (Delivery Traffic Indication Message)
-  * @param  dtim_factor: DTIM factor. Defined by user
-  * @param  dtim_interval: DTIM listen interval. Defined as dtim_factor * AP DTIM if W6X_WiFi_SetDTIM is called
+  * @brief  Get Low Power Wi-Fi DTIM (Delivery Traffic Indication Message) (dtim_interval is
+  *         derived from the configured factor and the AP DTIM)
+  *
+  * @param  dtim_factor: output pointer receiving the configured DTIM factor (user-defined)
+  * @param  dtim_interval: output pointer receiving the DTIM listen interval (dtim_factor * AP DTIM)
   * @note   DTIM is based on the AP configuration.
   *         The STA wakes up every beacon interval (typ. 100ms) x STA DTIM x AP DTIM.
   * @return Operation status
@@ -409,7 +450,8 @@ W6X_Status_t W6X_WiFi_GetDTIM(uint32_t *dtim_factor, uint32_t *dtim_interval);
 W6X_Status_t W6X_WiFi_GetDTIM_AP(uint32_t *dtim);
 
 /**
-  * @brief  Setup Target Wake Time (TWT) for the Wi-Fi station
+  * @brief  Setup Target Wake Time (TWT) for the Wi-Fi station (supports up to
+  *         ::W6X_WIFI_MAX_TWT_FLOWS simultaneous TWT flows)
   * @param  twt_params: TWT parameters
   * @return Operation status
   */
@@ -417,7 +459,7 @@ W6X_Status_t W6X_WiFi_TWT_Setup(W6X_WiFi_TWT_Setup_Params_t *twt_params);
 
 /**
   * @brief  Get Target Wake Time (TWT) status for the Wi-Fi station
-  * @param  twt_status: Pointer to TWT flow status
+  * @param  twt_status: pointer to TWT flow status
   * @return Operation status
   */
 W6X_Status_t W6X_WiFi_TWT_GetStatus(W6X_WiFi_TWT_Status_t *twt_status);
@@ -458,6 +500,13 @@ const char *W6X_WiFi_StateToStr(uint32_t state);
 const char *W6X_WiFi_SecurityToStr(uint32_t security);
 
 /**
+  * @brief  Convert the Wi-Fi AP security type to a string
+  * @param  security: Wi-Fi AP security type
+  * @return Security type string
+  */
+const char *W6X_WiFi_AP_SecurityToStr(W6X_WiFi_ApSecurityType_e security);
+
+/**
   * @brief  Convert the Wi-Fi error reason to a string
   * @param  reason: Wi-Fi error reason
   * @return Error reason string
@@ -480,6 +529,7 @@ const char *W6X_WiFi_AntDivToStr(W6X_WiFi_AntennaMode_e mode);
 
 /** @} */
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_Net_Public_Functions ST67W6X Net Functions
   * @ingroup  ST67W6X_API_Net
@@ -499,113 +549,117 @@ void W6X_Net_DeInit(void);
 
 /**
   * @brief  Set the Wi-Fi Station host name
-  * @param  Hostname: Hostname to set
+  * @param  hostname: Hostname to set
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SetHostname(uint8_t Hostname[33]);
+W6X_Status_t W6X_Net_SetHostname(uint8_t hostname[33]);
 
 /**
   * @brief  Get the Wi-Fi Station host name
-  * @param  Hostname: Hostname to get
+  * @param  hostname: Hostname to get
   * @return Operation status
   */
-W6X_Status_t W6X_Net_GetHostname(uint8_t Hostname[33]);
+W6X_Status_t W6X_Net_GetHostname(uint8_t hostname[33]);
 
 /**
   * @brief  Get the Wi-Fi Station interface's IP address
-  * @param  Ip_addr: IP address of the interface
-  * @param  Gateway_addr: Gateway address of the interface
-  * @param  Netmask_addr: Netmask address of the interface
+  * @param  ip_address: IP address of the interface
+  * @param  gateway_address: Gateway address of the interface
+  * @param  netmask_address: Netmask address of the interface
   * @return Operation status
   */
-W6X_Status_t W6X_Net_Station_GetIPAddress(uint8_t Ip_addr[4], uint8_t Gateway_addr[4], uint8_t Netmask_addr[4]);
+W6X_Status_t W6X_Net_Station_GetIPAddress(uint8_t ip_address[4], uint8_t gateway_address[4],
+                                          uint8_t netmask_address[4]);
 
 #if (W6X_NET_IPV6_ENABLE == 1)
 /**
   * @brief  Get the Wi-Fi Station interface's IPv6 addresses (link-local & global)
-  * @param  Ip6ll_addr: (optional) pointer to ip6_addr_t receiving link-local address (can be NULL)
-  * @param  Ip6gl_addr: (optional) pointer to ip6_addr_t receiving global/unicast address (can be NULL)
+  * @param  ip6ll_addr: (optional) pointer to ip6_addr_t receiving link-local address (can be NULL)
+  * @param  ip6gl_addr: (optional) pointer to ip6_addr_t receiving global/unicast address (can be NULL)
   * @return Operation status
   * @note   Each ip6_addr_t contains 4 host-order 32-bit words (uint32_t[4]) representing the 128-bit address.
   *         Use W6X_Net_Inet_ntop(AF_INET6, ip6.addr, buf, buflen) to obtain the compressed textual form.
   */
-W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *Ip6ll_addr, ip6_addr_t *Ip6gl_addr);
+W6X_Status_t W6X_Net_Station_GetIPv6Address(ip6_addr_t *ip6ll_addr, ip6_addr_t *ip6gl_addr);
 #endif /* W6X_NET_IPV6_ENABLE */
 
 /**
   * @brief  Set the Wi-Fi Station interface's IP address
-  * @param  Ipaddr: IP address to set
-  * @param  Gateway_addr: Gateway address to set
-  * @param  Netmask_addr: Netmask address to set
+  * @param  ip_address: IP address to set
+  * @param  gateway_address: Gateway address to set
+  * @param  netmask_address: Netmask address to set
   * @return Operation status
   */
-W6X_Status_t W6X_Net_Station_SetIPAddress(uint8_t Ipaddr[4], uint8_t Gateway_addr[4], uint8_t Netmask_addr[4]);
+W6X_Status_t W6X_Net_Station_SetIPAddress(uint8_t ip_address[4], uint8_t gateway_address[4],
+                                          uint8_t netmask_address[4]);
 
 /**
   * @brief  Get the Soft-AP IP addresses
-  * @param  Ipaddr: IP address of the Soft-AP
-  * @param  Netmask_addr: Netmask address of the Soft-AP
+  * @param  ip_address: IP address of the Soft-AP
+  * @param  netmask_address: Netmask address of the Soft-AP
   * @return Operation status
   */
-W6X_Status_t W6X_Net_AP_GetIPAddress(uint8_t Ipaddr[4], uint8_t Netmask_addr[4]);
+W6X_Status_t W6X_Net_AP_GetIPAddress(uint8_t ip_address[4], uint8_t netmask_address[4]);
 
 /**
   * @brief  Set the Soft-AP IP addresses
-  * @param  Ipaddr: IP address of the Soft-AP
-  * @param  Netmask_addr: Netmask address of the Soft-AP
+  * @param  ip_address: IP address of the Soft-AP
+  * @param  netmask_address: Netmask address of the Soft-AP
   * @return Operation status
   */
-W6X_Status_t W6X_Net_AP_SetIPAddress(uint8_t Ipaddr[4], uint8_t Netmask_addr[4]);
+W6X_Status_t W6X_Net_AP_SetIPAddress(uint8_t ip_address[4], uint8_t netmask_address[4]);
 
 /**
   * @brief  Get the DHCP configuration
-  * @param  State: pointer to the DHCP state
+  * @param  state: pointer to the DHCP state
   * @param  lease_time: lease time
   * @param  start_ip: pointer to the start IP address
   * @param  end_ip: pointer to the end IP address
   * @return Operation status
   */
-W6X_Status_t W6X_Net_GetDhcp(W6X_Net_DhcpType_e *State, uint32_t *lease_time, uint8_t start_ip[4], uint8_t end_ip[4]);
+W6X_Status_t W6X_Net_GetDhcp(W6X_Net_DhcpType_e *state, uint32_t *lease_time, uint8_t start_ip[4],
+                             uint8_t end_ip[4]);
 
 /**
   * @brief  Set the DHCP configuration
-  * @param  State: DHCP state
-  * @param  Operate: pointer to enable / disable DHCP
+  * @param  state: DHCP state
+  * @param  operate: pointer to enable / disable DHCP
   * @param  lease_time: lease time
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SetDhcp(W6X_Net_DhcpType_e *State, uint32_t *Operate, uint32_t lease_time);
+W6X_Status_t W6X_Net_SetDhcp(W6X_Net_DhcpType_e *state, uint32_t *operate, uint32_t lease_time);
 
 /**
   * @brief  Get the Wi-Fi DNS addresses
-  * @param  Dns1_addr: DNS1 address
-  * @param  Dns2_addr: DNS2 address
-  * @param  Dns3_addr: DNS3 address
+  * @param  dns1_addr: DNS1 address
+  * @param  dns2_addr: DNS2 address
+  * @param  dns3_addr: DNS3 address
   * @note   WARNING : If the DNS IP is set manually ONCE, a W6X_RestoreDefaultConfig() call is mandatory
   *         to retrieve default DNS IP address from the DHCP process.
   * @return Operation status
   */
-W6X_Status_t W6X_Net_GetDnsAddress(uint8_t Dns1_addr[4], uint8_t Dns2_addr[4], uint8_t Dns3_addr[4]);
+W6X_Status_t W6X_Net_GetDnsAddress(uint8_t dns1_addr[4], uint8_t dns2_addr[4], uint8_t dns3_addr[4]);
 
 /**
   * @brief  Set the Wi-Fi DNS addresses
-  * @param  Dns1_addr: DNS1 address
-  * @param  Dns2_addr: DNS2 address
-  * @param  Dns3_addr: DNS3 address
+  * @param  dns1_addr: DNS1 address
+  * @param  dns2_addr: DNS2 address
+  * @param  dns3_addr: DNS3 address
   * @note   WARNING : If the DNS IP is set manually ONCE, a W6X_RestoreDefaultConfig() call is mandatory
   *         to retrieve default DNS IP address from the DHCP process.
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SetDnsAddress(uint8_t Dns1_addr[4], uint8_t Dns2_addr[4], uint8_t Dns3_addr[4]);
+W6X_Status_t W6X_Net_SetDnsAddress(uint8_t dns1_addr[4], uint8_t dns2_addr[4], uint8_t dns3_addr[4]);
 
 /**
-  * @brief  Ping an IP address in the network
+  * @brief  Ping an IP address in the network (issues ICMP echo requests and returns aggregate
+  *         results)
   * @param  location: URL or IP address to ping
   * @param  length: Length of the URL or IP address
   * @param  count: Number of pings to send
-  * @param  interval_ms: Interval between pings
-  * @param  timeout: Timeout for each ping
-  * @param  average_time: Average time of the pings
+  * @param  interval_ms: Interval between pings, in milliseconds
+  * @param  timeout: Timeout for each ping, in milliseconds
+  * @param  average_time: output pointer receiving the average time of the pings, in milliseconds
   * @param  received_response: Number of received responses
   * @return Operation status
   */
@@ -615,79 +669,82 @@ W6X_Status_t W6X_Net_Ping(uint8_t *location, uint16_t length, uint16_t count, ui
 /**
   * @brief  Get IP address from URL using DNS
   * @param  location: Host URL
-  * @param  ipaddr: array of the IP address
+  * @param  ip_address: array of the IP address
   * @return Operation status
   */
-W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t *ipaddr);
+W6X_Status_t W6X_Net_ResolveHostAddress(const char *location, uint8_t ip_address[4]);
 
 /**
   * @brief  Resolve a hostname to an IP (IPv4 or IPv6).
   * @param  location: Hostname to resolve
-  * @param  out_addr: ip_addr_t* to fill as result of the resolve operation
-  * @param  family: family request for ip_addr_t
+  * @param  out_addr: ip_address_t* to fill as result of the resolve operation
+  * @param  family: family request for ip_address_t
   * @return Operation status
   */
 W6X_Status_t W6X_Net_ResolveHostAddressByType(const char *location, ip_addr_t *out_addr, uint8_t family);
 
 /**
-  * @brief  Get current SNTP status, timezone and servers
-  * @param  Enable:  SNTP usage status
-  * @param  Timezone:  Configured Timezone
-  * @param  SntpServer1:  Configured Primary SNTP Server URL
-  * @param  SntpServer2:  Configured Secondary SNTP Server URL
-  * @param  SntpServer3:  Configured Third SNTP Server URL
+  * @brief  Get current SNTP status, timezone and servers (retrieves current SNTP configuration)
+  * @param  enable:  SNTP usage status
+  * @param  sntp_timezone:  Configured Timezone
+  * @param  sntp_server1:  Configured Primary SNTP Server URL
+  * @param  sntp_server2:  Configured Secondary SNTP Server URL
+  * @param  sntp_server3:  Configured Third SNTP Server URL
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SNTP_GetConfiguration(uint8_t *Enable, int16_t *Timezone, uint8_t *SntpServer1,
-                                           uint8_t *SntpServer2, uint8_t *SntpServer3);
+W6X_Status_t W6X_Net_SNTP_GetConfiguration(uint8_t *enable, int16_t *sntp_timezone, uint8_t *sntp_server1,
+                                           uint8_t *sntp_server2, uint8_t *sntp_server3);
 
 /**
-  * @brief  Set SNTP status, timezone and servers
-  * @param  Enable:  Enable/Disable SNTP usage
-  * @param  Timezone:  Timezone to set in one of the 2 following formats:
-  *                     - range [-12,14]: marks most of the time zones by offset from UTC in whole hours
-  *                     - HHmm with HH in range[-12,+14] and mm in range [00,59]
-  * @param  SntpServer1:  Primary SNTP Server URL to use
-  * @param  SntpServer2:  Secondary SNTP Server URL to use
-  * @param  SntpServer3:  Third SNTP Server URL to use
+  * @brief  Set SNTP status, timezone and servers (the NCP uses the configured servers to
+  *         synchronize its system time)
+  *
+  * @param  enable: Enable (1) / disable (0) SNTP usage
+  * @param  sntp_timezone: Timezone to set in one of the following formats:
+  *                  - range [-12, 14]: UTC offset in whole hours
+  *                  - HHmm with HH in range [-12, +14] and mm in range [00, 59]
+  *                  Example: UTC+5:30 can be provided as 530.
+  * @param  sntp_server1: Primary SNTP server hostname/URL string
+  * @param  sntp_server2: Secondary SNTP server hostname/URL string
+  * @param  sntp_server3: Third SNTP server hostname/URL string
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SNTP_SetConfiguration(uint8_t Enable, int16_t Timezone, uint8_t *SntpServer1,
-                                           uint8_t *SntpServer2, uint8_t *SntpServer3);
+W6X_Status_t W6X_Net_SNTP_SetConfiguration(uint8_t enable, int16_t sntp_timezone, uint8_t *sntp_server1,
+                                           uint8_t *sntp_server2, uint8_t *sntp_server3);
 
 /**
   * @brief  Get SNTP Synchronization interval
-  * @param  Interval:  Configured SNTP time synchronization interval, in seconds
+  * @param  interval:  Configured SNTP time synchronization interval, in seconds
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SNTP_GetInterval(uint16_t *Interval);
+W6X_Status_t W6X_Net_SNTP_GetInterval(uint16_t *interval);
 
 /**
   * @brief  Set SNTP Synchronization interval
-  * @param  Interval:  SNTP time synchronization interval, in seconds (range:[15,4294967])
+  * @param  interval:  SNTP time synchronization interval, in seconds (range:[15,4294967])
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SNTP_SetInterval(uint16_t Interval);
+W6X_Status_t W6X_Net_SNTP_SetInterval(uint16_t interval);
 
 /**
   * @brief  Query date string from SNTP, the used format is asctime style time
-  * @param  Time: Pointer to W6X_Net_Time_t structure to fill with the current time
+  * @param  net_time: Pointer to W6X_Net_Time_t structure to fill with the current time
   * @return Operation status
   */
-W6X_Status_t W6X_Net_SNTP_GetTime(W6X_Net_Time_t *Time);
+W6X_Status_t W6X_Net_SNTP_GetTime(W6X_Net_Time_t *net_time);
 
 /**
   * @brief  Get information for an opened socket
-  * @param  Socket: Connection ID of the socket to get information for
-  * @param  Protocol: Protocol used in this socket ("TCP" "UDP" or "SSL")
-  * @param  RemoteIp: IP address the socket i connected to
-  * @param  RemotePort: Port the socket i connected to
-  * @param  LocalPort: Local port the socket uses
-  * @param  Type:  if the device is the server for that socket, 0 if it is client
+  * @param  socket: Connection ID of the socket to get information for
+  * @param  protocol: Protocol used in this socket ("TCP" "UDP" or "SSL")
+  * @param  remote_ip: IP address the socket i connected to
+  * @param  remote_port: Port the socket i connected to
+  * @param  local_port: Local port the socket uses
+  * @param  type:  if the device is the server for that socket, 0 if it is client
   * @return Operation status
   */
-W6X_Status_t W6X_Net_GetConnectionStatus(uint8_t Socket, uint8_t *Protocol, uint32_t *RemoteIp,
-                                         uint32_t *RemotePort, uint32_t *LocalPort, uint8_t *Type);
+W6X_Status_t W6X_Net_GetConnectionStatus(uint8_t socket, uint8_t *protocol, uint32_t *remote_ip,
+                                         uint32_t *remote_port, uint32_t *local_port, uint8_t *type);
 
 /**
   * @brief  Get a socket instance is available
@@ -734,7 +791,7 @@ int32_t W6X_Net_Connect(int32_t sock, const struct sockaddr *addr, socklen_t add
 /**
   * @brief  Listen for incoming connections on a socket
   * @param  sock: Socket ID to listen on
-  * @param  backlog: Maximum number of pending connections
+  * @param  backlog: maximum number of pending connections
   * @return Operation status
   */
 int32_t W6X_Net_Listen(int32_t sock, int32_t backlog);
@@ -762,7 +819,7 @@ ssize_t W6X_Net_Send(int32_t sock, const void *buf, size_t len, int32_t flags);
   * @brief  Receive data from a socket
   * @param  sock: Socket ID to receive on
   * @param  buf: Buffer to receive into
-  * @param  max_len: Maximum length of the buffer
+  * @param  max_len: maximum length of the buffer
   * @param  flags: Flags to use
   * @return Number of bytes received, or -1 on error
   */
@@ -778,14 +835,14 @@ ssize_t W6X_Net_Recv(int32_t sock, void *buf, size_t max_len, int32_t flags);
   * @param  addrlen: Length of the address
   * @return Number of bytes sent, or -1 on error
   */
-ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags, const struct sockaddr *dest_addr,
-                       socklen_t addrlen);
+ssize_t W6X_Net_Sendto(int32_t sock, const void *buf, size_t len, int32_t flags,
+                       const struct sockaddr *dest_addr, socklen_t addrlen);
 
 /**
   * @brief  Receive data from a socket from a specific address
   * @param  sock: Socket ID to receive on
   * @param  buf: Buffer to receive into
-  * @param  max_len: Maximum length of the buffer
+  * @param  max_len: maximum length of the buffer
   * @param  flags: Flags to use
   * @param  src_addr: Address to receive from
   * @param  addrlen: Length of the address
@@ -877,6 +934,8 @@ int32_t W6X_Net_Inet6_aton(const char *src, struct in6_addr *dst);
 
 /** @} */
 
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
+
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_FWU_Public_Functions ST67W6X Firmware updates Functions
   * @ingroup  ST67W6X_API_FWU
@@ -885,7 +944,7 @@ int32_t W6X_Net_Inet6_aton(const char *src, struct in6_addr *dst);
 /* ===================================================================== */
 
 /**
-  * @brief  Starts the NCP FWU process
+  * @brief  Starts the NCP FWU process (start/stop the NCP firmware update transfer session)
   * @param  enable: 0 Terminate the FWU transmission. 1 Start the FWU transmission
   * @return Operation status
   */
@@ -898,15 +957,17 @@ W6X_Status_t W6X_FWU_Starts(uint32_t enable);
 W6X_Status_t W6X_FWU_Finish(void);
 
 /**
-  * @brief  Send the firmware binary to the module
+  * @brief  Send the firmware binary to the module (sends a chunk of the firmware image; use in a
+  *         loop between ::W6X_FWU_Starts(1) and ::W6X_FWU_Finish)
   * @param  buff: Buffer containing the firmware binary chunk
-  * @param  len: Length of the firmware binary chunk
+  * @param  len: Length of the firmware binary chunk, in bytes
   * @return Operation status
   */
 W6X_Status_t W6X_FWU_Send(uint8_t *buff, uint32_t len);
 
 /** @} */
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_HTTP_Public_Functions ST67W6X HTTP Functions
   * @ingroup  ST67W6X_API_HTTP
@@ -922,17 +983,18 @@ W6X_Status_t W6X_FWU_Send(uint8_t *buff, uint32_t len);
   * @param  method: HTTP method to use
   * @param  post_data: Data to post
   * @param  post_data_len: Length of the data to post
-  * @param  result_fn: Callback function to call when the request is done
-  * @param  callback_arg: Argument to pass to the callback function
-  * @param  headers_done_fn: Callback function to call when the headers are received
-  * @param  data_fn: Callback function to call when data is received
-  * @param  settings: Settings to use for the HTTP request
+  * @param  result_fn: callback function to call when the request is done
+  * @param  callback_arg: argument to pass to the callback function
+  * @param  headers_done_fn: callback function to call when the headers are received
+  * @param  data_fn: callback function to call when data is received
+  * @param  settings: settings to use for the HTTP request
   * @return Operation status
   */
-W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port, const char *uri, const char *method,
-                                     const void *post_data, size_t post_data_len, W6X_HTTP_result_cb_t result_fn,
-                                     void *callback_arg, W6X_HTTP_headers_done_cb_t headers_done_fn,
-                                     W6X_HTTP_data_cb_t data_fn, const W6X_HTTP_connection_t *settings);
+W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port, const char *uri,
+                                     const char *method, const void *post_data, size_t post_data_len,
+                                     W6X_HTTP_result_cb_t result_fn, void *callback_arg,
+                                     W6X_HTTP_headers_done_cb_t headers_done_fn, W6X_HTTP_data_cb_t data_fn,
+                                     const W6X_HTTP_connection_t *settings);
 
 /** @} */
 
@@ -943,11 +1005,12 @@ W6X_Status_t W6X_HTTP_Client_Request(const ip_addr_t *server_addr, uint16_t port
   */
 /* ===================================================================== */
 /**
-  * @brief  Init the MQTT module
-  * @param  p_mqtt_config: MQTT Received data configuration
+  * @brief  Init the MQTT module (initializes the MQTT subsystem; call before ::W6X_MQTT_Configure
+  *         / ::W6X_MQTT_Connect)
+  * @param  mqtt_data: MQTT Received data configuration
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_Init(W6X_MQTT_Data_t *p_mqtt_config);
+W6X_Status_t W6X_MQTT_Init(W6X_MQTT_Data_t *mqtt_data);
 
 /**
   * @brief  De-Init the MQTT module
@@ -956,32 +1019,32 @@ void W6X_MQTT_DeInit(void);
 
 /**
   * @brief  Set/change the pointer where to copy the Recv Data
-  * @param  p_mqtt_config: MQTT Received data configuration
+  * @param  mqtt_data: MQTT Received data configuration
   * @return Operation status
   * @note   This function shall only be called when executing the callback (never on applicative task)
   */
-W6X_Status_t W6X_MQTT_SetRecvDataPtr(W6X_MQTT_Data_t *p_mqtt_config);
+W6X_Status_t W6X_MQTT_SetRecvDataPtr(W6X_MQTT_Data_t *mqtt_data);
 
 /**
   * @brief  MQTT Set user configuration
-  * @param  Config: MQTT configuration
+  * @param  config: MQTT configuration
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_Configure(W6X_MQTT_Connect_t *Config);
+W6X_Status_t W6X_MQTT_Configure(W6X_MQTT_Connect_t *config);
 
 /**
   * @brief  MQTT Connect to broker
-  * @param  Config: MQTT configuration
+  * @param  config: MQTT configuration
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_Connect(W6X_MQTT_Connect_t *Config);
+W6X_Status_t W6X_MQTT_Connect(W6X_MQTT_Connect_t *config);
 
 /**
   * @brief  MQTT Get connection status
-  * @param  Config: MQTT configuration to get the current status
+  * @param  config: MQTT configuration to get the current status
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_GetConnectionStatus(W6X_MQTT_Connect_t *Config);
+W6X_Status_t W6X_MQTT_GetConnectionStatus(W6X_MQTT_Connect_t *config);
 
 /**
   * @brief  MQTT Disconnect from broker
@@ -991,10 +1054,10 @@ W6X_Status_t W6X_MQTT_Disconnect(void);
 
 /**
   * @brief  MQTT Subscribe to a topic
-  * @param  Topic: Topic to subscribe to
+  * @param  topic: Topic to subscribe to
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_Subscribe(uint8_t *Topic);
+W6X_Status_t W6X_MQTT_Subscribe(uint8_t *topic);
 
 /**
   * @brief  MQTT Get subscribed topics
@@ -1004,21 +1067,22 @@ W6X_Status_t W6X_MQTT_GetSubscribedTopics(void);
 
 /**
   * @brief  MQTT Unsubscribe from a topic
-  * @param  Topic: Topic to unsubscribe from
+  * @param  topic: Topic to unsubscribe from
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_Unsubscribe(uint8_t *Topic);
+W6X_Status_t W6X_MQTT_Unsubscribe(uint8_t *topic);
 
 /**
-  * @brief  MQTT Publish a message to a topic
-  * @param  Topic: Topic to publish to
-  * @param  Message: Message to publish
-  * @param  Message_len: Length of the message
-  * @param  Qos: QoS. 0: At most once, 1: At least once, 2: Exactly once
-  * @param  Retain: Retain flag
+  * @brief  MQTT Publish a message to a topic (publishes the provided payload to the given topic)
+  * @param  topic: Topic to publish to
+  * @param  message: Message to publish
+  * @param  message_len: Length of the message, in bytes
+  * @param  qos: QoS. 0: At most once, 1: At least once, 2: Exactly once
+  * @param  retain: Retain flag
   * @return Operation status
   */
-W6X_Status_t W6X_MQTT_Publish(uint8_t *Topic, uint8_t *Message, uint32_t Message_len, uint32_t Qos, uint32_t Retain);
+W6X_Status_t W6X_MQTT_Publish(uint8_t *topic, uint8_t *message, uint32_t message_len, uint32_t qos,
+                              uint32_t retain);
 
 /**
   * @brief  Convert the MQTT state to a string
@@ -1029,6 +1093,8 @@ const char *W6X_MQTT_StateToStr(uint32_t state);
 
 /** @} */
 
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
+
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_BLE_Public_Functions ST67W6X BLE Functions
   * @ingroup  ST67W6X_API_BLE
@@ -1037,19 +1103,20 @@ const char *W6X_MQTT_StateToStr(uint32_t state);
 /* ===================================================================== */
 /**
   * @brief  Get BLE initialization mode
-  * @param  Mode: pointer to BLE mode (Server/Client/Dual)
+  * @param  mode: pointer to BLE mode (Server/Client/Dual)
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetInitMode(W6X_Ble_Mode_e *Mode);
+W6X_Status_t W6X_Ble_GetInitMode(W6X_Ble_Mode_e *mode);
 
 /**
-  * @brief  Initialize BLE Server/Client/Dual mode
+  * @brief  Initialize BLE Server/Client/Dual mode (initializes the BLE subsystem in the requested
+  *         role)
   * @param  mode: BLE mode (Server/Client/Dual)
-  * @param  p_recv_data: Pointer to the received data
-  * @param  max_len: Maximum length of the received data
+  * @param  recv_data: pointer to the received data
+  * @param  max_len: maximum length of the received data
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_len);
+W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *recv_data, size_t max_len);
 
 /**
   * @brief  De-Initialize BLE Server/Client/Dual mode
@@ -1058,12 +1125,12 @@ void W6X_Ble_DeInit(void);
 
 /**
   * @brief  Set/change the pointer where to copy the Recv Data
-  * @param  p_recv_data: Pointer to the received data
-  * @param  recv_data_buf_size: Maximum length of the received data
+  * @param  recv_data: pointer to the received data
+  * @param  recv_data_buf_size: maximum length of the received data
   * @return Operation status
   * @note   This function shall only be called when executing the callback (never on applicative task)
   */
-W6X_Status_t W6X_Ble_SetRecvDataPtr(uint8_t *p_recv_data, uint32_t recv_data_buf_size);
+W6X_Status_t W6X_Ble_SetRecvDataPtr(uint8_t *recv_data, uint32_t recv_data_buf_size);
 
 /**
   * @brief  BLE Set TX Power
@@ -1074,10 +1141,10 @@ W6X_Status_t W6X_Ble_SetTxPower(uint32_t power);
 
 /**
   * @brief  BLE Get TX Power
-  * @param  Power: TX Power
+  * @param  power: TX Power
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetTxPower(uint32_t *Power);
+W6X_Status_t W6X_Ble_GetTxPower(uint32_t *power);
 
 /**
   * @brief  BLE Server Start Advertising
@@ -1093,10 +1160,10 @@ W6X_Status_t W6X_Ble_AdvStop(void);
 
 /**
   * @brief  Retrieves the BLE BD address
-  * @param  BdAddr: BD address of the device
+  * @param  bd_addr: BD address of the device (6 bytes)
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetBDAddress(uint8_t *BdAddr);
+W6X_Status_t W6X_Ble_GetBDAddress(uint8_t bd_addr[6]);
 
 /**
   * @brief  Disconnect from a BLE remote device
@@ -1114,10 +1181,10 @@ W6X_Status_t W6X_Ble_ExchangeMTU(uint32_t conn_handle);
 
 /**
   * @brief  Set BLE BD Address
-  * @param  bdaddr: BD Address
+  * @param  bd_addr: BD Address (6 bytes)
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SetBdAddress(const uint8_t *bdaddr);
+W6X_Status_t W6X_Ble_SetBdAddress(const uint8_t bd_addr[6]);
 
 /**
   * @brief  Set BLE device Name
@@ -1126,33 +1193,36 @@ W6X_Status_t W6X_Ble_SetBdAddress(const uint8_t *bdaddr);
   *         If needed, they must be preceded by a \ to be interpreted correctly.
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SetDeviceName(char *name);
+W6X_Status_t W6X_Ble_SetDeviceName(char name[W6X_BLE_DEVICE_NAME_SIZE]);
 
 /**
   * @brief  This function retrieves the BLE device name
-  * @param  DeviceName: DeviceName to get
+  * @param  device_name: device name to get
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetDeviceName(char *DeviceName);
+W6X_Status_t W6X_Ble_GetDeviceName(char device_name[W6X_BLE_DEVICE_NAME_SIZE]);
 
 /**
-  * @brief  Set BLE Advertising Data
-  * @param  advdata: advertising data
+  * @brief  Set BLE Advertising Data (maximum payload length is ::W6X_BLE_MAX_ADV_DATA_LENGTH
+  *         bytes)
+  * @param  adv_data: advertising data
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SetAdvData(const char *advdata);
+W6X_Status_t W6X_Ble_SetAdvData(const char *adv_data);
 
 /**
-  * @brief  Set BLE scan response Data
-  * @param  scanrespdata: scan response data
+  * @brief  Set BLE scan response Data (maximum payload length is
+  *         ::W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH bytes)
+  * @param  scan_resp_data: scan response data
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SetScanRespData(const char *scanrespdata);
+W6X_Status_t W6X_Ble_SetScanRespData(const char *scan_resp_data);
 
 /**
-  * @brief  Set BLE Advertising Parameters
-  * @param  adv_int_min: minimum advertising interval this parameter is multiplied by 0.625ms
-  * @param  adv_int_max: maximum advertising interval this parameter is multiplied by 0.625ms
+  * @brief  Set BLE Advertising Parameters (advertising intervals are expressed in units of
+  *         0.625 ms)
+  * @param  adv_int_min: Minimum advertising interval in units of 0.625 ms
+  * @param  adv_int_max: maximum advertising interval in units of 0.625 ms
   * @param  adv_type: Advertising type
   * @param  adv_channel: advertising channel
   * @return Operation status
@@ -1162,10 +1232,10 @@ W6X_Status_t W6X_Ble_SetAdvParam(uint32_t adv_int_min, uint32_t adv_int_max,
 
 /**
   * @brief  Start BLE Device scan
-  * @param  cb: Callback to handle scan results
+  * @param  scan_result_cb: callback to handle scan results
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_StartScan(W6X_Ble_Scan_Result_cb_t cb);
+W6X_Status_t W6X_Ble_StartScan(W6X_Ble_Scan_Result_cb_t scan_result_cb);
 
 /**
   * @brief  Stop BLE Device scan
@@ -1174,53 +1244,58 @@ W6X_Status_t W6X_Ble_StartScan(W6X_Ble_Scan_Result_cb_t cb);
 W6X_Status_t W6X_Ble_StopScan(void);
 
 /**
-  * @brief  Set the BLE scan parameters
-  * @param  scan_type: Type of scan (0:passive, 1:active)
-  * @param  own_addr_type: type of BLE BD address
-  * @param  filter_policy: Scan filter policy
-  * @param  scan_interval: scan interval
-  * @param  scan_window: scan window
+  * @brief  Set the BLE scan parameters (configures the GAP scanner used by ::W6X_Ble_StartScan;
+  *         scan_interval/scan_window units are 0.625 ms; constraints: scan_window <=
+  *         scan_interval, valid range [4 .. 0x4000] in 0.625 ms units; example: 50 ms ->
+  *         scan_interval=80)
+  * @param  scan_type: Type of scan. Use ::W6X_BLE_SCAN_PASSIVE or ::W6X_BLE_SCAN_ACTIVE
+  * @param  own_addr_type: Scanner own address type. Use one of ::W6X_Ble_AddrType_e values
+  * @param  filter_policy: Scanner filter policy. Use one of ::W6X_Ble_FilterPolicy_e values
+  * @param  scan_interval: Scan interval in units of 0.625 ms (range [4 .. 0x4000])
+  * @param  scan_window: Scan window in units of 0.625 ms (range [4 .. 0x4000], must be <= scan_interval)
   * @return Operation status
   */
 W6X_Status_t W6X_Ble_SetScanParam(W6X_Ble_ScanType_e scan_type, W6X_Ble_AddrType_e own_addr_type,
                                   W6X_Ble_FilterPolicy_e filter_policy, uint32_t scan_interval, uint32_t scan_window);
 
 /**
-  * @brief  Get the Scan parameters
-  * @param  ScanType: pointer to get scan type
-  * @param  AddrType: pointer to get BLE BD address type
-  * @param  ScanFilter: pointer to get scan filter
-  * @param  ScanInterval: pointer to get scan interval this parameter is multiplied by 0.625ms
-  * @param  ScanWindow: pointer to get scan window this parameter is multiplied by 0.625ms
+  * @brief  Get the Scan parameters (scan_interval and scan_window are expressed in units of
+  *         0.625 ms)
+  * @param  scan_type: output pointer receiving the scan type (::W6X_Ble_ScanType_e)
+  * @param  addr_type: output pointer receiving the own address type (::W6X_Ble_AddrType_e)
+  * @param  scan_filter: output pointer receiving the filter policy (::W6X_Ble_FilterPolicy_e)
+  * @param  scan_interval: output pointer receiving the scan interval in units of 0.625 ms
+  * @param  scan_window: output pointer receiving the scan window in units of 0.625 ms
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetScanParam(W6X_Ble_ScanType_e *ScanType, W6X_Ble_AddrType_e *AddrType,
-                                  W6X_Ble_FilterPolicy_e *ScanFilter, uint32_t *ScanInterval, uint32_t *ScanWindow);
+W6X_Status_t W6X_Ble_GetScanParam(W6X_Ble_ScanType_e *scan_type, W6X_Ble_AddrType_e *addr_type,
+                                  W6X_Ble_FilterPolicy_e *scan_filter, uint32_t *scan_interval,
+                                  uint32_t *scan_window);
 
 /**
   * @brief  Print the scan results
-  * @param  Scan_results: pointer to Scan results
+  * @param  scan_results: pointer to Scan results
   */
-void W6X_Ble_Print_Scan(W6X_Ble_Scan_Result_t *Scan_results);
+void W6X_Ble_Print_Scan(W6X_Ble_Scan_Result_t *scan_results);
 
 /**
   * @brief  Get BLE Advertising Parameters
-  * @param  AdvIntMin: pointer to get minimum advertising interval
-  * @param  AdvIntMax: pointer to get maximum advertising interval
-  * @param  AdvType: pointer to get advertising type
-  * @param  ChannelMap: pointer to get advertising channel
+  * @param  adv_int_min: pointer to get minimum advertising interval
+  * @param  adv_int_max: pointer to get maximum advertising interval
+  * @param  adv_type: pointer to get advertising type
+  * @param  channel_map: pointer to get advertising channel
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetAdvParam(uint32_t *AdvIntMin, uint32_t *AdvIntMax,
-                                 W6X_Ble_AdvType_e *AdvType, W6X_Ble_AdvChannel_e *ChannelMap);
+W6X_Status_t W6X_Ble_GetAdvParam(uint32_t *adv_int_min, uint32_t *adv_int_max,
+                                 W6X_Ble_AdvType_e *adv_type, W6X_Ble_AdvChannel_e *channel_map);
 
 /**
-  * @brief  Set BLE Connection Parameters
+  * @brief  Set BLE Connection Parameters (all time parameters use BLE specification units)
   * @param  conn_handle: BLE connection handle
-  * @param  conn_int_min: minimum connecting interval this parameter is multiplied by 1.25ms
-  * @param  conn_int_max: maximum connecting interval this parameter is multiplied by 1.25ms
+  * @param  conn_int_min: minimum connection interval in units of 1.25 ms
+  * @param  conn_int_max: maximum connection interval in units of 1.25 ms
   * @param  latency: latency
-  * @param  timeout: connection timeout this parameter is multiplied by 10ms
+  * @param  timeout: Connection supervision timeout in units of 10 ms
   * @return Operation status
   */
 W6X_Status_t W6X_Ble_SetConnParam(uint32_t conn_handle, uint32_t conn_int_min,
@@ -1228,32 +1303,33 @@ W6X_Status_t W6X_Ble_SetConnParam(uint32_t conn_handle, uint32_t conn_int_min,
 
 /**
   * @brief  Get the connection parameters
-  * @param  ConnHandle: pointer to get BLE connection handle
-  * @param  ConnIntMin: pointer to get minimum connection interval
-  * @param  ConnIntMax: pointer to get maximum connection interval
-  * @param  ConnIntCurrent: pointer to get current connection interval
-  * @param  Latency: pointer to get latency
-  * @param  Timeout: pointer to get connection timeout
+  * @param  conn_handle: pointer to get BLE connection handle
+  * @param  conn_int_min: pointer to get minimum connection interval
+  * @param  conn_int_max: pointer to get maximum connection interval
+  * @param  conn_int_current: pointer to get current connection interval
+  * @param  latency: pointer to get latency
+  * @param  timeout: pointer to get connection timeout
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetConnParam(uint32_t *ConnHandle, uint32_t *ConnIntMin,
-                                  uint32_t *ConnIntMax, uint32_t *ConnIntCurrent, uint32_t *Latency, uint32_t *Timeout);
+W6X_Status_t W6X_Ble_GetConnParam(uint32_t *conn_handle, uint32_t *conn_int_min,
+                                  uint32_t *conn_int_max, uint32_t *conn_int_current, uint32_t *latency,
+                                  uint32_t *timeout);
 
 /**
   * @brief  Get the connection information
-  * @param  ConnHandle: pointer to get BLE connection handle. 0xFF if no connection
-  * @param  RemoteBDAddr: pointer to get the remote device address
+  * @param  conn_handle: pointer to get BLE connection handle. 0xFF if no connection
+  * @param  remote_bd_addr: pointer to get the remote device address (6 bytes)
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetConn(uint32_t *ConnHandle, uint8_t *RemoteBDAddr);
+W6X_Status_t W6X_Ble_GetConn(uint32_t *conn_handle, uint8_t remote_bd_addr[6]);
 
 /**
   * @brief  Create connection to a remote device
   * @param  conn_handle: index of the BLE connection
-  * @param  RemoteBDAddr: pointer to the remote device address
+  * @param  remote_bd_addr: pointer to the remote device address (6 bytes)
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_Connect(uint32_t conn_handle, uint8_t *RemoteBDAddr);
+W6X_Status_t W6X_Ble_Connect(uint32_t conn_handle, uint8_t remote_bd_addr[6]);
 
 /**
   * @brief  Set the BLE Data length
@@ -1265,7 +1341,9 @@ W6X_Status_t W6X_Ble_Connect(uint32_t conn_handle, uint8_t *RemoteBDAddr);
 W6X_Status_t W6X_Ble_SetDataLength(uint32_t conn_handle, uint32_t tx_bytes, uint32_t tx_trans_time);
 
 /**
-  * @brief  Create BLE Service
+  * @brief  Create BLE Service (service_index must be in range [0 ..
+  *         (::W6X_BLE_MAX_CREATED_SERVICE_NBR - 1)]; service_uuid is a null-terminated UUID
+  *         string; maximum string storage size is ::W6X_BLE_MAX_UUID_SIZE bytes)
   * @param  service_index: index of the service to create
   * @param  service_uuid: UUID of the service to create
   * @param  uuid_type: UUID type of the service to create (0: 16-bit or 2: 128-bit)
@@ -1281,7 +1359,9 @@ W6X_Status_t W6X_Ble_CreateService(uint8_t service_index, const char *service_uu
 W6X_Status_t W6X_Ble_DeleteService(uint8_t service_index);
 
 /**
-  * @brief  Create BLE Characteristic
+  * @brief  Create BLE Characteristic (char_index must be in range [0 ..
+  *         (::W6X_BLE_MAX_CHAR_NBR - 1)]; char_uuid is a null-terminated UUID string; maximum
+  *         string storage size is ::W6X_BLE_MAX_UUID_SIZE bytes)
   * @param  service_index: index of the service containing the new characteristic
   * @param  char_index: index of the characteristic to create
   * @param  char_uuid: UUID of the characteristic to create
@@ -1294,11 +1374,13 @@ W6X_Status_t W6X_Ble_CreateCharacteristic(uint8_t service_index, uint8_t char_in
                                           uint8_t uuid_type, uint8_t char_property, uint8_t char_permission);
 
 /**
-  * @brief  List BLE Services and their Characteristics
-  * @param  ServicesTable: pointer to get the existing services and characteristics
+  * @brief  List BLE Services and their Characteristics (ServicesTable must provide space for at
+  *         least ::W6X_BLE_MAX_CREATED_SERVICE_NBR services; each service can contain up to
+  *         ::W6X_BLE_MAX_CHAR_NBR characteristics)
+  * @param  services_table: pointer to get the existing services and characteristics
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetServicesAndCharacteristics(W6X_Ble_Service_t ServicesTable[]);
+W6X_Status_t W6X_Ble_GetServicesAndCharacteristics(W6X_Ble_Service_t services_table[]);
 
 /**
   * @brief  Register BLE characteristics
@@ -1322,44 +1404,46 @@ W6X_Status_t W6X_Ble_RemoteServiceDiscovery(uint8_t conn_handle);
 W6X_Status_t W6X_Ble_RemoteCharDiscovery(uint8_t conn_handle, uint8_t service_index);
 
 /**
-  * @brief  Notify the Characteristic Value from the Server to a Client
+  * @brief  Notify the Characteristic Value from the Server to a Client (maximum
+  *         notification/indication payload size is ::W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH bytes)
   * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to notify
   * @param  char_index: index of the characteristic to notify
-  * @param  pdata: pointer to the data to notify
-  * @param  req_len: length of the data to notify
+  * @param  data: pointer to the data to notify
+  * @param  req_len: length of the data to notify, in bytes (max ::W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH)
   * @param  sent_data_len: length of the data sent
   * @param  timeout: timeout in ms
   * @return Operation status
   */
 W6X_Status_t W6X_Ble_ServerNotify(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
-                                  void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
+                                  void *data, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
 
 /**
-  * @brief  Indicate the Characteristic Value from the Server to a Client
+  * @brief  Indicate the Characteristic Value from the Server to a Client (maximum
+  *         notification/indication payload size is ::W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH bytes)
   * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to indicate
   * @param  char_index: index of the characteristic to indicate
-  * @param  pdata: pointer to the data to indicate
-  * @param  req_len: length of the data to indicate
+  * @param  data: pointer to the data to indicate
+  * @param  req_len: length of the data to indicate, in bytes (max ::W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH)
   * @param  sent_data_len: length of the data sent
   * @param  timeout: timeout in ms
   * @return Operation status
   */
 W6X_Status_t W6X_Ble_ServerIndicate(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
-                                    void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
+                                    void *data, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
 
 /**
   * @brief  Set the data when Client read characteristic from the Server
   * @param  service_index: index of the service containing characteristic to read
   * @param  char_index: index of the characteristic to read
-  * @param  pdata: pointer to the data to read
+  * @param  data: pointer to the data to read
   * @param  req_len: length of the data to read
   * @param  sent_data_len: length of the data sent
   * @param  timeout: timeout in ms
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_ServerSetReadData(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,
+W6X_Status_t W6X_Ble_ServerSetReadData(uint8_t service_index, uint8_t char_index, void *data, uint32_t req_len,
                                        uint32_t *sent_data_len, uint32_t timeout);
 
 /**
@@ -1367,14 +1451,14 @@ W6X_Status_t W6X_Ble_ServerSetReadData(uint8_t service_index, uint8_t char_index
   * @param  conn_handle: BLE connection handle
   * @param  service_index: index of the service containing characteristic to write in
   * @param  char_index: index of the server characteristic to write in
-  * @param  pdata: pointer to the data to write
+  * @param  data: pointer to the data to write
   * @param  req_len: length of the data to write
   * @param  sent_data_len: length of the data sent
   * @param  timeout: timeout in ms
   * @return Operation status
   */
 W6X_Status_t W6X_Ble_ClientWriteData(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
-                                     void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
+                                     void *data, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout);
 
 /**
   * @brief  Read data from a Server characteristic
@@ -1411,10 +1495,10 @@ W6X_Status_t W6X_Ble_SetSecurityParam(W6X_Ble_SecurityParameter_e security_param
 
 /**
   * @brief  Get BLE security parameters
-  * @param  SecurityParameter: pointer to get BLE security parameter
+  * @param  security_parameter: pointer to get BLE security parameter
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_GetSecurityParam(W6X_Ble_SecurityParameter_e *SecurityParameter);
+W6X_Status_t W6X_Ble_GetSecurityParam(W6X_Ble_SecurityParameter_e *security_parameter);
 
 /**
   * @brief  Start BLE security
@@ -1439,12 +1523,12 @@ W6X_Status_t W6X_Ble_SecurityPassKeyConfirm(uint8_t conn_handle);
 W6X_Status_t W6X_Ble_SecurityPairingConfirm(uint8_t conn_handle);
 
 /**
-  * @brief  BLE set passkey
+  * @brief  BLE enter remote passkey
   * @param  conn_handle: BLE connection handle
   * @param  passkey: BLE security passkey
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SecuritySetPassKey(uint8_t conn_handle, uint32_t passkey);
+W6X_Status_t W6X_Ble_SecurityEnterRemotePassKey(uint8_t conn_handle, uint32_t passkey);
 
 /**
   * @brief  BLE pairing cancel
@@ -1455,20 +1539,36 @@ W6X_Status_t W6X_Ble_SecurityPairingCancel(uint8_t conn_handle);
 
 /**
   * @brief  BLE unpair
-  * @param  RemoteBDAddr: remote device address
+  * @param  remote_bd_addr: remote device address (6 bytes)
   * @param  remote_addr_type: remote address type
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SecurityUnpair(uint8_t *RemoteBDAddr, W6X_Ble_AddrType_e remote_addr_type);
+W6X_Status_t W6X_Ble_SecurityUnpair(uint8_t remote_bd_addr[6], W6X_Ble_AddrType_e remote_addr_type);
 
 /**
   * @brief  BLE get paired device list
-  * @param RemoteBondedDevices: pointer to bonded devices list
+  * @param remote_bonded_devices: pointer to bonded devices list
   * @return Operation status
   */
-W6X_Status_t W6X_Ble_SecurityGetBondedDeviceList(W6X_Ble_Bonded_Devices_Result_t *RemoteBondedDevices);
+W6X_Status_t W6X_Ble_SecurityGetBondedDeviceList(W6X_Ble_Bonded_Devices_Result_t *remote_bonded_devices);
+
+/**
+  * @brief  BLE set GAP appearance
+  * @param  appearance_value: GAP appearance value
+  * @return Operation status
+  */
+W6X_Status_t W6X_Ble_SetGapAppearance(uint16_t appearance_value);
+
+/**
+  * @brief  Convert the BLE Connection Role to a string
+  * @param  role: BLE Connection Role
+  * @return const char*
+  */
+const char *W6X_Ble_RoleToStr(W6X_Ble_Conn_Role_e role);
 
 /** @} */
+
+#if (ST67_ARCH == W6X_ARCH_T02)
 
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_Netif_Public_Functions ST67W6X Network Interface Functions
@@ -1494,11 +1594,11 @@ void W6X_Netif_DeInit(void);
 /**
   * @brief  Send data on the Network Interface
   * @param  link_id: Link ID of the network interface
-  * @param  pBuf: Pointer to the data buffer to send
+  * @param  buf: Pointer to the data buffer to send
   * @param  len: Length of the data buffer
   * @return Operation status
   */
-int32_t W6X_Netif_output(uint32_t link_id, uint8_t *pBuf, uint32_t len);
+int32_t W6X_Netif_output(uint32_t link_id, uint8_t *buf, uint32_t len);
 
 /**
   * @brief  Read data from the Network Interface
@@ -1518,6 +1618,9 @@ int32_t W6X_Netif_free(void *buffer);
 
 /** @} */
 
+#endif /* (ST67_ARCH == W6X_ARCH_T02) */
+
+/* coverity[misra_c_2012_rule_20_1_violation : FALSE] */
 #include "w6x_legacy.h"
 
 #ifdef __cplusplus

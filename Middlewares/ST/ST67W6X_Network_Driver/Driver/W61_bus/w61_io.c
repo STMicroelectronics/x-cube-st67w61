@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_io.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the IO operations to deal with the STM32W61 module.
   *          It mainly initialize and de-initialize the SPI interface.
   *          Send and receive data over it.
@@ -19,7 +19,9 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stdint.h"
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "logging.h"
 #include "w61_io.h"
 #include "FreeRTOS.h"
@@ -30,15 +32,15 @@
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/* Initialization flag */
-static volatile int32_t initialized = 0;
+/** Initialization flag */
+static volatile int32_t BusIo_initialized = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Functions Definition ------------------------------------------------------*/
 int32_t BusIo_SPI_Init(void)
 {
   int32_t ret;
-  if (initialized)
+  if (BusIo_initialized == 1)
   {
     return -1;
   }
@@ -46,14 +48,14 @@ int32_t BusIo_SPI_Init(void)
   ret = spi_transaction_init();
   if (ret == 0)
   {
-    initialized = 1;
+    BusIo_initialized = 1;
   }
   return ret;
 }
 
 int32_t BusIo_SPI_DeInit(void)
 {
-  initialized = 0;
+  BusIo_initialized = 0;
   return spi_transaction_deinit();
 }
 
@@ -127,7 +129,7 @@ int32_t BusIo_SPI_ReceivePtr(uint8_t type, void **buffer, uint8_t **data, uint32
 
 int32_t BusIo_SPI_Free(void *buffer)
 {
-  if (buffer)
+  if (buffer != NULL)
   {
     vPortFree(buffer);
   }

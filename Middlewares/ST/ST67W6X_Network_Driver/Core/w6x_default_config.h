@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_default_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W6X configuration module
   ******************************************************************************
   * @attention
@@ -40,7 +40,7 @@ extern "C" {
 
 #ifndef W6X_CLOCK_MODE
 /** NCP clock mode : 1: Internal RC oscillator, 2: External passive crystal, 3: External active crystal */
-#define W6X_CLOCK_MODE                          1
+#define W6X_CLOCK_MODE                          1U
 #endif /* W6X_CLOCK_MODE */
 
 #ifndef W6X_ASSERT_ENABLE
@@ -58,7 +58,7 @@ extern "C" {
 #ifndef W6X_WIFI_AUTOCONNECT
 /** Boolean to enable/disable autoconnect functionality */
 #define W6X_WIFI_AUTOCONNECT                    0
-#endif /* W61_AUTOCONNECT */
+#endif /* W6X_WIFI_AUTOCONNECT */
 
 #ifndef W6X_WIFI_SAP_MAX_CONNECTED_STATIONS
 /** Define the max number of stations that can connect to the Soft-AP */
@@ -96,7 +96,7 @@ extern "C" {
 
 #ifndef W6X_NET_DHCP
 /** Define the DHCP configuration : 0: NO DHCP, 1: DHCP CLIENT STA, 2:DHCP SERVER AP, 3: DHCP STA+AP */
-#define W6X_NET_DHCP                            1
+#define W6X_NET_DHCP                            1U
 #endif /* W6X_NET_DHCP */
 
 #ifndef W6X_NET_SAP_IP_SUBNET
@@ -112,12 +112,12 @@ extern "C" {
 
 #ifndef W6X_NET_RECV_TIMEOUT
 /** Timeout in ticks when calling W6X_Net_Recv() */
-#define W6X_NET_RECV_TIMEOUT                    5000
+#define W6X_NET_RECV_TIMEOUT                    5000U
 #endif /* W6X_NET_RECV_TIMEOUT */
 
 #ifndef W6X_NET_SEND_TIMEOUT
 /** Timeout in ticks when calling W6X_Net_Send() */
-#define W6X_NET_SEND_TIMEOUT                    5000
+#define W6X_NET_SEND_TIMEOUT                    5000U
 #endif /* W6X_NET_SEND_TIMEOUT */
 
 #ifndef W6X_NET_RECV_BUFFER_SIZE
@@ -125,7 +125,7 @@ extern "C" {
   * @note In the NCP, the LWIP recv function is used with a static buffer with
   * a fixed length of 4608 (3 * 1536). The data is read in chunks of 4608 bytes
   * So in order to get optimal performances, the buffer on NCP side should be twice as big */
-#define W6X_NET_RECV_BUFFER_SIZE                (2 * 3 * 1536)
+#define W6X_NET_RECV_BUFFER_SIZE                9216U
 #endif /* W6X_NET_RECV_BUFFER_SIZE */
 
 /** @} */
@@ -143,12 +143,44 @@ extern "C" {
 
 #ifndef W6X_HTTP_CLIENT_TCP_SOCKET_SIZE
 /** Size of the TCP socket used by the HTTP client, recommended to be at least 0x2000 when fetching lots of data.
-  * 0x2000 is the value used in the SPI host project for firmware updates,
+  * 0x2000 is the value used in the SPI host project for Firmware updates,
   * which retrieves around 1 mega bytes of data. */
 #define W6X_HTTP_CLIENT_TCP_SOCKET_SIZE         0x3000
 #endif /* W6X_HTTP_CLIENT_TCP_SOCKET_SIZE */
 
 /** @} */
+
+/** @defgroup ST67W6X_API_Netif_Public_Constants ST67W6X Network Interface Constants
+  * @ingroup  ST67W6X_API_Netif
+  * @{
+  */
+
+#ifndef W6X_NETIF_STA_RXQ_DEPTH
+/** RX queue depth (number of pending frames) for Network STA traffic */
+#define W6X_NETIF_STA_RXQ_DEPTH                16
+#endif /* W6X_NETIF_STA_RXQ_DEPTH */
+
+#ifndef W6X_NETIF_AP_RXQ_DEPTH
+/** RX queue depth (number of pending frames) for Network AP traffic */
+#define W6X_NETIF_AP_RXQ_DEPTH                 8
+#endif /* W6X_NETIF_AP_RXQ_DEPTH */
+
+/** @} */
+
+#ifndef MEM_PERF_ENABLE
+/** Enable memory performance measurement */
+#define MEM_PERF_ENABLE                         0
+#endif /* MEM_PERF_ENABLE */
+
+#ifndef TASK_PERF_ENABLE
+/** Enable task performance measurement */
+#define TASK_PERF_ENABLE                        0
+#endif /* TASK_PERF_ENABLE */
+
+#ifndef LFS_ENABLE
+/** Enable LittleFS */
+#define LFS_ENABLE                              0
+#endif /* LFS_ENABLE */
 
 #ifdef __cplusplus
 }

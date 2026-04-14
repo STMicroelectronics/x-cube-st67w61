@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_at_common.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the common implementations of the AT driver
   ******************************************************************************
   * @attention
@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include "modem_cmd_handler.h"
 #include "stdio.h"
-#if (SYS_DBG_ENABLE_TA4 >= 1)
+#if (defined(SYS_DBG_ENABLE_TA4) && (SYS_DBG_ENABLE_TA4 >= 1))
 #include "trcRecorder.h"
 #endif /* SYS_DBG_ENABLE_TA4 */
 
@@ -36,10 +36,15 @@
   */
 
 /** Timeout for io send operation */
-#define IO_SEND_TIMEOUT                         2000
+#define IO_SEND_TIMEOUT                         2000U
 
 /** Timeout for io receive operation */
 #define IO_RECEIVE_TIMEOUT                      portMAX_DELAY
+
+#ifndef IO_AT_CMDQ_DEPTH
+/** IO queue depth for AT CMD */
+#define IO_AT_CMDQ_DEPTH                        16
+#endif /* IO_AT_CMDQ_DEPTH */
 
 /** @} */
 
@@ -269,14 +274,14 @@ MODEM_CMD_DECLARE(on_cmd_wifi_scan_event);
   */
 
 /** List of response commands for the modem */
-static const struct modem_cmd response_cmds[] =
+static const struct modem_cmd response_cmds_list[] =
 {
   MODEM_CMD("OK", on_cmd_ok, 0U, ""),
   MODEM_CMD("ERROR", on_cmd_error, 0U, ""),
 };
 
 /** List of unsolicited commands for the modem */
-static const struct modem_cmd unsol_cmds[] =
+static const struct modem_cmd unsol_cmds_list[] =
 {
   MODEM_CMD("ready", on_cmd_ready, 0U, ""),
   MODEM_CMD("+CWLAP:", on_cmd_wifi_scan_event, 8U, ","),
@@ -312,10 +317,10 @@ int32_t W61_AT_ModemInit(W61_Object_t *Obj)
     .match_buf_len = sizeof(mdm->cmd_match_buf),
     .eol = "", /* CRLF sent within the command string to avoid 2 successive write */
     .user_data = mdm,
-    .response_cmds = response_cmds,
-    .response_cmds_len = ARRAY_SIZE(response_cmds),
-    .unsol_cmds = unsol_cmds,
-    .unsol_cmds_len = ARRAY_SIZE(unsol_cmds),
+    .response_cmds = response_cmds_list,
+    .response_cmds_len = ARRAY_SIZE(response_cmds_list),
+    .unsol_cmds = unsol_cmds_list,
+    .unsol_cmds_len = ARRAY_SIZE(unsol_cmds_list),
   };
 
   mdm->sem_response = xSemaphoreCreateBinary();
@@ -336,13 +341,13 @@ int32_t W61_AT_ModemInit(W61_Object_t *Obj)
 
   /* Assign rx_buff */
   /** Linear RX buffer to process */
-  mdm->modem_cmd_handler_data.rx_buf = pvPortMalloc(RX_BUF_SIZE);
-  if (mdm->modem_cmd_handler_data.rx_buf == NULL)
+  mdm->handler_data.rx_buf = pvPortMalloc(RX_BUF_SIZE);
+  if (mdm->handler_data.rx_buf == NULL)
   {
     goto __err;
   }
 
-  ret = modem_cmd_handler_init(&mdm->modem_cmd_handler, &mdm->modem_cmd_handler_data,
+  ret = modem_cmd_handler_init(&mdm->handler, &mdm->handler_data,
                                &cmd_handler_config);
   if (ret < 0)
   {
@@ -357,7 +362,7 @@ int32_t W61_AT_ModemInit(W61_Object_t *Obj)
 
   xReturned = xTaskCreate(W61_Modem_Process_task,
                           (char *)"Modem_Process",
-                          W61_MDM_RX_TASK_STACK_SIZE_BYTES >> 2,
+                          W61_MDM_RX_TASK_STACK_SIZE_BYTES >> 2U,
                           mdm,
                           W61_MDM_RX_TASK_PRIO,
                           &mdm->modem_task_handle);
@@ -377,14 +382,14 @@ int32_t W61_AT_ModemInit(W61_Object_t *Obj)
     goto __err;
   }
 
-  W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT\r\n", W61_NCP_TIMEOUT);
+  (void)W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT\r\n", W61_NCP_TIMEOUT);
 
-  return W61_Status(ret);
+  return ret;
 __err:
-  if (mdm->modem_cmd_handler_data.rx_buf != NULL)
+  if (mdm->handler_data.rx_buf != NULL)
   {
-    vPortFree(mdm->modem_cmd_handler_data.rx_buf);
-    mdm->modem_cmd_handler_data.rx_buf = NULL;
+    vPortFree(mdm->handler_data.rx_buf);
+    mdm->handler_data.rx_buf = NULL;
   }
   if (mdm->sem_response != NULL)
   {
@@ -406,17 +411,17 @@ __err:
     vTaskDelete(mdm->modem_task_handle);
     mdm->modem_task_handle = NULL;
   }
-  return W61_Status(ret);
+  return ret;
 }
 
 void W61_AT_ModemDeInit(W61_Object_t *Obj)
 {
   struct modem *mdm = (struct modem *) &Obj->Modem;
-  io_deinit(&mdm->iface);
-  if (mdm->modem_cmd_handler_data.rx_buf != NULL)
+  (void)io_deinit(&mdm->iface);
+  if (mdm->handler_data.rx_buf != NULL)
   {
-    vPortFree(mdm->modem_cmd_handler_data.rx_buf);
-    mdm->modem_cmd_handler_data.rx_buf = NULL;
+    vPortFree(mdm->handler_data.rx_buf);
+    mdm->handler_data.rx_buf = NULL;
   }
   if (mdm->sem_response != NULL)
   {
@@ -466,7 +471,7 @@ W61_Status_t W61_AT_Common_SetExecute(W61_Object_t *Obj, uint8_t *p_cmd, uint32_
 {
   struct modem *mdm = &Obj->Modem;
   return W61_Status(modem_cmd_send(&mdm->iface,
-                                   &mdm->modem_cmd_handler,
+                                   &mdm->handler,
                                    NULL,
                                    0,
                                    p_cmd,
@@ -478,7 +483,7 @@ W61_Status_t W61_AT_Common_Query_Parse(W61_Object_t *Obj, char *p_cmd, char *p_r
                                        uint16_t *argc, char **argv, uint32_t timeout_ms)
 {
   struct modem *mdm = (struct modem *) &Obj->Modem;
-  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->handler.cmd_handler_data;
   W61_Status_t ret;
 
   if (data == NULL)
@@ -503,7 +508,7 @@ W61_Status_t W61_AT_Common_Query_Parse(W61_Object_t *Obj, char *p_cmd, char *p_r
   };
 
   ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
-                                      &mdm->modem_cmd_handler,
+                                      &mdm->handler,
                                       handlers,
                                       ARRAY_SIZE(handlers),
                                       (const uint8_t *)p_cmd,
@@ -528,13 +533,13 @@ W61_Status_t W61_AT_Common_RequestSendData(W61_Object_t *Obj, uint8_t *p_cmd, ui
     MODEM_CMD("Recv ", on_cmd_recv, 1U, " "),
   };
 
-  (void)xSemaphoreTake(mdm->modem_cmd_handler_data.sem_tx_lock, portMAX_DELAY);
+  (void)xSemaphoreTake(mdm->handler_data.sem_tx_lock, portMAX_DELAY);
   /*reset mdm->sem_tx_read */
   (void)xSemaphoreTake(mdm->sem_tx_ready, 0);
 
-  ret = modem_cmd_send_ext(&mdm->iface, &mdm->modem_cmd_handler,
+  ret = modem_cmd_send_ext(&mdm->iface, &mdm->handler,
                            cmds, ARRAY_SIZE(cmds), p_cmd, mdm->sem_response,
-                           check_resp ? pdMS_TO_TICKS(timeout_ms) : 0, /* If check_resp is false don't wait for OK */
+                           check_resp ? pdMS_TO_TICKS(timeout_ms) : 0U, /* If check_resp is false don't wait for OK */
                            MODEM_NO_TX_LOCK | MODEM_NO_UNSET_CMDS);
   if (ret < 0)
   {
@@ -573,16 +578,16 @@ W61_Status_t W61_AT_Common_RequestSendData(W61_Object_t *Obj, uint8_t *p_cmd, ui
     goto out;
   }
 
-  ret = modem_cmd_handler_get_error(&mdm->modem_cmd_handler_data);
+  ret = modem_cmd_handler_get_error(&mdm->handler_data);
   if (ret != 0)
   {
     SYS_LOG_DEBUG("Failed to send data\n");
   }
 
 out:
-  (void)modem_cmd_handler_update_cmds(&mdm->modem_cmd_handler_data,
+  (void)modem_cmd_handler_update_cmds(&mdm->handler_data,
                                       NULL, 0U, false);
-  (void)xSemaphoreGive(mdm->modem_cmd_handler_data.sem_tx_lock);
+  (void)xSemaphoreGive(mdm->handler_data.sem_tx_lock);
 
   return W61_Status(ret);
 }
@@ -591,30 +596,30 @@ void W61_AT_RemoveStrQuotes(char *inbuf)
 {
   int32_t len = strlen(inbuf);
 
-  if (len < 2)
+  if (len < 2U)
   {
     return; /* Nothing to do */
   }
-  inbuf[len - 1] = '\0'; /* Ensure the last character is null-terminated */
+  inbuf[len - 1U] = '\0'; /* Ensure the last character is null-terminated */
   /* Ensure the first character is not a double quote */
-  memmove(inbuf, inbuf + 1, len);
+  (void)memmove(inbuf, inbuf + 1, len);
 }
 
 void W61_AT_Logger(uint8_t *pBuf, uint32_t len, char *inOut)
 {
   char log_message[W61_MAX_AT_LOG_LENGTH];
-  uint32_t message_len = W61_MAX_AT_LOG_LENGTH - 1;
-  if (len < W61_MAX_AT_LOG_LENGTH - 1)
+  uint32_t message_len = W61_MAX_AT_LOG_LENGTH - 1U;
+  if (len < (W61_MAX_AT_LOG_LENGTH - 1U))
   {
     message_len = len;
   }
-  memcpy(log_message, pBuf, message_len);
-  log_message[message_len] = 0;
-  if (message_len == W61_MAX_AT_LOG_LENGTH - 1)
+  (void)memcpy(log_message, pBuf, message_len);
+  log_message[message_len] = '\0';
+  if (message_len == (W61_MAX_AT_LOG_LENGTH - 1U))
   {
-    log_message[message_len - 1] = '.';
-    log_message[message_len - 2] = '.';
-    log_message[message_len - 3] = '.';
+    log_message[message_len - 1U] = '.';
+    log_message[message_len - 2U] = '.';
+    log_message[message_len - 3U] = '.';
   }
   SYS_LOG_DEBUG("AT%s %s\n", inOut, log_message);
 }
@@ -630,10 +635,10 @@ char *strnstr(const char *big, const char *little, size_t len)
     return ((char *)big);
   }
   j = 0;
-  while (j < len && big[j])
+  while ((j < len) && (big[j] != '\0'))
   {
     i = 0;
-    while (j < len && little[i] && big[j] && little[i] == big[j])
+    while ((j < len) && (little[i] != '\0') && (big[j] != '\0') && (little[i] == big[j]))
     {
       ++i;
       ++j;
@@ -642,9 +647,9 @@ char *strnstr(const char *big, const char *little, size_t len)
     {
       return ((char *)&big[j - i]);
     }
-    j = j - i + 1;
+    j = j - i + 1U;
   }
-  return (0);
+  return NULL;
 }
 #endif /* __ICCARM__ || __ARMCC_VERSION */
 
@@ -659,12 +664,12 @@ static int32_t io_init(struct modem_iface *iface)
   {
     return -1;
   }
-  if (BusIo_SPI_Bind(SPI_MSG_CTRL_TRAFFIC_AT_CMD, 16, NULL) != 0)
+  if (BusIo_SPI_Bind(SPI_MSG_CTRL_TRAFFIC_AT_CMD, (int32_t)IO_AT_CMDQ_DEPTH, NULL) != 0)
   {
     return -1;
   }
-  iface->read = modem_iface_spi_read;
-  iface->write = modem_iface_spi_write;
+  iface->mdm_read = modem_iface_spi_read;
+  iface->mdm_write = modem_iface_spi_write;
   return 0;
 }
 
@@ -678,8 +683,8 @@ static int32_t io_deinit(struct modem_iface *iface)
   {
     return -1;
   }
-  iface->read = NULL;
-  iface->write = NULL;
+  iface->mdm_read = NULL;
+  iface->mdm_write = NULL;
   return 0;
 }
 
@@ -687,9 +692,9 @@ static void W61_Modem_Process_task(void *arg)
 {
   struct modem *mdm = (struct modem *) arg;
 
-  while (1)
+  while (true)
   {
-    modem_cmd_handler_process(&mdm->modem_cmd_handler,
+    modem_cmd_handler_process(&mdm->handler,
                               &mdm->iface);
   }
 }
@@ -697,7 +702,7 @@ static void W61_Modem_Process_task(void *arg)
 static int32_t modem_iface_spi_write(struct modem_iface *iface,
                                      const uint8_t *buf, size_t size)
 {
-  if (size == 0)
+  if (size == 0U)
   {
     return 0;
   }
@@ -726,7 +731,7 @@ MODEM_CMD_DEFINE(on_cmd_query)
   /*len of the current mdm->cmd_match_buf + '\0'*/
   int32_t mlen = (argv[argc - 1] - mdm->cmd_match_buf) + strlen((char *) argv[argc - 1]) + 1;
 
-  memcpy(mdm->rx_data, (char *) mdm->cmd_match_buf, mlen);
+  (void)memcpy(mdm->rx_data, (char *) mdm->cmd_match_buf, mlen);
   /* Record and offset argv to mdm->rx_data */
   for (int32_t i = 0; i < argc; i++)
   {
@@ -749,22 +754,22 @@ MODEM_CMD_DEFINE(on_cmd_recv)
 {
   struct modem *mdm = (struct modem *) data->user_data;
   int32_t recv_len = 0;
-  if (argc > 0)
+  if (argc > 0U)
   {
     recv_len = atoi((char *) argv[0]);
     /*check if length received by modem is matching the sent value */
     if (recv_len != mdm->rx_data_len)
     {
-      modem_cmd_handler_set_error(data, -EIO);
+      (void)modem_cmd_handler_set_error(data, -EIO);
     }
     else
     {
-      modem_cmd_handler_set_error(data, 0);
+      (void)modem_cmd_handler_set_error(data, 0);
     }
   }
   else
   {
-    modem_cmd_handler_set_error(data, -EIO);
+    (void)modem_cmd_handler_set_error(data, -EIO);
   }
 
   (void)xSemaphoreGive(mdm->sem_response);
@@ -777,7 +782,7 @@ MODEM_CMD_DEFINE(on_cmd_ok)
 {
   struct modem *mdm = (struct modem *) data->user_data;
 
-  modem_cmd_handler_set_error(data, 0);
+  (void)modem_cmd_handler_set_error(data, 0);
 
   (void)xSemaphoreGive(mdm->sem_response);
 
@@ -789,7 +794,7 @@ MODEM_CMD_DEFINE(on_cmd_error)
 {
   struct modem *mdm = (struct modem *) data->user_data;
 
-  modem_cmd_handler_set_error(data, -EIO);
+  (void)modem_cmd_handler_set_error(data, -EIO);
 
   (void)xSemaphoreGive(mdm->sem_response);
 

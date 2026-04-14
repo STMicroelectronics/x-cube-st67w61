@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_default_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W61 configuration module
   ******************************************************************************
   * @attention
@@ -34,7 +34,7 @@ extern "C" {
 
 #ifndef W61_WIFI_MAX_DETECTED_AP
 /** Maximum number of detected AP during the scan. Cannot be greater than 50 */
-#define W61_WIFI_MAX_DETECTED_AP                20
+#define W61_WIFI_MAX_DETECTED_AP                20U
 #endif /* W61_WIFI_MAX_DETECTED_AP */
 
 #ifndef WIFI_LOG_ENABLE
@@ -55,28 +55,28 @@ extern "C" {
   * - Client mode (9 connection max)
   * - Dual Mode (10 connections max with up to 9 as Client)
   */
-#define W61_BLE_MAX_CONN_NBR                    2
+#define W61_BLE_MAX_CONN_NBR                    2U
 #endif /* W61_BLE_MAX_CONN_NBR */
 
 /** Maximum number of BLE application services that can be created */
-#define W61_BLE_MAX_CREATED_SERVICE_NBR         3
+#define W61_BLE_MAX_CREATED_SERVICE_NBR         3U
 
 /** Maximum number of BLE services supported including Generic access and Generic attributes predefined services */
-#define W61_BLE_MAX_SERVICE_NBR                 W61_BLE_MAX_CREATED_SERVICE_NBR + 2
+#define W61_BLE_MAX_SERVICE_NBR                 (W61_BLE_MAX_CREATED_SERVICE_NBR + 2U)
 
 /** Maximum number of BLE characteristics per service */
-#define W61_BLE_MAX_CHAR_NBR                    5
+#define W61_BLE_MAX_CHAR_NBR                    5U
 
 #ifndef W61_BLE_MAX_DETECTED_PERIPHERAL
 /** Maximum number of detected peripheral during the scan. Cannot be greater than 50 */
-#define W61_BLE_MAX_DETECTED_PERIPHERAL         10
+#define W61_BLE_MAX_DETECTED_PERIPHERAL         10U
 #endif /* W61_BLE_MAX_DETECTED_PERIPHERAL */
 
 /** BLE Service/Characteristic UUID maximum size size */
-#define W61_BLE_MAX_UUID_SIZE                   17
+#define W61_BLE_MAX_UUID_SIZE                   17U
 
 /** Maximum number of bonded devices */
-#define W61_BLE_MAX_BONDED_DEVICES              2
+#define W61_BLE_MAX_BONDED_DEVICES              2U
 
 #ifndef BLE_LOG_ENABLE
 /** Enable/Disable BLE module logging */
@@ -118,10 +118,10 @@ extern "C" {
 
 #ifndef W61_MAX_SPI_XFER
 /** Maximum SPI buffer size */
-#define W61_MAX_SPI_XFER                        1520
+#define W61_MAX_SPI_XFER                        1520U
 #endif /* W61_MAX_SPI_XFER */
 
-#if ((W61_MAX_SPI_XFER < 1520) || (W61_MAX_SPI_XFER > (6 * 1024)))
+#if ((W61_MAX_SPI_XFER < 1520U) || (W61_MAX_SPI_XFER > (6U * 1024U)))
 #error "W6X_MAX_SPI_XFER must be between 1520 and (6*1024)"
 #endif /* W61_MAX_SPI_XFER */
 

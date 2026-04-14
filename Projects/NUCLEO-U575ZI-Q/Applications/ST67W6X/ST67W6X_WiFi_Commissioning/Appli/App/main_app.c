@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    main_app.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   main_app program body
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -79,7 +79,7 @@ typedef struct
 /* USER CODE END PTD */
 
 /* Private defines -----------------------------------------------------------*/
-#define EVENT_FLAG_SCAN_DONE   (1<<1)             /*!< Scan done event bitmask */
+#define EVENT_FLAG_SCAN_DONE   (1UL << 1U)        /*!< Scan done event bitmask */
 
 #define WIFI_SCAN_TIMEOUT      10000              /*!< Delay before to declare the scan in failure */
 
@@ -179,7 +179,7 @@ int32_t APP_shell_quit(int32_t argc, char **argv);
 /**
   * @brief  Initialize the low power manager
   */
-static void LowPowerManagerInit(void);
+void LowPowerManagerInit(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -188,19 +188,23 @@ static void LowPowerManagerInit(void);
 /* Functions Definition ------------------------------------------------------*/
 void main_app(void)
 {
-  int32_t ret = 0;
+  W6X_Status_t ret;
   W6X_WiFi_ApConfig_t ap_config = {0};
 
   /* USER CODE BEGIN main_app_1 */
 
   /* USER CODE END main_app_1 */
 
+#if (LOW_POWER_MODE > LOW_POWER_DISABLE)
   LowPowerManagerInit();
+#endif /* LOW_POWER_MODE */
 
   /* Initialize the logging utilities */
   LoggingInit();
+#if (SHELL_ENABLE == 1)
   /* Initialize the shell utilities on UART instance */
   ShellInit();
+#endif /* SHELL_ENABLE == 1 */
 
   LogInfo("#### Welcome to %s Application #####\n", app_info.name);
   LogInfo("# build: %s %s\n", __TIME__, __DATE__);
@@ -218,11 +222,11 @@ void main_app(void)
   App_cb.APP_ble_cb = APP_ble_cb;
   App_cb.APP_mqtt_cb = APP_mqtt_cb;
   App_cb.APP_error_cb = APP_error_cb;
-  W6X_RegisterAppCb(&App_cb);
+  (void)W6X_RegisterAppCb(&App_cb);
 
   /* Initialize the ST67W6X Driver */
   ret = W6X_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
@@ -230,7 +234,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Wi-Fi module */
   ret = W6X_WiFi_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
@@ -239,7 +243,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Network module */
   ret = W6X_Net_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
@@ -255,11 +259,11 @@ void main_app(void)
   ap_config.Security = WIFI_SAP_SECURITY;
   ap_config.MaxConnections = WIFI_SAP_MAX_CONNECTIONS;
   ap_config.Protocol = W6X_WIFI_PROTOCOL_11AX;
-  strncpy((char *)ap_config.SSID, WIFI_SAP_SSID, W6X_WIFI_MAX_SSID_SIZE);
-  strncpy((char *)ap_config.Password, WIFI_SAP_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
+  (void)strncpy((char *)ap_config.SSID, WIFI_SAP_SSID, W6X_WIFI_MAX_SSID_SIZE);
+  (void)strncpy((char *)ap_config.Password, WIFI_SAP_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
   ret = W6X_WiFi_AP_Start(&ap_config);
 
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to start soft-AP, %" PRIi32 "\n", ret);
     goto _err;
@@ -269,7 +273,7 @@ void main_app(void)
     LogInfo("Soft-AP started\n");
   }
 
-  while (1)
+  while (true)
   {
     /* Start HTTP server and store credentials to connect STA */
     http_server_socket(NULL);
@@ -295,7 +299,7 @@ void main_app(void)
 
       /* Define the default factor to apply to AP DTIM interval when connected */
       ret = W6X_WiFi_SetDTIM(WIFI_DTIM);
-      if (ret)
+      if (ret != W6X_STATUS_OK)
       {
         LogError("Failed to initialize the DTIM, %" PRIi32 "\n", ret);
         goto _err;
@@ -309,7 +313,7 @@ void main_app(void)
     }
     credentials = 0;
 
-    vTaskDelay(1000);
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 
   /* USER CODE BEGIN main_app_Last */
@@ -335,63 +339,41 @@ _err:
   LogInfo("##### Application end\n");
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin);
-
-void HAL_GPIO_EXTI_Callback(uint16_t pin)
-{
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_1 */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_1 */
-  /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
-  {
-    if (HAL_GPIO_ReadPin(SPI_RDY_GPIO_Port, SPI_RDY_Pin) == GPIO_PIN_SET)
-    {
-      HAL_GPIO_EXTI_Rising_Callback(pin);
-    }
-    else
-    {
-      HAL_GPIO_EXTI_Falling_Callback(pin);
-    }
-  }
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_End */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_End */
-}
-
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Rising_Callback_1 */
 
   /* USER CODE END EXTI_Rising_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_txn_data_ready();
+    (void)spi_on_txn_data_ready();
   }
   /* USER CODE BEGIN EXTI_Rising_Callback_End */
 
   /* USER CODE END EXTI_Rising_Callback_End */
 }
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Falling_Callback_1 */
 
   /* USER CODE END EXTI_Falling_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_header_ack();
+    (void)spi_on_header_ack();
   }
 
   /* Callback when user button is pressed */
-  if (pin == USER_BUTTON_Pin)
+  if (GPIO_Pin == USER_BUTTON_Pin)
   {
     button_changed++;
-    button_changed %= 2;
+    button_changed %= 2U;
   }
   /* USER CODE BEGIN EXTI_Falling_Callback_End */
 
@@ -405,7 +387,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin)
 /* Private Functions Definition ----------------------------------------------*/
 static void APP_wifi_cb(W6X_event_id_t event_id, void *event_args)
 {
-  W6X_WiFi_CbParamData_t *cb_data = {0};
+  W6X_WiFi_CbParamData_t *cb_data;
 
   switch (event_id)
   {
@@ -428,10 +410,8 @@ static void APP_wifi_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     case W6X_WIFI_EVT_STA_CONNECTED_ID:
-#if 0
       cb_data = (W6X_WiFi_CbParamData_t *)event_args;
       LogInfo("Station connected to soft-AP : [" MACSTR "]\n", MAC2STR(cb_data->MAC));
-#endif /* 0 */
       break;
 
     case W6X_WIFI_EVT_STA_DISCONNECTED_ID:
@@ -440,6 +420,7 @@ static void APP_wifi_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Wi-Fi events unmanaged */
       break;
   }
 }
@@ -457,6 +438,7 @@ static void APP_net_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Net events unmanaged */
       break;
   }
 }
@@ -496,7 +478,7 @@ int32_t APP_shell_quit(int32_t argc, char **argv)
 SHELL_CMD_EXPORT_ALIAS(APP_shell_quit, quit, quit. Stop application execution);
 #endif /* SHELL_ENABLE */
 
-static void LowPowerManagerInit(void)
+void LowPowerManagerInit(void)
 {
   /* USER CODE BEGIN LowPowerManagerInit_1 */
 
@@ -524,11 +506,11 @@ static void LowPowerManagerInit(void)
 
 #if (LOW_POWER_MODE < LOW_POWER_STDBY_ENABLE)
   /* Disable Stand-by mode */
-  UTIL_LPM_SetOffMode((1 << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
+  UTIL_LPM_SetOffMode((1UL << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
 #endif /* LOW_POWER_MODE */
 #if (LOW_POWER_MODE < LOW_POWER_STOP_ENABLE)
   /* Disable Stop Mode */
-  UTIL_LPM_SetStopMode((1 << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
+  UTIL_LPM_SetStopMode((1UL << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
 #endif /* LOW_POWER_MODE */
 #endif /* LOW_POWER_MODE */
 

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    app_st67w6x.h
-  * @author  GPM Application Team
-  * @brief   This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.2.0 instances.
+  * @author  ST67 Application Team
+  * @brief   This file provides code for the configuration of the STMicroelectronics.X-CUBE-ST67W61.1.3.0 instances.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -19,8 +19,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __APP_ST67W6X_H
-#define __APP_ST67W6X_H
+#ifndef APP_ST67W6X_H
+#define APP_ST67W6X_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,4 +50,4 @@ void MX_ST67W6X_Init(void);
 }
 #endif /* __cplusplus */
 
-#endif /* __APP_ST67W6X_H */
+#endif /* APP_ST67W6X_H */

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file is part of the shell module
   ******************************************************************************
   * @attention
@@ -26,7 +26,7 @@
   */
 
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2025, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -51,10 +51,6 @@
 #include "shell_internal.h"
 #include "shell.h"
 
-extern void shell_abort_exec(int32_t sig);
-extern int32_t shell_start_exec(cmd_function_t func, int32_t argc, char *argv[]);
-extern void shell_dup_line(char *cmd, uint32_t length);
-
 /* Exported constants --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /** @addtogroup ST67W6X_Utilities_Shell_Macros
@@ -73,10 +69,10 @@ extern void shell_dup_line(char *cmd, uint32_t length);
 
 /**
   * @brief  Set the print function of shell
-  * @param  shell_printf the print function
+  * @param  shell_printf_fn the print function
   * @return 0 on success, -1 on error
   */
-int32_t shell_set_print(void (*shell_printf)(char *fmt, ...));
+int32_t shell_set_print(void (*shell_printf_fn)(char *fmt, ...));
 
 /**
   * @brief  Set the prompt of shell
@@ -107,9 +103,28 @@ static void shell_handle_history(struct shell *pShell);
 
 /**
   * @brief  Push the command into the shell history
-  * @param  shell the shell instance
+  * @param  pShell the shell instance
  */
-static void shell_push_history(struct shell *shell);
+static void shell_push_history(struct shell *pShell);
+
+#if (SHELL_USING_WORD_OPERATION == 1)
+/**
+  * @brief  Find the previous word start position
+  * @param  line the command line
+  * @param  curpos the current cursor position
+  * @return the previous word start position
+  */
+static int32_t find_prev_word_start(const char *line, int32_t curpos);
+
+/**
+  * @brief  Find the next word end position
+  * @param  line the command line
+  * @param  curpos the current cursor position
+  * @param  max the maximum position
+  * @return the next word end position
+  */
+static int32_t find_next_word_end(const char *line, int32_t curpos, int32_t max);
+#endif /* SHELL_USING_WORD_OPERATION */
 
 /**
   * @brief  Auto complete the command
@@ -189,14 +204,18 @@ size_t strlcat(char *dst, const char *src, size_t size);
 size_t strlcpy(char *dst, const char *src, size_t maxlen)
 {
   const size_t srclen = strlen(src);
-  if (srclen + 1 < maxlen)
+  if ((srclen + 1U) < maxlen)
   {
-    memcpy(dst, src, srclen + 1);
+    (void)memcpy(dst, src, srclen + 1U);
   }
-  else if (maxlen != 0)
+  else if (maxlen != 0U)
   {
-    memcpy(dst, src, maxlen - 1);
-    dst[maxlen - 1] = '\0';
+    (void)memcpy(dst, src, maxlen - 1U);
+    dst[maxlen - 1U] = '\0';
+  }
+  else
+  {
+    /* maxlen is 0, do nothing */
   }
   return srclen;
 }
@@ -209,20 +228,20 @@ size_t strlcat(char *dst, const char *src, size_t size)
   size_t dlen;
 
   /* Find the end of dst and adjust bytes left but don't go past end */
-  while (rsize-- != 0 && *d != '\0')
+  while ((rsize-- != 0U) && (*d != '\0'))
   {
     d++;
   }
   dlen = d - dst;
   rsize = size - dlen;
 
-  if (rsize == 0)
+  if (rsize == 0U)
   {
     return (dlen + strlen(s));
   }
   while (*s != '\0')
   {
-    if (rsize != 1)
+    if (rsize != 1U)
     {
       *d++ = *s;
       rsize--;
@@ -237,94 +256,106 @@ size_t strlcat(char *dst, const char *src, size_t size)
 
 struct shell *shell_get_instance(void)
 {
-  static struct shell shell =
+  static struct shell pShell =
   {
     .syscall_table_begin = NULL,
     .syscall_table_end = NULL,
-    .sysvar_table_begin = NULL,
-    .sysvar_table_end = NULL,
-    .shell_sig_func = NULL
   };
 
-  return &shell;
+  return &pShell;
 }
 
 void shell_handler(uint8_t data)
 {
-  struct shell *shell = shell_get_instance();
+  struct shell *pShell = shell_get_instance();
   /**
     * handle control key
-    * up key  : 0x1b 0x5b 0x41
-    * down key: 0x1b 0x5b 0x42
-    * right key:0x1b 0x5b 0x43
-    * left key: 0x1b 0x5b 0x44
+    * Key              | Key Code             | Notes
+    * --------------------------------------------------------------
+    * ctrl + c         | 0x03                 | interrupt current input
+    * tab              | 0x09                 | auto complete command or display help if empty line
+    * backspace        | 0x08 or 0x7f         | delete character before cursor
+    * up key           | 0x1b 0x5b 0x41       | display previous history command
+    * down key         | 0x1b 0x5b 0x42       | display next history command
+    * right key        | 0x1b 0x5b 0x43       | move cursor right
+    * left key         | 0x1b 0x5b 0x44       | move cursor left
+    * ctrl + right key | 0x1b 0x4f 0x43       | move cursor to next word
+    * ctrl + left key  | 0x1b 0x4f 0x44       | move cursor to previous word
+    * home             | 0x1b 0x5b 0x31 0x7E  | move cursor to beginning of line
+    * insert           | 0x1b 0x5b 0x32 0x7E  | toggle insert/overwrite mode
+    * del              | 0x1b 0x5b 0x33 0x7E  | delete character at current cursor position
+    * end              | 0x1b 0x5b 0x34 0x7E  | move cursor to end of line
     */
 
-  if (data == 0x03)
+  if (data == 0x03U)
   {
     /*!< ctrl + c */
-    if (shell->shell_sig_func)
-    {
-      shell->shell_sig_func(SHELL_SIGINT);
-      shell->shell_sig_func = NULL;
-    }
     SHELL_PRINTF("^C");
-    data = '\r';
+    data = 0x0DU; /* CR */
+    /* Clear command line */
+    pShell->line_position = 0U;
+    pShell->line_curpos = 0U;
   }
 
-  if (data == 0x1b)
+  if (data == 0x1BU)
   {
-    shell->stat = WAIT_SPEC_KEY;
+    pShell->stat = WAIT_SPEC_KEY;
     return;
   }
-  else if (shell->stat == WAIT_SPEC_KEY)
+  else if (pShell->stat == WAIT_SPEC_KEY)
   {
-    if (data == 0x5b)
+    if ((data == 0x5BU) || (data == 0x41U) || (data == 0x42U) || (data == 0x43U) || (data == 0x44U) || (data == 0x4FU))
     {
-      shell->stat = WAIT_FUNC_KEY;
+      pShell->stat = WAIT_FUNC_KEY;
+#if (SHELL_USING_WORD_OPERATION == 1)
+      if (data == 0x4FU)
+      {
+        pShell->control_mode = 1U;
+      }
+#endif /* SHELL_USING_WORD_OPERATION */
       return;
     }
 
-    shell->stat = WAIT_NORMAL;
+    pShell->stat = WAIT_NORMAL;
   }
-  else if (shell->stat == WAIT_FUNC_KEY)
+  else if (pShell->stat == WAIT_FUNC_KEY)
   {
-    shell->stat = WAIT_NORMAL;
+    pShell->stat = WAIT_NORMAL;
 
-    if (data == 0x41) /* Up key */
+    if (data == 0x41U) /* Up key */
     {
       /* Prev history */
-      if (shell->current_history > 0)
+      if (pShell->current_history > 0U)
       {
-        shell->current_history--;
+        pShell->current_history--;
       }
       else
       {
-        shell->current_history = 0;
+        pShell->current_history = 0U;
         return;
       }
 
       /* Copy the history command */
-      memcpy(shell->line, &shell->cmd_history[shell->current_history][0],
-             SHELL_CMD_SIZE);
-      shell->line_curpos = shell->line_position = strlen(shell->line);
-      shell_handle_history(shell);
+      (void)memcpy(pShell->line, &pShell->cmd_history[pShell->current_history][0], SHELL_CMD_SIZE);
+      pShell->line_position = (uint16_t)strlen(pShell->line);
+      pShell->line_curpos = pShell->line_position;
+      shell_handle_history(pShell);
 
       return;
     }
-    else if (data == 0x42) /* Down key */
+    if (data == 0x42U) /* Down key */
     {
       /* Next history */
-      if (shell->current_history < shell->history_count - 1)
+      if (pShell->current_history < (pShell->history_count - 1U))
       {
-        shell->current_history++;
+        pShell->current_history++;
       }
       else
       {
         /* Set to the end of history */
-        if (shell->history_count != 0)
+        if (pShell->history_count != 0U)
         {
-          shell->current_history = shell->history_count - 1;
+          pShell->current_history = pShell->history_count - 1U;
         }
         else
         {
@@ -332,82 +363,184 @@ void shell_handler(uint8_t data)
         }
       }
 
-      memcpy(shell->line, &shell->cmd_history[shell->current_history][0],
-             SHELL_CMD_SIZE);
-      shell->line_curpos = shell->line_position = strlen(shell->line);
-      shell_handle_history(shell);
+      (void)memcpy(pShell->line, &pShell->cmd_history[pShell->current_history][0], SHELL_CMD_SIZE);
+      pShell->line_position = (uint16_t)strlen(pShell->line);
+      pShell->line_curpos = pShell->line_position;
+      shell_handle_history(pShell);
 
       return;
     }
-    else if (data == 0x44) /* Left key */
+    if (data == 0x44U) /* Left key */
     {
-      if (shell->line_curpos)
+      if (pShell->line_curpos > 0U)
       {
-        SHELL_PRINTF("\b");
-        shell->line_curpos--;
+#if (SHELL_USING_WORD_OPERATION == 1)
+        if (pShell->control_mode == 1U) /* Ctrl + left handling */
+        {
+          int32_t new_pos = find_prev_word_start(pShell->line, pShell->line_curpos);
+          if (new_pos != pShell->line_curpos)
+          {
+            SHELL_PRINTF("\033[%dD", pShell->line_curpos - new_pos);
+            pShell->line_curpos = new_pos;
+          }
+          pShell->control_mode = 0U;
+        }
+        else
+#endif /* SHELL_USING_WORD_OPERATION */
+        {
+          SHELL_PRINTF("\b");
+          pShell->line_curpos--;
+        }
       }
 
       return;
     }
-    else if (data == 0x43) /* Right key */
+    if (data == 0x43U) /* Right key */
     {
-      if (shell->line_curpos < shell->line_position)
+      if (pShell->line_curpos < pShell->line_position)
       {
-        SHELL_PRINTF("%c", shell->line[shell->line_curpos]);
-        shell->line_curpos++;
+#if (SHELL_USING_WORD_OPERATION == 1)
+        if (pShell->control_mode == 1U) /* Ctrl + right handling */
+        {
+          int32_t new_pos = find_next_word_end(pShell->line, pShell->line_curpos, pShell->line_position);
+          if (new_pos != pShell->line_curpos)
+          {
+            SHELL_PRINTF("\033[%dC", new_pos - pShell->line_curpos);
+            pShell->line_curpos = new_pos;
+          }
+          pShell->control_mode = 0U;
+        }
+        else
+#endif /* SHELL_USING_WORD_OPERATION */
+        {
+          SHELL_PRINTF("%c", pShell->line[pShell->line_curpos]);
+          pShell->line_curpos++;
+        }
       }
+      return;
+    }
+#if (SHELL_USING_FUNC_EXT == 1)
+    if ((data >= 0x31U) && (data <= 0x34U)) /* Extended key: home(0x31), insert(0x32), del(0x33), end(0x34) */
+    {
+      pShell->stat                           = WAIT_EXT_KEY;
+      pShell->line[pShell->line_position + 1U] = (char)data; /* Store the key code */
       return;
     }
   }
+  else if (pShell->stat == WAIT_EXT_KEY)
+  {
+    pShell->stat = WAIT_NORMAL;
+
+    if (data == 0x7EU) /* Extended key terminator */
+    {
+      char key_code = pShell->line[pShell->line_position + 1U];
+
+      if (key_code == (char)0x31U) /* Home key */
+      {
+        /* Move cursor to beginning of line */
+        while (pShell->line_curpos > 0U)
+        {
+          SHELL_PRINTF("\b");
+          pShell->line_curpos--;
+        }
+        return;
+      }
+      if (key_code == (char)0x32U) /* Insert key */
+      {
+        /* Toggle insert mode */
+        pShell->overwrite_mode = (pShell->overwrite_mode == 0U) ? 1U : 0U;
+        return;
+      }
+      if (key_code == (char)0x33U) /* Del key */
+      {
+        /* Delete character at current cursor position */
+        if (pShell->line_curpos < pShell->line_position)
+        {
+          pShell->line_position--;
+          (void)memmove(&pShell->line[pShell->line_curpos],
+                        &pShell->line[pShell->line_curpos + 1U],
+                        (size_t)pShell->line_position - (size_t)pShell->line_curpos);
+
+          pShell->line[pShell->line_position] = '\0';
+
+          SHELL_PRINTF("%s ", &pShell->line[pShell->line_curpos]);
+
+          /* Move cursor back to original position */
+          for (uint16_t i = pShell->line_curpos; i <= pShell->line_position; i++)
+          {
+            SHELL_PRINTF("\b");
+          }
+        }
+        return;
+      }
+      if (key_code == (char)0x34U) /* End key */
+      {
+        /* Move cursor to end of line */
+        while (pShell->line_curpos < pShell->line_position)
+        {
+          SHELL_PRINTF("%c", pShell->line[pShell->line_curpos]);
+          pShell->line_curpos++;
+        }
+        return;
+      }
+      return; /* Unknown extended key */
+    }
+#endif /* SHELL_USING_FUNC_EXT */
+  }
+  else
+  {
+    /* stat undefined */
+  }
 
   /* Received null or error */
-  if ((data == '\0') || (data == 0xFF))
+  if ((data == 0U) || (data == 0xFFU))
   {
     return;
   }
   /* Handle tab key */
-  else if (data == '\t')
+  if (data == 0x09U)
   {
     int32_t i;
 
     /* Move the cursor to the beginning of line */
-    for (i = 0; i < shell->line_curpos; i++)
+    for (i = 0; i < pShell->line_curpos; i++)
     {
       SHELL_PRINTF("\b");
     }
 
     /* Auto complete */
-    shell_auto_complete(&shell->line[0]);
+    shell_auto_complete(&pShell->line[0]);
     /* Re-calculate position */
-    shell->line_curpos = shell->line_position = strlen(shell->line);
+    pShell->line_position = (uint16_t)strlen(pShell->line);
+    pShell->line_curpos = pShell->line_position;
 
     return;
   }
   /* Handle backspace key */
-  else if (data == 0x7f || data == 0x08)
+  if ((data == 0x7FU) || (data == 0x08U))
   {
-    /* Note that shell->line_curpos >= 0 */
-    if (shell->line_curpos == 0)
+    /* Note that pShell->line_curpos >= 0 */
+    if (pShell->line_curpos == 0U)
     {
       return;
     }
 
-    shell->line_position--;
-    shell->line_curpos--;
+    pShell->line_position--;
+    pShell->line_curpos--;
 
-    if (shell->line_position > shell->line_curpos)
+    if (pShell->line_position > pShell->line_curpos)
     {
       int32_t i;
 
-      memmove(&shell->line[shell->line_curpos],
-              &shell->line[shell->line_curpos + 1],
-              shell->line_position - shell->line_curpos);
-      shell->line[shell->line_position] = 0;
+      (void)memmove(&pShell->line[pShell->line_curpos],
+                    &pShell->line[pShell->line_curpos + 1U],
+                    pShell->line_position - pShell->line_curpos);
+      pShell->line[pShell->line_position] = '\0';
 
-      SHELL_PRINTF("\b%s  \b", &shell->line[shell->line_curpos]);
+      SHELL_PRINTF("\b%s  \b", &pShell->line[pShell->line_curpos]);
 
       /* Move the cursor to the origin position */
-      for (i = shell->line_curpos; i <= shell->line_position; i++)
+      for (i = pShell->line_curpos; i <= pShell->line_position; i++)
       {
         SHELL_PRINTF("\b");
       }
@@ -415,21 +548,21 @@ void shell_handler(uint8_t data)
     else
     {
       SHELL_PRINTF("\b \b");
-      shell->line[shell->line_position] = 0;
+      pShell->line[pShell->line_position] = '\0';
     }
 
     return;
   }
 
   /* Handle end of line, break */
-  if (data == '\r' || data == '\n')
+  if ((data == 0x0AU) || (data == 0x0DU))
   {
-    shell_push_history(shell);
+    shell_push_history(pShell);
 
     SHELL_PRINTF("\n");
 
 #if (SHELL_PRINT_STATUS == 1)
-    int32_t cmd_ret = shell_exec(shell->line, shell->line_position);
+    int32_t cmd_ret = shell_exec(pShell->line, pShell->line_position);
     if (cmd_ret == SHELL_STATUS_OK)
     {
       SHELL_PRINTF("SUCCESS\n");
@@ -438,79 +571,98 @@ void shell_handler(uint8_t data)
     {
       SHELL_PRINTF("ERROR\n");
     }
+    else
+    {
+      /* No command found, do nothing */
+    }
 #else
-    shell_exec(shell->line, shell->line_position);
+    (void)shell_exec(pShell->line, pShell->line_position);
 #endif /* SHELL_PRINT_STATUS */
 
     SHELL_PROMPT(shell_get_prompt());
-    memset(shell->line, 0, sizeof(shell->line));
-    shell->line_curpos = shell->line_position = 0;
+    (void)memset(pShell->line, 0, sizeof(pShell->line));
+    pShell->line_position = 0U;
+    pShell->line_curpos = 0U;
     return;
   }
-  /* Return not display character */
-  if ((data < 0x20) || (data >= 0x80))
+  /* Return not printable character */
+  if ((data < 0x20U) || (data >= 0x80U))
   {
     return;
   }
   /* It's a large line, discard it */
-  if (shell->line_position >= SHELL_CMD_SIZE)
+  if (pShell->line_position >= SHELL_CMD_SIZE)
   {
-    shell->line_position = 0;
+    pShell->line_position = 0U;
   }
 
   /* Normal character */
-  if (shell->line_curpos < shell->line_position)
+  if (pShell->line_curpos < pShell->line_position)
   {
     int32_t i;
-
-    memmove(&shell->line[shell->line_curpos + 1],
-            &shell->line[shell->line_curpos],
-            shell->line_position - shell->line_curpos);
-    shell->line[shell->line_curpos] = data;
-
-    SHELL_PRINTF("%s", &shell->line[shell->line_curpos]);
-
-    /* Move the cursor to new position */
-    for (i = shell->line_curpos; i < shell->line_position; i++)
+#if (SHELL_USING_FUNC_EXT == 1)
+    if (pShell->overwrite_mode == 1U) /* Overwrite mode */
     {
-      SHELL_PRINTF("\b");
+      /* Directly overwrite the character */
+      pShell->line[pShell->line_curpos] = data;
+      SHELL_PRINTF("%c", data);
+      pShell->line_curpos++;
+    }
+    else /* Insert mode */
+#endif /* SHELL_USING_FUNC_EXT */
+    {
+      pShell->line_position++;
+      /* Move existing characters to the right */
+      (void)memmove(&pShell->line[pShell->line_curpos + 1U],
+                    &pShell->line[pShell->line_curpos],
+                    pShell->line_position - pShell->line_curpos);
+      pShell->line[pShell->line_curpos] = data;
+
+      SHELL_PRINTF("%s", &pShell->line[pShell->line_curpos]);
+
+      /* Move cursor back to correct position */
+      for (i = pShell->line_curpos + 1U; i < pShell->line_position; i++)
+      {
+        SHELL_PRINTF("\b");
+      }
+      pShell->line_curpos++;
     }
   }
   else
   {
-    shell->line[shell->line_position] = data;
-    shell->shell_printf("%c", data);
+    /* Append character at end of line */
+    pShell->line[pShell->line_position] = data;
+    pShell->shell_printf_fn("%c", data);
+    pShell->line_position++;
+    pShell->line_curpos++;
     SHELL_FLUSH_OUT;
   }
 
-  shell->line_position++;
-  shell->line_curpos++;
-
-  if (shell->line_position >= SHELL_CMD_SIZE)
+  if (pShell->line_position >= SHELL_CMD_SIZE)
   {
     /* Clear command line */
-    shell->line_position = 0;
-    shell->line_curpos = 0;
+    pShell->line_position = 0U;
+    pShell->line_curpos = 0U;
   }
 }
 
 int32_t shell_set_prompt(const char *prompt)
 {
-  struct shell *shell = shell_get_instance();
+  struct shell *pShell = shell_get_instance();
 
-  if (shell->prompt_custom)
+  if (pShell->prompt_custom != NULL)
   {
-    SHELL_FREE(shell->prompt_custom);
-    shell->prompt_custom = NULL;
+    SHELL_FREE(pShell->prompt_custom);
+    pShell->prompt_custom = NULL;
   }
 
   /* Strdup */
-  if (prompt)
+  if (prompt != NULL)
   {
-    shell->prompt_custom = (char *)SHELL_MALLOC(strlen(prompt) + 1);
-    if (shell->prompt_custom)
+    pShell->prompt_custom = (char *)SHELL_MALLOC(strlen(prompt) + 1U);
+    if (pShell->prompt_custom != NULL)
     {
-      if (strlcpy(shell->prompt_custom, prompt, strlen(prompt) + 1) >= strlen(prompt) + 1)
+      if (strlcpy(pShell->prompt_custom, prompt, strlen(prompt) + 1U) >= (strlen(prompt) + 1U))
       {
         SHELL_LOG("[OS]: strlcpy truncated \n");
       }
@@ -520,15 +672,17 @@ int32_t shell_set_prompt(const char *prompt)
   return 0;
 }
 
-int32_t shell_set_print(void (*shell_printf)(char *fmt, ...))
+int32_t shell_set_print(void (*shell_printf_fn)(char *fmt, ...))
 {
-  if (shell_printf)
+  if (shell_printf_fn != NULL)
   {
-    shell_get_instance()->shell_printf = shell_printf;
+    shell_get_instance()->shell_printf_fn = shell_printf_fn;
     return 0;
   }
   else
+  {
     return -1;
+  }
 }
 
 #if (SHELL_ENABLE == 1)
@@ -537,7 +691,7 @@ int32_t shell_set_print(void (*shell_printf)(char *fmt, ...))
 #endif /* __ICCARM__ */
 #endif /* SHELL_ENABLE */
 
-void shell_init(void (*shell_printf)(char *fmt, ...))
+void shell_init(void (*shell_printf_fn)(char *fmt, ...))
 {
 #if (SHELL_ENABLE == 1)
 #if defined(__CC_ARM) || defined(__CLANG_ARM) || defined(__ARMCC_VERSION) /* ARM C Compiler */
@@ -553,64 +707,44 @@ void shell_init(void (*shell_printf)(char *fmt, ...))
   shell_function_init(&__fsymtab_start, &__fsymtab_end);
 #endif /* __CC_ARM */
 #endif /* SHELL_ENABLE */
-  shell_set_prompt(SHELL_DEFAULT_NAME);
-  if (shell_printf == NULL)
+  (void)shell_set_prompt(SHELL_DEFAULT_NAME);
+  if (shell_printf_fn == NULL)
   {
-    shell_printf = (void (*)(char *fmt, ...))printf;
+    shell_printf_fn = (void (*)(char *fmt, ...))printf;
   }
-  shell_set_print(shell_printf);
+  (void)shell_set_print(shell_printf_fn);
   SHELL_PRINTF(shell_get_prompt());
-}
-
-shell_sig_func_ptr shell_signal(int32_t sig, shell_sig_func_ptr func)
-{
-  struct shell *p_shell = shell_get_instance();
-  shell_sig_func_ptr shell_sig_func_prev = p_shell->shell_sig_func;
-
-  if (sig == SHELL_SIGINT)
-  {
-    if (func == SHELL_SIG_DFL)
-    {
-      p_shell->shell_sig_func = shell_abort_exec;
-    }
-    else if (func == SHELL_SIG_IGN)
-    {
-      p_shell->shell_sig_func = NULL;
-    }
-    else
-    {
-      p_shell->shell_sig_func = func;
-    }
-    return shell_sig_func_prev;
-  }
-
-  return NULL;
 }
 
 /* Private Functions Definition ----------------------------------------------*/
 static char *shell_get_prompt(void)
 {
   static char shell_prompt[SHELL_CONSOLEBUF_SIZE + 1] = { 0 };
-  struct shell *shell = shell_get_instance();
+  struct shell *pShell = shell_get_instance();
+  uint32_t len;
 
-  if (shell->prompt_custom)
+  if (pShell->prompt_custom != NULL)
   {
-    if (strlcpy(shell_prompt, shell->prompt_custom,
-                sizeof(shell_prompt)) >= sizeof(shell_prompt))
-    {
-      SHELL_LOG("[OS]: strlcpy truncated \n");
-    }
+    len = strlcpy(shell_prompt, pShell->prompt_custom, sizeof(shell_prompt));
   }
   else
   {
-    if (strlcpy(shell_prompt, SHELL_DEFAULT_NAME, sizeof(shell_prompt)) >= sizeof(shell_prompt))
-    {
-      SHELL_LOG("[OS]: strlcpy truncated \n");
-    }
+    len = strlcpy(shell_prompt, SHELL_DEFAULT_NAME, sizeof(shell_prompt));
   }
-  if (strlcat(shell_prompt, "/>", sizeof(shell_prompt)) >= sizeof(shell_prompt))
+
+  if (len >= sizeof(shell_prompt))
   {
-    SHELL_LOG("[OS]: strlcat truncated \n");
+    SHELL_LOG("[OS]: strlcpy truncated \n");
+  }
+  else if ((len + 3U) < SHELL_CONSOLEBUF_SIZE)
+  {
+    shell_prompt[len] = '/';
+    shell_prompt[len + 1U] = '>';
+    shell_prompt[len + 2U] = '\0';
+  }
+  else
+  {
+    /* Prompt is complete */
   }
 
   return shell_prompt;
@@ -620,7 +754,7 @@ static int32_t str_common(const char *str1, const char *str2)
 {
   const char *str = str1;
 
-  while ((*str != 0) && (*str2 != 0) && (*str == *str2))
+  while ((*str != '\0') && (*str2 != '\0') && (*str == *str2))
   {
     str++;
     str2++;
@@ -636,54 +770,92 @@ static void shell_handle_history(struct shell *pShell)
   SHELL_PRINTF("%s", pShell->line);
 }
 
-static void shell_push_history(struct shell *shell)
+static void shell_push_history(struct shell *pShell)
 {
-  if (shell->line_position != 0)
+  if (pShell->line_position != 0U)
   {
     /* Push history */
-    if (shell->history_count >= SHELL_HISTORY_LINES)
+    if (pShell->history_count >= SHELL_HISTORY_LINES)
     {
       /* If current cmd is same as last cmd, don't push */
-      if (memcmp(&shell->cmd_history[SHELL_HISTORY_LINES - 1], shell->line,
-                 SHELL_CMD_SIZE))
+      if (memcmp(&pShell->cmd_history[SHELL_HISTORY_LINES - 1], pShell->line, SHELL_CMD_SIZE) != 0)
       {
         /* Move history */
         int32_t index;
 
-        for (index = 0; index < SHELL_HISTORY_LINES - 1; index++)
+        for (index = 0; index < (SHELL_HISTORY_LINES - 1U); index++)
         {
-          memcpy(&shell->cmd_history[index][0],
-                 &shell->cmd_history[index + 1][0], SHELL_CMD_SIZE);
+          (void)memcpy(&pShell->cmd_history[index][0], &pShell->cmd_history[index + 1U][0], SHELL_CMD_SIZE);
         }
 
-        memset(&shell->cmd_history[index][0], 0, SHELL_CMD_SIZE);
-        memcpy(&shell->cmd_history[index][0], shell->line,
-               shell->line_position);
+        (void)memset(&pShell->cmd_history[index][0], 0, SHELL_CMD_SIZE);
+        (void)memcpy(&pShell->cmd_history[index][0], pShell->line, pShell->line_position);
 
         /* It's the maximum history */
-        shell->history_count = SHELL_HISTORY_LINES;
+        pShell->history_count = SHELL_HISTORY_LINES;
       }
     }
     else
     {
       /* If current cmd is same as last cmd, don't push */
-      if (shell->history_count == 0 ||
-          memcmp(&shell->cmd_history[shell->history_count - 1], shell->line,
-                 SHELL_CMD_SIZE))
+      if ((pShell->history_count == 0U) ||
+          memcmp(&pShell->cmd_history[pShell->history_count - 1], pShell->line, SHELL_CMD_SIZE) != 0)
       {
-        shell->current_history = shell->history_count;
-        memset(&shell->cmd_history[shell->history_count][0], 0, SHELL_CMD_SIZE);
-        memcpy(&shell->cmd_history[shell->history_count][0], shell->line,
-               shell->line_position);
+        pShell->current_history = pShell->history_count;
+        (void)memset(&pShell->cmd_history[pShell->history_count][0], 0, SHELL_CMD_SIZE);
+        (void)memcpy(&pShell->cmd_history[pShell->history_count][0], pShell->line, pShell->line_position);
 
         /* Increase count and set current history position */
-        shell->history_count++;
+        pShell->history_count++;
       }
     }
   }
 
-  shell->current_history = shell->history_count;
+  pShell->current_history = pShell->history_count;
 }
+
+#if (SHELL_USING_WORD_OPERATION == 1)
+static int32_t find_prev_word_start(const char *line, int32_t curpos)
+{
+  if (curpos <= 0) { return 0; }
+
+  /* Skip whitespace */
+  while ((--curpos > 0) && ((line[curpos] == ' ') || (line[curpos] == '\t')))
+  {
+    /* skip character */
+  }
+
+  /* Find word start */
+  while ((curpos > 0) && !((line[curpos] == ' ') || (line[curpos] == '\t')))
+  {
+    curpos--;
+  }
+
+  return (curpos <= 0) ? 0 : curpos + 1;
+}
+
+static int32_t find_next_word_end(const char *line, int32_t curpos, int32_t max)
+{
+  if (curpos >= max)
+  {
+    return max;
+  }
+
+  /* Skip to next word */
+  while ((curpos < max) && ((line[curpos] == ' ') || (line[curpos] == '\t')))
+  {
+    curpos++;
+  }
+
+  /* Find word end */
+  while ((curpos < max) && !((line[curpos] == ' ') || (line[curpos] == '\t')))
+  {
+    curpos++;
+  }
+
+  return curpos;
+}
+#endif /* SHELL_USING_WORD_OPERATION */
 
 static void shell_auto_complete(char *prefix)
 {
@@ -692,7 +864,7 @@ static void shell_auto_complete(char *prefix)
   const char *name_ptr;
   const char *cmd_name;
   struct shell_syscall *index;
-  struct shell *p_shell = shell_get_instance();
+  struct shell *pShell = shell_get_instance();
 
   min_length = 0;
   name_ptr = NULL;
@@ -701,13 +873,13 @@ static void shell_auto_complete(char *prefix)
 
   if (*prefix == '\0')
   {
-    shell_help(0, NULL);
+    (void)shell_help(0, NULL);
     return;
   }
 
   /* Checks in internal command */
   {
-    for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
+    for (index = pShell->syscall_table_begin; index < pShell->syscall_table_end; index++)
     {
       if (index->name == NULL)
       {
@@ -717,7 +889,7 @@ static void shell_auto_complete(char *prefix)
 
       if (strncmp(prefix, cmd_name, strlen(prefix)) == 0)
       {
-        if (min_length == 0)
+        if (min_length == 0U)
         {
           /* Set name_ptr */
           name_ptr = cmd_name;
@@ -740,7 +912,7 @@ static void shell_auto_complete(char *prefix)
   /* Auto complete string */
   if (name_ptr != NULL)
   {
-    strlcpy(prefix, name_ptr, min_length + 1);
+    (void)strlcpy(prefix, name_ptr, min_length + 1);
   }
 
   SHELL_PROMPT("%s", shell_get_prompt());
@@ -762,7 +934,7 @@ static int32_t shell_split(char *cmd, uint32_t length, char *argv[SHELL_ARG_NUM]
   while (position < length)
   {
     /* Strip bank and tab */
-    while ((*ptr == ' ' || *ptr == '\t') && position < length)
+    while (((*ptr == ' ') || (*ptr == '\t')) && (position < length))
     {
       *ptr = '\0';
       ptr++;
@@ -826,7 +998,7 @@ static int32_t shell_split(char *cmd, uint32_t length, char *argv[SHELL_ARG_NUM]
       argv[argc] = ptr;
       argc++;
 
-      while ((*ptr != ' ' && *ptr != '\t') && (position < length))
+      while (((*ptr != ' ') && (*ptr != '\t')) && (position < length))
       {
         ptr++;
         position++;
@@ -846,15 +1018,15 @@ static cmd_function_t shell_get_cmd(char *cmd, int32_t size)
 {
   struct shell_syscall *index;
   cmd_function_t cmd_func = NULL;
-  struct shell *p_shell = shell_get_instance();
+  struct shell *pShell = shell_get_instance();
 
-  for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
+  for (index = pShell->syscall_table_begin; index < pShell->syscall_table_end; index++)
   {
     if (index->name == NULL)
     {
       continue;
     }
-    if ((strncmp(index->name, cmd, size) == 0) && (index->name[0 + size] == '\0'))
+    if ((strncmp(index->name, cmd, size) == 0) && (index->name[0U + size] == '\0'))
     {
       cmd_func = (cmd_function_t)index->func;
       break;
@@ -872,13 +1044,12 @@ static int32_t shell_exec_cmd(char *cmd, uint32_t length, int32_t *retp)
   char *argv[SHELL_ARG_NUM];
 
   /* Find the size of first command */
-  while ((cmd[cmd0_size] != ' ' && cmd[cmd0_size] != '\t') &&
-         cmd0_size < length)
+  while (((cmd[cmd0_size] != ' ') && (cmd[cmd0_size] != '\t')) && (cmd0_size < length))
   {
     cmd0_size++;
   }
 
-  if (cmd0_size == 0)
+  if (cmd0_size == 0U)
   {
     return -1;
   }
@@ -891,7 +1062,7 @@ static int32_t shell_exec_cmd(char *cmd, uint32_t length, int32_t *retp)
   }
 
   /* Split arguments */
-  memset(argv, 0x00, sizeof(argv));
+  (void)memset(argv, 0x00, sizeof(argv));
   argc = shell_split(cmd, length, argv);
 
   if (argc == 0)
@@ -900,20 +1071,19 @@ static int32_t shell_exec_cmd(char *cmd, uint32_t length, int32_t *retp)
   }
 
   /* Exec this command */
-  shell_signal(SHELL_SIGINT, SHELL_SIG_DFL);
-  shell_dup_line(cmd, length);
-  *retp = shell_start_exec(cmd_func, argc, argv);
+  *retp = cmd_func(argc, argv);
 #if (SHELL_USING_DESCRIPTION == 1)
+  /* Print usage when return value is SHELL_STATUS_UNKNOWN_ARGS */
   if (*retp == SHELL_STATUS_UNKNOWN_ARGS)
   {
     struct shell_syscall *index;
-    struct shell *p_shell = shell_get_instance();
+    struct shell *pShell = shell_get_instance();
 
-    for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
+    for (index = pShell->syscall_table_begin; index < pShell->syscall_table_end; index++)
     {
       if ((index->name == NULL) ||
           ((strncmp(index->name, cmd, cmd0_size) == 0) &&
-           (index->name[0 + cmd0_size] == '\0')))
+           (index->name[0U + cmd0_size] == '\0')))
       {
         SHELL_E("Unknown argument. Usage: %s\n", index->desc);
         break;
@@ -930,13 +1100,13 @@ int32_t shell_exec(char *cmd, uint32_t length)
   int32_t cmd_ret;
 
   /* Strip the beginning of command */
-  while ((*cmd == ' ') || (*cmd == '\t'))
+  while ((length > 0U) && ((*cmd == ' ') || (*cmd == '\t')))
   {
     cmd++;
     length--;
   }
 
-  if (length == 0)
+  if (length == 0U)
   {
     return SHELL_STATUS_NO_COMMAND;
   }
@@ -950,12 +1120,12 @@ int32_t shell_exec(char *cmd, uint32_t length)
     return cmd_ret;
   }
 
-  /* Truncate the cmd at the first space. */
+  /* Truncate the cmd at the first space */
   {
     char *tcmd;
     tcmd = cmd;
 
-    while (*tcmd != ' ' && *tcmd != '\0')
+    while ((*tcmd != ' ') && (*tcmd != '\0'))
     {
       tcmd++;
     }
@@ -969,15 +1139,15 @@ int32_t shell_exec(char *cmd, uint32_t length)
 #if (SHELL_ENABLE == 1)
 static void shell_function_init(const void *begin, const void *end)
 {
-  struct shell *p_shell = shell_get_instance();
-  p_shell->syscall_table_begin = (struct shell_syscall *)begin;
-  p_shell->syscall_table_end = (struct shell_syscall *)end;
+  struct shell *pShell = shell_get_instance();
+  pShell->syscall_table_begin = (struct shell_syscall *)begin;
+  pShell->syscall_table_end = (struct shell_syscall *)end;
 }
 #endif /* SHELL_ENABLE */
 
 int32_t shell_help(int32_t argc, char **argv)
 {
-  struct shell *p_shell = shell_get_instance();
+  struct shell *pShell = shell_get_instance();
 
 #if (SHELL_USING_DESCRIPTION == 1)
   if (argc == 1)
@@ -990,19 +1160,62 @@ int32_t shell_help(int32_t argc, char **argv)
   {
     struct shell_syscall *index;
 
-    for (index = p_shell->syscall_table_begin; index < p_shell->syscall_table_end; index++)
+    for (index = pShell->syscall_table_begin; index < pShell->syscall_table_end; index++)
     {
       if (index->name == NULL)
       {
         continue;
       }
 #if (SHELL_USING_DESCRIPTION == 1)
-      if ((argc > 1) && (strncmp(index->name, argv[1],
-                                 MIN(strlen(argv[1]), SHELL_HELP_MAX_COMPARED_NB_CHAR)) != 0))
+      if ((argc > 1) &&
+          (strncmp(index->name, argv[1], MIN(strlen(argv[1]), SHELL_HELP_MAX_COMPARED_NB_CHAR)) != 0))
       {
         continue;
       }
-      SHELL_PRINTF("%-30s - %s\n", index->name, index->desc);
+      if (strlen(index->desc) > SHELL_HELP_DESC_SIZE)
+      {
+        /* Split the description in multi lines */
+        char desc_buf[SHELL_HELP_DESC_SIZE + 1U];
+        size_t offset = 0U;
+        size_t desc_len = strlen(index->desc);
+        uint8_t first_line = 1U;
+        do
+        {
+          size_t line_len = MIN(desc_len, SHELL_HELP_DESC_SIZE);
+
+          /* Find the last space to split */
+          if (line_len == SHELL_HELP_DESC_SIZE)
+          {
+            for (size_t i = line_len; i > 0U; i--)
+            {
+              if (index->desc[offset + i - 1U] == ' ')
+              {
+                line_len = i - 1U;
+                break;
+              }
+            }
+          }
+          /* Copy description line */
+          (void)memcpy(desc_buf, &index->desc[offset], line_len);
+          desc_buf[line_len] = '\0';
+
+          if (first_line == 1U) /* Print description line */
+          {
+            SHELL_PRINTF("%-30s - %s\n", index->name, desc_buf);
+            first_line = 0U;
+          }
+          else /* Print following lines */
+          {
+            SHELL_PRINTF("%-30s   %s\n", "", desc_buf);
+          }
+          offset += line_len;
+          desc_len -= line_len;
+        } while (desc_len > 0U);
+      }
+      else
+      {
+        SHELL_PRINTF("%-30s - %s\n", index->name, index->desc);
+      }
 #else
       SHELL_PRINTF("%s\n", index->name);
 #endif /* SHELL_USING_DESCRIPTION */
@@ -1015,37 +1228,5 @@ int32_t shell_help(int32_t argc, char **argv)
 
 SHELL_CMD_EXPORT_ALIAS(shell_help, help, help [ command ].
                        Display all available commands and the relative help message);
-
-/**
-  * @brief  Abort the command execution
-  * @param  sig the signal
-  */
-__attribute__((weak)) void shell_abort_exec(int32_t sig)
-{
-  (void)sig;
-}
-
-/**
-  * @brief  Start the command execution
-  * @param  func the command function
-  * @param  argc the argument count
-  * @param  argv the argument list
-  * @return the return value of the command
- */
-__attribute__((weak)) int32_t shell_start_exec(cmd_function_t func, int32_t argc, char *argv[])
-{
-  return func(argc, argv);
-}
-
-/**
-  * @brief  Duplicate the command line
-  * @param  cmd the command string
-  * @param  length the length of the command string
- */
-__attribute__((weak)) void shell_dup_line(char *cmd, uint32_t length)
-{
-  (void)cmd;
-  (void)length;
-}
 
 /** @} */

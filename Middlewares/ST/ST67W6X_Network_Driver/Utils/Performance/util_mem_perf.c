@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    util_mem_perf.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the implementation of Memory Performance
   ******************************************************************************
   * @attention
@@ -111,7 +111,7 @@ static uint32_t max_alloc       = 0;              /*!< Maximum allocation */
 static uint32_t alloc_report_enable = 1;          /*!< Allocation report enable */
 
 /** Memory Performance report title */
-static const char report_title[] = "Memory Performance report";
+static const char mem_perf_report_title[] = "Memory Performance report";
 #endif /* MEM_PERF_ENABLE */
 
 /** @} */
@@ -147,7 +147,7 @@ const char *mem_perf_get_task_name(TaskHandle_t xHandle);
 void mem_perf_malloc_hook(void *pvAddress, size_t uiSize)
 {
 #if (MEM_PERF_ENABLE == 1)
-  if (alloc_report_enable == 1)
+  if (alloc_report_enable == 1U)
   {
     uint32_t i;
     /* Get the current free heap size */
@@ -166,15 +166,15 @@ void mem_perf_malloc_hook(void *pvAddress, size_t uiSize)
 
     if (pvAddress == NULL)
     {
-      printf("Allocation failure");
+      (void)printf("Allocation failure");
 
-      while (1);
+      while (true) {};
     }
 
     for (i = 0; i < LEAKAGE_ARRAY; i++)
     {
       /* Find the first free slot memory performance array */
-      if (mem_perf[i].p == 0U)
+      if (mem_perf[i].p == NULL)
       {
         /* Save the allocation information */
         TaskHandle_t xHandle = xTaskGetCurrentTaskHandle();
@@ -183,7 +183,7 @@ void mem_perf_malloc_hook(void *pvAddress, size_t uiSize)
         mem_perf[i].iter = (uint16_t) iteralloc;
         if (xHandle != NULL)
         {
-          snprintf(mem_perf[i].name, 11, "%10s", mem_perf_get_task_name(xHandle));
+          (void)snprintf(mem_perf[i].name, 11, "%10s", mem_perf_get_task_name(xHandle));
         }
         break;
       }
@@ -233,9 +233,9 @@ void mem_perf_report(void)
 #if (MEM_PERF_ENABLE == 1)
   char separator[SEPARATOR_SIZE] = {0};
 
-  memset(separator, '-', sizeof(separator) - 1);
+  (void)memset(separator, 0x2D, sizeof(separator) - 1U);
   /* Display the summary */
-  LogInfo("### %s\n", report_title);
+  LogInfo("### %s\n", mem_perf_report_title);
   LogInfo("# Max allocated:        %" PRIu32 " bytes\n", max_alloc);
   LogInfo("# Current leakage:      %" PRIu32 " bytes\n", current_alloc);
   LogInfo("# Nb Max allocated:     %" PRIu32 "\n", iteralloc);
@@ -249,17 +249,17 @@ void mem_perf_report(void)
   /* Display all remaining entries still allocated */
   for (uint32_t i = 0; i < LEAKAGE_ARRAY; i++)
   {
-    if (mem_perf[i].p != 0)
+    if (mem_perf[i].p != NULL)
     {
       alloc_report_enable = 0;
       LogInfo("#%04" PRIu32 "  %" PRIu32 "%8" PRIu32 "  %10s\n",
               (uint32_t)mem_perf[i].iter, (uint32_t)mem_perf[i].p, mem_perf[i].size, mem_perf[i].name);
       alloc_report_enable = 1;
-      vTaskDelay(10);
+      vTaskDelay(pdMS_TO_TICKS(10));
     }
   }
   LogInfo("%s\n", separator);
-  LogInfo("### %s end\n", report_title);
+  LogInfo("### %s end\n", mem_perf_report_title);
 #endif /* MEM_PERF_ENABLE */
 }
 
@@ -269,7 +269,9 @@ int32_t mem_perf_shell_report(int32_t argc, char **argv)
   (void) argc;
   (void) argv;
 
+#if (MEM_PERF_ENABLE == 1)
   mem_perf_report();
+#endif /* MEM_PERF_ENABLE */
 
   return SHELL_STATUS_OK;
 }

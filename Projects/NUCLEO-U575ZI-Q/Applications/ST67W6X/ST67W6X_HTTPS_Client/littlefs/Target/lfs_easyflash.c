@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    lfs_easyflash.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Adapts LittleFS to EasyFlash4
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -64,7 +64,7 @@
 #define PROG_BUF_SIZE       256   /*!< Size of the program buffer */
 #define LOOKAHEAD_BUF_SIZE  256   /*!< Size of the lookahead buffer */
 #define CACHE_BUF_SIZE      512   /*!< Size of the cache buffer */
-#define BLOCK_SIZE          2048  /*!< Size of the block */
+#define BLOCK_SIZE          4096  /*!< Size of the block */
 #define BLOCK_CYCLES        500   /*!< Number of block cycles */
 
 /* USER CODE BEGIN PD */

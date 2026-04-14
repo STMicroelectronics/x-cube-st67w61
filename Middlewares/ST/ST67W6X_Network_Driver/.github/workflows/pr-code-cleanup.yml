@@ -1,0 +1,487 @@
+name: PR Code Cleanup
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  spelling-and-astyle:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu22-basic
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect changed files
+        id: changed_files
+        shell: bash
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$HEAD_SHA" > /tmp/changed_all_files.txt
+
+          grep -E '\.(c|h|cpp|hpp|inc|s|S|ld|txt|md|rst|yml|yaml)$' /tmp/changed_all_files.txt > /tmp/changed_spell_files.txt || true
+          grep -E '\.(c|h)$' /tmp/changed_all_files.txt > /tmp/changed_c_files.txt || true
+
+          if [ -s /tmp/changed_spell_files.txt ]; then
+            echo "any_spell_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any_spell_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -s /tmp/changed_c_files.txt ]; then
+            echo "any_c_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any_c_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install codespell
+        id: install_codespell
+        if: steps.changed_files.outputs.any_spell_changed == 'true'
+        run: |
+          USER_BASE="$(python3.12 -m site --user-base)"
+          python3.12 -m pip install --break-system-packages --user codespell
+          echo "$USER_BASE/bin" >> "$GITHUB_PATH"
+          echo "CODESPELL_BIN=$USER_BASE/bin/codespell" >> "$GITHUB_ENV"
+
+      - name: Run codespell on changed files
+        id: run_codespell
+        if: steps.changed_files.outputs.any_spell_changed == 'true'
+        shell: bash
+        run: |
+          if [ ! -s /tmp/changed_spell_files.txt ]; then
+            echo "No changed files to spell-check."
+            exit 0
+          fi
+
+          echo "Running codespell on changed files:"
+          cat /tmp/changed_spell_files.txt
+
+          if [ ! -x "$CODESPELL_BIN" ]; then
+            echo "codespell executable not found at $CODESPELL_BIN"
+            exit 1
+          fi
+
+          # Ignore common short tokens frequently used in embedded projects.
+          failed=0
+          rm -f /tmp/codespell_failures.md
+
+          while IFS= read -r file; do
+            [ -f "$file" ] || continue
+
+            if ! output="$($CODESPELL_BIN --check-hidden --quiet-level 2 --ignore-words .github/codespell-ignore-words.txt "$file" 2>&1)"; then
+              failed=1
+              echo "::error file=$file::codespell found spelling issues"
+              {
+                echo "### codespell: $file"
+                echo
+                echo '```text'
+                echo "$output"
+                echo '```'
+                echo
+              } >> /tmp/codespell_failures.md
+            fi
+          done < /tmp/changed_spell_files.txt
+
+          if [ "$failed" -ne 0 ]; then
+            echo "codespell detected spelling issues."
+            exit 1
+          fi
+
+      - name: Setup SSH key for Gerrit
+        id: setup_ssh
+        if: steps.changed_files.outputs.any_c_changed == 'true'
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.GERRIT_SSH_PRIVATE_KEY }}" ]; then
+            echo "Missing secret GERRIT_SSH_PRIVATE_KEY"
+            exit 1
+          fi
+
+          GERRIT_SSH_USER="${{ secrets.GERRIT_SSH_USERNAME }}"
+          if [ -z "$GERRIT_SSH_USER" ]; then
+            GERRIT_SSH_USER="git"
+            echo "GERRIT_SSH_USERNAME not set; falling back to user '$GERRIT_SSH_USER'."
+          fi
+          echo "GERRIT_SSH_USER=$GERRIT_SSH_USER" >> "$GITHUB_ENV"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf "%s\n" "${{ secrets.GERRIT_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          ssh-keyscan -p 29418 gerrit.st.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Clone MCUAStyle tool repository
+        id: clone_mcuastyle
+        if: steps.changed_files.outputs.any_c_changed == 'true'
+        shell: bash
+        run: |
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes' \
+          git clone --depth 1 ssh://${GERRIT_SSH_USER}@gerrit.st.com:29418/stm32cube/internal/mcuastyle.git /tmp/mcuastyle
+
+      - name: Run MCUAStyle check on changed C headers/sources
+        id: run_mcuastyle
+        if: steps.changed_files.outputs.any_c_changed == 'true'
+        shell: bash
+        run: |
+          ASTYLE_EXE="/tmp/mcuastyle/mcuAStyle"
+          ASTYLE_OPTIONS="/tmp/mcuastyle/formattingOption.txt"
+          ASTYLE_IGNORE_FILE=".github/astyle-ignore-files.txt"
+          ASTYLE_WAIVER_FILE=".github/waiver.cfg"
+
+          RED='\033[0;31m'
+          YELLOW='\033[0;33m'
+          GREEN='\033[0;32m'
+          BLUE='\033[0;34m'
+          NC='\033[0m'
+
+          log_info() { printf "%b[INFO]%b %s\n" "$BLUE" "$NC" "$1"; }
+          log_warn() { printf "%b[WARN]%b %s\n" "$YELLOW" "$NC" "$1"; }
+          log_error() { printf "%b[ERROR]%b %s\n" "$RED" "$NC" "$1"; }
+          log_ok() { printf "%b[OK]%b %s\n" "$GREEN" "$NC" "$1"; }
+
+          if [ ! -f "$ASTYLE_EXE" ]; then
+            log_error "MCUAStyle executable not found at $ASTYLE_EXE"
+            echo "::error::MCUAStyle executable not found at $ASTYLE_EXE"
+            exit 1
+          fi
+
+          if [ ! -f "$ASTYLE_OPTIONS" ]; then
+            log_error "MCUAStyle options file not found at $ASTYLE_OPTIONS"
+            echo "::error::MCUAStyle options file not found at $ASTYLE_OPTIONS"
+            exit 1
+          fi
+
+          chmod +x "$ASTYLE_EXE"
+
+          if [ ! -s /tmp/changed_c_files.txt ]; then
+            log_info "No changed C/H files to check with MCUAStyle."
+            exit 0
+          fi
+
+          if [ ! -f "$ASTYLE_IGNORE_FILE" ]; then
+            log_warn "Ignore file not found at $ASTYLE_IGNORE_FILE (no files will be skipped)."
+            echo "::warning::Ignore file not found at $ASTYLE_IGNORE_FILE (no files will be skipped)."
+          fi
+
+          if [ ! -f "$ASTYLE_WAIVER_FILE" ]; then
+            log_warn "Waiver file not found at $ASTYLE_WAIVER_FILE (no severity waivers will be applied)."
+            echo "::warning::Waiver file not found at $ASTYLE_WAIVER_FILE (no severity waivers will be applied)."
+          fi
+
+          waiver_patterns=()
+          waiver_rules=()
+          if [ -f "$ASTYLE_WAIVER_FILE" ]; then
+            while IFS= read -r raw_line; do
+              line="$(printf '%s' "$raw_line" | sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+              [ -n "$line" ] || continue
+
+              IFS=',' read -r file_pattern rule_to_skip <<< "$line"
+              file_pattern="$(printf '%s' "$file_pattern" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+              rule_to_skip="$(printf '%s' "$rule_to_skip" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+              # Accept both numeric rule values (13) and prefixed forms (Rule-13).
+              rule_to_skip="$(printf '%s' "$rule_to_skip" | sed -E 's/^[Rr]ule-([0-9]+)$/\1/')"
+
+              if [ -z "$file_pattern" ] || [ -z "$rule_to_skip" ]; then
+                log_warn "Invalid waiver entry ignored: $raw_line"
+                echo "::warning::Invalid waiver entry ignored: $raw_line"
+                continue
+              fi
+
+              waiver_patterns+=("$file_pattern")
+              waiver_rules+=("$rule_to_skip")
+            done < "$ASTYLE_WAIVER_FILE"
+            log_info "Loaded ${#waiver_patterns[@]} waiver entries from $ASTYLE_WAIVER_FILE"
+          fi
+
+          failed=0
+          rm -f /tmp/mcuastyle_failures.md
+
+          while IFS= read -r file; do
+            [ -f "$file" ] || continue
+
+            file_basename="$(basename "$file")"
+            file_rel="${file#./}"
+            if [ -f "$ASTYLE_IGNORE_FILE" ] && grep -Fqx "$file_basename" "$ASTYLE_IGNORE_FILE"; then
+              log_info "Skipping $file (ignored by $ASTYLE_IGNORE_FILE)"
+              continue
+            fi
+
+            echo "::group::MCUAStyle check: $file"
+            log_info "Checking $file"
+            "$ASTYLE_EXE" -I --options="$ASTYLE_OPTIONS" "$file" | tee /tmp/mcuastyle_last.log
+
+            if grep -q "Severity-" /tmp/mcuastyle_last.log; then
+              mapfile -t severity_rules < <(grep -oE 'Rule-[0-9]+' /tmp/mcuastyle_last.log | sed 's/Rule-//' | sort -u)
+              non_waived_rules=()
+              waived_rules=()
+
+              for severity_rule in "${severity_rules[@]}"; do
+                is_waived=0
+                for idx in "${!waiver_patterns[@]}"; do
+                  if [ "$severity_rule" = "${waiver_rules[$idx]}" ] && [[ "$file_basename" == ${waiver_patterns[$idx]} || "$file_rel" == ${waiver_patterns[$idx]} || "$file" == ${waiver_patterns[$idx]} ]]; then
+                    is_waived=1
+                    break
+                  fi
+                done
+
+                if [ "$is_waived" -eq 1 ]; then
+                  waived_rules+=("$severity_rule")
+                else
+                  non_waived_rules+=("$severity_rule")
+                fi
+              done
+
+              if [ "${#non_waived_rules[@]}" -gt 0 ]; then
+                log_error "Non-waived MCUAStyle severity rule(s) in $file: ${non_waived_rules[*]}"
+                echo "::error file=$file::Non-waived MCUAStyle severity rule(s): ${non_waived_rules[*]}"
+                {
+                  echo "### MCUAStyle severity: $file"
+                  echo
+                  echo "- Non-waived rules: ${non_waived_rules[*]}"
+                  echo
+                } >> /tmp/mcuastyle_failures.md
+                failed=1
+              else
+                log_ok "MCUAStyle severity warning(s) waived in $file: ${waived_rules[*]}"
+                echo "::notice file=$file::MCUAStyle severity warning(s) waived: ${waived_rules[*]}"
+              fi
+            fi
+
+            if grep -q ">>>>> Formatted" /tmp/mcuastyle_last.log; then
+              log_error "MCUAStyle formatting mismatch in $file"
+              echo "::error file=$file::MCUAStyle formatting mismatch"
+              {
+                echo "### MCUAStyle formatting: $file"
+                echo
+                echo "- Formatting mismatch detected"
+                echo
+              } >> /tmp/mcuastyle_failures.md
+              failed=1
+              if [ -f "${file}.orig" ]; then
+                log_info "Diff for $file"
+                diff -u "${file}.orig" "$file" || true
+                rm -f "${file}.orig"
+              fi
+            fi
+
+            echo "::endgroup::"
+          done < /tmp/changed_c_files.txt
+
+          if [ "$failed" -ne 0 ]; then
+            log_error "MCUAStyle checks failed. Run MCUAStyle locally and commit the result."
+            echo "::error::MCUAStyle checks failed. Run MCUAStyle locally and commit the result."
+            exit 1
+          fi
+
+          log_ok "MCUAStyle checks passed."
+
+      - name: Publish PR checks summary
+        if: always()
+        shell: bash
+        env:
+          ANY_SPELL_CHANGED: ${{ steps.changed_files.outputs.any_spell_changed }}
+          ANY_C_CHANGED: ${{ steps.changed_files.outputs.any_c_changed }}
+          INSTALL_CODESPELL_OUTCOME: ${{ steps.install_codespell.outcome }}
+          CODESPELL_OUTCOME: ${{ steps.run_codespell.outcome }}
+          SETUP_SSH_OUTCOME: ${{ steps.setup_ssh.outcome }}
+          CLONE_MCUASTYLE_OUTCOME: ${{ steps.clone_mcuastyle.outcome }}
+          MCUASTYLE_OUTCOME: ${{ steps.run_mcuastyle.outcome }}
+        run: |
+          render_result() {
+            case "$1" in
+              success) echo "PASS" ;;
+              failure) echo "FAIL" ;;
+              skipped) echo "SKIPPED" ;;
+              cancelled) echo "CANCELLED" ;;
+              *) echo "N/A" ;;
+            esac
+          }
+
+          {
+            echo "## PR Code Cleanup Summary"
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+
+            if [ "$ANY_SPELL_CHANGED" = "true" ]; then
+              echo "| Install codespell | $(render_result "$INSTALL_CODESPELL_OUTCOME") |"
+              echo "| codespell (changed files) | $(render_result "$CODESPELL_OUTCOME") |"
+            else
+              echo "| codespell (changed files) | SKIPPED (no applicable files) |"
+            fi
+
+            if [ "$ANY_C_CHANGED" = "true" ]; then
+              echo "| Setup Gerrit SSH | $(render_result "$SETUP_SSH_OUTCOME") |"
+              echo "| Clone MCUAStyle tool | $(render_result "$CLONE_MCUASTYLE_OUTCOME") |"
+              echo "| MCUAStyle (changed C/H files) | $(render_result "$MCUASTYLE_OUTCOME") |"
+            else
+              echo "| MCUAStyle (changed C/H files) | SKIPPED (no applicable files) |"
+            fi
+
+            if [ -s /tmp/codespell_failures.md ]; then
+              echo
+              echo "## codespell Errors"
+              cat /tmp/codespell_failures.md
+            fi
+
+            if [ -s /tmp/mcuastyle_failures.md ]; then
+              echo
+              echo "## MCUAStyle Errors"
+              cat /tmp/mcuastyle_failures.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish PR failure comment
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          ANY_SPELL_CHANGED: ${{ steps.changed_files.outputs.any_spell_changed }}
+          ANY_C_CHANGED: ${{ steps.changed_files.outputs.any_c_changed }}
+          INSTALL_CODESPELL_OUTCOME: ${{ steps.install_codespell.outcome }}
+          CODESPELL_OUTCOME: ${{ steps.run_codespell.outcome }}
+          SETUP_SSH_OUTCOME: ${{ steps.setup_ssh.outcome }}
+          CLONE_MCUASTYLE_OUTCOME: ${{ steps.clone_mcuastyle.outcome }}
+          MCUASTYLE_OUTCOME: ${{ steps.run_mcuastyle.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const marker = '<!-- pr-code-cleanup-summary -->';
+              const owner = context.repo.owner;
+              const repo = context.repo.repo;
+              const issue_number = context.payload.pull_request.number;
+
+              const toResult = (outcome) => {
+                switch (outcome) {
+                  case 'success': return 'PASS';
+                  case 'failure': return 'FAIL';
+                  case 'skipped': return 'SKIPPED';
+                  case 'cancelled': return 'CANCELLED';
+                  default: return 'N/A';
+                }
+              };
+
+              const readIfExists = (path) => {
+                try {
+                  if (fs.existsSync(path)) {
+                    return fs.readFileSync(path, 'utf8').trim();
+                  }
+                } catch (e) {
+                  core.warning(`Unable to read ${path}: ${e.message}`);
+                }
+                return '';
+              };
+
+              const anySpellChanged = process.env.ANY_SPELL_CHANGED === 'true';
+              const anyCChanged = process.env.ANY_C_CHANGED === 'true';
+
+              const outcomes = {
+                installCodespell: process.env.INSTALL_CODESPELL_OUTCOME || '',
+                codespell: process.env.CODESPELL_OUTCOME || '',
+                setupSsh: process.env.SETUP_SSH_OUTCOME || '',
+                cloneMcuastyle: process.env.CLONE_MCUASTYLE_OUTCOME || '',
+                mcuastyle: process.env.MCUASTYLE_OUTCOME || '',
+              };
+
+              const hasFailure = Object.values(outcomes).some((v) => v === 'failure');
+
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number,
+                per_page: 100,
+              });
+
+              const existing = comments.find((c) =>
+                c.user?.type === 'Bot' && typeof c.body === 'string' && c.body.includes(marker)
+              );
+
+              if (!hasFailure) {
+                if (existing) {
+                  await github.rest.issues.deleteComment({
+                    owner,
+                    repo,
+                    comment_id: existing.id,
+                  });
+                  core.info('Removed previous PR cleanup failure comment (checks now passing).');
+                } else {
+                  core.info('No failure and no previous comment to remove.');
+                }
+                return;
+              }
+
+              let body = `${marker}\n## PR Code Cleanup Failed\n\n`;
+              body += 'One or more cleanup checks failed. See the summary below and fix the reported issues.\n\n';
+              body += '| Check | Result |\n| --- | --- |\n';
+
+              if (anySpellChanged) {
+                body += `| Install codespell | ${toResult(outcomes.installCodespell)} |\n`;
+                body += `| codespell (changed files) | ${toResult(outcomes.codespell)} |\n`;
+              } else {
+                body += '| codespell (changed files) | SKIPPED (no applicable files) |\n';
+              }
+
+              if (anyCChanged) {
+                body += `| Setup Gerrit SSH | ${toResult(outcomes.setupSsh)} |\n`;
+                body += `| Clone MCUAStyle tool | ${toResult(outcomes.cloneMcuastyle)} |\n`;
+                body += `| MCUAStyle (changed C/H files) | ${toResult(outcomes.mcuastyle)} |\n`;
+              } else {
+                body += '| MCUAStyle (changed C/H files) | SKIPPED (no applicable files) |\n';
+              }
+
+              const codespellDetails = readIfExists('/tmp/codespell_failures.md');
+              const mcuastyleDetails = readIfExists('/tmp/mcuastyle_failures.md');
+
+              if (codespellDetails) {
+                body += `\n## codespell Errors\n\n${codespellDetails}\n`;
+              }
+
+              if (mcuastyleDetails) {
+                body += `\n## MCUAStyle Errors\n\n${mcuastyleDetails}\n`;
+              }
+
+              body += '\nFor complete diagnostics, open the failed check run details.\n';
+
+              if (body.length > 60000) {
+                body = `${body.slice(0, 60000)}\n\n...output truncated...\n`;
+              }
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                  body,
+                });
+                core.info('Updated existing PR cleanup failure comment.');
+              } else {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body,
+                });
+                core.info('Created PR cleanup failure comment.');
+              }
+            } catch (error) {
+              const status = error && error.status ? String(error.status) : 'unknown';
+              const message = error && error.message ? error.message : String(error);
+              core.warning(`Skipping PR failure comment due to API error (status=${status}): ${message}`);
+              return;
+            }

@@ -2,13 +2,13 @@
 /**
   ******************************************************************************
   * @file    sntp.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This is simple "SNTP" client for the lwIP raw API.
   *          It is a minimal implementation of SNTPv4 as specified in RFC 4330.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -76,8 +76,8 @@
 #include "logging.h"
 #include "shell.h"
 
-#include <FreeRTOS.h>
-#include <task.h>
+#include "FreeRTOS.h"
+#include "task.h"
 #include "event_groups.h"
 #include "stm32h7rsxx_hal.h"
 
@@ -90,6 +90,7 @@
 
 /* Global variables ----------------------------------------------------------*/
 #if defined(HAL_RTC_MODULE_ENABLED)
+/* coverity[misra_c_2012_rule_8_5_violation : FALSE] */
 extern RTC_HandleTypeDef hrtc;
 #endif /* HAL_RTC_MODULE_ENABLED */
 /* USER CODE BEGIN GV */
@@ -128,7 +129,7 @@ struct sntp_msg
 {
   PACK_STRUCT_FLD_8(uint8_t  li_vn_mode);               /*!< Leap Indicator, Version and Mode */
   PACK_STRUCT_FLD_8(uint8_t  stratum);                  /*!< Stratum level of the local clock */
-  PACK_STRUCT_FLD_8(uint8_t  poll);                     /*!< Maximum interval between successive messages */
+  PACK_STRUCT_FLD_8(uint8_t  poll_interval);            /*!< Maximum interval between successive messages */
   PACK_STRUCT_FLD_8(uint8_t  precision);                /*!< Precision of the local clock */
   PACK_STRUCT_FIELD(uint32_t root_delay);               /*!< Total round trip delay time */
   PACK_STRUCT_FIELD(uint32_t root_dispersion);          /*!< Max error aloud from primary clock source */
@@ -146,7 +147,7 @@ PACK_STRUCT_END
 /**
   * @brief  Names/Addresses of servers
   */
-struct sntp_server
+struct sntp_server_info
 {
   const char *name;               /*!< DNS name of the server */
   ip_addr_t addr;                 /*!< IP address of the server */
@@ -158,10 +159,10 @@ struct sntp_server
   */
 typedef struct
 {
-  struct udp_pcb *sntp_pcb;       /*!< UDP protocol control block */
-  struct sntp_server sntp_server; /*!< SNTP server information */
-  int16_t timezone;               /*!< Timezone in hours */
-  date_time_t dt;                 /*!< Date and time information */
+  struct udp_pcb *sntp_pcb;             /*!< UDP protocol control block */
+  struct sntp_server_info sntp_server;  /*!< SNTP server information */
+  int16_t timezone_offset;              /*!< Timezone in hours */
+  date_time_t dt;                       /*!< Date and time information */
 } sntp_context_t;
 
 /* USER CODE BEGIN PTD */
@@ -174,7 +175,7 @@ typedef struct
 #endif /* SNTP_UPDATE_DELAY */
 
 /** SNTP message length */
-#define SNTP_MSG_LEN                48
+#define SNTP_MSG_LEN                48U
 
 /** SNTP message offsets and modes */
 #define SNTP_OFFSET_LI_VN_MODE      0
@@ -204,7 +205,7 @@ typedef struct
 #define SNTP_STRATUM_KOD            0x00
 
 /** Offset of the transmit timestamp in the SNTP message */
-#define SNTP_OFFSET_TRANSMIT_TIME   40
+#define SNTP_OFFSET_TRANSMIT_TIME   40U
 
 /** Start year for Unix time */
 #define SNTP_UNIX_START_YEAR        1970
@@ -213,13 +214,13 @@ typedef struct
 #define SNTP_DAYS_IN_YEAR           365
 
 /** Number of seconds between 1900 (NTP time) and 1970 (Unix time) */
-#define DIFF_SEC_1970_1900          ((uint32_t)2208988800L)
+#define DIFF_SEC_1970_1900          (2208988800UL)
 
 /** Start offset of the timestamps to extract from the SNTP packet */
-#define SNTP_OFFSET_TIMESTAMPS      (SNTP_OFFSET_TRANSMIT_TIME + 8 - sizeof(struct sntp_timestamp))
+#define SNTP_OFFSET_TIMESTAMPS      (SNTP_OFFSET_TRANSMIT_TIME + 8U - sizeof(struct sntp_timestamp))
 
 /** Event bit for SNTP time received */
-#define SNTP_TIME_RECEIVED          (1 << 0)
+#define SNTP_TIME_RECEIVED          (1UL << 0U)
 
 /* USER CODE BEGIN PD */
 
@@ -318,7 +319,7 @@ int32_t sntp_shell_gettime(int32_t argc, char **argv);
 /* USER CODE END PFP */
 
 /* Functions Definition ------------------------------------------------------*/
-int32_t sntp_init(int16_t timezone)
+int32_t sntp_init(int16_t timezone_offset)
 {
   if (sntp_ctx == NULL)
   {
@@ -329,7 +330,7 @@ int32_t sntp_init(int16_t timezone)
       return -1;
     }
     sntp_ctx->sntp_server.name = SNTP_SERVER_ADDRESS;
-    sntp_ctx->timezone = timezone;
+    sntp_ctx->timezone_offset = timezone_offset;
 
     sntp_ctx->sntp_pcb = udp_new_ip_type(IPADDR_TYPE_ANY);
     if (sntp_ctx->sntp_pcb != NULL)
@@ -362,7 +363,7 @@ void sntp_stop(void)
 
 int32_t sntp_gettime(date_time_t *dt)
 {
-  if (sntp_ctx == NULL || dt == NULL)
+  if ((sntp_ctx == NULL) || (dt == NULL))
   {
     return -1;
   }
@@ -372,44 +373,44 @@ int32_t sntp_gettime(date_time_t *dt)
   }
 
 #if defined(HAL_RTC_MODULE_ENABLED)
-  RTC_TimeTypeDef time = {0};
-  RTC_DateTypeDef date = {0};
+  RTC_TimeTypeDef rtc_time = {0};
+  RTC_DateTypeDef rtc_date = {0};
   /* Get the current date and time */
-  HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+  (void)HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+  (void)HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN);
 
-  dt->seconds = time.Seconds;
-  dt->minutes = time.Minutes;
-  dt->hours   = time.Hours;
-  dt->day     = date.Date;
-  dt->month   = date.Month;
-  dt->year    = date.Year + 2000;
-  dt->day_of_week = date.WeekDay;
+  dt->seconds = rtc_time.Seconds;
+  dt->minutes = rtc_time.Minutes;
+  dt->hours   = rtc_time.Hours;
+  dt->day     = rtc_date.Date;
+  dt->month   = rtc_date.Month;
+  dt->year    = rtc_date.Year + 2000U;
+  dt->day_of_week = rtc_date.WeekDay;
 #else
   /* Compute the elapsed time from the last server response */
-  uint32_t elapsed_time = (sys_now() / 1000) - sntp_ctx->dt.current_time;
+  uint32_t elapsed_time = (sys_now() / 1000U) - sntp_ctx->dt.current_time;
   time_t current_timestamp = sntp_ctx->dt.timestamp + elapsed_time;
 
   /* Update date_time_t structure */
-  sntp_time_format(&current_timestamp, &sntp_ctx->dt);
-  sntp_ctx->dt.current_time = sys_now() / 1000;
+  (void)sntp_time_format(&current_timestamp, &sntp_ctx->dt);
+  sntp_ctx->dt.current_time = sys_now() / 1000U;
 
   /* copy date/time info */
-  memcpy(dt, &sntp_ctx->dt, sizeof(date_time_t));
+  (void)memcpy(dt, &sntp_ctx->dt, sizeof(date_time_t));
 #endif /* HAL_RTC_MODULE_ENABLED */
 
   return 0;
 }
 
-void sntp_setserver(const ip_addr_t *server)
+void sntp_setserver(const ip_addr_t *server_addr)
 {
   if (sntp_ctx == NULL)
   {
     return;
   }
-  if (server != NULL)
+  if (server_addr != NULL)
   {
-    sntp_ctx->sntp_server.addr = (*server);
+    sntp_ctx->sntp_server.addr = (*server_addr);
   }
   else
   {
@@ -442,53 +443,59 @@ static int32_t sntp_time_format(time_t *timestamp, date_time_t *dt)
   };
 
   uint64_t t = (uint64_t)(*timestamp);
-  dt->seconds = (uint32_t)(t % 60);
-  t /= 60;
-  dt->minutes = (uint32_t)(t % 60);
-  t /= 60;
-  dt->hours = (uint32_t)(t % 24);
-  t /= 24;
+  dt->seconds = (uint32_t)(t % 60U);
+  t /= 60U;
+  dt->minutes = (uint32_t)(t % 60U);
+  t /= 60U;
+  dt->hours = (uint32_t)(t % 24U);
+  t /= 24U;
   dt->day = (uint32_t)t;
 
   /* 1970-01-01 was a Thursday (4) */
-  dt->day_of_week = (dt->day + 4) % 7;
+  dt->day_of_week = (dt->day + 4U) % 7U;
 
   /* Calculate year */
   dt->year = SNTP_UNIX_START_YEAR;
-  while (1)
+  while (true)
   {
     uint32_t days_in_year = SNTP_DAYS_IN_YEAR;
-    if ((dt->year % 4 == 0 && dt->year % 100 != 0) || (dt->year % 400 == 0))
+    if ((((dt->year % 4U) == 0U) && ((dt->year % 100U) != 0U)) || ((dt->year % 400U) == 0U))
     {
       days_in_year = SNTP_DAYS_IN_YEAR + 1;
     }
-    if (dt->day < days_in_year) { break; }
+    if (dt->day < days_in_year)
+    {
+      break;
+    }
     dt->day -= days_in_year;
     dt->year++;
   }
 
   /* Calculate month */
   dt->month = 0;
-  for (uint32_t y = 0; y < 12; y++)
+  for (uint32_t y = 0; y < 12U; y++)
   {
     uint32_t dim = days_in_month[y];
-    if (y == 1 && ((dt->year % 4 == 0 && dt->year % 100 != 0) || (dt->year % 400 == 0)))
+    if ((y == 1U) && ((((dt->year % 4U) == 0U) && ((dt->year % 100U) != 0U)) || ((dt->year % 400U) == 0U)))
     {
       dim = 29;
     }
-    if (dt->day < dim) { break; }
+    if (dt->day < dim)
+    {
+      break;
+    }
     dt->day -= dim;
     dt->month++;
   }
-  dt->day = dt->day + 1;
-  dt->month = dt->month + 1;
+  dt->day = dt->day + 1U;
+  dt->month = dt->month + 1U;
   dt->timestamp = *timestamp;
 
-  snprintf(dt->raw, sizeof(dt->raw),
-           "%s %s %2" PRIu32 " %02" PRIu32 ":%02" PRIu32 ":%02" PRIu32 " %04" PRIu32,
-           wday_name[dt->day_of_week], mon_name[dt->month - 1],
-           dt->day, dt->hours, dt->minutes,
-           dt->seconds, dt->year);
+  (void)snprintf(dt->raw, sizeof(dt->raw),
+                 "%s %s %2" PRIu32 " %02" PRIu32 ":%02" PRIu32 ":%02" PRIu32 " %04" PRIu32,
+                 wday_name[dt->day_of_week], mon_name[dt->month - 1U],
+                 dt->day, dt->hours, dt->minutes,
+                 dt->seconds, dt->year);
   return 0;
 }
 
@@ -502,10 +509,10 @@ static void sntp_process(const struct sntp_timestamp *timestamp)
     return;
   }
 
-  sec += sntp_ctx->timezone * 3600;
+  sec += sntp_ctx->timezone_offset * 3600;
   sntp_ctx->dt.timestamp = (uint32_t)((uint32_t)sec - DIFF_SEC_1970_1900);
   /* Get the time of the system */
-  sntp_ctx->dt.current_time = sys_now() / 1000;
+  sntp_ctx->dt.current_time = sys_now() / 1000U;
   ret = sntp_time_format(&sntp_ctx->dt.timestamp, &sntp_ctx->dt);
 
   if (ret != 0)
@@ -514,30 +521,31 @@ static void sntp_process(const struct sntp_timestamp *timestamp)
   }
 
 #if defined(HAL_RTC_MODULE_ENABLED)
-  RTC_TimeTypeDef time = {0};
-  RTC_DateTypeDef date = {0};
+  RTC_TimeTypeDef rtc_time = {0};
+  RTC_DateTypeDef rtc_date = {0};
 
   /* Set the Time in RTC IP */
-  time.Hours = sntp_ctx->dt.hours;
-  time.Minutes = sntp_ctx->dt.minutes;
-  time.Seconds = sntp_ctx->dt.seconds;
-  time.TimeFormat = RTC_HOURFORMAT12_AM;
-  time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  time.StoreOperation = RTC_STOREOPERATION_RESET;
+  rtc_time.Hours = sntp_ctx->dt.hours;
+  rtc_time.Minutes = sntp_ctx->dt.minutes;
+  rtc_time.Seconds = sntp_ctx->dt.seconds;
+  rtc_time.TimeFormat = RTC_HOURFORMAT12_AM;
+  rtc_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  rtc_time.StoreOperation = RTC_STOREOPERATION_RESET;
 
-  if (HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN) != HAL_OK)
   {
     LogError("Process Time failed\n");
     return;
   }
 
   /* Set the Date in RTC IP */
-  date.Year = sntp_ctx->dt.year - 2000;    /* Convert the year to 2-digits format */
-  date.Month = sntp_ctx->dt.month;
-  date.Date = sntp_ctx->dt.day;
-  date.WeekDay = sntp_ctx->dt.day_of_week;
+  /* Convert the year to 2-digits format */
+  rtc_date.Year = sntp_ctx->dt.year - 2000U;
+  rtc_date.Month = sntp_ctx->dt.month;
+  rtc_date.Date = sntp_ctx->dt.day;
+  rtc_date.WeekDay = sntp_ctx->dt.day_of_week;
 
-  if (HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN) != HAL_OK)
   {
     LogError("Process Time failed\n");
     return;
@@ -546,13 +554,13 @@ static void sntp_process(const struct sntp_timestamp *timestamp)
 
   if (lwip_event_group != NULL)
   {
-    xEventGroupSetBits(lwip_event_group, SNTP_TIME_RECEIVED);
+    (void)xEventGroupSetBits(lwip_event_group, SNTP_TIME_RECEIVED);
   }
 }
 
 static void sntp_initialize_request(struct sntp_msg *req)
 {
-  memset(req, 0, SNTP_MSG_LEN);
+  (void)memset(req, 0, SNTP_MSG_LEN);
   req->li_vn_mode = SNTP_LI_NO_WARNING | SNTP_VERSION | SNTP_MODE_CLIENT;
 }
 
@@ -571,7 +579,7 @@ static void sntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
   err_t err = ERR_ARG;
   if (sntp_ctx == NULL)
   {
-    pbuf_free(p);
+    (void)pbuf_free(p);
     return;
   }
   {
@@ -591,7 +599,7 @@ static void sntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
         }
         else
         {
-          pbuf_copy_partial(p, &timestamp, sizeof(timestamp), SNTP_OFFSET_TIMESTAMPS);
+          (void)pbuf_copy_partial(p, &timestamp, sizeof(timestamp), SNTP_OFFSET_TIMESTAMPS);
           {
             /* correct answer */
             err = ERR_OK;
@@ -611,7 +619,7 @@ static void sntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
     }
   }
 
-  pbuf_free(p);
+  (void)pbuf_free(p);
 
   if (err == ERR_OK)
   {
@@ -619,7 +627,7 @@ static void sntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
     sntp_process(&timestamp);
 
     /* indicate that server responded */
-    sntp_ctx->sntp_server.reachability |= 1;
+    sntp_ctx->sntp_server.reachability |= 1U;
     /* Set up timeout for next request (only if poll response was received) */
     sys_untimeout(sntp_retry, NULL);
     sys_untimeout(sntp_request, NULL);
@@ -657,9 +665,9 @@ static void sntp_send_request(const ip_addr_t *server_addr)
     /* initialize request message */
     sntp_initialize_request(sntpmsg);
     /* send request */
-    udp_sendto(sntp_ctx->sntp_pcb, p, server_addr, SNTP_PORT);
+    (void)udp_sendto(sntp_ctx->sntp_pcb, p, server_addr, SNTP_PORT);
     /* free the pbuf after sending it */
-    pbuf_free(p);
+    (void)pbuf_free(p);
     /* indicate new packet has been sent */
     sntp_ctx->sntp_server.reachability <<= 1;
     /* set up receive timeout: retry on timeout */
@@ -729,6 +737,10 @@ static void sntp_request(void *arg)
     {
       sntp_ctx->sntp_server.addr = sntp_server_address;
     }
+    else
+    {
+      /* DNS resolving failed */
+    }
   }
   else
   {
@@ -761,7 +773,7 @@ static void sntp_request(void *arg)
 int32_t sntp_shell_gettime(int32_t argc, char **argv)
 {
   date_time_t dt = {0};
-  int16_t timezone = 0;
+  int16_t timezone_offset = 0;
   EventBits_t eventBits;
 
   if (argc != 2)
@@ -770,24 +782,28 @@ int32_t sntp_shell_gettime(int32_t argc, char **argv)
   }
 
   /* Get the current timezone */
-  timezone = (int16_t)atoi(argv[1]);
+  timezone_offset = (int16_t)atoi(argv[1]);
 
   /* Check UTC timezone format */
-  if ((timezone < -12) || (timezone > 14))
+  if ((timezone_offset < -12) || (timezone_offset > 14))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  if ((sntp_ctx == NULL) || (sntp_ctx->timezone != timezone))
+  if ((sntp_ctx == NULL) || (sntp_ctx->timezone_offset != timezone_offset))
   {
     if (sntp_ctx == NULL)
     {
-      sntp_init(timezone);
+      (void)sntp_init(timezone_offset);
     }
-    else if (sntp_ctx->timezone != timezone)
+    else if (sntp_ctx->timezone_offset != timezone_offset)
     {
       sntp_stop();
-      sntp_init(timezone);
+      (void)sntp_init(timezone_offset);
+    }
+    else
+    {
+      /* No change of SNTP client, started and already configured */
     }
     if (sntp_ctx == NULL)
     {
@@ -798,11 +814,11 @@ int32_t sntp_shell_gettime(int32_t argc, char **argv)
     lwip_event_group = xEventGroupCreate();
     /* Wait to receive the first response */
     eventBits = xEventGroupWaitBits(lwip_event_group, SNTP_TIME_RECEIVED,
-                                    pdFALSE, pdTRUE, pdMS_TO_TICKS(SNTP_STARTUP_DELAY + 2000));
+                                    pdFALSE, pdTRUE, pdMS_TO_TICKS(SNTP_STARTUP_DELAY + 2000U));
     vEventGroupDelete(lwip_event_group);
     lwip_event_group = NULL;
 
-    if ((eventBits & SNTP_TIME_RECEIVED) == 0)
+    if ((eventBits & SNTP_TIME_RECEIVED) == 0U)
     {
       goto _err;
     }
@@ -821,7 +837,7 @@ _err:
 }
 
 /** Shell command to get the time from SNTP server */
-SHELL_CMD_EXPORT_ALIAS(sntp_shell_gettime, time, time < timezone : UTC format : range [-12; 14] >);
+SHELL_CMD_EXPORT_ALIAS(sntp_shell_gettime, time, time < timezone_offset : UTC format : range [-12; 14] >);
 #endif /* SHELL_ENABLE */
 
 /* USER CODE BEGIN PFD */

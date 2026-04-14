@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    ping.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Ping module definition
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -28,6 +28,8 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
+#include <stdbool.h>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "event_groups.h"
@@ -48,38 +50,31 @@ extern "C" {
   */
 typedef struct
 {
-  EventGroupHandle_t event;           /*!< Event group handle */
-  int32_t count;                      /*!< Number of ping requests */
-  int32_t interval_ms;                /*!< Interval between ping requests in milliseconds */
-  int32_t size;                       /*!< Size of the ping payload */
-  int32_t timeout;                    /*!< Timeout for each ping request in milliseconds */
+  uint16_t count;                     /*!< Number of ping requests */
+  uint32_t interval_ms;               /*!< Interval between ping requests in milliseconds */
+  size_t size;                        /*!< Size of the ping payload */
+  uint32_t timeout;                   /*!< Timeout for each ping request in milliseconds */
 #if (LWIP_IPV6 == 1)
   uint32_t ipv6;                      /*!< false for IPv4, true for IPv6 */
   char dst_addr[IP6ADDR_STRLEN_MAX];  /*!< Destination address (supports IPv6 and IPv4) */
 #else
   char dst_addr[IPADDR_STRLEN_MAX];   /*!< Destination address (supports IPv4) */
 #endif /* LWIP_IPV6 */
-} ping_params_t;
+  uint32_t ping_sent;                 /*!< Number of ping requests sent */
+  uint32_t ping_rcv;                  /*!< Number of ping responses received */
+  uint32_t ping_tot_time_ms;          /*!< Total time taken for all ping requests in milliseconds */
+} ping_context_t;
 
 /* USER CODE BEGIN ET */
 
 /* USER CODE END ET */
 /* Exported functions --------------------------------------------------------*/
 /**
-  * Ping ipv4 function
-  * @param  argc: number of arguments
-  * @param  argv: pointer to the arguments
-  * @retval 0 on success, -1 otherwise
+  * @brief  run the ping application (IPv4/IPv6)
+  * @param  ping_context: Ping parameters and results
+  * @return 0 on success, -1 on failure
   */
-int32_t ping_ipv4_cmd(int32_t argc, char **argv);
-
-/**
-  * Ping ipv6 function
-  * @param  argc: number of arguments
-  * @param  argv: pointer to the arguments
-  * @retval 0 on success, -1 otherwise
-  */
-int32_t ping_ipv6_cmd(int32_t argc, char **argv);
+int32_t send_ping(ping_context_t *ping_context);
 
 #ifdef __cplusplus
 }

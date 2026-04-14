@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    logging_config_template.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W6X Logging configuration module
   ******************************************************************************
   * @attention
@@ -50,25 +50,25 @@ extern "C" {
 #define LOG_INCLUDE_TIMESTAMP                   1
 
 /** Max metadata length */
-#define LOG_INCLUDE_MAX_LENGTH                  100
+#define LOG_INCLUDE_MAX_LENGTH                  100U
 
 /** Max message length */
-#define MAX_LOG_MESSAGE_LENGTH                  2000
+#define MAX_LOG_MESSAGE_LENGTH                  2000U
 
 /** Max queue length */
-#define MAX_LOG_QUEUE_LENGTH                    200
+#define MAX_LOG_QUEUE_LENGTH                    200U
 
 /** Max log level */
 #define MAX_LOG_LEVEL                           LOG_DEBUG
 
 /** Max log level */
-#define MAX_LOG_MEMORY                          4096
+#define MAX_LOG_MEMORY                          4096U
 
 /** Log id. must be unique per queue producer */
-#define LOG_MESSAGE_ID                          1
+#define LOG_MESSAGE_ID                          1U
 
 /** Log thread stack size */
-#define LOG_THREAD_STACK_SIZE                   256
+#define LOG_THREAD_STACK_SIZE                   256U
 
 /** Log thread priority */
 #define LOG_THREAD_PRIO                         25

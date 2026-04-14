@@ -31,8 +31,8 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __SYS_ARCH_H__
-#define __SYS_ARCH_H__
+#ifndef SYS_ARCH_H
+#define SYS_ARCH_H
 
 #include "lwip/opt.h"
 
@@ -58,5 +58,5 @@ typedef osThreadId_t        sys_thread_t;
 }
 #endif
 
-#endif /* __SYS_ARCH_H__ */
+#endif /* SYS_ARCH_H */
 

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_at_common.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the common definitions of the AT driver
   ******************************************************************************
   * @attention
@@ -41,12 +41,12 @@ extern "C" {
 
 #ifndef W61_CMDRSP_STRING_SIZE
 /** W61 AT command response string size */
-#define W61_CMDRSP_STRING_SIZE                  192
+#define W61_CMDRSP_STRING_SIZE                  192U
 #endif /* W61_CMDRSP_STRING_SIZE */
 
 #ifndef W61_MDM_RX_TASK_STACK_SIZE_BYTES
 /** Stack required especially for Log messages */
-#define W61_MDM_RX_TASK_STACK_SIZE_BYTES        2048
+#define W61_MDM_RX_TASK_STACK_SIZE_BYTES        2048U
 #endif /* W61_MDM_RX_TASK_STACK_SIZE_BYTES */
 
 #ifndef W61_MDM_RX_TASK_PRIO
@@ -56,33 +56,33 @@ extern "C" {
 
 #ifndef W61_MAX_AT_LOG_LENGTH
 /** Maximum size of AT log */
-#define W61_MAX_AT_LOG_LENGTH                   300
+#define W61_MAX_AT_LOG_LENGTH                   300U
 #endif /* W61_MAX_AT_LOG_LENGTH */
 
 /** Cmd/query default timeouts */
 #ifndef W61_NCP_TIMEOUT
 /** Timeout for reply/execute of NCP */
-#define W61_NCP_TIMEOUT                         2000
+#define W61_NCP_TIMEOUT                         2000U
 #endif /* W61_NCP_TIMEOUT */
 
 #ifndef W61_SYS_TIMEOUT
 /** Timeout for special cases like flash write, firmware updates, etc */
-#define W61_SYS_TIMEOUT                         2000
+#define W61_SYS_TIMEOUT                         2000U
 #endif /* W61_SYS_TIMEOUT */
 
 #ifndef W61_WIFI_TIMEOUT
 /** Timeout for remote WIFI device operation (e.g. AP) */
-#define W61_WIFI_TIMEOUT                        6000
+#define W61_WIFI_TIMEOUT                        6000U
 #endif /* W61_WIFI_TIMEOUT */
 
 #ifndef W61_NET_TIMEOUT
 /** Timeout for remote network operation (e.g. server) */
-#define W61_NET_TIMEOUT                         6000
+#define W61_NET_TIMEOUT                         6000U
 #endif /* W61_NET_TIMEOUT */
 
 #ifndef W61_BLE_TIMEOUT
 /** Timeout for remote BLE device operation */
-#define W61_BLE_TIMEOUT                         2000
+#define W61_BLE_TIMEOUT                         2000U
 #endif /* W61_BLE_TIMEOUT */
 
 /** @} */

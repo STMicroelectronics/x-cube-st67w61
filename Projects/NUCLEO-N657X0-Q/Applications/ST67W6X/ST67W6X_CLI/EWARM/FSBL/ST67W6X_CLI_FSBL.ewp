@@ -802,7 +802,7 @@
                 </option>
                 <option>
                     <name>IlinkIcfFile</name>
-                    <state>$PROJ_DIR$/stm32n657xx_axisram2_fsbl.icf</state>
+                    <state>$PROJ_DIR$/stm32n657xx.icf</state>
                 </option>
                 <option>
                     <name>IlinkIcfFileSlave</name>

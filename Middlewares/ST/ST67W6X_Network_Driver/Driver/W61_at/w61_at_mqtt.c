@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_at_mqtt.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W61 MQTT AT module
   ******************************************************************************
   * @attention
@@ -24,7 +24,7 @@
 #include "w61_at_internal.h"
 #include "common_parser.h" /* Common Parser functions */
 
-#if (SYS_DBG_ENABLE_TA4 >= 1)
+#if (defined(SYS_DBG_ENABLE_TA4) && (SYS_DBG_ENABLE_TA4 >= 1))
 #include "trcRecorder.h"
 #endif /* SYS_DBG_ENABLE_TA4 */
 
@@ -35,7 +35,7 @@
   * @{
   */
 
-#define W61_MQTT_CONNECT_TIMEOUT 10000 /*!< MQTT connect timeout in ms */
+#define W61_MQTT_CONNECT_TIMEOUT 10000U /*!< MQTT connect timeout in ms */
 
 /** @} */
 
@@ -131,14 +131,15 @@ W61_Status_t W61_MQTT_SetUserConfiguration(W61_Object_t *Obj, uint32_t Scheme, u
     return W61_STATUS_ERROR; /* ClientId must not be empty */
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTUSERCFG=0,%" PRIu32 ",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\r\n",
-           Scheme, ClientId, Username, Password, Certificate, PrivateKey, CaCertificate);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE,
+                 "AT+MQTTUSERCFG=0,%" PRIu32 ",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\r\n",
+                 Scheme, ClientId, Username, Password, Certificate, PrivateKey, CaCertificate);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
 W61_Status_t W61_MQTT_GetUserConfiguration(W61_Object_t *Obj, uint8_t ClientId[32], uint8_t Username[32],
-                                           uint8_t Password[32], uint8_t Certificate[64], uint8_t PrivateKey[64],
-                                           uint8_t CaCertificate[64])
+                                           uint8_t Password[32], uint8_t Certificate[32], uint8_t PrivateKey[32],
+                                           uint8_t CaCertificate[32])
 {
   char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
   char cmd[W61_CMD_MATCH_BUFF_SIZE];
@@ -160,40 +161,40 @@ W61_Status_t W61_MQTT_GetUserConfiguration(W61_Object_t *Obj, uint8_t ClientId[3
   PrivateKey[0] = '\0';
   CaCertificate[0] = '\0';
 
-  strncpy(cmd, "AT+MQTTUSERCFG?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+MQTTUSERCFG?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+MQTTUSERCFG:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 8)
+  if (argc < 8U)
   {
     return W61_STATUS_ERROR;
   }
 
   W61_AT_RemoveStrQuotes(argv[2]); /* ClientId */
-  strncpy((char *)ClientId, argv[2], 31);
+  (void)strncpy((char *)ClientId, argv[2], 31);
   ClientId[31] = '\0';  /* Ensure null termination */
 
   W61_AT_RemoveStrQuotes(argv[3]); /* Username */
-  strncpy((char *)Username, argv[3], 31);
+  (void)strncpy((char *)Username, argv[3], 31);
   Username[31] = '\0';  /* Ensure null termination */
 
   W61_AT_RemoveStrQuotes(argv[4]); /* Password */
-  strncpy((char *)Password, argv[4], 31);
+  (void)strncpy((char *)Password, argv[4], 31);
   Password[31] = '\0';  /* Ensure null termination */
 
   W61_AT_RemoveStrQuotes(argv[5]); /* Certificate */
-  strncpy((char *)Certificate, argv[5], 63);
-  Certificate[63] = '\0';  /* Ensure null termination */
+  (void)strncpy((char *)Certificate, argv[5], 31);
+  Certificate[31] = '\0';  /* Ensure null termination */
 
   W61_AT_RemoveStrQuotes(argv[6]); /* Private Key */
-  strncpy((char *)PrivateKey, argv[6], 63);
-  PrivateKey[63] = '\0';  /* Ensure null termination */
+  (void)strncpy((char *)PrivateKey, argv[6], 31);
+  PrivateKey[31] = '\0';  /* Ensure null termination */
 
   W61_AT_RemoveStrQuotes(argv[7]); /* CA Certificate */
-  strncpy((char *)CaCertificate, argv[7], 63);
-  CaCertificate[63] = '\0';  /* Ensure null termination */
+  (void)strncpy((char *)CaCertificate, argv[7], 31);
+  CaCertificate[31] = '\0';  /* Ensure null termination */
 
   return ret;
 }
@@ -205,14 +206,14 @@ W61_Status_t W61_MQTT_SetConfiguration(W61_Object_t *Obj, uint32_t KeepAlive, ui
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE,
-           "AT+MQTTCONNCFG=0,%" PRIu32 ",%" PRIu32 ",\"%s\",\"%s\",%" PRIu32 ",%" PRIu32 "\r\n",
-           KeepAlive, DisableCleanSession, WillTopic, WillMessage, WillQos, WillRetain);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE,
+                 "AT+MQTTCONNCFG=0,%" PRIu32 ",%" PRIu32 ",\"%s\",\"%s\",%" PRIu32 ",%" PRIu32 "\r\n",
+                 KeepAlive, DisableCleanSession, WillTopic, WillMessage, WillQos, WillRetain);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
 W61_Status_t W61_MQTT_GetConfiguration(W61_Object_t *Obj, uint32_t *KeepAlive, uint32_t *DisableCleanSession,
-                                       uint8_t WillTopic[128], uint8_t WillMessage[128], uint32_t *WillQos,
+                                       uint8_t WillTopic[64], uint8_t WillMessage[64], uint32_t *WillQos,
                                        uint32_t *WillRetain)
 {
   char *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
@@ -227,13 +228,13 @@ W61_Status_t W61_MQTT_GetConfiguration(W61_Object_t *Obj, uint32_t *KeepAlive, u
   W61_NULL_ASSERT(WillQos);
   W61_NULL_ASSERT(WillRetain);
 
-  strncpy(cmd, "AT+MQTTCONNCFG?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+MQTTCONNCFG?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+MQTTCONNCFG:", &argc, argv, W61_NET_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 7)
+  if (argc < 7U)
   {
     return W61_STATUS_ERROR;
   }
@@ -242,12 +243,12 @@ W61_Status_t W61_MQTT_GetConfiguration(W61_Object_t *Obj, uint32_t *KeepAlive, u
   *DisableCleanSession = atoi(argv[2]);
 
   W61_AT_RemoveStrQuotes(argv[3]); /* WillTopic */
-  strncpy((char *)WillTopic, argv[3], 127);
-  WillTopic[127] = '\0';  /* Ensure null termination */
+  (void)strncpy((char *)WillTopic, argv[3], 63);
+  WillTopic[63] = 0;  /* Ensure null termination */
 
   W61_AT_RemoveStrQuotes(argv[4]); /* WillMessage */
-  strncpy((char *)WillMessage, argv[4], 127);
-  WillMessage[127] = '\0';  /* Ensure null termination */
+  (void)strncpy((char *)WillMessage, argv[4], 63);
+  WillMessage[63] = 0;  /* Ensure null termination */
 
   *WillQos = atoi(argv[5]);
   *WillRetain = atoi(argv[6]);
@@ -261,7 +262,7 @@ W61_Status_t W61_MQTT_SetSNI(W61_Object_t *Obj, uint8_t *SNI)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(SNI);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTSNI=0,\"%s\"\r\n", SNI);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTSNI=0,\"%s\"\r\n", SNI);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
@@ -274,13 +275,13 @@ W61_Status_t W61_MQTT_GetSNI(W61_Object_t *Obj, uint8_t SNI[128])
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(SNI);
 
-  strncpy(cmd, "AT+MQTTSNI?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+MQTTSNI?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+MQTTSNI:", &argc, argv, W61_NET_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 2)
+  if (argc < 2U)
   {
     return W61_STATUS_ERROR;
   }
@@ -289,7 +290,7 @@ W61_Status_t W61_MQTT_GetSNI(W61_Object_t *Obj, uint8_t SNI[128])
   if (strncmp(argv[1], "\"", 1) == 0)
   {
     W61_AT_RemoveStrQuotes(argv[1]); /* Remove quotes from the string */
-    strncpy((char *)SNI, argv[1], 127);
+    (void)strncpy((char *)SNI, argv[1], 127);
     SNI[127] = '\0';  /* Ensure null termination */
   }
   else
@@ -307,7 +308,9 @@ W61_Status_t W61_MQTT_Connect(W61_Object_t *Obj, uint8_t *Host, uint16_t Port)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Host);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTCONN=0,\"%s\",%" PRIu16 ",%" PRIu16 "\r\n", Host, Port, reconnect);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE,
+                 "AT+MQTTCONN=0,\"%s\",%" PRIu16 ",%" PRIu16 "\r\n",
+                 Host, Port, reconnect);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_MQTT_CONNECT_TIMEOUT);
 }
 
@@ -324,13 +327,13 @@ W61_Status_t W61_MQTT_GetConnectionStatus(W61_Object_t *Obj, uint8_t *Host, uint
   W61_NULL_ASSERT(Scheme);
   W61_NULL_ASSERT(State);
 
-  strncpy(cmd, "AT+MQTTCONN?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+MQTTCONN?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+MQTTCONN:", &argc, argv, W61_NET_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 6)
+  if (argc < 6U)
   {
     return W61_STATUS_ERROR;
   }
@@ -338,7 +341,7 @@ W61_Status_t W61_MQTT_GetConnectionStatus(W61_Object_t *Obj, uint8_t *Host, uint
   *State = atoi(argv[1]);
   *Scheme = atoi(argv[2]);
   W61_AT_RemoveStrQuotes(argv[3]);
-  strncpy((char *)Host, argv[3], 63);
+  (void)strncpy((char *)Host, argv[3], 63);
   *Port = atoi(argv[4]);
 
   return ret;
@@ -358,7 +361,7 @@ W61_Status_t W61_MQTT_Subscribe(W61_Object_t *Obj, uint8_t *Topic)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Topic);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTSUB=0,\"%s\",%" PRIu32 "\r\n", Topic, qos);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTSUB=0,\"%s\",%" PRIu32 "\r\n", Topic, qos);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
 }
 
@@ -373,7 +376,7 @@ W61_Status_t W61_MQTT_GetSubscribedTopics(W61_Object_t *Obj)
   };
 
   return W61_Status(modem_cmd_send(&mdm->iface,
-                                   &mdm->modem_cmd_handler,
+                                   &mdm->handler,
                                    handlers,
                                    ARRAY_SIZE(handlers),
                                    (const uint8_t *)"AT+MQTTSUB?\r\n",
@@ -393,9 +396,9 @@ W61_Status_t W61_MQTT_Unsubscribe(W61_Object_t *Obj, uint8_t *Topic)
     MODEM_CMD("+MQTTUNSUB:", on_cmd_getunsub, 1U, ""),
   };
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTUNSUB=0,\"%s\"\r\n", Topic);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTUNSUB=0,\"%s\"\r\n", Topic);
   return W61_Status(modem_cmd_send(&mdm->iface,
-                                   &mdm->modem_cmd_handler,
+                                   &mdm->handler,
                                    handlers,
                                    ARRAY_SIZE(handlers),
                                    (const uint8_t *)cmd,
@@ -411,15 +414,17 @@ W61_Status_t W61_MQTT_Publish(W61_Object_t *Obj, uint8_t *Topic, uint8_t *Messag
   W61_NULL_ASSERT(Topic);
   W61_NULL_ASSERT(Message);
 
-  if (Message_len > 0)
+  if (Message_len > 0U)
   {
-    snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTPUBRAW=0,\"%s\",%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
-             Topic, Message_len, Qos, Retain);
+    (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTPUBRAW=0,\"%s\",%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
+                   Topic, Message_len, Qos, Retain);
     return W61_AT_Common_RequestSendData(Obj, (uint8_t *)cmd, Message, Message_len, W61_NET_TIMEOUT, true);
   }
   else
   {
-    snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+MQTTPUB=0,\"%s\",\"\",%" PRIu32 ",%" PRIu32 "\r\n", Topic, Qos, Retain);
+    (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE,
+                   "AT+MQTTPUB=0,\"%s\",\"\",%" PRIu32 ",%" PRIu32 "\r\n",
+                   Topic, Qos, Retain);
     return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NET_TIMEOUT);
   }
 }
@@ -427,7 +432,7 @@ W61_Status_t W61_MQTT_Publish(W61_Object_t *Obj, uint8_t *Topic, uint8_t *Messag
 /* Private Functions Definition ----------------------------------------------*/
 MODEM_CMD_DEFINE(on_cmd_getsub)
 {
-  if (argc >= 4)
+  if (argc >= 4U)
   {
     MQTT_LOG_DEBUG("LinkID: %" PRIu32 ", state: %" PRIu32 ", topic: %s, qos: %" PRIu32 "\n",
                    atoi((char *)argv[0]), atoi((char *)argv[1]), argv[2], atoi((char *)argv[3]));
@@ -438,7 +443,7 @@ MODEM_CMD_DEFINE(on_cmd_getsub)
 
 MODEM_CMD_DEFINE(on_cmd_getunsub)
 {
-  if ((argc >= 1) && (strcmp((char *)argv[0], "NO_UNSUBSCRIBE") == 0))
+  if ((argc >= 1U) && (strcmp((char *)argv[0], "NO_UNSUBSCRIBE") == 0))
   {
     MQTT_LOG_WARN("No topic found\n");
   }
@@ -450,7 +455,7 @@ static void W61_MQTT_AT_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
 
-  if ((Obj == NULL) || (Obj->ulcbs.UL_mqtt_cb == NULL) || (*argc < 2))
+  if ((Obj == NULL) || (Obj->ulcbs.UL_mqtt_cb == NULL) || (*argc < 2U))
   {
     return;
   }
@@ -486,7 +491,7 @@ static int32_t W61_MQTT_Data_Event(uint32_t event_id, struct modem_cmd_handler_d
     return -EINVAL;
   }
 
-  ptr = &data->rx_buf[len + 2]; /* Skip the link id and the comma */
+  ptr = &data->rx_buf[len + 2U]; /* Skip the link id and the comma */
   data->rx_buf[data->rx_buf_len] = 0;
 
   /* Get the topic length */
@@ -517,12 +522,12 @@ static int32_t W61_MQTT_Data_Event(uint32_t event_id, struct modem_cmd_handler_d
   if (data->rx_buf_len >= rx_data_len)
   {
     /* Copy the topic */
-    memcpy(Obj->MQTTCtx.AppBuffRecvData, endptr, topic_len);
+    (void)memcpy(Obj->MQTTCtx.AppBuffRecvData, endptr, topic_len);
     /* Null-terminate the topic */
-    Obj->MQTTCtx.AppBuffRecvData[topic_len] = '\0';
+    Obj->MQTTCtx.AppBuffRecvData[topic_len] = 0;
     endptr += topic_len + 1; /* Skip the comma after topic */
     /* Copy the message */
-    memcpy(&Obj->MQTTCtx.AppBuffRecvData[topic_len + 1], endptr, message_len);
+    (void)memcpy(&Obj->MQTTCtx.AppBuffRecvData[topic_len + 1], endptr, message_len);
     cb_param_mqtt_data.topic_length = topic_len;
     cb_param_mqtt_data.message_length = message_len;
     if (Obj->ulcbs.UL_mqtt_cb != NULL)

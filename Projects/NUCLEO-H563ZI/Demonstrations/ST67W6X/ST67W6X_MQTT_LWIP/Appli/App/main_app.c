@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    main_app.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   main_app program body
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -33,7 +33,7 @@
 #include <lwip/errno.h>
 #include <netdb.h>
 #include "dns.h"
-#include "altcp_tls_mbedtls.h"
+#include "altls_mbedtls.h"
 #include "mqtt.h"
 #include "sntp.h"
 
@@ -74,6 +74,7 @@
 
 /* Global variables ----------------------------------------------------------*/
 /** RTC handle */
+/* coverity[misra_c_2012_rule_8_5_violation : FALSE] */
 extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN GV */
@@ -116,10 +117,10 @@ typedef struct
 
 /* Private defines -----------------------------------------------------------*/
 /** Scan done event bitmask */
-#define EVENT_FLAG_SCAN_DONE            (1<<1)
+#define EVENT_FLAG_SCAN_DONE            (1UL << 1U)
 
 /** DNS done event bitmask */
-#define EVENT_FLAG_DNS_DONE             (1<<1)
+#define EVENT_FLAG_DNS_DONE             (1UL << 1U)
 
 /** DNS resolve timeout in milliseconds */
 #define DNS_RESOLVE_TIMEOUT_MS          5000
@@ -131,7 +132,13 @@ typedef struct
 #define SUBSCRIPTION_THREAD_PRIO        24
 
 /** Stack size of the subscription process task */
-#define SUBSCRIPTION_TASK_STACK_SIZE    1024
+#define SUBSCRIPTION_TASK_STACK_SIZE    1024U
+
+/** Priority of the refresher process task */
+#define REFRESHER_THREAD_PRIO           10
+
+/** Stack size of the refresher process task */
+#define REFRESHER_TASK_STACK_SIZE       4096U
 
 #ifndef SNTP_TIMEZONE
 /** SNTP timezone configuration */
@@ -140,12 +147,12 @@ typedef struct
 
 #ifndef MQTT_TOPIC_BUFFER_SIZE
 /** Subscribed topic max buffer size */
-#define MQTT_TOPIC_BUFFER_SIZE          100
+#define MQTT_TOPIC_BUFFER_SIZE          100U
 #endif /* MQTT_TOPIC_BUFFER_SIZE */
 
 #ifndef MQTT_MSG_BUFFER_SIZE
 /** Subscribed message max buffer size */
-#define MQTT_MSG_BUFFER_SIZE            600
+#define MQTT_MSG_BUFFER_SIZE            600U
 #endif /* MQTT_MSG_BUFFER_SIZE */
 
 #ifndef MQTT_HOST_NAME
@@ -190,23 +197,23 @@ typedef struct
 
 #ifndef MQTT_CERTIFICATE
 /** MQTT Client Certificate. Required when the scheme is greater or equal to 3 */
-#define MQTT_CERTIFICATE                "client_1.crt"
+#define MQTT_CERTIFICATE                "client_mqtt.crt"
 #endif /* MQTT_CERTIFICATE */
 
 #ifndef MQTT_KEY
 /** MQTTClient Private key. Required when the scheme is greater or equal to 3 */
-#define MQTT_KEY                        "client_1.key"
+#define MQTT_KEY                        "client_mqtt.key"
 #endif /* MQTT_KEY */
 
 #ifndef MQTT_CA_CERTIFICATE
 /** MQTT Client CA certificate. Required when the scheme is greater or equal to 2 */
-#define MQTT_CA_CERTIFICATE             "ca_1.crt"
+#define MQTT_CA_CERTIFICATE             "ca_mqtt.crt"
 #endif /* MQTT_CA_CERTIFICATE */
 
-#ifndef MQTT_SNI_ENABLED
-/** MQTT Server Name Indication (SNI) enabled */
-#define MQTT_SNI_ENABLED                1
-#endif /* MQTT_SNI_ENABLED */
+#ifndef MQTT_SNI
+/** MQTT Server Name Indication (SNI) */
+#define MQTT_SNI                        "server.local"
+#endif /* MQTT_SNI */
 
 #ifndef MQTT_KEEP_ALIVE
 /** Keep Alive interval using MQTT ping. Range [0, 7200]. 0 is forced to 120 */
@@ -298,8 +305,8 @@ static W6X_MQTT_Connect_t mqtt_config =
   /** Client Private key
     * Required when the scheme is greater or equal to 3 */
   .PrivateKeyName = MQTT_KEY,
-  /** Server Name Indication (SNI) enabled */
-  .SNI_enabled = MQTT_SNI_ENABLED,
+  /** Server Name Indication (SNI) */
+  .SNI = MQTT_SNI,
   /** Keep Alive interval using MQTT ping. Range [0, 7200]. 0 is forced to 120 */
   .KeepAlive = MQTT_KEEP_ALIVE,
   /** Skip cleaning the MQTT session */
@@ -337,77 +344,100 @@ static const APP_Info_t app_info =
 /* USER CODE BEGIN PV */
 #if (LFS_ENABLE == 0)
 /** Certificate Authority (CA) content */
-static const char ca_cert[] =
+static const char ca_certificate[] =
   "-----BEGIN CERTIFICATE-----\r\n"
-  "MIIDBzCCAe+gAwIBAgIUC2PjWg8acdlkI8rQQfQ+lnYYehowDQYJKoZIhvcNAQEL\r\n"
-  "BQAwEjEQMA4GA1UEAwwHTVFUVCBDQTAgFw0yNTA1MjcxODE0NTFaGA8yMDU1MDcw\r\n"
-  "OTE4MTQ1MVowEjEQMA4GA1UEAwwHTVFUVCBDQTCCASIwDQYJKoZIhvcNAQEBBQAD\r\n"
-  "ggEPADCCAQoCggEBAMxnl/G5ANi2O7B4/NRkaJF7GC36IcUJSfhxujCe+9RqbS20\r\n"
-  "bgZyo3o4SDTr5oyEyRzW/xzdCHd2zDUcllRT6JbAsVMGl9q1LXdyVEcCoB3lAvSw\r\n"
-  "YKliUibpIG2gcBI7D/jz65RSSejRECy5jAhUCdcH37tQe9Tjsa7BZ4T9NpEguFny\r\n"
-  "hVWnN/SLytczRQoUROZDiZCzzTjaPwYgBXC6VQ8cCdF7SgIDZ9C+onRUE1MQE0iF\r\n"
-  "z5my4GzA/g+6q/PaW3b2RLEiTPduQhM6uRPhKrjw4V955CYjXf655aclEMVNR44/\r\n"
-  "ZOMavLzMxQUaFEYyK7aOx8jGiI61rTuiTqdmdmcCAwEAAaNTMFEwHQYDVR0OBBYE\r\n"
-  "FETlZW7jUwuflGlWgUyYPpP/hNbPMB8GA1UdIwQYMBaAFETlZW7jUwuflGlWgUyY\r\n"
-  "PpP/hNbPMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAGFG97Jt\r\n"
-  "tPlyAzYCdihtrXBIKx+05nwQubEkqudKWy5gCo9MTW95QS2D9FY7ebO/k1wuyH4v\r\n"
-  "PmlIxOZjNq52WFjCENOFB437WkDkjbeJ0z/qrjn2UwBG9nxw7nbyRiWV6BPJnNe7\r\n"
-  "UL1kRQE1NhPilbpFlUTIM3goUKU9eOTQux32ASZ6/9W8dYpVfZ/MS1ZTHc1K8RJt\r\n"
-  "wbiCpq5tLp3DP2JH8PJVS2FfK+6dEsHhcprbH+uajcTIWfcKzpzSc1UTzC1MGh/3\r\n"
-  "vNBgSgWv5f4DUKaUU1cGZt3BB2XjoBQbU3IirKMsmBEgB09IyotmGLgYv+zkDUkT\r\n"
-  "oW2t00Hmkrht79A=\r\n"
+  "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\r\n"
+  "Qw==\r\n"
   "-----END CERTIFICATE-----\r\n";
 
 /** Client Certificate content */
-static const char client_cert[] =
+static const char client_certificate[] =
   "-----BEGIN CERTIFICATE-----\r\n"
-  "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\r\n"
+  "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\r\n"
+  "ryVA6qIrAmgq/YPIeQ6xZNyVZIMV\r\n"
   "-----END CERTIFICATE-----\r\n";
 
 /** Client Private Key content */
 static const char client_key[] =
   "-----BEGIN PRIVATE KEY-----\r\n"
-  "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDEgwrvHPmin/tl\r\n"
-  "SGwi5EtOrS+81/mnKWD4/7aU6VNBNM2f6+B+gq70J2mbAJDQ5G/KiY7Gz6m2mjEm\r\n"
-  "HsyoKrH5AFJ0L3WOlpCq1lhMr9bgTgSfRhunDGEEGCulKD9IEN9E/mQfl1m1k8gw\r\n"
-  "ouT/PeXk9RRedog9tlLyY80zC4eBmdGj0uGatZeqmtrgQSgYyXbx+6QOw5vtcKyX\r\n"
-  "/UlwoP4ZaiziCG1V/YeolNNwrrnlZwvtLRopcvd326EjoQWo+qjkIzGKCXvp1l1Z\r\n"
-  "/uy6YT8XO9Ps0WjeHjY9OzYev/8Mheu2QzoKH7aLvtUOzeUj8Ef71ZVkqI5D8FGZ\r\n"
-  "Bxi+f0HbAgMBAAECggEAJI8emyKgXL13tz2UhJ9FVWNJ9M+Xbh54IIruTGDmMMTi\r\n"
-  "lmR7NP4aD2k/r+sYhgxhseQKkHk04ThpeWaUe5rJ1oHVVTE5JShkzKuo7Mdv6fYJ\r\n"
-  "zRntbhQS/oCCqizFLSKabwsG1IvDUFEolsfPY57/5KsluXdC3HxNjTO9CsiT0qvY\r\n"
-  "Pi0jdVx8vvpdFuJfLq0c+5OBDRyKk0KnXFrhd8T9cGPh5dNaDApgR4axm/Bt2fDn\r\n"
-  "biQHDZt20QYBAKK2DHcXB0xzaRjzwnxgwnXDtlGfLJhTijqUZyf/adzDWucUeXvI\r\n"
-  "CMlJeVlkib87rm6E0IbWlr7fzXz8u/9aXlGOV68MfQKBgQDopD5VPlQdCNf99tlR\r\n"
-  "NB9QseUrQDxR0qKi4vlECPRhspFF1McXyfi9ZKORARX1e6nj5DealVcYmEesYTpf\r\n"
-  "uei/5mAs+FF2xPCp/Wbq/1iojFzExxuKjnOPzLW/bsNLgQgLzsDQAooueng/fySc\r\n"
-  "qQdElSPRek3tpPHUdYWhlKwkHwKBgQDYPiGhrB299TsDmmWElfwIUNqQ8Jfnf62D\r\n"
-  "A6cwUZY5aovhm/v5kEBJmc7oCFsoSSLt36uTeExymDbuNJ4V6kJD5eOhrLPFc9dd\r\n"
-  "iAZJjtQw/693vYNA5+dm8EKrTR2rH7tyT8V4uW1o171U3hGL8OLr/6+vhS0c4Pab\r\n"
-  "ga06tZnKxQKBgBmsBjTh6+ZIU41y8AhF+C6vctqS/BULaWcQJPGdC1q8mcta751w\r\n"
-  "bEJ6GJKnzASK4PSE+p3UXQgZxc7/67EkksqaYYKU5Gh20xfvHqxQATiYRKRyVFe1\r\n"
-  "4Iq9zFCTqHlsg7bJ2f0aSqVWXm6jWSbwgBzRWGKFXJQc35LSZSyve0+BAoGBAIUC\r\n"
-  "Gn+uNZEdIRKDSoQ2GRMoYHgcdOMhBqH6gkDXPjbM0YORBXkpAFIFOF5CnYd3DPQR\r\n"
-  "yyBnM2adN9RnKwHB2MaYxd4xM1Z1fXf7bhqaruwAqXZWbEBlJFGN4QQq59/VIeAb\r\n"
-  "LxSlwaVmZf+opFRWc83DtNWabfhAa4+VQO9GunUdAoGAB0KKhfO/oCnuukqo6A9K\r\n"
-  "a78NkT93ysS1CjlzWZrLM43BBJecEh0vgXJh7RWGUWgUGyThZis1SgYcio2dMSbJ\r\n"
-  "h+4WwztCwhXgpZQQ05aL6wZ0pA8k0WVLebtK6yaUo4rKhecsZC5giBlyDsqqTzJL\r\n"
-  "jwiT9Myy3iHKMHrIG95vODU=\r\n"
+  "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCV+g342mQI2gCa\r\n"
+  "rCfoKYk5HI6ZLNsScUrmqUvMnMBYph+AdC8GhbdfkkvikFUlM9G3Qm8gnGdTvsji\r\n"
+  "u1BywFw3kkrqT8vrPvU/8iRzhQNEZE+QtxHAkp/6axTEpEaEhg3cITnl95Q4IHcs\r\n"
+  "X9rjbqlcR4EkQtvEQDpqfmnF/d6Y0zbZW/PcAnbdu/apG7xFzt9DvWVlKDCLBvNr\r\n"
+  "H6qyEkwneC7RgKzGaX7mxmoUeCFE99XRJcUMFraMCaD+ZE/d0Gba5SG2eJN+0Z18\r\n"
+  "b1XiAfY3mE8VdZljivNjaCOV3Y5Mw0cEqFnZggU1qbhVdEbOtaoDWwF/YacdQz7Y\r\n"
+  "j6dAuh9dAgMBAAECggEAPP4LBZvnV9Q0r7J4rkmKFXBgK7oaw8bQQ7sw6N8MuGCi\r\n"
+  "6g4V+8yQlSz9cH/rKKyIysMZR4Vj3iJ2NwMfhfNl7XGwxta54wthGObkXRiIih1T\r\n"
+  "YFKbRRo8Nk6rDQeT6BxOcaoPjk8f9614WdMHxTuBY9Zuli0cjBTkzN9pK8yBZNvN\r\n"
+  "JXHxgDb/GTQ4ZWEZhh0fBNwXMF9oMbEn59K7Hh6XzsM85EV4M60LvvSiD/m94Oys\r\n"
+  "3C6dFL7UaDJ2rmThLlItrCRzE+/2FgbjCAmEv2X2NXDzNEenZoCF9X1ie3v6caIT\r\n"
+  "KdNyIZs5Vsaa4eWQdZYDthQUZjbNuK73CgxjqdJ0bwKBgQDSop6hjamHxUXpsaRv\r\n"
+  "wHlDz7TXbYx/eyeCLtQESnKedYoSSWPw6tArMlLfQkFiuFh5lXIis08CvRYDf4Ns\r\n"
+  "G/eglXO/iIF2lMm+bLEn5MGA+EwpuLHw7fvTpP6udLmElFa6hbmUyj/XgsZlIPA9\r\n"
+  "Bl3UiLQi0s1/pNcb0ubZCdgPvwKBgQC2Rwdn+7W9gd1N9qPX79WagxuJ4DRUm21C\r\n"
+  "vz2Ve2YMb7UR7+p5sktrtUEolXuPvfahJ+9FDIpaZigJRp2ySzcrMGHufLeW4UB/\r\n"
+  "ZnPVWqtEBaQrpshWu5JHlycQAhjzFveEc9expHN/Fm5WkSDxma1NU2016hot+lz+\r\n"
+  "Ajsm0cYX4wKBgQCwehmIZ8V7gLhDxVdtXgj73MG6oQlPIeMHOq7ebXW89+PX0G+Q\r\n"
+  "wVvqZT5z2fIogSV3sNOw6SSwubYA9kwpPwFpJO6WsgsuTBj/l9eSAiJyKRa++gT0\r\n"
+  "RKByQdI0Xo203AgSPMoxNIbqzKHmxwMhTf09fc/XQWF1qamkoT5S5+GDxwKBgDsz\r\n"
+  "2r31TVQd5+k4oIK0TSaASuN/RL/uM5CoWLJCgCSt65vF1txsAn8bQeySkK1hP8ec\r\n"
+  "FuTQa+dsorhQjUupjmOitUwmieKhirdWaWz0pAfV5TqgUxWImrxR5cgXRk8+OGp2\r\n"
+  "zanPBgxTFsdbH94Y0eb5n9ERFiu005tU0i2LmNGNAoGARw3oORmknMdOOuDTtOl8\r\n"
+  "yiIMzm6lmSIHI0hpJPPrVz1zzJY6CWwf9rvcGy3Rp+RpoYYgpgMFpfUeeH5zB7L7\r\n"
+  "2d+Irfu5wuoWp5ImmAveFIHAdR9rqbzjz3M+/EEg/OKRUKSGHnfdExkhhZFKpJ+B\r\n"
+  "ItceYk1hkNpYvnACWDpoIAc=\r\n"
   "-----END PRIVATE KEY-----\r\n";
 #endif /* LFS_ENABLE */
 
@@ -483,6 +513,14 @@ static void client_refresher(void *client);
   */
 static void dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
 
+/**
+  * @brief  DNS lookup callback
+  * @param  ip: IP address to connect
+  * @param  port: Port to connect
+  * @return Socket file descriptor on success, -1 on failure
+  */
+static int32_t tcp_client_connect(ip4_addr_t *ip, int32_t port);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -490,7 +528,9 @@ static void dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void 
 /* Functions Definition ------------------------------------------------------*/
 void main_app(void)
 {
-  int32_t ret = 0;
+  W6X_Status_t ret;
+  enum MQTTErrors mqtt_ret;
+  EventBits_t eventBits = 0;
 
   /* USER CODE BEGIN main_app_1 */
 
@@ -509,13 +549,12 @@ void main_app(void)
   uint8_t Mac[6] = {0};
   const char *hostname = MQTT_HOST_NAME;
   int32_t port = MQTT_HOST_PORT;
-  int32_t sockfd = -1;
+  int32_t sockfd;
   struct custom_socket_handle handle;
   struct mqtt_client client = {0};
   /* Ensure we have a clean session */
   uint8_t connect_flags = MQTT_CONNECT_CLEAN_SESSION;
   ip_addr_t resolved_ip = {0};
-  ssl_param_t *g_ssl_param = NULL;
 
   /* USER CODE BEGIN main_app_2 */
   /* Sensor variables */
@@ -525,13 +564,15 @@ void main_app(void)
   /* USER CODE END main_app_2 */
 
   /* Time variables */
-  RTC_TimeTypeDef time = {0};
-  RTC_DateTypeDef date = {0};
+  RTC_TimeTypeDef rtc_time = {0};
+  RTC_DateTypeDef rtc_date = {0};
 
   /* Initialize the logging utilities */
   LoggingInit();
+#if (SHELL_ENABLE == 1)
   /* Initialize the shell utilities on UART instance */
   ShellInit();
+#endif /* SHELL_ENABLE == 1 */
 
   LogInfo("#### Welcome to %s Application #####\n", app_info.name);
   LogInfo("# build: %s %s\n", __TIME__, __DATE__);
@@ -549,11 +590,11 @@ void main_app(void)
   App_cb.APP_ble_cb = APP_ble_cb;
   App_cb.APP_mqtt_cb = APP_mqtt_cb;
   App_cb.APP_error_cb = APP_error_cb;
-  W6X_RegisterAppCb(&App_cb);
+  (void)W6X_RegisterAppCb(&App_cb);
 
   /* Initialize the ST67W6X Driver */
   ret = W6X_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
@@ -561,7 +602,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Wi-Fi module */
   ret = W6X_WiFi_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
@@ -569,10 +610,9 @@ void main_app(void)
   LogInfo("Wi-Fi init is done\n");
 
   /* Initialize the LWIP stack */
-  ret = MX_LWIP_Init();
-  if (ret)
+  if (MX_LWIP_Init() != 0)
   {
-    LogError("Failed to initialize LWIP stack %" PRIi32 "\n", ret);
+    LogError("Failed to initialize LWIP stack\n");
     goto _err;
   }
 
@@ -584,11 +624,13 @@ void main_app(void)
 
   dns_event_flags = xEventGroupCreate();
 
-  W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
+  (void)W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
 
   /* Wait to receive the EVENT_FLAG_SCAN_DONE event. The scan is declared as failed after 'ScanTimeout' delay */
-  if ((int32_t)xEventGroupWaitBits(scan_event_flags, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
-                                   pdMS_TO_TICKS(WIFI_SCAN_TIMEOUT)) != EVENT_FLAG_SCAN_DONE)
+  eventBits = xEventGroupWaitBits(scan_event_flags, EVENT_FLAG_SCAN_DONE,
+                                  pdTRUE, pdFALSE,
+                                  pdMS_TO_TICKS(WIFI_SCAN_TIMEOUT));
+  if ((eventBits & EVENT_FLAG_SCAN_DONE) == 0U)
   {
     LogError("Scan Failed\n");
     goto _err;
@@ -596,10 +638,10 @@ void main_app(void)
 
   /* Connect the device to the pre-defined Access Point */
   LogInfo("\nConnecting to Local Access Point\n");
-  strncpy((char *)ConnectOpts.SSID, WIFI_SSID, W6X_WIFI_MAX_SSID_SIZE);
-  strncpy((char *)ConnectOpts.Password, WIFI_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
+  (void)strncpy((char *)ConnectOpts.SSID, WIFI_SSID, W6X_WIFI_MAX_SSID_SIZE);
+  (void)strncpy((char *)ConnectOpts.Password, WIFI_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
   ret = W6X_WiFi_Connect(&ConnectOpts);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to connect, %" PRIi32 "\n", ret);
     goto _err;
@@ -620,7 +662,7 @@ void main_app(void)
           connectData.SSID);
 
   /* Wait a moment to receive the IP Address from Access Point */
-  vTaskDelay(5000);
+  vTaskDelay(pdMS_TO_TICKS(5000));
 
   if (sntp_init(SNTP_TIMEZONE) != 0)
   {
@@ -629,7 +671,7 @@ void main_app(void)
   }
 
   ret = W6X_WiFi_Station_GetMACAddress(Mac);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to get the MAC Address, %" PRIi32 "\n", ret);
     goto _err;
@@ -659,13 +701,14 @@ void main_app(void)
     }
     else if (err == ERR_INPROGRESS)
     {
-      if ((int32_t)xEventGroupWaitBits(dns_event_flags, EVENT_FLAG_DNS_DONE, pdTRUE, pdFALSE,
-                                       pdMS_TO_TICKS(DNS_RESOLVE_TIMEOUT_MS)) != EVENT_FLAG_DNS_DONE)
+      eventBits = xEventGroupWaitBits(dns_event_flags, EVENT_FLAG_DNS_DONE, pdTRUE, pdFALSE,
+                                      pdMS_TO_TICKS(DNS_RESOLVE_TIMEOUT_MS));
+      if ((eventBits & EVENT_FLAG_DNS_DONE) == 0U)
       {
         LogError("DNS Lookup timed out\n");
         goto _err;
       }
-      else if (dns_res.res != 0)
+      if (dns_res.res != 0)
       {
         LogError("DNS Lookup resolution failed\n");
         goto _err;
@@ -679,45 +722,45 @@ void main_app(void)
     }
   }
 
-  if (mqtt_config.Scheme == 0)
-  {
-    sockfd = tcp_client_connect(&(resolved_ip.u_addr.ip4), port);
-    handle.type = MQTTC_PAL_CONNTION_TYPE_TCP;
-    handle.ctx.fd = sockfd;
-  }
-  else
+  sockfd = tcp_client_connect(&(resolved_ip.u_addr.ip4), port);
+  handle.type = MQTTC_PAL_CONNTION_TYPE_TCP;
+  handle.ctx.fd = sockfd;
+
+  if (mqtt_config.Scheme != 0U)
   {
     char *sni = NULL;
-    char *ca = NULL;
-    uint32_t ca_len = 0;
-    char *own_cert = NULL;
-    uint32_t own_cert_len = 0;
-    char *private_cert = NULL;
-    uint32_t private_cert_len = 0;
-    char *ssl_alpn[6] = {0};
+    ssl_conn_param_t params = {0};
+    ssl_config_ctx_t *ssl_param;
 
-    if ((mqtt_config.Scheme == 2) || (mqtt_config.Scheme == 4))
+    if ((mqtt_config.Scheme == 2U) || (mqtt_config.Scheme == 4U))
     {
-      ca = (char *)ca_cert;
-      ca_len = sizeof(ca_cert);
+      params.ca_cert = (char *)ca_certificate;
+      params.ca_cert_len = sizeof(ca_certificate);
     }
-    if (mqtt_config.Scheme >= 3)
+    if (mqtt_config.Scheme >= 3U)
     {
-      own_cert = (char *)client_cert;
-      own_cert_len = sizeof(client_cert);
-      private_cert = (char *)client_key;
-      private_cert_len = sizeof(client_key);
+      params.own_cert = (char *)client_certificate;
+      params.own_cert_len = sizeof(client_certificate);
+      params.private_cert = (char *)client_key;
+      params.private_cert_len = sizeof(client_key);
     }
 
-    if (mqtt_config.SNI_enabled)
+    if (mqtt_config.SNI[0] != 0)
     {
-      sni = (char *)hostname;
+      sni = (char *)mqtt_config.SNI;
     }
-    sockfd = ssl_client_connect(&(resolved_ip.u_addr.ip4), port, sni,
-                                own_cert, own_cert_len, private_cert, private_cert_len, ca, ca_len,
-                                ssl_alpn, 0, &g_ssl_param);
+    ssl_param = ssl_configure(&params, 1);
+    if (ssl_param == NULL)
+    {
+      goto _err;
+    }
+    ssl_conn_t *conn_param = ssl_secure_connection(sockfd, ssl_param, 1, sni);
+    if (conn_param == NULL)
+    {
+      goto _err;
+    }
     handle.type = MQTTC_PAL_CONNTION_TYPE_TLS;
-    handle.ctx.ssl_ctx = &(g_ssl_param->ssl);
+    handle.ctx.ssl_ctx = &(conn_param->ssl);
   }
 
   if (sockfd < 0)
@@ -727,21 +770,21 @@ void main_app(void)
   }
 
   /* setup a client */
-  mqtt_init(&client, &handle, sendbuf, sizeof(sendbuf), recvbuf, sizeof(recvbuf), publish_callback_1);
+  (void)mqtt_init(&client, &handle, sendbuf, sizeof(sendbuf), recvbuf, sizeof(recvbuf), publish_callback_1);
 
   {
     char *username = NULL;
     char *password = NULL;
 
-    if (mqtt_config.Scheme >= 1)
+    if (mqtt_config.Scheme >= 1U)
     {
       username = (char *)mqtt_config.MQUserName;
       password = (char *)mqtt_config.MQUserPwd;
     }
 
     /* Send connection request to the broker. */
-    if (MQTT_OK == mqtt_connect(&client, (char const *)mqtt_config.MQClientId, NULL, NULL, 0,
-                                username, password, connect_flags, 400))
+    if (MQTT_OK == mqtt_connect(&client, (char const *)mqtt_config.MQClientId, NULL, NULL, 0U,
+                                username, password, connect_flags, 400U))
     {
       /* check that we don't have any errors */
       if (client.error != MQTT_OK)
@@ -760,23 +803,26 @@ void main_app(void)
   }
 
   /* start a thread to refresh the client (handle egress and ingree client traffic) */
-  xTaskCreate(client_refresher, (char *)"client_ref", 1024,  &client, 10, NULL);
+  (void)xTaskCreate(client_refresher, (char *)"mqtt_ref",
+                    REFRESHER_TASK_STACK_SIZE >> 2U,
+                    &client, REFRESHER_THREAD_PRIO, NULL);
 
   /* Add a new task to process the received message of subscribed topics */
   sub_msg_queue = xQueueCreate(10, sizeof(APP_MQTT_Data_t));
-  xTaskCreate(Subscription_process_task, (char *)"mqtt_sub",
-              SUBSCRIPTION_TASK_STACK_SIZE >> 2, NULL, SUBSCRIPTION_THREAD_PRIO, &sub_task_handle);
+  (void)xTaskCreate(Subscription_process_task, (char *)"mqtt_sub",
+                    SUBSCRIPTION_TASK_STACK_SIZE >> 2U,
+                    NULL, SUBSCRIPTION_THREAD_PRIO, &sub_task_handle);
 
   /* Subscribe to a control topic with topic_level based on ClientID */
-  snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/devices/%s/control", mqtt_config.MQClientId);
+  (void)snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/devices/%s/control", mqtt_config.MQClientId);
   LogInfo("Subscribing to topic %s.\n", mqtt_topic);
-  mqtt_subscribe(&client, (char *)mqtt_topic, 0);
-  memset(mqtt_topic, 0, sizeof(mqtt_topic));
+  (void)mqtt_subscribe(&client, (char *)mqtt_topic, 0);
+  (void)memset(mqtt_topic, 0, sizeof(mqtt_topic));
 
   /* Subscribe to a sensor topic with topic_level based on ClientID */
-  snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/sensors/%s", mqtt_config.MQClientId);
+  (void)snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/sensors/%s", mqtt_config.MQClientId);
   LogInfo("Subscribing to topic %s.\n", mqtt_topic);
-  mqtt_subscribe(&client, (char *)mqtt_topic, 0);
+  (void)mqtt_subscribe(&client, (char *)mqtt_topic, 0);
 
   /* Reuse the same topic to publish message */
   do
@@ -786,11 +832,11 @@ void main_app(void)
     W6X_WiFi_Connect_t ConnectData = {0};
 
     /* Get the current date and time */
-    HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+    (void)HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+    (void)HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN);
 
     /* Get the Wi-Fi station state to retrieve the RSSI value */
-    W6X_WiFi_Station_GetState(&State, &ConnectData);
+    (void)W6X_WiFi_Station_GetState(&State, &ConnectData);
 
     /* Create the json string message with:
      * - current date and time
@@ -803,7 +849,7 @@ void main_app(void)
     len = snprintf((char *)mqtt_pubmsg, MQTT_MSG_BUFFER_SIZE, "{\n \"state\": {\n \"reported\": {\n "
                    "   \"time\": \"%02" PRIu16 "-%02" PRIu16 "-%02" PRIu16 " %02" PRIu16 ":%02" PRIu16 ":%02" PRIu16
                    "\", \"mac\": \"" MACSTR "\", \"rssi\": %" PRIi32 "\n",
-                   date.Year, date.Month, date.Date, time.Hours, time.Minutes, time.Seconds,
+                   rtc_date.Year, rtc_date.Month, rtc_date.Date, rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds,
                    MAC2STR(Mac), ConnectData.Rssi);
 
     /* USER CODE BEGIN main_app_6 */
@@ -811,7 +857,7 @@ void main_app(void)
     if (sensor_initialized)
     {
       /* Read the sensor values of the components on the MEMS expansion board */
-      Sys_Sensors_Read(&sensors_data);
+      (void)Sys_Sensors_Read(&sensors_data);
 
       /* Append the json string message with:
        * - environmental sensor values
@@ -826,31 +872,30 @@ void main_app(void)
 
     /* USER CODE END main_app_6 */
 
-    snprintf((char *)&mqtt_pubmsg[len], MQTT_MSG_BUFFER_SIZE - len, "\n  }\n }\n}");
+    len += snprintf((char *)&mqtt_pubmsg[len], MQTT_MSG_BUFFER_SIZE - len, "\n  }\n }\n}");
+
+    /* Prevent missing null-terminated character */
+    mqtt_pubmsg[len] = 0U;
 
     /* Publish the message on a topic with topic_level based on ClientID */
-    ret = mqtt_publish(&client, (char *)mqtt_topic, (char *)mqtt_pubmsg,
-                       strlen((char *)mqtt_pubmsg) + 1, MQTT_PUBLISH_QOS_0);
-    if (ret == MQTT_OK)
+    mqtt_ret = mqtt_publish(&client, (char *)mqtt_topic, (char *)mqtt_pubmsg,
+                            len, MQTT_PUBLISH_QOS_0);
+    if (mqtt_ret == MQTT_OK)
     {
       LogInfo("MQTT Publish OK\n");
     }
-    vTaskDelay(2000);
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 #if (TEST_AUTOMATION_ENABLE == 1)
-  while ((ret == W6X_STATUS_OK) && (subscription_received == false));
+  while ((mqtt_ret == W6X_STATUS_OK) && (subscription_received == false));
 #else
-  while (ret == MQTT_OK);
+  while (mqtt_ret == MQTT_OK);
+  LogError("MQTT Failure\n");
 #endif /* TEST_AUTOMATION_ENABLE */
 
-  if (ret != MQTT_OK)
-  {
-    LogError("MQTT Failure\n");
-  }
-
   /* Close the MQTT connection */
-  ret = mqtt_disconnect(&client);
-  if (ret == MQTT_OK)
+  mqtt_ret = mqtt_disconnect(&client);
+  if (mqtt_ret == MQTT_OK)
   {
     LogInfo("MQTT Disconnect success\n");
   }
@@ -904,60 +949,38 @@ _err:
   LogInfo("##### Application end\n");
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin);
-
-void HAL_GPIO_EXTI_Callback(uint16_t pin)
-{
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_1 */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_1 */
-  /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
-  {
-    if (HAL_GPIO_ReadPin(SPI_RDY_GPIO_Port, SPI_RDY_Pin) == GPIO_PIN_SET)
-    {
-      HAL_GPIO_EXTI_Rising_Callback(pin);
-    }
-    else
-    {
-      HAL_GPIO_EXTI_Falling_Callback(pin);
-    }
-  }
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_End */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_End */
-}
-
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Rising_Callback_1 */
 
   /* USER CODE END EXTI_Rising_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_txn_data_ready();
+    (void)spi_on_txn_data_ready();
   }
   /* USER CODE BEGIN EXTI_Rising_Callback_End */
 
   /* USER CODE END EXTI_Rising_Callback_End */
 }
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Falling_Callback_1 */
 
   /* USER CODE END EXTI_Falling_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_header_ack();
+    (void)spi_on_header_ack();
   }
 
   /* Callback when user button is pressed */
-  if (pin == USER_BUTTON_Pin)
+  if (GPIO_Pin == USER_BUTTON_Pin)
   {
   }
   /* USER CODE BEGIN EXTI_Falling_Callback_End */
@@ -975,7 +998,7 @@ static void Subscription_process_task(void *arg)
   /* USER CODE BEGIN Subscription_process_task_1 */
 
   /* USER CODE END Subscription_process_task_1 */
-  int32_t ret;
+  BaseType_t ret;
   APP_MQTT_Data_t mqtt_data = {0};
   cJSON *json = NULL;
   cJSON *root = NULL;
@@ -992,7 +1015,7 @@ static void Subscription_process_task(void *arg)
   {
     /* Wait a new message from the subscribed topics */
     ret = xQueueReceive(sub_msg_queue, &mqtt_data, 2000);
-    if (ret)
+    if (ret > 0)
     {
       LogInfo("MQTT Subscription Received on topic %s\n", (char *)mqtt_data.topic);
 
@@ -1089,7 +1112,7 @@ static void Subscription_process_task(void *arg)
           if (cJSON_IsTrue(json) == true)
           {
             LogInfo("  %s requested in 1s ...\n", json->string);
-            vTaskDelay(1000);
+            vTaskDelay(pdMS_TO_TICKS(1000));
             HAL_NVIC_SystemReset();
           }
         }
@@ -1170,7 +1193,7 @@ static void APP_wifi_scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *Scan_result
   LogInfo("SCAN DONE\n");
   LogInfo(" Cb informed APP that WIFI SCAN DONE.\n");
   W6X_WiFi_PrintScan(Scan_results);
-  xEventGroupSetBits(scan_event_flags, EVENT_FLAG_SCAN_DONE);
+  (void)xEventGroupSetBits(scan_event_flags, EVENT_FLAG_SCAN_DONE);
   /* USER CODE BEGIN APP_wifi_scan_cb_End */
 
   /* USER CODE END APP_wifi_scan_cb_End */
@@ -1196,6 +1219,7 @@ static void APP_wifi_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Wi-Fi events unmanaged */
       break;
   }
   /* USER CODE BEGIN APP_wifi_cb_End */
@@ -1246,7 +1270,7 @@ static void publish_callback_1(void **unused, struct mqtt_response_publish *publ
   mqtt_data.topic = pvPortMalloc(mqtt_data.topic_length);
 
   /* Copy the received topic in allocated buffer */
-  memcpy(mqtt_data.topic, published->topic_name, published->topic_name_size);
+  (void)memcpy(mqtt_data.topic, published->topic_name, published->topic_name_size);
   mqtt_data.topic[published->topic_name_size] = '\0';
 
   /* Get the received message length */
@@ -1256,26 +1280,26 @@ static void publish_callback_1(void **unused, struct mqtt_response_publish *publ
   mqtt_data.message = pvPortMalloc(mqtt_data.message_length);
 
   /* Copy the received message in allocated buffer */
-  memcpy(mqtt_data.message, published->application_message, published->application_message_size);
+  (void)memcpy(mqtt_data.message, published->application_message, published->application_message_size);
   mqtt_data.message[published->application_message_size] = '\0';
 
   /* Push the new mqtt_data into the sub_msg_queue */
-  xQueueSendToBack(sub_msg_queue, &mqtt_data, 0);
+  (void)xQueueSendToBack(sub_msg_queue, &mqtt_data, 0);
 }
 
 static void client_refresher(void *client)
 {
-  while (1)
+  while (true)
   {
-    mqtt_sync((struct mqtt_client *) client);
-    vTaskDelay(100);
+    (void)mqtt_sync((struct mqtt_client *) client);
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
 static void dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
 {
   APP_DNS_res_t *dns_res = (APP_DNS_res_t *)arg;
-  if (ipaddr)
+  if (ipaddr != NULL)
   {
     dns_res->res = 0;
     dns_res->ipaddr = *ipaddr;
@@ -1284,7 +1308,64 @@ static void dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void 
   {
     dns_res->res = -1;
   }
-  xEventGroupSetBits(dns_event_flags, EVENT_FLAG_DNS_DONE);
+  (void)xEventGroupSetBits(dns_event_flags, EVENT_FLAG_DNS_DONE);
+}
+
+static int32_t tcp_client_connect(ip4_addr_t *ip, int32_t port)
+{
+  /* USER CODE BEGIN tcp_client_connect_1 */
+
+  /* USER CODE END tcp_client_connect_1 */
+  int32_t fd;
+  int32_t res;
+  struct sockaddr_in addr;
+
+  LogInfo("tcp client connect %s:%d\r\n", ip4addr_ntoa(ip), port);
+
+  fd = lwip_socket(AF_INET, SOCK_STREAM, 0);
+  if (fd < 0)
+  {
+    LogError("socket create failed\r\n");
+    return -2;
+  }
+
+  (void)memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_len = sizeof(addr);
+  addr.sin_port = htons(port);
+  addr.sin_addr.s_addr = ip4_addr_get_u32(ip);
+
+  LogInfo("tcp_client_connect fd:%d\r\n", fd);
+
+  int32_t on = 1;
+  res = lwip_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+  if (res != 0)
+  {
+    LogError("setsockopt failed, res:%d\r\n", res);
+  }
+
+  res = lwip_connect(fd, (struct sockaddr *)&addr, sizeof(addr));
+  if (res < 0)
+  {
+    LogError("connect failed, res:%d\r\n", res);
+    (void)close(fd);
+    fd = -1;
+  }
+
+  /* make non-blocking */
+  if (fd != -1)
+  {
+    int32_t iMode = 1;
+    (void)ioctlsocket(fd, FIONBIO, &iMode);
+  }
+  /* USER CODE BEGIN tcp_client_connect_2 */
+
+  /* USER CODE END tcp_client_connect_2 */
+
+  return fd;
+  /* USER CODE BEGIN tcp_client_connect_End */
+
+  /* USER CODE END tcp_client_connect_End */
 }
 
 /* USER CODE BEGIN PFD */

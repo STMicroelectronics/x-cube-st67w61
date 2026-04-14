@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_ble_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x BLE Shell Commands
   ******************************************************************************
   * @attention
@@ -33,21 +33,21 @@
   * @{
   */
 
-#define EVENT_FLAG_SCAN_DONE  (1<<1)  /*!< Scan done event bitmask */
+#define EVENT_FLAG_SCAN_DONE  (1UL << 1U)  /*!< Scan done event bitmask */
 
-#define SCAN_TIMEOUT          10000   /*!< Delay before to declare the scan in failure */
+#define SCAN_TIMEOUT          10000U   /*!< Delay before to declare the scan in failure */
 
 #ifndef BDADDR2STR
 /** BD Address buffer to string macros */
-#define BDADDR2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#define BDADDR2STR(a)         (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #endif /* BDADDR2STR */
 
 #ifndef BDADDRSTR
 /** BD Address string format */
-#define BDADDRSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#define BDADDRSTR             "%02x:%02x:%02x:%02x:%02x:%02x"
 #endif /* BDADDRSTR */
 
-#define MAX_BLE_TX_POWER  20  /*!< Maximum value of BLE TX power */
+#define MAX_BLE_TX_POWER      20U  /*!< Maximum value of BLE TX power */
 
 /** @} */
 
@@ -58,7 +58,7 @@
   */
 
 /** Event bitmask flag used for asynchronous execution */
-static EventGroupHandle_t scan_event = NULL;
+static EventGroupHandle_t W6X_Shell_Ble_scan_event = NULL;
 
 /** @} */
 
@@ -383,12 +383,20 @@ int32_t W6X_Shell_Ble_SecurityUnpair(int32_t argc, char **argv);
 int32_t W6X_Shell_Ble_SecurityGetBondedDeviceList(int32_t argc, char **argv);
 
 /**
-  * @brief  BLE set security passkey function
+  * @brief  BLE enter remote security passkey function
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
   * @retval 0 in case of success, -1 otherwise
   */
-int32_t W6X_Shell_Ble_SecuritySetPassKey(int32_t argc, char **argv);
+int32_t W6X_Shell_Ble_SecurityEnterRemotePassKey(int32_t argc, char **argv);
+
+/**
+  * @brief  BLE set GAP appearance value function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval 0 in case of success, -1 otherwise
+  */
+int32_t W6X_Shell_Ble_SetGapAppearance(int32_t argc, char **argv);
 
 /* Private Functions Definition ----------------------------------------------*/
 void W6X_Shell_Ble_Print_Scan(W6X_Ble_Scan_Result_t *Scan_results)
@@ -405,16 +413,16 @@ void W6X_Shell_Ble_Print_Scan(W6X_Ble_Scan_Result_t *Scan_results)
     SHELL_PRINTF("[" BDADDRSTR "] RSSI: %4" PRIi16 "| Name: %s\n",
                  BDADDR2STR(Scan_results->Detected_Peripheral[count].BDAddr),
                  Scan_results->Detected_Peripheral[count].RSSI, Scan_results->Detected_Peripheral[count].DeviceName);
-    vTaskDelay(15); /* Wait few ms to avoid logging buffer overflow */
+    vTaskDelay(pdMS_TO_TICKS(15)); /* Wait few ms to avoid logging buffer overflow */
   }
 }
 
 void W6X_Shell_Ble_Scan_cb(W6X_Ble_Scan_Result_t *entry)
 {
-  if (scan_event != NULL)
+  if (W6X_Shell_Ble_scan_event != NULL)
   {
     SHELL_PRINTF(" Cb informed APP that BLE SCAN DONE\n");
-    if (entry->Count == 0)
+    if (entry->Count == 0U)
     {
       SHELL_PRINTF("No scan results\n");
     }
@@ -422,7 +430,7 @@ void W6X_Shell_Ble_Scan_cb(W6X_Ble_Scan_Result_t *entry)
     {
       W6X_Shell_Ble_Print_Scan(entry);
       /* Set the scan done event */
-      xEventGroupSetBits(scan_event, EVENT_FLAG_SCAN_DONE);
+      (void)xEventGroupSetBits(W6X_Shell_Ble_scan_event, EVENT_FLAG_SCAN_DONE);
     }
   }
 }
@@ -551,23 +559,23 @@ int32_t W6X_Shell_Ble_Scan(int32_t argc, char **argv)
   else
   {
     /* Initialize the scan event */
-    if (scan_event == NULL)
+    if (W6X_Shell_Ble_scan_event == NULL)
     {
-      scan_event = xEventGroupCreate();
+      W6X_Shell_Ble_scan_event = xEventGroupCreate();
     }
     /* Start the BLE scan */
     if (W6X_Ble_StartScan(W6X_Shell_Ble_Scan_cb) == W6X_STATUS_OK)
     {
       SHELL_PRINTF("BLE Start Scan OK\n");
       /* Wait for the scan to be done */
-      if ((int32_t)xEventGroupWaitBits(scan_event, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
+      if ((int32_t)xEventGroupWaitBits(W6X_Shell_Ble_scan_event, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
                                        pdMS_TO_TICKS(SCAN_TIMEOUT)) != EVENT_FLAG_SCAN_DONE)
       {
         /* Scan timeout */
         SHELL_PRINTF("No device found\n");
       }
       SHELL_PRINTF("Stop Scan\n");
-      W6X_Ble_StopScan();
+      (void)W6X_Ble_StopScan();
     }
     else
     {
@@ -585,7 +593,7 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_Scan, ble_scan, ble_scan [ -a abort scan ])
 
 int32_t W6X_Shell_Ble_Connect(int32_t argc, char **argv)
 {
-  uint32_t conn_handle = 0;
+  uint32_t conn_handle = 0U;
   uint8_t ble_bd_addr[6] = {0};
 
 #if (SHELL_CMD_LEVEL >= 1)
@@ -594,7 +602,7 @@ int32_t W6X_Shell_Ble_Connect(int32_t argc, char **argv)
     /* Get the connection information */
     if (W6X_Ble_GetConn(&conn_handle, ble_bd_addr) == W6X_STATUS_OK)
     {
-      if (conn_handle == 0xFF)
+      if (conn_handle == 0xFFU)
       {
         SHELL_PRINTF("No BLE Connection established\n");
         return SHELL_STATUS_OK;
@@ -616,7 +624,7 @@ int32_t W6X_Shell_Ble_Connect(int32_t argc, char **argv)
   if (argc == 3)
   {
     conn_handle = (uint32_t)atoi(argv[1]);
-    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
@@ -648,7 +656,7 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_Connect, ble_connect, ble_connect < Conn Ha
 
 int32_t W6X_Shell_Ble_Disconnect(int32_t argc, char **argv)
 {
-  uint32_t conn_handle = 0;
+  uint32_t conn_handle = 0U;
 
   if (argc != 2)
   {
@@ -657,7 +665,7 @@ int32_t W6X_Shell_Ble_Disconnect(int32_t argc, char **argv)
   else
   {
     conn_handle = (uint32_t)atoi(argv[1]);
-    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
@@ -758,7 +766,7 @@ int32_t W6X_Shell_Ble_BdAddress(int32_t argc, char **argv)
   if (argc == 2)
   {
     /* Parse the Bluetooth Device Address */
-    if (strlen(argv[1]) != 17)
+    if (strlen(argv[1]) != 17U)
     {
       SHELL_E("Invalid BD_ADDR length. Expected 12 hexadecimal characters\n");
       return SHELL_STATUS_UNKNOWN_ARGS;
@@ -817,7 +825,7 @@ int32_t W6X_Shell_Ble_DeviceName(int32_t argc, char **argv)
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
-    strncpy(device_name, argv[1], W6X_BLE_DEVICE_NAME_SIZE);
+    (void)strncpy(device_name, argv[1], W6X_BLE_DEVICE_NAME_SIZE);
     device_name[W6X_BLE_DEVICE_NAME_SIZE] = '\0'; /* Ensure null termination */
 
     /* Set Device Name */
@@ -845,22 +853,22 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_DeviceName, ble_device_name, ble_device_nam
 
 int32_t W6X_Shell_Ble_AdvData(int32_t argc, char **argv)
 {
-  char adv_data[(W6X_BLE_MAX_ADV_DATA_LENGTH * 2) + 1] = {0};
+  char adv_data[(W6X_BLE_MAX_ADV_DATA_LENGTH * 2U) + 1U] = {0};
 
   if (argc != 2)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  if (strlen(argv[1]) > (W6X_BLE_MAX_ADV_DATA_LENGTH * 2))
+  if (strlen(argv[1]) > (W6X_BLE_MAX_ADV_DATA_LENGTH * 2U))
   {
     SHELL_E("Advertising data is too long. Maximum length is %" PRIu32 " characters\n",
-            (W6X_BLE_MAX_ADV_DATA_LENGTH * 2));
+            (W6X_BLE_MAX_ADV_DATA_LENGTH * 2U));
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  strncpy(adv_data, argv[1], W6X_BLE_MAX_ADV_DATA_LENGTH * 2);
-  adv_data[W6X_BLE_MAX_ADV_DATA_LENGTH * 2] = '\0';
+  (void)strncpy(adv_data, argv[1], W6X_BLE_MAX_ADV_DATA_LENGTH * 2U);
+  adv_data[W6X_BLE_MAX_ADV_DATA_LENGTH * 2U] = '\0';
 
   /* Set Advertising data */
   if (W6X_Ble_SetAdvData(adv_data) == W6X_STATUS_OK)
@@ -912,14 +920,14 @@ int32_t W6X_Shell_Ble_AdvParam(int32_t argc, char **argv)
   {
     /* Parse the minimum advertising interval */
     adv_int_min = (uint32_t)atoi(argv[1]);
-    if ((adv_int_min < 0x0020) || (adv_int_min > 0x4000))
+    if ((adv_int_min < 0x0020U) || (adv_int_min > 0x4000U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
     /* Parse the maximum advertising interval */
     adv_int_max = (uint32_t)atoi(argv[2]);
-    if ((adv_int_max < 0x0020) || (adv_int_max > 0x4000) || (adv_int_max < adv_int_min))
+    if ((adv_int_max < 0x0020U) || (adv_int_max > 0x4000U) || (adv_int_max < adv_int_min))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
@@ -1028,14 +1036,14 @@ int32_t W6X_Shell_Ble_ScanParam(int32_t argc, char **argv)
 
     /* Parse the scan interval */
     scan_interval = (uint32_t)atoi(argv[4]);
-    if ((scan_interval < 4) || (scan_interval > 16384))
+    if ((scan_interval < 4U) || (scan_interval > 0x4000U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
     /* Parse the scan window */
     scan_window = (uint32_t)atoi(argv[5]);
-    if ((scan_window < 4) || (scan_window > 16384) || (scan_window > scan_interval))
+    if ((scan_window < 4U) || (scan_window > 0x4000U) || (scan_window > scan_interval))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
@@ -1072,22 +1080,22 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_ScanParam, ble_scan_param,
 
 int32_t W6X_Shell_Ble_ScanRespData(int32_t argc, char **argv)
 {
-  char scan_resp_data[(W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2) + 1] = {0};
+  char scan_resp_data[(W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2U) + 1U] = {0};
 
   if (argc != 2)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  if (strlen(argv[1]) > (W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2))
+  if (strlen(argv[1]) > (W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2U))
   {
     SHELL_E("Scan response data is too long. Maximum length is %" PRIu32 " characters\n",
-            (W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2));
+            (W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2U));
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  strncpy(scan_resp_data, argv[1], (W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2));
-  scan_resp_data[(W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2)] = '\0';
+  (void)strncpy(scan_resp_data, argv[1], (W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2U));
+  scan_resp_data[(W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH * 2U)] = '\0';
 
   /* Set Scan Response data */
   if (W6X_Ble_SetScanRespData(scan_resp_data) == W6X_STATUS_OK)
@@ -1123,7 +1131,7 @@ int32_t W6X_Shell_Ble_ConnParam(int32_t argc, char **argv)
   {
     /* Parse the connection handle */
     conn_handle = (uint32_t)atoi(argv[1]);
-    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
@@ -1153,35 +1161,35 @@ int32_t W6X_Shell_Ble_ConnParam(int32_t argc, char **argv)
   {
     /* Parse the connection handle */
     conn_handle = (uint32_t)atoi(argv[1]);
-    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+    if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
     /* Parse the minimum connection interval */
     conn_int_min = (uint32_t)atoi(argv[2]);
-    if ((conn_int_min < 0x6) || (conn_int_min > 0xC80))
+    if ((conn_int_min < 0x6U) || (conn_int_min > 0xC80U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
     /* Parse the maximum connection interval */
     conn_int_max = (uint32_t)atoi(argv[3]);
-    if ((conn_int_max < 0x6) || (conn_int_max > 0xC80) || (conn_int_max < conn_int_min))
+    if ((conn_int_max < 0x6U) || (conn_int_max > 0xC80U) || (conn_int_max < conn_int_min))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
     /* Parse the connection latency */
     latency = (uint32_t)atoi(argv[4]);
-    if (latency > 0x1F3)
+    if (latency > 0x1F3U)
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
 
     /* Parse the supervision timeout */
     timeout = (uint32_t)atoi(argv[5]);
-    if ((timeout < 0xA) || (timeout > 0xC80))
+    if ((timeout < 0xAU) || (timeout > 0xC80U))
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
     }
@@ -1229,7 +1237,7 @@ int32_t W6X_Shell_Ble_GetConn(int32_t argc, char **argv)
   /* Get connection information */
   if (W6X_Ble_GetConn(&conn_handle, remote_bdaddr) == W6X_STATUS_OK)
   {
-    if (conn_handle == 0xFF)
+    if (conn_handle == 0xFFU)
     {
       SHELL_PRINTF("No BLE Connection established\n");
       return SHELL_STATUS_OK;
@@ -1264,7 +1272,7 @@ int32_t W6X_Shell_Ble_ExchangeMTU(int32_t argc, char **argv)
   }
 
   conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1300,14 +1308,14 @@ int32_t W6X_Shell_Ble_DataLength(int32_t argc, char **argv)
   }
 
   conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the data packet length */
   tx_bytes = (uint32_t)atoi(argv[2]);
-  if ((tx_bytes < 27) || (tx_bytes > 251))
+  if ((tx_bytes < 27U) || (tx_bytes > 251U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1342,7 +1350,7 @@ int32_t W6X_Shell_Ble_CreateService(int32_t argc, char **argv)
 {
   uint8_t service_index = 0;
   uint8_t uuid_type = 0;
-  char service_uuid[((W6X_BLE_MAX_UUID_SIZE - 1) * 2) + 1] = {0};
+  char service_uuid[((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U) + 1U] = {0};
 
   if (argc != 4)
   {
@@ -1351,21 +1359,21 @@ int32_t W6X_Shell_Ble_CreateService(int32_t argc, char **argv)
 
   /* Parse the service index argument */
   service_index = (uint8_t)atoi(argv[1]);
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the service UUID argument */
-  if (strlen(argv[2]) > ((W6X_BLE_MAX_UUID_SIZE - 1) * 2))
+  if (strlen(argv[2]) > ((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U))
   {
     SHELL_E("UUID is too long\n");
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Copy the service UUID */
-  strncpy(service_uuid, argv[2], ((W6X_BLE_MAX_UUID_SIZE - 1) * 2));
-  service_uuid[((W6X_BLE_MAX_UUID_SIZE - 1) * 2)] = 0; /* Ensure end of UUID detection */
+  (void)strncpy(service_uuid, argv[2], ((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U));
+  service_uuid[((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U)] = '\0'; /* Ensure end of UUID detection */
 
   /* Parse the UUID type argument */
   uuid_type = (uint8_t)atoi(argv[3]);
@@ -1401,7 +1409,7 @@ int32_t W6X_Shell_Ble_DeleteService(int32_t argc, char **argv)
 
   /* Parse the service index argument */
   service_index = (uint8_t)atoi(argv[1]);
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1430,7 +1438,7 @@ int32_t W6X_Shell_Ble_CreateCharacteristic(int32_t argc, char **argv)
   uint8_t service_index = 0;
   uint8_t char_index = 0;
   uint8_t uuid_type = 0;
-  char char_uuid[((W6X_BLE_MAX_UUID_SIZE - 1) * 2) + 1] = {0};
+  char char_uuid[((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U) + 1U] = {0};
   uint8_t char_property = 0;
   uint8_t char_permission = 0;
 
@@ -1441,28 +1449,28 @@ int32_t W6X_Shell_Ble_CreateCharacteristic(int32_t argc, char **argv)
 
   /* Parse the service index argument */
   service_index = (uint8_t)atoi(argv[1]);
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the characteristic index argument */
   char_index = (uint8_t)atoi(argv[2]);
-  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1))
+  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the characteristic UUID argument */
-  if (strlen(argv[3]) > ((W6X_BLE_MAX_UUID_SIZE - 1) * 2))
+  if (strlen(argv[3]) > ((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U))
   {
     SHELL_E("UUID is too long\n");
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Copy the service UUID */
-  strncpy(char_uuid, argv[3], ((W6X_BLE_MAX_UUID_SIZE - 1) * 2));
-  char_uuid[((W6X_BLE_MAX_UUID_SIZE - 1) * 2)] = 0; /* Ensure end of UUID detection */
+  (void)strncpy(char_uuid, argv[3], ((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U));
+  char_uuid[((W6X_BLE_MAX_UUID_SIZE - 1U) * 2U)] = '\0'; /* Ensure end of UUID detection */
 
   /* Parse the UUID type argument */
   uuid_type = (uint8_t)atoi(argv[4]);
@@ -1559,7 +1567,7 @@ int32_t W6X_Shell_Ble_RemoteServiceDiscovery(int32_t argc, char **argv)
 
   /* Parse the connection handle */
   conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1596,7 +1604,7 @@ int32_t W6X_Shell_Ble_RemoteCharDiscovery(int32_t argc, char **argv)
 
   /* Parse the connection handle */
   conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1646,21 +1654,21 @@ int32_t W6X_Shell_Ble_ServerSendNotification(int32_t argc, char **argv)
 
   /* Parse the connection handle argument */
   conn_handle = (uint8_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the service index argument */
   service_index = (uint8_t)atoi(argv[2]);
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the characteristic index argument */
   char_index = (uint8_t)atoi(argv[3]);
-  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1))
+  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1669,8 +1677,8 @@ int32_t W6X_Shell_Ble_ServerSendNotification(int32_t argc, char **argv)
   timeout = (uint32_t)atoi(argv[4]);
 
   /* Parse the data hex format */
-  req_len = strlen(argv[5]) / 2; /* Each byte is represented by 2 hex characters */
-  if ((req_len == 0) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
+  req_len = strlen(argv[5]) / 2U; /* Each byte is represented by 2 hex characters */
+  if ((req_len == 0U) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
   {
     SHELL_E("Data length must be between 1 and %" PRIu32 " bytes\n", W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH);
     return SHELL_STATUS_UNKNOWN_ARGS;
@@ -1678,7 +1686,7 @@ int32_t W6X_Shell_Ble_ServerSendNotification(int32_t argc, char **argv)
 
   for (uint32_t i = 0; i < req_len; i++)
   {
-    char byte_str[3] = {argv[5][i * 2], argv[5][i * 2 + 1], '\0'};
+    char byte_str[3] = {argv[5][i * 2U], argv[5][(i * 2U) + 1U], '\0'};
     int32_t hex_value = Parser_StrToHex(byte_str, NULL);
     if (hex_value < 0)
     {
@@ -1733,21 +1741,21 @@ int32_t W6X_Shell_Ble_ServerSendIndication(int32_t argc, char **argv)
 
   /* Parse the connection handle argument */
   conn_handle = (uint8_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the service index argument */
   service_index = (uint8_t)atoi(argv[2]);
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the characteristic index argument */
   char_index = (uint8_t)atoi(argv[3]);
-  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1))
+  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1756,8 +1764,8 @@ int32_t W6X_Shell_Ble_ServerSendIndication(int32_t argc, char **argv)
   timeout = (uint32_t)atoi(argv[4]);
 
   /* Parse the data hex format */
-  req_len = strlen(argv[5]) / 2; /* Each byte is represented by 2 hex characters */
-  if ((req_len == 0) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
+  req_len = strlen(argv[5]) / 2U; /* Each byte is represented by 2 hex characters */
+  if ((req_len == 0U) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
   {
     SHELL_E("Data length must be between 1 and %" PRIu32 " bytes\n", W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH);
     return SHELL_STATUS_UNKNOWN_ARGS;
@@ -1765,7 +1773,7 @@ int32_t W6X_Shell_Ble_ServerSendIndication(int32_t argc, char **argv)
 
   for (uint32_t i = 0; i < req_len; i++)
   {
-    char byte_str[3] = {argv[5][i * 2], argv[5][i * 2 + 1], '\0'};
+    char byte_str[3] = {argv[5][i * 2U], argv[5][(i * 2U) + 1U], '\0'};
     int32_t hex_value = Parser_StrToHex(byte_str, NULL);
     if (hex_value < 0)
     {
@@ -1819,14 +1827,14 @@ int32_t W6X_Shell_Ble_ServerSetReadData(int32_t argc, char **argv)
 
   /* Parse the service index argument */
   service_index = (uint8_t)atoi(argv[1]);
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the characteristic index argument */
   char_index = (uint8_t)atoi(argv[2]);
-  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1))
+  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1835,8 +1843,8 @@ int32_t W6X_Shell_Ble_ServerSetReadData(int32_t argc, char **argv)
   timeout = (uint32_t)atoi(argv[3]);
 
   /* Parse the data hex format */
-  req_len = strlen(argv[4]) / 2; /* Each byte is represented by 2 hex characters */
-  if ((req_len == 0) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
+  req_len = strlen(argv[4]) / 2U; /* Each byte is represented by 2 hex characters */
+  if ((req_len == 0U) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
   {
     SHELL_E("Data length must be between 1 and %" PRIu32 " bytes\n", W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH);
     return SHELL_STATUS_UNKNOWN_ARGS;
@@ -1844,7 +1852,7 @@ int32_t W6X_Shell_Ble_ServerSetReadData(int32_t argc, char **argv)
 
   for (uint32_t i = 0; i < req_len; i++)
   {
-    char byte_str[3] = {argv[4][i * 2], argv[4][i * 2 + 1], '\0'};
+    char byte_str[3] = {argv[4][i * 2U], argv[4][(i * 2U) + 1U], '\0'};
     int32_t hex_value = Parser_StrToHex(byte_str, NULL);
     if (hex_value < 0)
     {
@@ -1897,8 +1905,8 @@ int32_t W6X_Shell_Ble_ClientWriteData(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -1921,8 +1929,8 @@ int32_t W6X_Shell_Ble_ClientWriteData(int32_t argc, char **argv)
   timeout = (uint32_t)atoi(argv[4]);
 
   /* Parse the data hex format */
-  req_len = strlen(argv[5]) / 2; /* Each byte is represented by 2 hex characters */
-  if ((req_len == 0) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
+  req_len = strlen(argv[5]) / 2U; /* Each byte is represented by 2 hex characters */
+  if ((req_len == 0U) || (req_len > W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH))
   {
     SHELL_E("Data length must be between 1 and %" PRIu32 " bytes\n", W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH);
     return SHELL_STATUS_UNKNOWN_ARGS;
@@ -1930,7 +1938,7 @@ int32_t W6X_Shell_Ble_ClientWriteData(int32_t argc, char **argv)
 
   for (uint32_t i = 0; i < req_len; i++)
   {
-    char byte_str[3] = {argv[5][i * 2], argv[5][i * 2 + 1], '\0'};
+    char byte_str[3] = {argv[5][i * 2U], argv[5][(i * 2U) + 1U], '\0'};
     int32_t hex_value = Parser_StrToHex(byte_str, NULL);
     if (hex_value < 0)
     {
@@ -1980,8 +1988,8 @@ int32_t W6X_Shell_Ble_ClientReadData(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2033,8 +2041,8 @@ int32_t W6X_Shell_Ble_ClientSubscribeChar(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2044,7 +2052,7 @@ int32_t W6X_Shell_Ble_ClientSubscribeChar(int32_t argc, char **argv)
 
   /* Parse the characteristic properties */
   char_prop = (uint8_t)atoi(argv[3]);
-  if ((char_prop < 1) || (char_prop > 2))
+  if ((char_prop < 1U) || (char_prop > 2U))
   {
     SHELL_E("Invalid CharProp. Expected a value between 1 (notification) and 2 (indication)\n");
     return SHELL_STATUS_UNKNOWN_ARGS;
@@ -2069,8 +2077,8 @@ int32_t W6X_Shell_Ble_ClientSubscribeChar(int32_t argc, char **argv)
 
 #if (SHELL_CMD_LEVEL >= 0)
 /** Shell command to subscribe to a BLE characteristic */
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_ClientSubscribeChar, ble_client_subscribe_char,
-                       ble_client_subscribe_char < Conn Handle [0; 1] > < CharValue Handle > < Char Prop [1; 2] >);
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_ClientSubscribeChar, ble_client_sub_char,
+                       ble_client_sub_char < Conn Handle [0; 1] > < CharValue Handle > < Char Prop [1; 2] >);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_Ble_ClientUnsubscribeChar(int32_t argc, char **argv)
@@ -2084,8 +2092,8 @@ int32_t W6X_Shell_Ble_ClientUnsubscribeChar(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2111,8 +2119,8 @@ int32_t W6X_Shell_Ble_ClientUnsubscribeChar(int32_t argc, char **argv)
 
 #if (SHELL_CMD_LEVEL >= 1)
 /** Shell command to subscribe to a BLE characteristic */
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_ClientUnsubscribeChar, ble_client_unsubscribe_char,
-                       ble_client_unsubscribe_char < Conn Handle [0; 1] > < CharValue Handle >);
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_ClientUnsubscribeChar, ble_client_unsub_char,
+                       ble_client_unsub_char < Conn Handle [0; 1] > < CharValue Handle >);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_Ble_SecurityParam(int32_t argc, char **argv)
@@ -2184,15 +2192,15 @@ int32_t W6X_Shell_Ble_SecurityStart(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the security level */
   security_level = (uint8_t)atoi(argv[2]);
-  if (security_level > 4)
+  if (security_level > 4U)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2219,7 +2227,7 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_SecurityStart, ble_sec_start,
                        ble_sec_start < Conn Handle [0; 1] > < Security Level [1; 4] >);
 #endif /* SHELL_CMD_LEVEL */
 
-int32_t W6X_Shell_Ble_SecuritySetPassKey(int32_t argc, char **argv)
+int32_t W6X_Shell_Ble_SecurityEnterRemotePassKey(int32_t argc, char **argv)
 {
   uint8_t conn_handle = 0;
   uint32_t passkey = 0;
@@ -2230,29 +2238,29 @@ int32_t W6X_Shell_Ble_SecuritySetPassKey(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Parse the passkey */
   passkey = (uint32_t)atoi(argv[2]);
-  if (passkey > 999999)
+  if (passkey > 999999U)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
-  /* Set security passkey */
-  if (W6X_Ble_SecuritySetPassKey(conn_handle, passkey) == W6X_STATUS_OK)
+  /* Enter remote security passkey */
+  if (W6X_Ble_SecurityEnterRemotePassKey(conn_handle, passkey) == W6X_STATUS_OK)
   {
-    SHELL_PRINTF("Security Set PassKey OK:\n");
+    SHELL_PRINTF("Enter Remote Security PassKey OK:\n");
     SHELL_PRINTF("  Conn Handle: %u\n", conn_handle);
     SHELL_PRINTF("  PassKey: %06u\n", passkey);
   }
   else
   {
-    SHELL_E("Security Set PassKey Failure\n");
+    SHELL_E("Enter Remote Security PassKey Failure\n");
     return SHELL_STATUS_ERROR;
   }
 
@@ -2260,9 +2268,9 @@ int32_t W6X_Shell_Ble_SecuritySetPassKey(int32_t argc, char **argv)
 }
 
 #if (SHELL_CMD_LEVEL >= 1)
-/** Shell command to set the BLE security passkey */
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_SecuritySetPassKey, ble_sec_set_passkey,
-                       ble_sec_set_passkey < Conn Handle [0; 1] > < PassKey [0; 999999] >);
+/** Shell command to enter the remote BLE security passkey */
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_SecurityEnterRemotePassKey, ble_sec_enter_passkey,
+                       ble_sec_enter_passkey < Conn Handle [0; 1] > < PassKey [0; 999999] >);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_Ble_SecurityPassKeyConfirm(int32_t argc, char **argv)
@@ -2275,8 +2283,8 @@ int32_t W6X_Shell_Ble_SecurityPassKeyConfirm(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2311,8 +2319,8 @@ int32_t W6X_Shell_Ble_SecurityPairingConfirm(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2347,8 +2355,8 @@ int32_t W6X_Shell_Ble_SecurityPairingCancel(int32_t argc, char **argv)
   }
 
   /* Parse the connection handle */
-  conn_handle = (uint32_t)atoi(argv[1]);
-  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1))
+  conn_handle = (uint8_t)atoi(argv[1]);
+  if (conn_handle > (W6X_BLE_MAX_CONN_NBR - 1U))
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
@@ -2384,7 +2392,7 @@ int32_t W6X_Shell_Ble_SecurityUnpair(int32_t argc, char **argv)
   }
 
   /* Parse the remote Bluetooth Device Address */
-  if (strlen(argv[1]) != 17)
+  if (strlen(argv[1]) != 17U)
   {
     SHELL_E("Invalid Remote BD Addr length. Expected 12 hexadecimal characters\n");
     return SHELL_STATUS_UNKNOWN_ARGS;
@@ -2435,12 +2443,12 @@ int32_t W6X_Shell_Ble_SecurityGetBondedDeviceList(int32_t argc, char **argv)
   if (W6X_Ble_SecurityGetBondedDeviceList(&bonded_devices) == W6X_STATUS_OK)
   {
     /* Print the list of bonded devices */
-    if (bonded_devices.Count != 0)
+    if (bonded_devices.Count != 0U)
     {
       SHELL_PRINTF("Get Bonded Device List:\n");
-      for (uint8_t i = 0; i < bonded_devices.Count; i++)
+      for (uint32_t i = 0; i < bonded_devices.Count; i++)
       {
-        SHELL_PRINTF("  Device %" PRIu32 ":\n", i + 1);
+        SHELL_PRINTF("  Device %" PRIu32 ":\n", i + 1U);
         SHELL_PRINTF("    BD Addr: %02X:%02X:%02X:%02X:%02X:%02X\n",
                      bonded_devices.Bonded_device[i].BDAddr[0], bonded_devices.Bonded_device[i].BDAddr[1],
                      bonded_devices.Bonded_device[i].BDAddr[2], bonded_devices.Bonded_device[i].BDAddr[3],
@@ -2467,6 +2475,36 @@ int32_t W6X_Shell_Ble_SecurityGetBondedDeviceList(int32_t argc, char **argv)
 /** Shell command to get the list of bonded BLE devices */
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_SecurityGetBondedDeviceList, ble_bonded_device_list,
                        ble_bonded_device_list);
+#endif /* SHELL_CMD_LEVEL */
+
+int32_t W6X_Shell_Ble_SetGapAppearance(int32_t argc, char **argv)
+{
+  uint16_t appearance_value;
+
+  if (argc != 2)
+  {
+    return SHELL_STATUS_UNKNOWN_ARGS;
+  }
+
+  /* Parse the GAP Appearance value */
+  appearance_value = (uint16_t)strtoul(argv[1], NULL, 16);
+
+  /* Set the GAP Appearance value */
+  if (W6X_Ble_SetGapAppearance(appearance_value) != W6X_STATUS_OK)
+  {
+    SHELL_E("Set GAP Appearance Failure\n");
+    return SHELL_STATUS_ERROR;
+  }
+
+  SHELL_PRINTF("Set GAP Appearance value OK:\n");
+  SHELL_PRINTF("  Appearance value : 0x%04X\n", appearance_value);
+  return SHELL_STATUS_OK;
+}
+
+#if (SHELL_CMD_LEVEL >= 1)
+/** Shell command to set the GAP Appearance value */
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Ble_SetGapAppearance, ble_set_gap_appearance,
+                       ble_set_gap_appearance < Appearance Value [0; 0xffff] >);
 #endif /* SHELL_CMD_LEVEL */
 
 /** @} */

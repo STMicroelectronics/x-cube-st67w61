@@ -5,14 +5,23 @@
 
 \section shell_intro Introduction
 
-THe Shell provides a command Line Interface for the user to interact with the program via a serial command
+The Shell provides a command-line interface (CLI) that allows a user to interact with the application via a
+serial interface (typically UART).
+
+The shell is intended primarily for:
+
+- Interactive control during development and debugging
+- Exposing diagnostic commands (status, configuration, basic actions)
+- Demonstration applications that require a simple console interface
 
 The **shell component** features:
 
 - auto completion.
 - history (down/up key).
-- navigate with right/left key.
-- backspace.
+- navigate with right/left key (ctrl to move by word) and home/end key.
+- backspace and delete.
+- insert mode and overwrite mode (insert key to toggle).
+- cancel command (ctrl+c).
 - help &cmd help.
 - decentralization of the command implementation.
 - colorized CLI.
@@ -23,10 +32,13 @@ The **shell component** features:
 
 To add the Shell feature into a project, The application writer must :
 
-- Add all source files in /shell directory must be added in the project
-- Add /shell must be added in include path
+- Add all source files in the shell directory to the project.
+- Add the shell directory to the include path.
 
-All commands are placed in ROM by the linker, so the the application writer must 2 sections in the linker file.
+All commands are placed in ROM by the linker, so the application writer must add 2 sections in the linker file.
+
+These sections delimit the command table exported by `SHELL_CMD_EXPORT_*` macros. The shell iterates this table at
+runtime to implement command discovery and help output.
 
 An example of STM32CubeIDE linker script:
 
@@ -64,7 +76,11 @@ The diag suppress is needed to avoid the warning about the unused section.
 
 \subsection shell_gs_2 Initialize the Shell
 
-The following code initializes the Shell. It requires a single parameter which is an optional FreeRtos Queue handle for the Shell output. If it is left to NULL, the Shell will output the Shell messages using the standard printf
+The following code initializes the Shell.
+
+It requires a single parameter which is an optional FreeRTOS queue handle for shell output. When a queue is
+provided, the shell prints through that queue (which can be shared with logging). When it is NULL, the shell
+falls back to standard `printf`-style output.
 
 ```c
 /* file: MeExample.c */
@@ -95,7 +111,8 @@ void MyInitFunc(void)
 }
 ```
 
-if the Shell output is shared with the logging (e.g. same UART for Shell and Logging), the following initialization sequence must be executed where xLogQueue is used to queue both Shell and Log messages
+If the shell output is shared with logging (e.g. same UART for Shell and Logging), the following initialization
+sequence can be used. Here, `xLogQueue` is used to queue both Shell and Log messages.
 
 ```c
 /* file: MeExample.c */

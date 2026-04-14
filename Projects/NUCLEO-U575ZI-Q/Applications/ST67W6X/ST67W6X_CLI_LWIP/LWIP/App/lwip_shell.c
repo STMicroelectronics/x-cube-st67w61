@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    lwip_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for LwIP Shell Commands
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -38,8 +38,8 @@
 #include <lwip/dhcp6.h>
 #include <lwip/netifapi.h>
 #include <lwip/sockets.h>
+#include <lwip/stats.h>
 
-#include "lwip.h"
 #include "shell.h"
 #include "logging.h"
 #include "common_parser.h" /* Common Parser functions */
@@ -59,16 +59,6 @@
 int32_t lwip_shell_sta_ip(int32_t argc, char **argv);
 
 /**
-  * @brief  Wi-Fi get STA IPv6 shell function
-  * @param  argc: number of arguments
-  * @param  argv: pointer to the arguments
-  * @retval ::SHELL_STATUS_OK on success
-  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
-  * @retval ::SHELL_STATUS_ERROR otherwise
-  */
-int32_t lwip_shell_sta_ip6(int32_t argc, char **argv);
-
-/**
   * @brief  Wi-Fi get/set STA hostname shell function
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
@@ -86,7 +76,7 @@ int32_t lwip_shell_Hostname(int32_t argc, char **argv);
   * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
   * @retval ::SHELL_STATUS_ERROR otherwise
   */
-int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv);
+int32_t lwip_shell_resolve_host_address(int32_t argc, char **argv);
 
 /**
   * @brief  Wi-Fi Get list of station connected on Soft-AP shell function
@@ -94,7 +84,24 @@ int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv);
   * @param  argv: pointer to the arguments
   * @retval ::SHELL_STATUS_OK on success
   */
-static int32_t lwip_shell_aplist_sta(int32_t argc, char **argv);
+int32_t lwip_shell_aplist_sta(int32_t argc, char **argv);
+
+#if LWIP_STATS && LWIP_STATS_DISPLAY
+/**
+  * @brief  Extract stats from tcpip_thread context and display them
+  * @param  arg: pointer to arguments (not used)
+ */
+static void lwip_stats_tcpip_thread_cb(void *arg);
+#endif /* LWIP_STATS && LWIP_STATS_DISPLAY */
+
+/**
+  * @brief  LwIP stats shell function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval ::SHELL_STATUS_OK on success
+  * @retval ::SHELL_STATUS_ERROR otherwise
+  */
+int32_t lwip_shell_display_stats(int32_t argc, char **argv);
 
 /**
   * @brief  DNS lookup callback function for lwIP
@@ -102,26 +109,26 @@ static int32_t lwip_shell_aplist_sta(int32_t argc, char **argv);
   * @param  ipaddr: pointer to the resolved IP address (NULL if failed)
   * @param  arg: user-supplied argument (unused)
   */
-void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
+void lwip_shell_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
 
 /* Private Functions Definition ----------------------------------------------*/
 int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
 {
-  struct netif *netif = netif_get_interface(NETIF_STA);
-  if (netif == NULL)
+  struct netif *netif_cur = netif_get_interface(NETIF_STA);
+  if (netif_cur == NULL)
   {
     return SHELL_STATUS_ERROR;
   }
 
   if (argc == 1)
   {
-    if (print_ipv4_addresses(netif) != 0)
+    if (print_ipv4_addresses(netif_cur) != 0)
     {
       SHELL_E("Get STA IP error\n");
       return SHELL_STATUS_ERROR;
     }
 #if (LWIP_IPV6 == 1)
-    if (print_ipv6_addresses(netif) != 0)
+    if (print_ipv6_addresses(netif_cur) != 0)
     {
       SHELL_E("Get STA IP error\n");
       return SHELL_STATUS_ERROR;
@@ -135,13 +142,13 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
   else
   {
     ip4_addr_t ipaddr;
-    uint8_t ip_addr[4] = {0};
+    uint8_t ip_address[4] = {0};
 
     /* Set the STA IP configuration in IP, Gateway, Netmask fixed order. Gateway and Netmask are optional */
     if (argc > 1)
     {
-      Parser_StrToIP(argv[1], ip_addr);
-      if (Parser_CheckValidAddress(ip_addr, 4) != 0)
+      Parser_StrToIP(argv[1], ip_address);
+      if (Parser_CheckValidAddress(ip_address, 4) != 0)
       {
         SHELL_E("IP address invalid\n");
         return SHELL_STATUS_ERROR;
@@ -152,13 +159,13 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
         SHELL_E("IP address invalid\n");
         return SHELL_STATUS_ERROR;
       }
-      netif_set_ipaddr(netif, &ipaddr);
+      netif_set_ipaddr(netif_cur, &ipaddr);
     }
 
     if (argc > 2)
     {
-      Parser_StrToIP(argv[2], ip_addr);
-      if (Parser_CheckValidAddress(ip_addr, 4) != 0)
+      Parser_StrToIP(argv[2], ip_address);
+      if (Parser_CheckValidAddress(ip_address, 4) != 0)
       {
         SHELL_E("Gateway IP address invalid\n");
         return SHELL_STATUS_ERROR;
@@ -169,13 +176,13 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
         SHELL_E("Gateway IP address invalid\n");
         return SHELL_STATUS_ERROR;
       }
-      netif_set_gw(netif, &ipaddr);
+      netif_set_gw(netif_cur, &ipaddr);
     }
 
     if (argc > 3)
     {
-      Parser_StrToIP(argv[3], ip_addr);
-      if (Parser_CheckValidAddress(ip_addr, 4) != 0)
+      Parser_StrToIP(argv[3], ip_address);
+      if (Parser_CheckValidAddress(ip_address, 4) != 0)
       {
         SHELL_E("Netmask IP address invalid\n");
         return SHELL_STATUS_ERROR;
@@ -186,11 +193,11 @@ int32_t lwip_shell_sta_ip(int32_t argc, char **argv)
         SHELL_E("Netmask IP address invalid\n");
         return SHELL_STATUS_ERROR;
       }
-      netif_set_netmask(netif, &ipaddr);
+      netif_set_netmask(netif_cur, &ipaddr);
     }
 
     /* Bring the interface up */
-    netif_set_up(netif);
+    netif_set_up(netif_cur);
     SHELL_PRINTF("STA IP configuration set successfully\n");
   }
 
@@ -204,14 +211,14 @@ SHELL_CMD_EXPORT_ALIAS(lwip_shell_sta_ip, net_sta_ip,
 
 int32_t lwip_shell_Hostname(int32_t argc, char **argv)
 {
-  struct netif *netif = netif_get_interface(NETIF_STA);
+  struct netif *netif_cur = netif_get_interface(NETIF_STA);
   static char hostname[34] = {0};
 
 #if (SHELL_CMD_LEVEL >= 1)
   if (argc == 1)
   {
     /* Get the host name */
-    const char *current_hostname = netif_get_hostname(netif);
+    const char *current_hostname = netif_get_hostname(netif_cur);
     if (current_hostname != NULL)
     {
       SHELL_PRINTF("Host name : %s\n", current_hostname);
@@ -228,7 +235,7 @@ int32_t lwip_shell_Hostname(int32_t argc, char **argv)
   if (argc == 2)
   {
     /* Check the host name length */
-    if (strlen(argv[1]) > 33)
+    if (strlen(argv[1]) > 33U)
     {
       SHELL_E("Host name maximum length is 32\n");
       SHELL_PRINTF("Set host name failed\n");
@@ -236,8 +243,8 @@ int32_t lwip_shell_Hostname(int32_t argc, char **argv)
     }
 
     /* Set the host name */
-    strncpy(hostname, argv[1], sizeof(hostname) - 1);
-    netif_set_hostname(netif, hostname);
+    (void)strncpy(hostname, argv[1], sizeof(hostname) - 1U);
+    netif_set_hostname(netif_cur, hostname);
     SHELL_PRINTF("Host name set successfully\n");
   }
   else
@@ -253,7 +260,7 @@ int32_t lwip_shell_Hostname(int32_t argc, char **argv)
 SHELL_CMD_EXPORT_ALIAS(lwip_shell_Hostname, net_hostname, net_hostname [ hostname ]);
 #endif /* SHELL_CMD_LEVEL */
 
-void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
+void lwip_shell_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
 {
   if (ipaddr)
   {
@@ -265,7 +272,7 @@ void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *a
   }
 }
 
-int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv)
+int32_t lwip_shell_resolve_host_address(int32_t argc, char **argv)
 {
   int32_t err = 0;
   ip_addr_t resolved_ip;
@@ -276,7 +283,7 @@ int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv)
   }
 
   /* Get the IP address from the host name */
-  err = dns_gethostbyname(argv[1], &resolved_ip, lwip_dns_lookup_callback, NULL);
+  err = dns_gethostbyname(argv[1], &resolved_ip, lwip_shell_dns_lookup_callback, NULL);
   if (err == ERR_OK)
   {
     /* IP address was found in cache, callback will NOT be called */
@@ -297,10 +304,10 @@ int32_t lwip_shell_ResolveHostAddress(int32_t argc, char **argv)
 
 #if (SHELL_CMD_LEVEL >= 1)
 /** Shell command to get the IP address from the host name */
-SHELL_CMD_EXPORT_ALIAS(lwip_shell_ResolveHostAddress, dnslookup, dnslookup <hostname>);
+SHELL_CMD_EXPORT_ALIAS(lwip_shell_resolve_host_address, dnslookup, dnslookup <hostname>);
 #endif /* SHELL_CMD_LEVEL */
 
-static int32_t lwip_shell_aplist_sta(int32_t argc, char **argv)
+int32_t lwip_shell_aplist_sta(int32_t argc, char **argv)
 {
   ip4_addr_t ipaddr;
   W6X_WiFi_Connected_Sta_t ConnectedSta;
@@ -325,3 +332,23 @@ static int32_t lwip_shell_aplist_sta(int32_t argc, char **argv)
 }
 
 SHELL_CMD_EXPORT_ALIAS(lwip_shell_aplist_sta, wifi_ap_list_sta, List connected stations to the AP);
+
+#if LWIP_STATS && LWIP_STATS_DISPLAY
+static void lwip_stats_tcpip_thread_cb(void *arg)
+{
+  stats_display();
+}
+#endif /* LWIP_STATS && LWIP_STATS_DISPLAY */
+
+int32_t lwip_shell_display_stats(int32_t argc, char **argv)
+{
+#if LWIP_STATS && LWIP_STATS_DISPLAY
+  (void)tcpip_callback(lwip_stats_tcpip_thread_cb, NULL);
+  return SHELL_STATUS_OK;
+#else
+  LogError("Please enable LWIP_STATS and LWIP_STATS_DISPLAY from lwipopts.h to print stats\n");
+  return SHELL_STATUS_ERROR;
+#endif /* LWIP_STATS && LWIP_STATS_DISPLAY */
+}
+
+SHELL_CMD_EXPORT_ALIAS(lwip_shell_display_stats, lwip_stats, show LwIP statistics);

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    freertos_tickless.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Management of timers and ticks
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdio.h>
+#include <stdbool.h>
 #include "freertos_tickless.h"
 #include "bsp_conf.h"
 #include "main.h"
@@ -33,15 +34,13 @@
 
 /* USER CODE END Includes */
 
-/* Global variables ----------------------------------------------------------*/
 #if (LOW_POWER_MODE != LOW_POWER_DISABLE)
 #ifndef LPTIM_HANDLE
 #error "LPTIM instance not selected. Please use platform settings panel in STM32CubeMX GUI."
 #endif /* LPTIM_HANDLE */
-
-/** LPTIM handle */
-extern LPTIM_HandleTypeDef LPTIM_HANDLE;
 #endif /* LOW_POWER_MODE */
+
+/* Global variables ----------------------------------------------------------*/
 
 /* USER CODE BEGIN GV */
 
@@ -55,7 +54,7 @@ extern LPTIM_HandleTypeDef LPTIM_HANDLE;
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN TICK_PD */
 /** Tick rate configuration */
-#define configTICK_RATE_HZ_1MS                  1000
+#define configTICK_RATE_HZ_1MS                  1000U
 
 #ifndef configSYSTICK_CLOCK_HZ
 /** Override the default SysTick clock rate */
@@ -72,11 +71,11 @@ extern LPTIM_HandleTypeDef LPTIM_HANDLE;
 
 /* Constants required to manipulate the core.  Registers first... */
 /** SysTick Control and Status Register */
-#define portNVIC_SYSTICK_CTRL_REG               ( * ( ( volatile uint32_t * ) 0xe000e010 ) )
+#define portNVIC_SYSTICK_CTRL_REG               ( * ( ( volatile uint32_t * ) 0xE000E010UL ) )
 /** SysTick Reload Value Register */
-#define portNVIC_SYSTICK_LOAD_REG               ( * ( ( volatile uint32_t * ) 0xe000e014 ) )
+#define portNVIC_SYSTICK_LOAD_REG               ( * ( ( volatile uint32_t * ) 0xE000E014UL ) )
 /** SysTick Current Value Register */
-#define portNVIC_SYSTICK_CURRENT_VALUE_REG      ( * ( ( volatile uint32_t * ) 0xe000e018 ) )
+#define portNVIC_SYSTICK_CURRENT_VALUE_REG      ( * ( ( volatile uint32_t * ) 0xE000E018UL ) )
 /** SysTick interrupt enable.
   * When this bit is set, the SysTick exception is generated when the SysTick timer count down to 0. */
 #define portNVIC_SYSTICK_INT_BIT                ( 1UL << 1UL )
@@ -217,7 +216,8 @@ void vPortSetupTimerInterrupt(void)
   /* Start LPTIM counter */
   LL_LPTIM_Enable(LPTIM_IDLE);
   LL_LPTIM_SetAutoReload(LPTIM_IDLE, 0xFFFF);
-  while (LL_LPTIM_IsActiveFlag_ARROK(LPTIM_IDLE) != 1);
+  while (LL_LPTIM_IsActiveFlag_ARROK(LPTIM_IDLE) != 1U)
+  {}
   LL_LPTIM_StartCounter(LPTIM_IDLE, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
 
   /* USER CODE BEGIN vPortSetupTimerInterrupt_End */
@@ -234,7 +234,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
   /* USER CODE END vPortSuppressTicksAndSleep_1 */
   /* If low power is not used, do not stop the SysTick and continue execution */
 
-  if (DisableSuppressTicksAndSleepBm == 0)
+  if (DisableSuppressTicksAndSleepBm == 0U)
   {
     /* Although this is not documented as such, when xExpectedIdleTime = 0xFFFFFFFF = (~0),
        it likely means the system may enter low power for ever ( from a FreeRTOS point of view ).
@@ -243,7 +243,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
        systick count and when the system exits from low power mode, there is no need to update the count with
        the time spent in low power mode */
     uint32_t ulCompleteTickPeriods;
-    int32_t curSysTickValue = portNVIC_SYSTICK_CURRENT_VALUE_REG;
+    int32_t curSysTickValue = (int32_t)portNVIC_SYSTICK_CURRENT_VALUE_REG;
 
     /* Stop the SysTick  to avoid the interrupt to occur while in the critical section.
        Otherwise, this will prevent the device to enter low power mode
@@ -268,10 +268,10 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
     }
     else
     {
-      if (xExpectedIdleTime != (~0))
+      if (xExpectedIdleTime != (~0UL))
       {
         /* Remove one tick to wake up before the event occurs */
-        xExpectedIdleTime -= 1;
+        xExpectedIdleTime -= 1U;
         /* Start the low power timer */
         LpTimer_StartIT(app_freertos_tick_to_ms(xExpectedIdleTime));
       }
@@ -279,21 +279,21 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
       /* Enter low power mode */
       UTIL_LPM_EnterLowPower();
 
-      if (xExpectedIdleTime != (~0))
+      if (xExpectedIdleTime != (~0UL))
       {
         /* Get the number of FreeRTOS ticks that has been suppressed
            In the current implementation, this shall be kept in critical section
            so that the timer returns the correct elapsed time */
-        uint32_t sysTickRem = 0;
+        uint32_t sysTickRem = 0U;
 
         ulCompleteTickPeriods = app_freertos_ms_to_tick(LpTimer_GetElapsedTime(&sysTickRem));
 
-        curSysTickValue -= sysTickRem;
+        curSysTickValue -= (int32_t)sysTickRem;
 
         if (curSysTickValue < 0)
         {
           ulCompleteTickPeriods++;
-          curSysTickValue += ulTimerCountsForOneTick;
+          curSysTickValue += (int32_t)ulTimerCountsForOneTick;
         }
 
         vTaskStepTick(ulCompleteTickPeriods);
@@ -302,7 +302,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 
       /* Restart SysTick */
       /* The 3 raws below are to force the systick counter to portNVIC_SYSTICK_CURRENT_VALUE_REG = curSysTickValue; */
-      portNVIC_SYSTICK_LOAD_REG = curSysTickValue;
+      portNVIC_SYSTICK_LOAD_REG = (uint32_t)curSysTickValue;
       portNVIC_SYSTICK_CURRENT_VALUE_REG = 0;
       portNVIC_SYSTICK_CTRL_REG |= portNVIC_SYSTICK_ENABLE_BIT;
       /* Update the load reg back to ulTimerCountsForOneTick */
@@ -330,28 +330,30 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 
 static void LpTimer_StartIT(uint32_t ms_to_sleep)
 {
-  uint16_t timeout = (uint16_t)((ms_to_sleep << 15) / 1000);
+  uint16_t timeout = (uint16_t)((ms_to_sleep << 15U) / 1000U);
 
-  old_32k = LpTimer_GetCounter();
+  old_32k = (uint16_t)LpTimer_GetCounter();
 
   timeout += old_32k; /* Intentional wrap */
   /* Account for 2 32k period delay of LL_LPTIM_OC_SetCompareCH1 +1 for */
-  timeout -= 3; /* Intentional wrap */
+  timeout -= 3U; /* Intentional wrap */
 
-  if (timeout > UINT16_MAX - 10)
+  if (timeout > (0xFFFFU - 10U))
   {
-    timeout = UINT16_MAX - 10;
+    timeout = 0xFFFFU - 10U;
   }
 
   LL_LPTIM_ClearFlag_CMP1OK(LPTIM_IDLE);
   LL_LPTIM_OC_SetCompareCH1(LPTIM_IDLE, timeout);
   /* Wait Compare Value is set */
-  while (LL_LPTIM_IsActiveFlag_CMP1OK(LPTIM_IDLE) != 1);
+  while (LL_LPTIM_IsActiveFlag_CMP1OK(LPTIM_IDLE) != 1U)
+  {}
 
   LL_LPTIM_ClearFlag_DIEROK(LPTIM_IDLE);
   LL_LPTIM_EnableIT_CC1(LPTIM_IDLE);
   /* Wait for the completion of the write operation to the LPTIM_DIER register */
-  while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM_IDLE) != 1);
+  while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM_IDLE) != 1U)
+  {}
 
   HAL_NVIC_EnableIRQ(LPTIM_IDLE_IRQn);
 }
@@ -362,33 +364,38 @@ static void LpTimer_StopIT(void)
   /* Disable CC1 IT */
   LL_LPTIM_DisableIT_CC1(LPTIM_IDLE);
   /* Wait Interrupt is reset */
-  while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM_IDLE) != 1)
+  while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM_IDLE) != 1U)
+  {}
 
-    /* Clear Active Flag if set */
-    if (LL_LPTIM_IsActiveFlag_CC1(LPTIM_IDLE) == 1)
-    {
-      LL_LPTIM_ClearFLAG_CC1(LPTIM_IDLE);
-    }
+  /* Clear Active Flag if set */
+  if (LL_LPTIM_IsActiveFlag_CC1(LPTIM_IDLE) == 1U)
+  {
+    LL_LPTIM_ClearFLAG_CC1(LPTIM_IDLE);
+  }
   /* Wait flag is cleared */
   /* Clear  NVIC pending LPTIM IRQ */
   HAL_NVIC_ClearPendingIRQ(LPTIM_IDLE_IRQn);
 
   if (HAL_NVIC_GetPendingIRQ(LPTIM_IDLE_IRQn))
   {
-    while (1);
+    while (true)
+    {
+      /* wait until flag is cleared */
+    }
   }
 }
 
 static uint32_t LpTimer_GetElapsedTime(uint32_t *sysTickRem)
 {
-  new_32k = LpTimer_GetCounter();
+  new_32k = (uint16_t)LpTimer_GetCounter();
 
-  uint32_t elapsed32k = (uint16_t)(new_32k - old_32k);
-  uint32_t elapsed_ms = (elapsed32k * 1000) >> 15;
-  uint32_t remainder = elapsed32k * 1000 - (elapsed_ms << 15);
-  remainder = (remainder * ulTimerCountsForOneTick) >> 15;
+  uint32_t elapsed32k = (uint32_t)new_32k;
+  elapsed32k -= (uint32_t)old_32k;
+  uint32_t elapsed_ms = (elapsed32k * 1000U) >> 15U;
+  uint32_t remainder_time = (elapsed32k * 1000U) - (elapsed_ms << 15U);
+  remainder_time = (remainder_time * ulTimerCountsForOneTick) >> 15U;
 
-  *sysTickRem = remainder;
+  *sysTickRem = remainder_time;
 
   return elapsed_ms;
 }
@@ -399,7 +406,7 @@ static uint32_t LpTimer_GetCounter(void)
   /* Read until 2 consecutive identical read */
   do
   {
-    cnt =  LL_LPTIM_GetCounter(LPTIM_IDLE);
+    cnt = LL_LPTIM_GetCounter(LPTIM_IDLE);
   } while (cnt != LL_LPTIM_GetCounter(LPTIM_IDLE));
 
   return cnt;
@@ -418,7 +425,8 @@ static uint32_t app_freertos_ms_to_tick(uint32_t value)
   uint32_t tick = value;
   if (configTICK_RATE_HZ != configTICK_RATE_HZ_1MS)
   {
-    tick = (uint32_t)((((uint64_t)(value)) * configTICK_RATE_HZ) / configTICK_RATE_HZ_1MS);
+    /* coverity[misra_c_2012_rule_14_3_violation : FALSE] */
+    tick = ((uint32_t)(((uint64_t)(value) * (uint64_t)configTICK_RATE_HZ) / (uint64_t)configTICK_RATE_HZ_1MS));
   }
   return tick;
 }
@@ -428,7 +436,8 @@ static uint32_t app_freertos_tick_to_ms(uint32_t value)
   uint32_t ms = value;
   if (configTICK_RATE_HZ != configTICK_RATE_HZ_1MS)
   {
-    ms = (uint32_t)((((uint64_t)(value)) * configTICK_RATE_HZ_1MS) / configTICK_RATE_HZ);
+    /* coverity[misra_c_2012_rule_14_3_violation : FALSE] */
+    ms = ((uint32_t)(((uint64_t)(value) * (uint64_t)configTICK_RATE_HZ_1MS) / (uint64_t)configTICK_RATE_HZ));
   }
   return ms;
 }

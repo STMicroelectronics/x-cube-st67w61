@@ -6,4 +6,4 @@ REM Get the littlefs directory of the script
 set "SCRIPT_DIR=%~dp0"
 
 REM Run the mklfs.exe tool to generate the littlefs binary
-%SCRIPT_DIR%..\..\..\..\..\..\ST67W6X_Scripts\LittleFS\mklfs\mklfs.exe -c lfs -b 2048 -p 256 -r 256 -s 0x4000 -i littlefs.bin
+%SCRIPT_DIR%..\..\..\..\..\..\ST67W6X_Scripts\LittleFS\mklfs\mklfs.exe -c lfs -b 4096 -p 256 -r 256 -s 0x7000 -i littlefs.bin

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    httpserver.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Http server application.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
 #include "httpserver.h"
@@ -63,6 +64,16 @@ typedef enum
 } HttpServer_response_e;
 
 /**
+  * @brief  Structure to handle GPIO pins for HTTP server application
+  */
+typedef struct
+{
+  GPIO_PinState btn_state;        /*!< user button state */
+  GPIO_PinState led_green_state;  /*!< green led state */
+  GPIO_PinState led_red_state;    /*!< red led state */
+} PinInfos_t;
+
+/**
   * @brief  HTTP server response structure
   */
 typedef struct
@@ -70,6 +81,7 @@ typedef struct
   HttpServer_response_e response_type;  /*!< Type of response */
   const char *request;                  /*!< Request string */
   const char *response;                 /*!< Response string */
+  size_t resp_len;                      /*!< Response string length */
 } HttpServer_response_t;
 
 /* USER CODE BEGIN PTD */
@@ -81,13 +93,13 @@ typedef struct
 #define PIN_POLLING_THREAD_PRIO        30
 
 /** Stack size of the user pins polling task */
-#define PIN_POLLING_TASK_STACK_SIZE    512
+#define PIN_POLLING_TASK_STACK_SIZE    512U
 
 /** Priority of the web server child task */
 #define WEBSERVER_CHILD_THREAD_PRIO    29
 
 /** Stack size of the web server child task */
-#define HTTP_CHILD_TASK_STACK_SIZE     2048
+#define HTTP_CHILD_TASK_STACK_SIZE     2048U
 
 /** HTTP server port */
 #define HTTP_PORT                      80
@@ -96,16 +108,16 @@ typedef struct
 #define SOCKET_TIMEOUT_MS              1000
 
 /** Event flag for pin status update */
-#define EVENT_FLAG_PIN                 (1<<1)
+#define EVENT_FLAG_PIN                 (1UL << 1U)
 
 /** Timeout for the pin status update in ms */
 #define PIN_TIMEOUT_MS                 9000
 
 /** Buffer size for the child task */
-#define HTTP_CHILD_TASK_BUFFER_SIZE    1024
+#define HTTP_CHILD_TASK_BUFFER_SIZE    1024U
 
 /** Maximum bytes to send in one step */
-#define MAX_BYTES_TO_SEND              4096
+#define MAX_BYTES_TO_SEND              4096U
 
 /* USER CODE BEGIN PD */
 
@@ -146,14 +158,14 @@ static const char response_ok_html[] =
 };
 
 /** Response content depending on the request */
-HttpServer_response_t http_server_responses[] =
+static const HttpServer_response_t http_server_responses[] =
 {
-  {INDEX_HTML,      "GET / ",                                     response_index_html},
-  {FAVICON_SVG,     "GET /favicon.ico",                           response_favicon_svg},
-  {ST_LOGO_SVG,     "GET /ST_logo_2020_white_no_tagline_rgb.svg", response_st_logo_svg},
-  {LED_GREEN_STATE, "GET /LedGreen",                              response_ok_html},
-  {LED_RED_STATE,   "GET /LedRed",                                response_ok_html},
-  {BUTTON_STATE,    "GET /pins_status",                           NULL},
+  {INDEX_HTML,      "GET / ",                                     response_index_html,  sizeof(response_index_html)},
+  {FAVICON_SVG,     "GET /favicon.ico",                           response_favicon_svg, sizeof(response_favicon_svg)},
+  {ST_LOGO_SVG,     "GET /ST_logo_2020_white_no_tagline_rgb.svg", response_st_logo_svg, sizeof(response_st_logo_svg)},
+  {LED_GREEN_STATE, "GET /LedGreen",                              response_ok_html,     sizeof(response_ok_html)},
+  {LED_RED_STATE,   "GET /LedRed",                                response_ok_html,     sizeof(response_ok_html)},
+  {BUTTON_STATE,    "GET /pins_status",                           NULL,                 0U},
 };
 
 /* USER CODE BEGIN PV */
@@ -206,26 +218,26 @@ void http_server_socket(void *arg)
   (void)arg;
   const int32_t domain = AF_INET;
   int32_t sock = -1;
-  uint16_t port = HTTP_PORT;
   struct sockaddr_in s_addr_in_t = { 0 };
-  uint8_t ip_addr[4] = {0};
+  int32_t fct_start = 9;
+  uint16_t port = HTTP_PORT;
+  uint8_t ip_address[4] = {0};
   uint8_t netmask_addr[4] = {0};
   int32_t timeout = (int32_t)pdMS_TO_TICKS(SOCKET_TIMEOUT_MS);
-  int32_t fct_start = 9;
 
   /* USER CODE BEGIN http_server_socket_1 */
 
   /* USER CODE END http_server_socket_1 */
 
   /* Get the soft-AP current IP address */
-  if (W6X_Net_AP_GetIPAddress(ip_addr, netmask_addr) != W6X_STATUS_OK)
+  if (W6X_Net_AP_GetIPAddress(ip_address, netmask_addr) != W6X_STATUS_OK)
   {
     LogError("Get soft-AP IP failed\n");
     goto _err;
   }
 
-  LogInfo("Soft-AP IP address : " IPSTR "\n", IP2STR(ip_addr));
-  s_addr_in_t.sin_addr.s_addr = ATON(ip_addr);
+  LogInfo("Soft-AP IP address : " IPSTR "\n", IP2STR(ip_address));
+  s_addr_in_t.sin_addr.s_addr = ATON(ip_address);
   s_addr_in_t.sin_port = PP_HTONS(port);
   s_addr_in_t.sin_family = AF_INET;
 
@@ -283,14 +295,14 @@ void http_server_socket(void *arg)
   /* Creation of a thread to check if the pin value of the button or the LEDs has change */
   pin_handle = xEventGroupCreate();
   if (pdPASS != xTaskCreate((TaskFunction_t)pin_verification_task, "UserPinsPolling",
-                            PIN_POLLING_TASK_STACK_SIZE >> 2,
+                            PIN_POLLING_TASK_STACK_SIZE >> 2U,
                             &fct_start, PIN_POLLING_THREAD_PRIO, NULL))
   {
     LogInfo("User pins task creation failed\n");
     goto _err;
   }
 
-  while (1)
+  while (true)
   {
     struct sockaddr remotehost_t;
     uint32_t remotehost_size = sizeof(remotehost_t);
@@ -299,7 +311,7 @@ void http_server_socket(void *arg)
     int32_t newconn = W6X_Net_Accept(sock, (struct sockaddr *)&remotehost_t, (socklen_t *)&remotehost_size);
     if (newconn < 0)
     {
-      vTaskDelay(200);
+      vTaskDelay(pdMS_TO_TICKS(200));
       LogInfo("\n Failed to accept new client requests.\n");
     }
     else
@@ -307,18 +319,18 @@ void http_server_socket(void *arg)
       /* Create a temporary thread to process the incoming HTTP request */
       char thread_name[14];
       const size_t thread_name_len = sizeof(thread_name);
-      snprintf(thread_name, thread_name_len, "HTTP_%08" PRIX32, newconn);
-      thread_name[thread_name_len - 1] = '\0';
+      (void)snprintf(thread_name, thread_name_len, "HTTP_%08" PRIX32, newconn);
+      thread_name[thread_name_len - 1U] = '\0';
 
       LogDebug("\n Creation of temporary thread to process an incoming HTTP request : %" PRIi32 "\n", newconn);
       if (pdPASS != xTaskCreate((TaskFunction_t)http_server_serve_task, thread_name,
-                                HTTP_CHILD_TASK_STACK_SIZE >> 2,
+                                HTTP_CHILD_TASK_STACK_SIZE >> 2U,
                                 &newconn, WEBSERVER_CHILD_THREAD_PRIO, NULL))
       {
         LogInfo("%s task creation failed\n", thread_name);
       }
       /* Delay added to avoid that too many requests are processed in parallel */
-      vTaskDelay(50);
+      vTaskDelay(pdMS_TO_TICKS(50));
     }
   }
 
@@ -328,9 +340,12 @@ void http_server_socket(void *arg)
 
 _err:
   /* Error case */
-  if ((sock >= 0) && (W6X_Net_Shutdown(sock, 1) != W6X_STATUS_OK))
+  if (sock >= 0)
   {
-    LogError("Failed to close server socket\n");
+    if (W6X_Net_Shutdown(sock, 1) != 0)
+    {
+      LogError("Failed to close server socket\n");
+    }
   }
   return;
 }
@@ -345,9 +360,10 @@ static void http_server_serve_task(void *arg)
   int32_t client = *((int32_t *)arg);
   int32_t bytes_received;
   int32_t recv_total_len = 0;
+  bool request_complete = false;
   /* Allocate considering the biggest buffer the client can send */
-  size_t recv_buffer_len = HTTP_CHILD_TASK_BUFFER_SIZE;
-  char *recv_buffer = (char *)pvPortMalloc(recv_buffer_len);
+  ssize_t recv_buffer_len = HTTP_CHILD_TASK_BUFFER_SIZE;
+  char *recv_buffer = (char *)pvPortMalloc(recv_buffer_len + 1);
   if (recv_buffer == NULL)
   {
     LogError("Unable to allocate recv buffer\n");
@@ -363,35 +379,42 @@ static void http_server_serve_task(void *arg)
   do
   {
     bytes_received = W6X_Net_Recv(client, (uint8_t *)&recv_buffer[recv_total_len], recv_buffer_len, 0);
-    if (bytes_received < 0) /* No data received or error */
+    if (bytes_received <= 0) /* No data received or error */
     {
-      break;
-    }
-
-    /* Case where we have receive less than the buffer allocated */
-    if (bytes_received < recv_buffer_len)
-    {
-      recv_total_len += bytes_received;
       break;
     }
 
     recv_total_len += bytes_received;
-    recv_buffer_len -= bytes_received;
-  } while ((bytes_received != 0) && (recv_buffer_len > 0));
 
-  if (recv_total_len == 0)
+    /* Verify if we have receive the whole request or if we need to do another receive */
+    if (strncmp(&recv_buffer[recv_total_len - 4], "\r\n\r\n", 4) == 0)
+    {
+      /* The full request has been received leaving the reading loop */
+      request_complete = true;
+      break;
+    }
+
+    recv_buffer_len -= bytes_received;
+  } while (recv_buffer_len > 0);
+
+  if (!request_complete)
   {
-    LogError("No data read on the socket, closing the socket\n");
+    if (recv_total_len == 0)
+    {
+      LogError("No data read on the socket, closing the socket\n");
+    }
+    else
+    {
+      LogError("Data received does not contain the whole request, receive buffer is too small, closing the socket\n");
+    }
     goto _close;
   }
+
   LogDebug("\n %" PRIi32 " >>> %" PRIi32 " <<<\n", client, recv_total_len);
 
   /* Count can be negative. */
-  if (recv_total_len > 0)
-  {
-    recv_buffer[recv_total_len++] = '\0';
-    LogDebug("\n %" PRIi32 " >>> %s <<<\n", client, recv_buffer);
-  }
+  recv_buffer[recv_total_len] = '\0';
+  LogDebug("\n %" PRIi32 " >>> %s <<<\n", client, recv_buffer);
 
   /* USER CODE BEGIN http_server_serve_task_2 */
 
@@ -407,7 +430,7 @@ static void http_server_serve_task(void *arg)
 _close:
   vPortFree(recv_buffer);
 _err:
-  close_client(client);
+  (void)close_client(client);
   vTaskDelete(NULL);
 }
 
@@ -422,17 +445,28 @@ static void pin_verification_task(void *arg)
 
   /* USER CODE END pin_verification_task_1 */
 
-  while (1)
+  while (true)
   {
-    do /* Wait for the button or the LEDs to change */
+    while (true) /* Wait for the button or the LEDs to change */
     {
-      vTaskDelay(50);
+      vTaskDelay(pdMS_TO_TICKS(50));
       Btn = (GPIO_PinState)button_changed;
       LedGreen = HAL_GPIO_ReadPin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
       LedRed = HAL_GPIO_ReadPin(LED_RED_GPIO_Port, LED_RED_Pin);
-    } while ((Btn == pins_info.btn_state) &&
-             (LedGreen == pins_info.led_green_state) &&
-             (LedRed == pins_info.led_red_state));
+
+      if (Btn != pins_info.btn_state)
+      {
+        break;
+      }
+      if (LedGreen != pins_info.led_green_state)
+      {
+        break;
+      }
+      if (LedRed != pins_info.led_red_state)
+      {
+        break;
+      }
+    }
 
     /* Update the button and the LEDs states */
     pins_info.btn_state = Btn;
@@ -440,7 +474,7 @@ static void pin_verification_task(void *arg)
     pins_info.led_red_state = LedRed;
 
     /* Notify the HTTP server task */
-    xEventGroupSetBits(pin_handle, EVENT_FLAG_PIN);
+    (void)xEventGroupSetBits(pin_handle, EVENT_FLAG_PIN);
   }
 }
 
@@ -473,7 +507,7 @@ static int32_t http_server_write(int32_t client, const char *buffer, size_t buff
   return 0;
 }
 
-int32_t close_client(int32_t client)
+static int32_t close_client(int32_t client)
 {
   /* USER CODE BEGIN close_client_1 */
 
@@ -493,14 +527,14 @@ int32_t close_client(int32_t client)
 static void http_process_response(int32_t client, char *recv_buffer)
 {
   HttpServer_response_e response = UNKNOWN_RESPONSE;
-  char *response_data = NULL;
+  const char *response_data = response_error_404_html; /* Request not recognized, return 404 error */
+  size_t resp_len = sizeof(response_error_404_html);
   char response_template[250] =
   {
     "HTTP/1.1 200 OK\r\n"
     "Server: U5\r\n"
     "Access-Control-Allow-Origin: * \r\n"
     "Cache-Control: no-cache\r\n"
-    "Keep-Alive: timeout=2, max=2\r\n"
     "Connection: close\r\n"
     "Content-Type: text/html; charset=utf-8\r\n"
   };
@@ -510,12 +544,13 @@ static void http_process_response(int32_t client, char *recv_buffer)
   /* USER CODE END http_process_response_1 */
 
   /* Check the request to determine the response */
-  for (uint32_t i = 0; i < sizeof(http_server_responses) / sizeof(http_server_responses[0]); i++)
+  for (uint32_t i = 0; i < (sizeof(http_server_responses) / sizeof(http_server_responses[0])); i++)
   {
     if (strncmp(recv_buffer, http_server_responses[i].request, strlen(http_server_responses[i].request)) == 0)
     {
       response = http_server_responses[i].response_type;
       response_data = (char *)http_server_responses[i].response;
+      resp_len = http_server_responses[i].resp_len;
       break;
     }
   }
@@ -524,11 +559,7 @@ static void http_process_response(int32_t client, char *recv_buffer)
 
   /* USER CODE END http_process_response_2 */
 
-  if (response == UNKNOWN_RESPONSE) /* Request not recognized, return 404 error */
-  {
-    response_data = (char *)response_error_404_html;
-  }
-  else if (response == BUTTON_STATE) /* Prepare a custom response for the button state */
+  if (response == BUTTON_STATE) /* Prepare a custom response for the button state */
   {
     LogInfo("\nPending request for the PIN STATUS received\n\n");
     /* Wait for the pin status update */
@@ -536,21 +567,29 @@ static void http_process_response(int32_t client, char *recv_buffer)
     /* Send anyway the pin status update or the last known status if timeouted */
     /* Prepare the HTTP content data */
     char data[60];
-    snprintf(data, sizeof(data), "{\"LedGreenPin\":%" PRIu16 ",\"LedRedPin\":%" PRIu16 ",\"BtnPin\":%" PRIu16 "}",
-             (pins_info.led_green_state == GPIO_PIN_RESET ? 0 : 1),
-             (pins_info.led_red_state == GPIO_PIN_RESET ? 0 : 1),
-             (pins_info.btn_state == GPIO_PIN_RESET ? 0 : 1));
+    uint32_t green = (pins_info.led_green_state == GPIO_PIN_RESET) ? 0U : 1U;
+    uint32_t red = (pins_info.led_red_state == GPIO_PIN_RESET) ? 0U : 1U;
+    uint32_t button = (pins_info.btn_state == GPIO_PIN_RESET) ? 0U : 1U;
+    (void)snprintf(data, sizeof(data),
+                   "{\"LedGreenPin\":%" PRIu32 ",\"LedRedPin\":%" PRIu32 ",\"BtnPin\":%" PRIu32 "}",
+                   green, red, button);
 
+    resp_len = strlen(response_template);
     /* Append the content length and the data to the response */
-    snprintf(&response_template[strlen(response_template)], sizeof(response_template) - strlen(response_template),
-             "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
+    resp_len += snprintf(&response_template[strlen(response_template)],
+                         sizeof(response_template) - strlen(response_template),
+                         "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
 
     LogInfo("Pins status :\n%s\n", data);
     response_data = response_template;
   }
+  else
+  {
+    /* Unknown request */
+  }
 
   /* Send the response */
-  if (1 == http_server_write(client, response_data, strlen(response_data)))
+  if (1 == http_server_write(client, response_data, resp_len))
   {
     return;
   }
@@ -563,6 +602,10 @@ static void http_process_response(int32_t client, char *recv_buffer)
   else if (response == LED_GREEN_STATE) /* Toggle the green LED */
   {
     HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+  }
+  else
+  {
+    /* Nothing to do */
   }
 
   /* USER CODE BEGIN http_process_response_last */

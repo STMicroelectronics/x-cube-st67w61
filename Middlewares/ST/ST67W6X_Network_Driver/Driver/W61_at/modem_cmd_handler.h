@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    modem_cmd_handler.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Modem command handler header file
   ******************************************************************************
   * @attention
@@ -77,9 +77,9 @@ extern "C" {
 #define CMD_MAX             3       /*!< Maximum command types */
 
 /* Flags for modem_send_cmd_ext */
-#define MODEM_NO_TX_LOCK    BIT(0)  /*!< No TX lock flag send */
-#define MODEM_NO_SET_CMDS   BIT(1)  /*!< No set commands flag send */
-#define MODEM_NO_UNSET_CMDS BIT(2)  /*!< No unset commands flag send */
+#define MODEM_NO_TX_LOCK    (1UL << 0U)  /*!< No TX lock flag send */
+#define MODEM_NO_SET_CMDS   (1UL << 1U)  /*!< No set commands flag send */
+#define MODEM_NO_UNSET_CMDS (1UL << 2U)  /*!< No unset commands flag send */
 
 /** @} */
 
@@ -95,9 +95,9 @@ extern "C" {
 struct modem_iface
 {
   /** Callback to read data from the modem interface */
-  int32_t (*read)(struct modem_iface *iface, uint8_t *buf, size_t size, size_t *bytes_read);
+  int32_t (*mdm_read)(struct modem_iface *iface, uint8_t *buf, size_t size, size_t *bytes_read);
   /** Callback to write data to the modem interface */
-  int32_t (*write)(struct modem_iface *iface, const uint8_t *buf, size_t size);
+  int32_t (*mdm_write)(struct modem_iface *iface, const uint8_t *buf, size_t size);
 };
 
 /**
@@ -231,11 +231,6 @@ struct modem_cmd_handler_config
 #define ARRAY_SIZE(array)   (sizeof(array) / sizeof((array)[0]))
 #endif /* ARRAY_SIZE */
 
-#ifndef BIT
-/** Get the bit value at position n */
-#define BIT(n)              (1U << (n))
-#endif /* BIT */
-
 /** Macro to declare a modem command handler function */
 #define MODEM_CMD_DECLARE(name_) \
   static int32_t name_(struct modem_cmd_handler_data *data, uint16_t len, \
@@ -364,7 +359,7 @@ int32_t modem_cmd_send_ext(struct modem_iface *iface,
                            struct modem_cmd_handler *handler,
                            const struct modem_cmd *handler_cmds,
                            size_t handler_cmds_len, const uint8_t *buf,
-                           SemaphoreHandle_t sem, TickType_t timeout, int32_t flags);
+                           SemaphoreHandle_t sem, TickType_t timeout, uint32_t flags);
 
 /**
   * @brief  send AT command to interface w/o locking TX

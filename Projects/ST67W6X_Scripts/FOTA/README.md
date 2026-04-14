@@ -19,9 +19,9 @@ This folder provides tools to establish a Firmware Update Over-The-Air (FOTA) en
 
 This script generates firmware update files with separate FOTA headers. It supports two subcommands:
 
-| Subcommand         | Description                                                                                           d   |
+| Subcommand         | Description                                                                                              |
 |--------------------|----------------------------------------------------------------------------------------------------------|
-| **gen_header**     | Generates a FOTA header descriptor file (`fota_header_struct.h`) for STM32 integration.                                    |
+| **gen_header**     | Generates a FOTA header descriptor file (`fota_header_struct.h`) for STM32 integration.                  |
 | **install_header** | Generates a JSON-format FOTA header and copies the ST67W61 and STM32 binaries to the specified location. |
 
 ```sh
@@ -54,7 +54,7 @@ Files generated:
 | Argument                 | Description                              | Required |
 | ------------------------ | ---------------------------------------- | -------- |
 | `-i`, `--input`          | Path to STM32 binary file                | Yes      |
-| `-n`, `--st67`           | Path to Network Co-Processor binary file | Yes      |
+| `-n`, `--st67`           | Path to Network Coprocessor binary file  | Yes      |
 | `-t`, `--target`         | Target STM32 device name                 | Yes      |
 | `-w`, `--firmware_type`  | ST67 firmware type                       | Yes      |
 | `-v`, `--version`        | Firmware version (format: x.y.z)         | Yes      |
@@ -67,7 +67,7 @@ Files generated:
 Example:
 
 ```sh
-python fota_header_gen.py install_header -v 1.2.0 -c 2.0.97 -t STM32U575ZI -b NUCLEO -r C05 -w NCP1 -n ../Binaries/NCP_Binaries/st67w611m_mission_t01_v2.0.97.bin.ota -i ../Binaries/NUCLEO-U575ZI-Q_Binaries/ST67W6X_FOTA.bin
+python fota_header_gen.py install_header -v 1.3.0 -c 2.0.106 -t STM32U575ZI -b NUCLEO -r C05 -w NCP1 -n ../Binaries/NCP_Binaries/st67w611m_mission_t01_v2.0.106.bin.ota -i ../Binaries/NUCLEO-U575ZI-Q_Binaries/ST67W6X_FOTA.bin
 ```
 
 ---

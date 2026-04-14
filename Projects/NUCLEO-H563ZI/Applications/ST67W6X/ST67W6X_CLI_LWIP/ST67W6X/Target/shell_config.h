@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    shell_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W6X Shell configuration module
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -44,7 +44,7 @@ extern "C" {
 #define SHELL_CMD_LEVEL                         0
 
 /** Shell command maximum size */
-#define SHELL_CMD_SIZE                          256
+#define SHELL_CMD_SIZE                          256U
 
 /** Shell using color */
 #define SHELL_USING_COLOR                       1
@@ -53,7 +53,7 @@ extern "C" {
 #define SHELL_PRINT_STATUS                      0
 
 /** Shell receive buffer size */
-#define SHELL_FREERTOS_RX_BUFF_SIZE             256
+#define SHELL_FREERTOS_RX_BUFF_SIZE             256U
 
 /* USER CODE BEGIN EC */
 

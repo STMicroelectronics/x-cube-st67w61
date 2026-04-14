@@ -277,7 +277,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x34180400</StartAddress>
-                <Size>0x3fc00</Size>
+                <Size>0x7fc00</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -301,8 +301,8 @@
               </OCR_RVCT8>
               <OCR_RVCT9>
                 <Type>0</Type>
-                <StartAddress>0x341c0000</StartAddress>
-                <Size>0x40000</Size>
+                <StartAddress>0x34000000</StartAddress>
+                <Size>0x180000</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
@@ -371,7 +371,7 @@
             <TextAddressRange></TextAddressRange>
             <DataAddressRange></DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile>stm32n657xx_axisram2_fsbl.sct</ScatterFile>
+            <ScatterFile>stm32n657xx.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--keep *.o(FSymTab) --diag_suppress L6319W</Misc>

@@ -2,13 +2,13 @@
 /**
   ******************************************************************************
   * @file    main.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header for main.c file.
   *          This file contains the common defines of the application.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file

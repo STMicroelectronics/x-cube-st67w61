@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    sntp.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This is simple "SNTP" client definition
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -124,7 +124,7 @@ typedef struct
 #define SNTP_RETRY_TIMEOUT          SNTP_RECV_TIMEOUT
 
 /** Delay before to start first request */
-#define SNTP_STARTUP_DELAY          5000
+#define SNTP_STARTUP_DELAY          5000U
 
 /** SNTP server address
   * For a list of some public NTP servers, see this link:
@@ -149,11 +149,11 @@ typedef struct
 /* Exported functions --------------------------------------------------------*/
 /**
   * @brief  Initialize the SNTP client module
-  * @param  timezone: timezone in hours
+  * @param  timezone_offset: timezone_offset in hours
   * @retval 0 on success, -1 on failure
   * @note   Send out request after a delay
   */
-int32_t sntp_init(int16_t timezone);
+int32_t sntp_init(int16_t timezone_offset);
 
 /**
   * @brief  Stop the SNTP client module
@@ -169,9 +169,9 @@ int32_t sntp_gettime(date_time_t *dt);
 
 /**
   * @brief  Set the SNTP server address
-  * @param  addr: pointer to ip_addr_t structure
+  * @param  server_addr: pointer to ip_addr_t structure
   */
-void sntp_setserver(const ip_addr_t *addr);
+void sntp_setserver(const ip_addr_t *server_addr);
 
 /* USER CODE BEGIN EF */
 

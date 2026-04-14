@@ -183,7 +183,7 @@
     });
     function sendPeriodicGetRequest(val) {
         var xhr = new XMLHttpRequest();
-        xhr.timeout = 11000;
+        xhr.timeout = 14000;
         xhr.open("GET", "/connect_status", true);
         xhr.ontimeout = function () {
             sendPeriodicGetRequest();
@@ -207,7 +207,7 @@
     sendPeriodicGetRequest();
     function sendGetRequest(val) {
         var xhr = new XMLHttpRequest();
-        var timeout = 6000;
+        var timeout = 9000;
         var requestTimeout = setTimeout(function() {
             xhr.abort();
             console.error('Request GET timed out after ' + timeout + ' milliseconds');
@@ -246,7 +246,7 @@
             document.getElementById("console").innerHTML = "> Credentials sent Failed <br />" + document.getElementById("console").innerHTML;
           }
         };
-        xhr.send(JSON.stringify(cred));
+        xhr.send(JSON.stringify(cred) + "\r\n\r\n");
     }
 
     function switch_status(val) {

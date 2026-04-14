@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_version.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the version of W6x_Network_Driver
   ******************************************************************************
   * @attention
@@ -30,7 +30,7 @@ extern "C" {
   */
 
 #define W6X_VERSION_MAIN   1    /*!< [31:24] main version */
-#define W6X_VERSION_SUB1   2    /*!< [23:16] sub1 version */
+#define W6X_VERSION_SUB1   3    /*!< [23:16] sub1 version */
 #define W6X_VERSION_SUB2   0    /*!< [15:8]  sub2 version */
 
 #define W6X_MAIN_SHIFT     24   /*!< main version shift */

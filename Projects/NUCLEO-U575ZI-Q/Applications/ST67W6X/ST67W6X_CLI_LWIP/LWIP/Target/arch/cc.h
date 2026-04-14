@@ -31,8 +31,8 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __CC_H__
-#define __CC_H__
+#ifndef CC_H
+#define CC_H
 
 #include "arch/cpu.h"
 #include <stdlib.h>
@@ -90,4 +90,4 @@ typedef int32_t ssize_t;
 #define LWIP_PLATFORM_ASSERT(x) do {printf("Assertion \"%s\" failed at line %d in %s\n", \
                                     x, __LINE__, __FILE__); } while(0)
 
-#endif /* __CC_H__ */
+#endif /* CC_H */

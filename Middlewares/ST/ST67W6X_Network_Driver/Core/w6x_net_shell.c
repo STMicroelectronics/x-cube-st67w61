@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_net_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x Net Shell Commands
   ******************************************************************************
   * @attention
@@ -33,14 +33,27 @@
 /** @addtogroup ST67W6X_Private_Net_Constants
   * @{
   */
-#define PING_MAX_SIZE  10000 /*!< Max size of the ping request to send */
+#define PING_MAX_SIZE  10000U /*!< Max size of the ping request to send */
 
-#define PING_TIMEOUT   1000  /*!< Default timeout value for ping request */
+#define PING_TIMEOUT   1000U  /*!< Default timeout value for ping request */
 
 /** @} */
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+/** @addtogroup ST67W6X_Private_Net_Variables
+  * @{
+  */
+
+/** Default NTP servers */
+static const char *default_ntp_servers[] =
+{
+  "0.pool.ntp.org",
+  "time.google.com"
+};
+
+/** @} */
+
 /* Private function prototypes -----------------------------------------------*/
 /** @addtogroup ST67W6X_Private_Net_Functions
   * @{
@@ -151,14 +164,14 @@ int32_t W6X_Shell_Net_Hostname(int32_t argc, char **argv)
   if (argc == 2)
   {
     /* Check the host name length */
-    if (strlen(argv[1]) > 33)
+    if (strlen(argv[1]) > 33U)
     {
       SHELL_E("Host name maximum length is 32\n");
       return SHELL_STATUS_ERROR;
     }
 
     /* Set the host name */
-    strncpy((char *)hostname, argv[1], sizeof(hostname) - 1);
+    (void)strncpy((char *)hostname, argv[1], sizeof(hostname) - 1U);
     if (W6X_Net_SetHostname(hostname) == W6X_STATUS_OK)
     {
       SHELL_PRINTF("Host name set successfully\n");
@@ -184,7 +197,7 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_Hostname, net_hostname, net_hostname [ host
 
 int32_t W6X_Shell_Net_Station_IP(int32_t argc, char **argv)
 {
-  uint8_t ip_addr[4] = {0};
+  uint8_t ip_address[4] = {0};
   uint8_t gateway_addr[4] = {0};
   uint8_t netmask_addr[4] = {0};
 #if (W6X_NET_IPV6_ENABLE == 1)
@@ -197,11 +210,11 @@ int32_t W6X_Shell_Net_Station_IP(int32_t argc, char **argv)
   if (argc == 1)
   {
     /* Get the STA IP configuration */
-    if (W6X_Net_Station_GetIPAddress(ip_addr, gateway_addr, netmask_addr) == W6X_STATUS_OK)
+    if (W6X_Net_Station_GetIPAddress(ip_address, gateway_addr, netmask_addr) == W6X_STATUS_OK)
     {
       /* Display the IP configuration */
       SHELL_PRINTF("STA IP :\n");
-      SHELL_PRINTF("IP :              " IPSTR "\n", IP2STR(ip_addr));
+      SHELL_PRINTF("IP :              " IPSTR "\n", IP2STR(ip_address));
       SHELL_PRINTF("Gateway :         " IPSTR "\n", IP2STR(gateway_addr));
       SHELL_PRINTF("Netmask :         " IPSTR "\n", IP2STR(netmask_addr));
 #if (W6X_NET_IPV6_ENABLE == 1)
@@ -238,42 +251,37 @@ int32_t W6X_Shell_Net_Station_IP(int32_t argc, char **argv)
   if ((argc > 1) && (argc <= 4))
   {
     /* Set the STA IP configuration in IP, Gateway, Netmask fixed order. Gateway and Netmask are optional */
-    for (int32_t i = 1; i < argc; i++)
+    /* Parse the IP address */
+    Parser_StrToIP(argv[1], ip_address);
+    if (Parser_CheckValidAddress(ip_address, 4) != 0)
     {
-      switch (i)
+      SHELL_E("IP address invalid\n");
+      return SHELL_STATUS_ERROR;
+    }
+
+    if (argc >= 3)
+    {
+      /* Parse the Gateway address */
+      Parser_StrToIP(argv[2], gateway_addr);
+      if (Parser_CheckValidAddress(gateway_addr, 4) != 0)
       {
-        case 1:
-          /* Parse the IP address */
-          Parser_StrToIP(argv[i], ip_addr);
-          if (Parser_CheckValidAddress(ip_addr, 4) != 0)
-          {
-            SHELL_E("IP address invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
-        case 2:
-          /* Parse the Gateway address */
-          Parser_StrToIP(argv[i], gateway_addr);
-          if (Parser_CheckValidAddress(gateway_addr, 4) != 0)
-          {
-            SHELL_E("Gateway IP address invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
-        case 3:
-          /* Parse the Netmask address */
-          Parser_StrToIP(argv[i], netmask_addr);
-          if (Parser_CheckValidAddress(netmask_addr, 4) != 0)
-          {
-            SHELL_E("Netmask IP address invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
+        SHELL_E("Gateway IP address invalid\n");
+        return SHELL_STATUS_ERROR;
+      }
+    }
+    if (argc == 4)
+    {
+      /* Parse the Netmask address */
+      Parser_StrToIP(argv[3], netmask_addr);
+      if (Parser_CheckValidAddress(netmask_addr, 4) != 0)
+      {
+        SHELL_E("Netmask IP address invalid\n");
+        return SHELL_STATUS_ERROR;
       }
     }
 
     /* Set the IP configuration */
-    if (W6X_Net_Station_SetIPAddress(ip_addr, gateway_addr, netmask_addr) == W6X_STATUS_OK)
+    if (W6X_Net_Station_SetIPAddress(ip_address, gateway_addr, netmask_addr) == W6X_STATUS_OK)
     {
       SHELL_PRINTF("STA IP configuration set successfully\n");
     }
@@ -324,37 +332,32 @@ int32_t W6X_Shell_Net_Station_DNS(int32_t argc, char **argv)
   if ((argc > 1) && (argc <= 4))
   {
     /* Set the STA DNS configuration in enable, DNS1, DNS2, DNS3 fixed order. DNS2 and DNS3 are optional */
-    for (int32_t i = 1; i < argc; i++)
+    /* Parse the DNS1 address */
+    Parser_StrToIP(argv[1], dns1_addr);
+    if (Parser_CheckValidAddress(dns1_addr, 4) != 0)
     {
-      switch (i)
+      SHELL_E("DNS IP 1 invalid\n");
+      return SHELL_STATUS_ERROR;
+    }
+
+    if (argc >= 3)
+    {
+      /* Parse the DNS2 address */
+      Parser_StrToIP(argv[2], dns2_addr);
+      if (Parser_CheckValidAddress(dns2_addr, 4) != 0)
       {
-        case 1:
-          /* Parse the DNS1 address */
-          Parser_StrToIP(argv[i], dns1_addr);
-          if (Parser_CheckValidAddress(dns1_addr, 4) != 0)
-          {
-            SHELL_E("DNS IP 1 invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
-        case 2:
-          /* Parse the DNS2 address */
-          Parser_StrToIP(argv[i], dns2_addr);
-          if (Parser_CheckValidAddress(dns2_addr, 4) != 0)
-          {
-            SHELL_E("DNS IP 2 invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
-        case 3:
-          /* Parse the DNS3 address */
-          Parser_StrToIP(argv[i], dns3_addr);
-          if (Parser_CheckValidAddress(dns3_addr, 4) != 0)
-          {
-            SHELL_E("DNS IP 3 invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
+        SHELL_E("DNS IP 2 invalid\n");
+        return SHELL_STATUS_ERROR;
+      }
+    }
+    if (argc == 4)
+    {
+      /* Parse the DNS3 address */
+      Parser_StrToIP(argv[3], dns3_addr);
+      if (Parser_CheckValidAddress(dns3_addr, 4) != 0)
+      {
+        SHELL_E("DNS IP 3 invalid\n");
+        return SHELL_STATUS_ERROR;
       }
     }
 
@@ -385,18 +388,18 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_Station_DNS, net_sta_dns,
 /** Shell command to get the Soft-AP IP configuration */
 int32_t W6X_Shell_Net_AP_IP(int32_t argc, char **argv)
 {
-  uint8_t ip_addr[4] = {0};
+  uint8_t ip_address[4] = {0};
   uint8_t netmask_addr[4] = {0};
 
 #if (SHELL_CMD_LEVEL >= 0)
   if (argc == 1)
   {
     /* Get the Soft-AP IP configuration */
-    if (W6X_Net_AP_GetIPAddress(ip_addr, netmask_addr) == W6X_STATUS_OK)
+    if (W6X_Net_AP_GetIPAddress(ip_address, netmask_addr) == W6X_STATUS_OK)
     {
       /* Display the IP configuration */
       SHELL_PRINTF("Soft-AP :\n");
-      SHELL_PRINTF("IP :      " IPSTR "\n", IP2STR(ip_addr));
+      SHELL_PRINTF("IP :      " IPSTR "\n", IP2STR(ip_address));
       SHELL_PRINTF("Netmask : " IPSTR "\n", IP2STR(netmask_addr));
     }
     else
@@ -411,33 +414,27 @@ int32_t W6X_Shell_Net_AP_IP(int32_t argc, char **argv)
   if ((argc > 1) && (argc <= 3))
   {
     /* Set the Soft-AP IP configuration in IP, Netmask fixed order */
-    for (int32_t i = 1; i < argc; i++)
+    /* Parse the Soft-AP IP address */
+    Parser_StrToIP(argv[1], ip_address);
+    if (Parser_CheckValidAddress(ip_address, 4) != 0)
     {
-      switch (i)
+      SHELL_E("Soft-AP IP address invalid\n");
+      return SHELL_STATUS_ERROR;
+    }
+
+    if (argc == 3)
+    {
+      /* Parse the Netmask address */
+      Parser_StrToIP(argv[2], netmask_addr);
+      if (Parser_CheckValidAddress(netmask_addr, 4) != 0)
       {
-        case 1:
-          /* Parse the Soft-AP IP address */
-          Parser_StrToIP(argv[i], ip_addr);
-          if (Parser_CheckValidAddress(ip_addr, 4) != 0)
-          {
-            SHELL_E("Soft-AP IP address invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
-        case 2:
-          /* Parse the Netmask address */
-          Parser_StrToIP(argv[i], netmask_addr);
-          if (Parser_CheckValidAddress(netmask_addr, 4) != 0)
-          {
-            SHELL_E("Netmask IP address invalid\n");
-            return SHELL_STATUS_ERROR;
-          }
-          break;
+        SHELL_E("Netmask IP address invalid\n");
+        return SHELL_STATUS_ERROR;
       }
     }
 
     /* Set the Soft-AP IP configuration */
-    if (W6X_Net_AP_SetIPAddress(ip_addr, netmask_addr) == W6X_STATUS_OK)
+    if (W6X_Net_AP_SetIPAddress(ip_address, netmask_addr) == W6X_STATUS_OK)
     {
       SHELL_PRINTF("Soft-AP IP configuration set successfully\n");
     }
@@ -491,7 +488,7 @@ int32_t W6X_Shell_Net_DHCP_Config(int32_t argc, char **argv)
   {
     /* Get the DHCP client requested mode */
     operate = (uint32_t)atoi(argv[1]);
-    if (operate > 1)
+    if (operate > 1U)
     {
       SHELL_E("First parameter should be 0 to disable, or 1 to enable DHCP client\n");
       return SHELL_STATUS_ERROR;
@@ -512,7 +509,7 @@ int32_t W6X_Shell_Net_DHCP_Config(int32_t argc, char **argv)
       /* DHCP Server configuration */
       /* Parse the lease time */
       lease_time = (uint32_t)atoi(argv[3]);
-      if ((lease_time < 1) || (lease_time > 2880))
+      if ((lease_time < 1U) || (lease_time > 2880U))
       {
         SHELL_E("Lease time out of range [1;2880]\n");
         return SHELL_STATUS_ERROR;
@@ -563,13 +560,13 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
     /* Parse the count argument */
     if (strncmp(argv[current_arg], "-c", 2) == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
       /* Parse the count value */
       ping_count = (uint16_t)atoi(argv[current_arg + 1]);
-      if (ping_count < 1)
+      if (ping_count < 1U)
       {
         SHELL_E("Ping count is invalid.\n");
         return SHELL_STATUS_ERROR;
@@ -579,12 +576,12 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
     /* Parse the size argument */
     else if (strncmp(argv[current_arg], "-s", 2) == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
       ping_size = (uint32_t)atoi(argv[current_arg + 1]);
-      if ((ping_size < 1) || (ping_size > PING_MAX_SIZE))
+      if ((ping_size < 1U) || (ping_size > PING_MAX_SIZE))
       {
         SHELL_E("Ping size is invalid, valid range : [1;%" PRIu32 "].\n", PING_MAX_SIZE);
         return SHELL_STATUS_ERROR;
@@ -594,13 +591,13 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
     /* Parse the time interval argument */
     else if (strncmp(argv[current_arg], "-i", 2) == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
       /* Parse the interval value */
       ping_interval = (uint32_t)atoi(argv[current_arg + 1]);
-      if (ping_interval < 100 || ping_interval > 3500)
+      if ((ping_interval < 100U) || (ping_interval > 3500U))
       {
         SHELL_E("Ping interval is invalid, valid range : [100;3500]\n");
         return SHELL_STATUS_ERROR;
@@ -610,13 +607,13 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
     /* Parse the timeout argument */
     else if (strncmp(argv[current_arg], "-t", 2) == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
       /* Parse the timeout value */
       ping_timeout = (uint32_t)atoi(argv[current_arg + 1]);
-      if (ping_timeout < 100 || ping_timeout > 3500)
+      if ((ping_timeout < 100U) || (ping_timeout > 3500U))
       {
         SHELL_E("Ping timeout is invalid, valid range : [100;3500]\n");
         return SHELL_STATUS_ERROR;
@@ -638,7 +635,7 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
   if (W6X_STATUS_OK == W6X_Net_Ping((uint8_t *)argv[1], ping_size, ping_count, ping_interval, ping_timeout,
                                     &average_ping, &ping_received_response))
   {
-    if (ping_received_response == 0)
+    if (ping_received_response == 0U)
     {
       SHELL_E("No ping received\n");
       return SHELL_STATUS_ERROR;
@@ -648,7 +645,7 @@ int32_t W6X_Shell_Net_Ping(int32_t argc, char **argv)
       SHELL_PRINTF("%" PRIu16 " packets transmitted, %" PRIu16 " received, %" PRIu16
                    "%% packet loss, time %" PRIu32 "ms\n",
                    ping_count, ping_received_response,
-                   100 * (ping_count - ping_received_response) / ping_count, average_ping);
+                   100U * (ping_count - ping_received_response) / ping_count, average_ping);
     }
   }
   else
@@ -698,16 +695,16 @@ int32_t W6X_Shell_Net_SNTP_GetTime(int32_t argc, char **argv)
   }
 
   /* Set the SNTP configuration if not already set or if the timezone is different */
-  if ((Enable == 0) || (Timezone_current != Timezone_expected))
+  if ((Enable == 0U) || (Timezone_current != Timezone_expected))
   {
-    if (W6X_Net_SNTP_SetConfiguration(1, Timezone_expected, (uint8_t *)"0.pool.ntp.org",
-                                      (uint8_t *)"time.google.com", NULL) != W6X_STATUS_OK)
+    if (W6X_Net_SNTP_SetConfiguration(1, Timezone_expected, (uint8_t *)default_ntp_servers[0],
+                                      (uint8_t *)default_ntp_servers[1], NULL) != W6X_STATUS_OK)
     {
       SHELL_E("Set SNTP Configuration failed\n");
       goto _err;
     }
     SHELL_PRINTF("SNTP: Getting time from server (can take up to 5000 ms)...\n");
-    vTaskDelay(5000); /* Wait few seconds to execute the first request */
+    vTaskDelay(pdMS_TO_TICKS(5000)); /* Wait few seconds to execute the first request */
   }
 
   /* Get the time */
@@ -735,16 +732,16 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_Net_SNTP_GetTime, time, time < timezone : UTC f
 
 int32_t W6X_Shell_Net_ResolveHostAddress(int32_t argc, char **argv)
 {
-  ip_addr_t ipaddr = {0};
+  ip_addr_t ip_address = {0};
   if (argc != 2)
   {
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
 
   /* Get the IP address from the host name */
-  if (W6X_Net_ResolveHostAddressByType(argv[1], &ipaddr, W6X_NET_DNS_ADDRTYPE_IPV4) == W6X_STATUS_OK)
+  if (W6X_Net_ResolveHostAddressByType(argv[1], &ip_address, W6X_NET_DNS_ADDRTYPE_IPV4) == W6X_STATUS_OK)
   {
-    SHELL_PRINTF("IPv4 address: " IPSTR "\n", IP2STR((uint8_t *)&ipaddr.u_addr.ip4.addr));
+    SHELL_PRINTF("IPv4 address: " IPSTR "\n", NIP2STR(ip_address.u_addr.ip4.addr));
   }
   else
   {

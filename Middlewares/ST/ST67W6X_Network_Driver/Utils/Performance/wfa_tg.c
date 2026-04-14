@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    wfa_tg.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Library functions for traffic generator. They are shared with both TC and DUT agent
   ******************************************************************************
   * @attention
@@ -65,7 +65,7 @@
 
 /* Traffic generator related constant or threshold values defined here */
 /** Maximum UDP packet length */
-#define MAX_UDP_LEN               1470
+#define MAX_UDP_LEN               1470U
 /** Maximum receive buffer length */
 #define MAX_RCV_BUF_LEN           MAX_UDP_LEN
 /** Maximum name length */
@@ -197,12 +197,6 @@ static void int2buff(int32_t val, char *buf);
 static int32_t buff2int(char *buff);
 
 /**
-  * @brief  Get the real time in ms
-  * @return Real time in ms
-  */
-static uint64_t get_real_time(void);
-
-/**
   * @brief  Get the current time
   * @param  pT: Time structure to store the time
   * @return 0 if success, -1 otherwise
@@ -247,10 +241,10 @@ static int32_t wfa_tg_recv_data(tg_stream_t *stream, char *recv_buf);
   * @param  rate: Rate in frames per second
   * @param  chunk_time_ms: Chunk time in ms
   * @param  chunk_rate: Chunk rate
-  * @param  remainder: Remainder
+  * @param  rate_remainder: Remainder
   */
 static void wfa_tg_set_send_timing(int32_t profile, int32_t rate, int32_t *chunk_time_ms, int32_t *chunk_rate,
-                                   int32_t *remainder);
+                                   int32_t *rate_remainder);
 
 /**
   * @brief  RX thread function
@@ -307,7 +301,7 @@ int32_t wfa_tg_new_stream(void)
     if (Streams[i].id == 0)
     {
       Streams[i].id = StreamIdCounter++;
-      sprintf(Streams[i].name, "wfa_stream_%" PRIi32 "_thread\n", Streams[i].id);
+      (void)sprintf(Streams[i].name, "wfa_stream_%" PRIi32 "_thread\n", Streams[i].id);
       return Streams[i].id;
     }
   }
@@ -344,7 +338,7 @@ void wfa_tg_reset(void)
     }
   }
 
-  vTaskDelay(500);
+  vTaskDelay(pdMS_TO_TICKS(500));
   for (i = 0; i < TG_MAX_STREAMS; i++)
   {
     /* Sanity check */
@@ -354,7 +348,7 @@ void wfa_tg_reset(void)
       vTaskDelete(Streams[i].thread);
       Streams[i].thread = NULL;
     }
-    memset(&Streams[i], 0, sizeof(tg_stream_t));
+    (void)memset(&Streams[i], 0, sizeof(tg_stream_t));
     Streams[i].socket_fd = -1;
   }
 }
@@ -368,13 +362,13 @@ int32_t wfa_tg_recv_start(int32_t stream_id)
   }
 
   tg_profile_t *profile = &stream->profile;
-  if (profile == NULL || profile->direction != TG_DIRECT_RECV)
+  if ((profile == NULL) || (profile->direction != TG_DIRECT_RECV))
   {
     return TG_ERROR_CONFIG;
   }
 
   /* calculate the frame interval which is used to derive its jitter */
-  if (profile->rate != 0 && profile->rate < 5000)
+  if ((profile->rate != 0) && (profile->rate < 5000))
   {
     stream->fm_interval = TG_FRAME_INTERVAL / profile->rate; /* in ms */
   }
@@ -383,11 +377,12 @@ int32_t wfa_tg_recv_start(int32_t stream_id)
     stream->fm_interval = 0;
   }
 
-  memset(&stream->stats, 0, sizeof(tg_stats_t));
+  (void)memset(&stream->stats, 0, sizeof(tg_stats_t));
 
   int32_t sock;
   int32_t timeout_ms = TG_RX_DEFAULT_TIMEOUT_MS;
-  if (profile->profile == TG_PROF_IPTV || profile->profile == TG_PROF_FILE_TX || profile->profile == TG_PROF_MCAST)
+  if ((profile->profile == TG_PROF_IPTV) || (profile->profile == TG_PROF_FILE_TX) ||
+      (profile->profile == TG_PROF_MCAST))
   {
     sock = wfa_tg_create_udp_socket(profile->dipaddr, profile->dport);
     if (sock < 0)
@@ -410,7 +405,7 @@ int32_t wfa_tg_recv_start(int32_t stream_id)
 #endif /* Not supported */
     }
   }
-  else if (profile->profile == TG_PROF_TRANSC || profile->profile == TG_PROF_CALI_RTD)
+  else if ((profile->profile == TG_PROF_TRANSC) || (profile->profile == TG_PROF_CALI_RTD))
   {
     sock = wfa_tg_create_udp_socket(profile->sipaddr, profile->sport);
     if (sock < 0)
@@ -436,14 +431,15 @@ int32_t wfa_tg_recv_start(int32_t stream_id)
 
   /* mark the stream active */
   stream->state = TG_STREAM_ACTIVE;
-  xTaskCreate(wfa_rx_thread, stream->name, (MAX_RCV_BUF_LEN + 2000) >> 2,
-              stream, 24, &stream->thread);
+  (void)xTaskCreate(wfa_rx_thread, stream->name, (MAX_RCV_BUF_LEN + 2000U) >> 2U,
+                    stream, 24, &stream->thread);
 
   return TG_SUCCESS;
 }
 
 int32_t wfa_tg_recv_stop(int32_t stream_id)
 {
+#if 0 /* Not used currently */
   tg_stream_t *stream = get_stream(stream_id);
   if (stream == NULL)
   {
@@ -463,13 +459,13 @@ int32_t wfa_tg_recv_stop(int32_t stream_id)
       (void) NET_CLOSE(stream->socket_fd);
       stream->socket_fd = -1;
     }
-    vTaskDelay(100);
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     /* Wait for RX thread */
     while (stream->thread != NULL)
     {
       LogDebug("%s: ...\n", __func__);
-      vTaskDelay(100);
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
   }
 
@@ -482,7 +478,7 @@ int32_t wfa_tg_recv_stop(int32_t stream_id)
   }
 
   stream->state = TG_STREAM_INACTIVE;
-
+#endif /* 0 */
   return TG_SUCCESS;
 }
 
@@ -508,17 +504,17 @@ int32_t wfa_tg_send_start(int32_t stream_id, tg_send_done_cb_t done_cb)
   tg_profile_t *profile = &stream->profile;
 
   profile = &stream->profile;
-  if (profile == NULL || profile->direction != TG_DIRECT_SEND)
+  if ((profile == NULL) || (profile->direction != TG_DIRECT_SEND))
   {
     return TG_ERROR_CONFIG;
   }
 
-  if (profile->duration == 0 && profile->maxcnt == 0)
+  if ((profile->duration == 0) && (profile->maxcnt == 0))
   {
     return TG_ERROR_CONFIG;
   }
 
-  memset(&stream->stats, 0, sizeof(tg_stats_t));
+  (void)memset(&stream->stats, 0, sizeof(tg_stats_t));
 
   int32_t sock = wfa_tg_create_udp_socket(profile->sipaddr, profile->sport);
   if (sock < 0)
@@ -553,14 +549,14 @@ int32_t wfa_tg_send_start(int32_t stream_id, tg_send_done_cb_t done_cb)
   stream->finished_cb = done_cb;
   stream->state = TG_STREAM_ACTIVE;
 
-  xTaskCreate(wfa_tx_thread, stream->name, (MAX_UDP_LEN + 2000) >> 2,
-              stream, 24, &stream->thread);
+  (void)xTaskCreate(wfa_tx_thread, stream->name, (MAX_UDP_LEN + 2000U) >> 2U,
+                    stream, 24, &stream->thread);
   return TG_SUCCESS;
 }
 
 int32_t wfa_tg_start_echo_server(uint16_t port)
 {
-  if (EchoThread || EchoSock >= 0)
+  if ((EchoThread != NULL) || (EchoSock >= 0))
   {
     return TG_ERROR_BUSY;
   }
@@ -591,23 +587,23 @@ int32_t wfa_tg_start_echo_server(uint16_t port)
   }
 
   EchoGo = 1;
-  xTaskCreate(wfa_tg_echo_thread, "wfa_tg_echo_thread", (MAX_RCV_BUF_LEN + 2000) >> 2,
-              NULL, 24, &EchoThread);
+  (void)xTaskCreate(wfa_tg_echo_thread, "wfa_tg_echo_thread", (MAX_RCV_BUF_LEN + 2000U) >> 2U,
+                    NULL, 24, &EchoThread);
   return TG_SUCCESS;
 }
 
 int32_t wfa_tg_stop_echo_server(void)
 {
-  if (EchoThread)
+  if (EchoThread != NULL)
   {
     EchoGo = 0;
-    vTaskDelay(100);
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     /* Wait for the Echo thread */
     while (EchoThread != NULL)
     {
       LogDebug("%s: ...\n", __func__);
-      vTaskDelay(100);
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
   }
 
@@ -646,14 +642,9 @@ static int32_t buff2int(char *buff)
   return val;
 }
 
-static uint64_t get_real_time(void)
-{
-  return xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
-}
-
 static int32_t get_time(time_struct_t *pT)
 {
-  uint32_t system_tick = xPortIsInsideInterrupt() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
+  uint32_t system_tick = xTaskGetTickCount();
 
   pT->sec = system_tick / configTICK_RATE_HZ;
   pT->usec = (system_tick % configTICK_RATE_HZ) * 1000;
@@ -691,7 +682,7 @@ static int32_t wfa_tg_create_udp_socket(char *ipaddr, uint16_t port)
     return TG_FAILURE;
   }
 
-  memset(&servAddr, 0, sizeof(servAddr));
+  (void)memset(&servAddr, 0, sizeof(servAddr));
   servAddr.sin_family = AF_INET;
   servAddr.sin_addr.s_addr = PP_HTONL(INADDR_ANY);
   servAddr.sin_port = PP_HTONS(port);
@@ -726,6 +717,10 @@ static int32_t wfa_tg_send_packet(tg_stream_t *stream, char *buf, int32_t len)
     to_addr.sin_addr.s_addr = ATON(profile->sipaddr);
     to_addr.sin_port = PP_HTONS(profile->sport);
   }
+  else
+  {
+    /* invalid direction */
+  }
 
   /* fill in the packet_n */
   int2buff(stream->stats.tx_frames + 1, &((tg_header_t *)buf)->hdr[8]);
@@ -733,10 +728,10 @@ static int32_t wfa_tg_send_packet(tg_stream_t *stream, char *buf, int32_t len)
   /*
    * Fill the timestamp to the header.
    */
-  time_struct_t stime;
-  get_time(&stime);
-  int2buff(stime.sec, &((tg_header_t *)buf)->hdr[12]);
-  int2buff(stime.usec, &((tg_header_t *)buf)->hdr[16]);
+  time_struct_t current_time;
+  (void)get_time(&current_time);
+  int2buff(current_time.sec, &((tg_header_t *)buf)->hdr[12]);
+  int2buff(current_time.usec, &((tg_header_t *)buf)->hdr[16]);
 
   int32_t bytes_sent = NET_SENDTO(stream->socket_fd, buf, len, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
 
@@ -779,7 +774,7 @@ static int32_t wfa_tg_recv_data(tg_stream_t *stream, char *recv_buf)
 }
 
 static void wfa_tg_set_send_timing(int32_t profile, int32_t rate, int32_t *chunk_time_ms, int32_t *chunk_rate,
-                                   int32_t *remainder)
+                                   int32_t *rate_remainder)
 {
   if (rate == 0)
   {
@@ -790,14 +785,14 @@ static void wfa_tg_set_send_timing(int32_t profile, int32_t rate, int32_t *chunk
   switch (profile)
   {
     case TG_PROF_MCAST:
-      if (rate < 500 && rate >= 50)
+      if ((rate < 500) && (rate >= 50))
       {
         *chunk_time_ms = TG_CHUNK_MCAST_TIME_MS;
       }
       break;
     case TG_PROF_IPTV:
     case TG_PROF_FILE_TX:
-      if (rate > 0 && rate <= 50) /* typically for voice */
+      if ((rate > 0) && (rate <= 50)) /* typically for voice */
       {
         *chunk_time_ms = TG_CHUNK_PER_SEC(rate);
       }
@@ -808,7 +803,7 @@ static void wfa_tg_set_send_timing(int32_t profile, int32_t rate, int32_t *chunk
   }
   int32_t chunks_per_sec = TG_CHUNK_PER_SEC(*chunk_time_ms);
   *chunk_rate = rate / chunks_per_sec;
-  *remainder = rate % chunks_per_sec;
+  *rate_remainder = rate % chunks_per_sec;
 }
 
 /* Thread arg is pointer to the stream */
@@ -818,7 +813,7 @@ static void wfa_rx_thread(void *arg)
   tg_profile_t *profile = &stream->profile;
   char recv_buf[MAX_RCV_BUF_LEN + 1];
 
-  if (profile == NULL || profile->direction != TG_DIRECT_RECV)
+  if ((profile == NULL) || (profile->direction != TG_DIRECT_RECV))
   {
     LogError("%s: Invalid profile\n", __func__);
     vTaskDelete(NULL);
@@ -828,11 +823,11 @@ static void wfa_rx_thread(void *arg)
   LogInfo("%s: Start stream ID %" PRIi32 "\n", __func__, stream->id);
 
   int32_t nbytes = 0;
-  const bool transaction = (profile->profile == TG_PROF_TRANSC || profile->profile == TG_PROF_CALI_RTD);
-  while ((stream->socket_fd >= 0 || nbytes > 0))
+  const bool transaction = ((profile->profile == TG_PROF_TRANSC) || (profile->profile == TG_PROF_CALI_RTD));
+  while (((stream->socket_fd >= 0) || (nbytes > 0)))
   {
     nbytes = wfa_tg_recv_data(stream, (char *)recv_buf);
-    if (transaction && nbytes > 0)
+    if (transaction && (nbytes > 0))
     {
       int32_t err = wfa_tg_send_packet(stream, recv_buf, nbytes);
       if (err != 0)
@@ -857,7 +852,7 @@ static void wfa_tx_thread(void *arg)
 {
   tg_stream_t *stream = (tg_stream_t *)arg;
   tg_profile_t *profile;
-  char packet_buf[MAX_UDP_LEN + 1];
+  char packet_buf[MAX_UDP_LEN + 1U];
 
   if ((stream == NULL) || (stream->socket_fd < 0))
   {
@@ -874,9 +869,9 @@ static void wfa_tx_thread(void *arg)
   }
 
   /* if delay is too long, it must be something wrong */
-  if (profile->startdelay > 0 && profile->startdelay < 100)
+  if ((profile->startdelay > 0) && (profile->startdelay < 100))
   {
-    vTaskDelay(profile->startdelay * 1000);
+    vTaskDelay(pdMS_TO_TICKS((uint64_t)profile->startdelay * 1000U));
   }
 
   LogInfo("%s: Start stream ID %" PRIi32 "\n", __func__, stream->id);
@@ -885,7 +880,7 @@ static void wfa_tx_thread(void *arg)
   int32_t packet_len = 0;
   if (profile->rate == 0)
   {
-    if (profile->hti == 0 && profile->pksize)
+    if ((profile->hti == 0) && (profile->pksize != 0))
     {
       packet_len = profile->pksize;
     }
@@ -911,7 +906,7 @@ static void wfa_tx_thread(void *arg)
   }
 
   /* fill in the header */
-  strncpy(packet_buf, "1345678", sizeof(tg_header_t));
+  (void)strncpy(packet_buf, "1345678", sizeof(tg_header_t));
 
   int32_t chunk_time_ms = TG_CHUNK_DEFAULT_TIME_MS;
   int32_t chunk_rate = 0;
@@ -920,7 +915,7 @@ static void wfa_tx_thread(void *arg)
   int32_t chunks_per_sec = TG_CHUNK_PER_SEC(chunk_time_ms);
 
   int32_t packet_n = 0;
-  uint64_t start_time_ms = get_real_time();
+  uint64_t start_time_ms = xTaskGetTickCount();
   uint64_t current_time_ms = 0;
   uint64_t target_time_ms = start_time_ms;
   uint32_t rate_error_accumulator = 0;
@@ -928,7 +923,8 @@ static void wfa_tx_thread(void *arg)
 
   uint64_t end_time_ms = start_time_ms;
   /* 100 seconds max duration */
-  end_time_ms += (profile->duration <= 0 || profile->duration > 100) ? 100000 : profile->duration * 1000;
+  end_time_ms += (((profile->duration <= 0)
+                   || (profile->duration > 100)) ? (uint64_t)100000 : ((uint64_t)profile->duration * 1000U));
 
   /* Handle the unlimited rate case */
   if (profile->rate == 0)
@@ -938,11 +934,11 @@ static void wfa_tx_thread(void *arg)
   }
 
   /* If max packet count is set, check this condition first */
-  while (profile->maxcnt <= 0 || packet_n < profile->maxcnt)
+  while ((profile->maxcnt <= 0) || (packet_n < profile->maxcnt))
   {
-    current_time_ms = get_real_time();
+    current_time_ms = xTaskGetTickCount();
 
-    if (counter <= 0 || current_time_ms >= target_time_ms)
+    if ((counter <= 0) || (current_time_ms >= target_time_ms))
     {
       /* Finished sending current chunk, or timeout */
 
@@ -951,7 +947,7 @@ static void wfa_tx_thread(void *arg)
         /* Finished sending the final chunk */
         break;
       }
-      if (current_time_ms >= target_time_ms && target_time_ms != start_time_ms)
+      if ((current_time_ms >= target_time_ms) && (target_time_ms != start_time_ms))
       {
         LogDebug("%s: cannot keep up with the bitrate\n", __func__);
       }
@@ -961,7 +957,7 @@ static void wfa_tx_thread(void *arg)
 
       /* Handle rate error accumulation */
       rate_error_accumulator += chunk_rate_remainder;
-      if (rate_error_accumulator > 0)
+      if (rate_error_accumulator > 0U)
       {
         /* Send extra packet if needed */
         rate_error_accumulator -= chunks_per_sec;
@@ -971,7 +967,7 @@ static void wfa_tx_thread(void *arg)
       if (current_time_ms < target_time_ms)
       {
         /* Sleep until beginning of new chunk */
-        vTaskDelay(target_time_ms - current_time_ms);
+        vTaskDelay(pdMS_TO_TICKS(target_time_ms - current_time_ms));
       }
 
       /* Set the beginning time of the next chunk */
@@ -987,7 +983,7 @@ static void wfa_tx_thread(void *arg)
         case EAGAIN:
         case ENOBUFS:
           LogDebug("%s: send error - try again\n", __func__);
-          vTaskDelay(1);
+          vTaskDelay(pdMS_TO_TICKS(1));
           break;
         default:
           LogDebug("%s: send error - skip packet\n", __func__);
@@ -1005,7 +1001,7 @@ static void wfa_tx_thread(void *arg)
     counter--;
     packet_n++;
 
-    if (profile->profile == TG_PROF_TRANSC || profile->profile == TG_PROF_CALI_RTD)
+    if ((profile->profile == TG_PROF_TRANSC) || (profile->profile == TG_PROF_CALI_RTD))
     {
       int32_t nbytes = wfa_tg_recv_data(stream, (char *)packet_buf);
       if (nbytes <= 0)
@@ -1023,7 +1019,7 @@ static void wfa_tx_thread(void *arg)
     stream->socket_fd = -1;
   }
 
-  if (stream->finished_cb)
+  if (stream->finished_cb != NULL)
   {
     stream->finished_cb(stream->id, stream->stats);
     stream->finished_cb = NULL;
@@ -1050,7 +1046,7 @@ static void wfa_tg_echo_thread(void *arg)
 
   LogInfo("%s: thread start\n", __func__);
 
-  while (EchoGo && EchoSock >= 0)
+  while ((EchoGo != 0) && (EchoSock >= 0))
   {
     from_addr_len = sizeof(from_addr);
     len = NET_RECVFROM(EchoSock, buffer, MAX_RCV_BUF_LEN, 0, (struct sockaddr *)&from_addr, &from_addr_len);
@@ -1070,7 +1066,7 @@ static void wfa_tg_echo_thread(void *arg)
   if (EchoSock >= 0)
   {
     (void) NET_SHUTDOWN(EchoSock, 1);
-    NET_CLOSE(EchoSock);
+    (void)NET_CLOSE(EchoSock);
   }
   EchoSock = -1;
 
@@ -1087,7 +1083,7 @@ static int32_t wfa_tg_connect_udp(int32_t mysock, char *daddr, int32_t dport)
 {
   struct sockaddr_in peerAddr;
 
-  memset(&peerAddr, 0, sizeof(peerAddr));
+  (void)memset(&peerAddr, 0, sizeof(peerAddr));
   peerAddr.sin_family = AF_INET;
   peerAddr.sin_addr.s_addr = ATON(daddr);
   peerAddr.sin_port = PP_HTONS(dport);

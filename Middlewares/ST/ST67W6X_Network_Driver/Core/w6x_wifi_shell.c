@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_wifi_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x WiFi Shell Commands
   ******************************************************************************
   * @attention
@@ -33,13 +33,13 @@
   * @{
   */
 
-#define EVENT_FLAG_SCAN_DONE  (1<<1)  /*!< Scan done event bitmask */
+#define EVENT_FLAG_SCAN_DONE  (1UL << 1U)  /*!< Scan done event bitmask */
 
-#define SCAN_TIMEOUT_MS       10000   /*!< Delay before to declare the scan in failure */
+#define SCAN_TIMEOUT_MS       10000U   /*!< Delay before to declare the scan in failure */
 
-#define CONNECT_MAX_INTERVAL  7200 /*!< Maximum reconnection interval in seconds */
+#define CONNECT_MAX_INTERVAL  7200U /*!< Maximum reconnection interval in seconds */
 
-#define CONNECT_MAX_ATTEMPTS  1000 /*!< Maximum reconnection attempts */
+#define CONNECT_MAX_ATTEMPTS  1000U /*!< Maximum reconnection attempts */
 
 /** @} */
 
@@ -50,7 +50,7 @@
   */
 
 /** Event bitmask flag used for asynchronous execution */
-static EventGroupHandle_t scan_event = NULL;
+static EventGroupHandle_t W6X_Shell_WiFi_scan_event = NULL;
 
 /** @} */
 
@@ -107,6 +107,36 @@ int32_t W6X_Shell_WiFi_Disconnect(int32_t argc, char **argv);
 int32_t W6X_Shell_WiFi_AutoConnect(int32_t argc, char **argv);
 
 /**
+  * @brief  Wi-Fi add credentials shell function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval ::SHELL_STATUS_OK on success
+  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
+  * @retval ::SHELL_STATUS_ERROR otherwise
+  */
+int32_t W6X_Shell_WiFi_AddCredentials(int32_t argc, char **argv);
+
+/**
+  * @brief  Wi-Fi delete credentials shell function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval ::SHELL_STATUS_OK on success
+  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
+  * @retval ::SHELL_STATUS_ERROR otherwise
+  */
+int32_t W6X_Shell_WiFi_DeleteCredentials(int32_t argc, char **argv);
+
+/**
+  * @brief  Wi-Fi list credentials shell function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval ::SHELL_STATUS_OK on success
+  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
+  * @retval ::SHELL_STATUS_ERROR otherwise
+  */
+int32_t W6X_Shell_WiFi_GetCredentials(int32_t argc, char **argv);
+
+/**
   * @brief  Wi-Fi get/set country code shell function
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
@@ -156,6 +186,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv);
   */
 int32_t W6X_Shell_WiFi_AP_Stop(int32_t argc, char **argv);
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /**
   * @brief  Wi-Fi list connected stations shell function
   * @param  argc: number of arguments
@@ -165,6 +196,7 @@ int32_t W6X_Shell_WiFi_AP_Stop(int32_t argc, char **argv);
   * @retval ::SHELL_STATUS_ERROR otherwise
   */
 int32_t W6X_Shell_WiFi_AP_List_Stations(int32_t argc, char **argv);
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
 
 /**
   * @brief  Wi-Fi disconnect station shell function
@@ -216,16 +248,6 @@ int32_t W6X_Shell_WiFi_TWT_Setup(int32_t argc, char **argv);
 int32_t W6X_Shell_WiFi_TWT_GetStatus(int32_t argc, char **argv);
 
 /**
-  * @brief  Set TWT shell function
-  * @param  argc: number of arguments
-  * @param  argv: pointer to the arguments
-  * @retval ::SHELL_STATUS_OK on success
-  * @retval ::SHELL_STATUS_UNKNOWN_ARGS if wrong arguments
-  * @retval ::SHELL_STATUS_ERROR otherwise
-  */
-int32_t W6X_Shell_WiFi_TWT_Set(int32_t argc, char **argv);
-
-/**
   * @brief  Teardown TWT shell function
   * @param  argc: number of arguments
   * @param  argv: pointer to the arguments
@@ -253,7 +275,7 @@ void W6X_Shell_WiFi_Scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *entry)
     return;
   }
 
-  if (scan_event != NULL)
+  if (W6X_Shell_WiFi_scan_event != NULL)
   {
     SHELL_PRINTF("Scan results :\n");
 
@@ -268,7 +290,7 @@ void W6X_Shell_WiFi_Scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *entry)
     }
 
     /* Set the scan done event */
-    xEventGroupSetBits(scan_event, EVENT_FLAG_SCAN_DONE);
+    (void)xEventGroupSetBits(W6X_Shell_WiFi_scan_event, EVENT_FLAG_SCAN_DONE);
   }
 }
 
@@ -283,21 +305,21 @@ int32_t W6X_Shell_WiFi_Scan(int32_t argc, char **argv)
   }
 
   /* Initialize the scan event */
-  if (scan_event == NULL)
+  if (W6X_Shell_WiFi_scan_event == NULL)
   {
-    scan_event = xEventGroupCreate();
+    W6X_Shell_WiFi_scan_event = xEventGroupCreate();
   }
 
   while (current_arg < argc)
   {
     /* Passive scan mode argument */
-    if ((strncmp(argv[current_arg], "-p", 2) == 0) && strlen(argv[current_arg]) == 2)
+    if ((strncmp(argv[current_arg], "-p", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       /* Set the passive scan mode */
       Opts.Scan_type = W6X_WIFI_SCAN_PASSIVE;
     }
     /* SSID filter argument */
-    else if ((strncmp(argv[current_arg], "-s", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-s", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       /* Check the SSID length */
@@ -310,10 +332,10 @@ int32_t W6X_Shell_WiFi_Scan(int32_t argc, char **argv)
         return SHELL_STATUS_ERROR;
       }
       /* Copy the SSID */
-      strncpy((char *)Opts.SSID, argv[current_arg], sizeof(Opts.SSID) - 1);
+      (void)strncpy((char *)Opts.SSID, argv[current_arg], sizeof(Opts.SSID) - 1U);
     }
     /* BSSID filter argument */
-    else if ((strncmp(argv[current_arg], "-b", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-b", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -332,7 +354,7 @@ int32_t W6X_Shell_WiFi_Scan(int32_t argc, char **argv)
       }
     }
     /* Channel filter argument */
-    else if ((strncmp(argv[current_arg], "-c", 2) == 0) && (strlen(argv[current_arg]) == 2))
+    else if ((strncmp(argv[current_arg], "-c", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -342,13 +364,13 @@ int32_t W6X_Shell_WiFi_Scan(int32_t argc, char **argv)
       /* Parse the channel filter argument */
       Opts.Channel = (uint8_t)atoi(argv[current_arg]);
       /* Check the channel validity */
-      if ((Opts.Channel < 1) || (Opts.Channel > 13))
+      if ((Opts.Channel < 1U) || (Opts.Channel > 13U))
       {
         return SHELL_STATUS_ERROR;
       }
     }
     /* Max number of beacon received argument */
-    else if ((strncmp(argv[current_arg], "-n", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-n", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -357,7 +379,7 @@ int32_t W6X_Shell_WiFi_Scan(int32_t argc, char **argv)
       }
       /* Parse the Max number of APs argument */
       Opts.MaxCnt = (uint8_t)atoi(argv[current_arg]);
-      if ((Opts.MaxCnt < 1) || (Opts.MaxCnt > W61_WIFI_MAX_DETECTED_AP))
+      if ((Opts.MaxCnt < 1U) || (Opts.MaxCnt > W61_WIFI_MAX_DETECTED_AP))
       {
         return SHELL_STATUS_ERROR;
       }
@@ -377,7 +399,7 @@ int32_t W6X_Shell_WiFi_Scan(int32_t argc, char **argv)
     return SHELL_STATUS_ERROR;
   }
   /* Wait for the scan to be done */
-  if ((int32_t)xEventGroupWaitBits(scan_event, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
+  if ((int32_t)xEventGroupWaitBits(W6X_Shell_WiFi_scan_event, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
                                    pdMS_TO_TICKS(SCAN_TIMEOUT_MS)) != EVENT_FLAG_SCAN_DONE)
   {
     /* Scan timeout */
@@ -406,10 +428,10 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
   /* Search if wps argument is present */
   for (int32_t i = 1; i < argc; i++)
   {
-    if (strncmp(argv[i], "-wps", sizeof("-wps") - 1) == 0)
+    if (strncmp(argv[i], "-wps", sizeof("-wps") - 1U) == 0)
     {
       /* Connect to the AP using WPS */
-      connect_opts.WPS = 1;
+      connect_opts.WPS = 1U;
       if (W6X_WiFi_Connect(&connect_opts) == W6X_STATUS_OK)
       {
         SHELL_PRINTF("Connection success\n");
@@ -427,11 +449,27 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
   }
 
   /* Copy the SSID */
-  strncpy((char *)connect_opts.SSID, argv[current_arg], sizeof(connect_opts.SSID) - 1);
+  (void)strncpy((char *)connect_opts.SSID, argv[current_arg], sizeof(connect_opts.SSID) - 1U);
   current_arg++;
 
+  /* Search if secured credentials argument is present */
+  for (int32_t i = 1; i < argc; i++)
+  {
+    if (strncmp(argv[i], "-sec", sizeof("-sec") - 1U) == 0)
+    {
+      connect_opts.Secured = 1U;
+      /* Connect to the AP using secured credentials */
+      if (W6X_WiFi_Connect(&connect_opts) == W6X_STATUS_OK)
+      {
+        SHELL_PRINTF("Connection success\n");
+        return SHELL_STATUS_OK;
+      }
+      return SHELL_STATUS_ERROR;
+    }
+  }
+
   /* Parse the Password argument if present */
-  if (argc > 2 && (strncmp(argv[current_arg], "-", 1) != 0))
+  if ((argc > 2) && (strncmp(argv[current_arg], "-", 1) != 0))
   {
     /* Check the password length */
     if (strlen(argv[current_arg]) > W6X_WIFI_MAX_PASSWORD_SIZE)
@@ -439,14 +477,14 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
       SHELL_E("Password is too long\n");
       return SHELL_STATUS_ERROR;
     }
-    strncpy((char *)connect_opts.Password, argv[current_arg], sizeof(connect_opts.Password) - 1);
+    (void)strncpy((char *)connect_opts.Password, argv[current_arg], sizeof(connect_opts.Password) - 1U);
     current_arg++;
   }
 
   while (current_arg < argc)
   {
     /* Parse the BSSID argument */
-    if (strncmp(argv[current_arg], "-b", sizeof("-b") - 1) == 0)
+    if (strncmp(argv[current_arg], "-b", sizeof("-b") - 1U) == 0)
     {
       current_arg++;
       if (current_arg == argc)
@@ -466,7 +504,7 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
     }
 
     /* Parse the reconnection interval argument */
-    else if (strncmp(argv[current_arg], "-i", sizeof("-i") - 1) == 0)
+    else if (strncmp(argv[current_arg], "-i", sizeof("-i") - 1U) == 0)
     {
       current_arg++;
       if (current_arg == argc)
@@ -483,7 +521,7 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
       }
     }
     /* Parse the reconnection attempts argument */
-    else if (strncmp(argv[current_arg], "-n", sizeof("-n") - 1) == 0)
+    else if (strncmp(argv[current_arg], "-n", sizeof("-n") - 1U) == 0)
     {
       current_arg++;
       if (current_arg == argc)
@@ -500,7 +538,7 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
       }
     }
     /* Parse the reconnection attempts argument */
-    else if (strncmp(argv[current_arg], "-wep", sizeof("-wep") - 1) == 0)
+    else if (strncmp(argv[current_arg], "-wep", sizeof("-wep") - 1U) == 0)
     {
       current_arg++;
 
@@ -532,7 +570,7 @@ int32_t W6X_Shell_WiFi_Connect(int32_t argc, char **argv)
 /** Shell command to connect to a WiFi network */
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_Connect, wifi_sta_connect,
                        wifi_sta_connect < SSID > [ Password ] [ -b BSSID ]
-                       [ -i interval [0; 7200] ] [ -n nb_attempts [0; 1000] ] [ -wps ] [ -wep ]);
+                       [ -i interval [0; 7200] ] [ -n nb_attempts [0; 1000] ] [ -wps ] [ -wep ] [ -sec ]);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_WiFi_Disconnect(int32_t argc, char **argv)
@@ -590,6 +628,120 @@ int32_t W6X_Shell_WiFi_AutoConnect(int32_t argc, char **argv)
 #if (SHELL_CMD_LEVEL >= 1)
 /** Shell command to get autoconnect status */
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_AutoConnect, wifi_auto_connect, wifi_auto_connect);
+#endif /* SHELL_CMD_LEVEL */
+
+int32_t W6X_Shell_WiFi_AddCredentials(int32_t argc, char **argv)
+{
+  uint8_t SSID[W6X_WIFI_MAX_SSID_SIZE + 1];
+  uint8_t Password[W6X_WIFI_MAX_PASSWORD_SIZE + 1];
+
+  if (argc != 3)
+  {
+    return SHELL_STATUS_UNKNOWN_ARGS;
+  }
+
+  /* Parse the SSID argument */
+  if (strlen(argv[1]) > W6X_WIFI_MAX_SSID_SIZE)
+  {
+    SHELL_E("SSID is too long\n");
+    return SHELL_STATUS_ERROR;
+  }
+  (void)strncpy((char *)SSID, argv[1], sizeof(SSID) - 1U);
+
+  /* Check the password length */
+  if (strlen(argv[2]) > W6X_WIFI_MAX_PASSWORD_SIZE)
+  {
+    SHELL_E("Password is too long\n");
+    return SHELL_STATUS_ERROR;
+  }
+  (void)strncpy((char *)Password, argv[2], sizeof(Password) - 1U);
+
+  /* Add the credentials */
+  if (W6X_WiFi_AddCredentials(SSID, Password) == W6X_STATUS_OK)
+  {
+    SHELL_PRINTF("Credentials added successfully\n");
+  }
+  else
+  {
+    SHELL_E("Add credentials error\n");
+    return SHELL_STATUS_ERROR;
+  }
+
+  return SHELL_STATUS_OK;
+}
+
+#if (SHELL_CMD_LEVEL >= 1)
+/** Shell command to add WiFi credentials */
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_AddCredentials, wifi_add_cred,
+                       wifi_add_cred < SSID > < Password >);
+#endif /* SHELL_CMD_LEVEL */
+
+int32_t W6X_Shell_WiFi_DeleteCredentials(int32_t argc, char **argv)
+{
+  uint8_t SSID[W6X_WIFI_MAX_SSID_SIZE + 1];
+
+  if (argc != 2)
+  {
+    return SHELL_STATUS_UNKNOWN_ARGS;
+  }
+
+  /* Parse the SSID argument */
+  if (strlen(argv[1]) > W6X_WIFI_MAX_SSID_SIZE)
+  {
+    SHELL_E("SSID is too long\n");
+    return SHELL_STATUS_ERROR;
+  }
+  (void)strncpy((char *)SSID, argv[1], sizeof(SSID) - 1U);
+
+  /* Add the credentials */
+  if (W6X_WiFi_DeleteCredentials(SSID) == W6X_STATUS_OK)
+  {
+    SHELL_PRINTF("Credentials deleted successfully\n");
+  }
+  else
+  {
+    SHELL_E("Delete credentials error\n");
+    return SHELL_STATUS_ERROR;
+  }
+
+  return SHELL_STATUS_OK;
+}
+
+#if (SHELL_CMD_LEVEL >= 1)
+/** Shell command to delete WiFi credentials */
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_DeleteCredentials, wifi_delete_cred,
+                       wifi_delete_cred < SSID >);
+#endif /* SHELL_CMD_LEVEL */
+
+int32_t W6X_Shell_WiFi_GetCredentials(int32_t argc, char **argv)
+{
+  W6X_WiFi_CredentialsList_t credentials_list = {0};
+  if (argc != 1)
+  {
+    return SHELL_STATUS_UNKNOWN_ARGS;
+  }
+
+  /* List the credentials */
+  if (W6X_WiFi_GetCredentials(&credentials_list) == W6X_STATUS_OK)
+  {
+    SHELL_PRINTF("Credentials list :\n");
+    for (uint32_t i = 0; i < credentials_list.Count; i++)
+    {
+      SHELL_PRINTF("SSID: %s\n", credentials_list.SSID[i]);
+    }
+  }
+  else
+  {
+    SHELL_E("List credentials error\n");
+    return SHELL_STATUS_ERROR;
+  }
+
+  return SHELL_STATUS_OK;
+}
+
+#if (SHELL_CMD_LEVEL >= 1)
+/** Shell command to list WiFi credentials */
+SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_GetCredentials, wifi_get_cred, wifi_get_cred);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_WiFi_Station_MAC(int32_t argc, char **argv)
@@ -690,7 +842,7 @@ int32_t W6X_Shell_WiFi_Country_Code(int32_t argc, char **argv)
   {
     /* Get the country policy mode */
     policy = (uint32_t)atoi(argv[1]);
-    if (!((policy == 0) || (policy == 1)))
+    if (!((policy == 0U) || (policy == 1U)))
     {
       SHELL_E("First parameter should be 0 to disable, or 1 to enable Country policy\n");
       return SHELL_STATUS_ERROR;
@@ -700,12 +852,12 @@ int32_t W6X_Shell_WiFi_Country_Code(int32_t argc, char **argv)
     len = strlen(argv[2]);
 
     /* Check the country code length */
-    if ((len < 0) || (len > 2))
+    if (len > 2U)
     {
       SHELL_E("Second parameter length is invalid\n");
       return SHELL_STATUS_ERROR;
     }
-    memcpy(countryString, argv[2], len);
+    (void)memcpy(countryString, argv[2], len);
 
     if (W6X_WiFi_SetCountryCode(&policy, countryString) == W6X_STATUS_OK)
     {
@@ -755,7 +907,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
     {
       SHELL_PRINTF("AP SSID :     %s\n", ap_config.SSID);
       SHELL_PRINTF("AP Channel :  %" PRIu32 "\n", ap_config.Channel);
-      SHELL_PRINTF("AP Security : %s\n", W6X_WiFi_SecurityToStr(ap_config.Security));
+      SHELL_PRINTF("AP Security : %s\n", W6X_WiFi_AP_SecurityToStr(ap_config.Security));
       SHELL_PRINTF("AP Hidden :   %" PRIu32 "\n", ap_config.Hidden);
       SHELL_PRINTF("AP Protocol : %s\n", W6X_WiFi_ProtocolToStr(ap_config.Protocol));
       return SHELL_STATUS_OK;
@@ -786,7 +938,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
         return SHELL_STATUS_ERROR;
       }
       /* Copy the SSID */
-      strncpy((char *)ap_config.SSID, argv[current_arg], sizeof(ap_config.SSID) - 1);
+      (void)strncpy((char *)ap_config.SSID, argv[current_arg], sizeof(ap_config.SSID) - 1U);
     }
     /* Parse the Password argument */
     else if (strncmp(argv[current_arg], "-p", 2) == 0)
@@ -804,7 +956,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
         return SHELL_STATUS_ERROR;
       }
       /* Copy the password */
-      strncpy((char *)ap_config.Password, argv[current_arg], sizeof(ap_config.Password) - 1);
+      (void)strncpy((char *)ap_config.Password, argv[current_arg], sizeof(ap_config.Password) - 1U);
     }
     /* Parse the Channel argument */
     else if (strncmp(argv[current_arg], "-c", 2) == 0)
@@ -817,7 +969,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
       }
       /* Parse the channel */
       ap_config.Channel = (uint32_t)atoi(argv[current_arg]);
-      if ((ap_config.Channel < 1) || (ap_config.Channel > 13))
+      if ((ap_config.Channel < 1U) || (ap_config.Channel > 13U))
       {
         SHELL_E("Channel value out of range : [1;13]\n");
         return SHELL_STATUS_ERROR;
@@ -849,7 +1001,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
       }
       /* Parse the hidden value */
       ap_config.Hidden = (uint32_t)atoi(argv[current_arg]);
-      if (ap_config.Hidden > 1)
+      if (ap_config.Hidden > 1U)
       {
         SHELL_E("Hidden value out of range [0;1]\n");
         return SHELL_STATUS_ERROR;
@@ -879,7 +1031,7 @@ int32_t W6X_Shell_WiFi_AP_Start(int32_t argc, char **argv)
     current_arg++;
   }
 
-  if (ap_config.SSID[0] == '\0')
+  if (ap_config.SSID[0] == 0U)
   {
     SHELL_E("SSID cannot be null\n");
     return SHELL_STATUS_ERROR;
@@ -941,7 +1093,7 @@ int32_t W6X_Shell_WiFi_AP_List_Stations(int32_t argc, char **argv)
   if (W6X_WiFi_AP_ListConnectedStations(&connected_sta) == W6X_STATUS_OK)
   {
     SHELL_PRINTF("Connected stations :\n");
-    for (int32_t i = 0; i < connected_sta.Count; i++)
+    for (uint32_t i = 0; i < connected_sta.Count; i++)
     {
       SHELL_PRINTF("MAC : " MACSTR " | IP : " IPSTR "\n",
                    MAC2STR(connected_sta.STA[i].MAC),
@@ -955,7 +1107,7 @@ int32_t W6X_Shell_WiFi_AP_List_Stations(int32_t argc, char **argv)
 #if (SHELL_CMD_LEVEL >= 0)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_AP_List_Stations, wifi_ap_list_sta, wifi_ap_list_sta);
 #endif /* SHELL_CMD_LEVEL */
-#endif /* ST67_ARCH_T01 */
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
 
 /** Shell command to disconnect a station connected to the Soft-AP */
 int32_t W6X_Shell_WiFi_AP_Disconnect_Station(int32_t argc, char **argv)
@@ -1039,7 +1191,7 @@ int32_t W6X_Shell_WiFi_DTIM(int32_t argc, char **argv)
       return SHELL_STATUS_ERROR;
     }
 
-    if (dtim_interval != 0)
+    if (dtim_interval != 0U)
     {
       if (W6X_WiFi_GetDTIM_AP(&dtim_ap) != W6X_STATUS_OK)
       {
@@ -1129,7 +1281,7 @@ int32_t W6X_Shell_WiFi_TWT_GetStatus(int32_t argc, char **argv)
   }
 
   /* Print if TWT is not supported by AP */
-  if (twt_status.is_supported == 0)
+  if (twt_status.is_supported == 0U)
   {
     SHELL_E("TWT not supported\n");
     return SHELL_STATUS_ERROR;
@@ -1137,11 +1289,11 @@ int32_t W6X_Shell_WiFi_TWT_GetStatus(int32_t argc, char **argv)
 
   /* Display the TWT status */
   SHELL_PRINTF("TWT flows active: %" PRIu32 "\n", twt_status.flow_count);
-  if (twt_status.flow_count != 0)
+  if (twt_status.flow_count != 0U)
   {
     for (uint32_t i = 0; i < W6X_WIFI_MAX_TWT_FLOWS; i++)
     {
-      if (twt_status.flow[i].wake_int_mantissa != 0)
+      if (twt_status.flow[i].wake_int_mantissa != 0U)
       {
         SHELL_PRINTF("ID: %" PRIu32 " Type %" PRIu16 " Wake Interval exponent: %" PRIu32
                      " Minimum Wake duration: %" PRIu32 " Wake Interval mantissa: %" PRIu32 "\n",
@@ -1159,44 +1311,47 @@ SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_TWT_GetStatus, wifi_twt_status, wifi_twt_s
 
 int32_t W6X_Shell_WiFi_TWT_Teardown(int32_t argc, char **argv)
 {
-#if 0 /* TWT multi flow is not supported in current version */
-  int32_t value = 0;
   W6X_WiFi_TWT_Teardown_Params_t twt_params = {0};
 
-  if ((argc == 1) || (argc > 3))
+  if (W6X_SdkMinVersion(2, 0, 106) == W6X_STATUS_OK)
   {
-    return SHELL_STATUS_UNKNOWN_ARGS;
-  }
+    int32_t value = 0;
 
-  /* Teardown type */
-  value = atoi(argv[1]);
-  if ((value < 0) || (value > 1))
-  {
-    SHELL_E("TWT teardown type should be between [0; 1]\n");
-    return SHELL_STATUS_ERROR;
-  }
-
-  twt_params.all_twt = (uint8_t)value;
-  twt_params.id = 0;
-
-  if (argc == 3)
-  {
-    value = atoi(argv[2]);
-    if ((value < 0) || (value > 10))
+    if ((argc == 1) || (argc > 3))
     {
-      SHELL_E("In case of single flow teardown, flow id should be between [0; 10]\n");
+      return SHELL_STATUS_UNKNOWN_ARGS;
+    }
+
+    /* Teardown type */
+    value = atoi(argv[1]);
+    if ((value < 0) || (value > 1))
+    {
+      SHELL_E("TWT teardown type should be between [0; 1]\n");
       return SHELL_STATUS_ERROR;
     }
 
-    twt_params.id = (uint8_t)value;
+    twt_params.all_twt = (uint8_t)value;
+    twt_params.id = 0;
+
+    if (argc == 3)
+    {
+      value = atoi(argv[2]);
+      if ((value < 0) || (value > 8))
+      {
+        SHELL_E("In case of single flow teardown, flow id should be between [0; 8]\n");
+        return SHELL_STATUS_ERROR;
+      }
+
+      twt_params.id = (uint8_t)value;
+    }
   }
-#endif /* TWT multi flow is not supported in current version */
-
-  W6X_WiFi_TWT_Teardown_Params_t twt_params = {0};
-
-  if (argc != 1)
+  else
   {
-    return SHELL_STATUS_UNKNOWN_ARGS;
+    if (argc != 1)
+    {
+      SHELL_E("No teardown TWT parameter needed in SDK version < 2.0.106\n");
+      return SHELL_STATUS_UNKNOWN_ARGS;
+    }
   }
 
   /* Teardown TWT */
@@ -1210,26 +1365,24 @@ int32_t W6X_Shell_WiFi_TWT_Teardown(int32_t argc, char **argv)
 }
 
 #if (SHELL_CMD_LEVEL >= 1)
-#if 0 /* TWT multi flow is not supported in current version */
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_TWT_Teardown, wifi_twt_teardown,
                        wifi_twt_teardown < all_twt [0: a single flow; 1: all flows] >
-                       [ flow_id(in case all_twt param equals 0) [0 ; 10]]);
-#else
-SHELL_CMD_EXPORT_ALIAS(W6X_Shell_WiFi_TWT_Teardown, wifi_twt_teardown, wifi_twt_teardown);
-#endif /* TWT multi flow is not supported in current version */
+                       [ flow_id(in case all_twt param equals 0) [0 ; 8]]);
 #endif /* SHELL_CMD_LEVEL */
 
 int32_t W6X_Shell_WiFi_Antenna(int32_t argc, char **argv)
 {
+  W6X_WiFi_AntennaInfo_t antenna_info;
+  if (W6X_WiFi_GetAntennaDiversity(&antenna_info) != W6X_STATUS_OK)
+  {
+    SHELL_E("Unable to get antenna info\n");
+    return SHELL_STATUS_ERROR;
+  }
+
 #if (SHELL_CMD_LEVEL >= 1)
   if (argc == 1)
   {
-    W6X_WiFi_AntennaInfo_t antenna_info;
-    if (W6X_WiFi_GetAntennaDiversity(&antenna_info) != W6X_STATUS_OK)
-    {
-      SHELL_E("Unable to get antenna info\n");
-      return SHELL_STATUS_ERROR;
-    }
+
     SHELL_PRINTF("Antenna info:\n");
     SHELL_PRINTF("  Mode       :  %s\n", W6X_WiFi_AntDivToStr(antenna_info.mode));
     SHELL_PRINTF("  Antenna ID :  %" PRIu32 "\n", antenna_info.antenna_id);
@@ -1240,6 +1393,12 @@ int32_t W6X_Shell_WiFi_Antenna(int32_t argc, char **argv)
   if (argc == 2)
   {
     W6X_WiFi_AntennaMode_e mode = (W6X_WiFi_AntennaMode_e)atoi(argv[1]);
+    if (antenna_info.mode == mode)
+    {
+      /* No need to change the antenna diversity mode to avoid unnecessary reboot */
+      return SHELL_STATUS_OK;
+    }
+
     if (W6X_WiFi_SetAntennaDiversity(mode) != W6X_STATUS_OK)
     {
       SHELL_E("Unable to set antenna diversity\n");

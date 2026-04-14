@@ -1,0 +1,10 @@
+[ req ]
+distinguished_name = req_distinguished_name
+prompt = no
+
+[ req_distinguished_name ]
+countryName = FR
+localityName = Paris
+organizationName = STMicroelectronics
+organizationalUnitName = Client
+commonName = client.local

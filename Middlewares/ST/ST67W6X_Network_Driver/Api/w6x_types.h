@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_types.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the different W6x core resources types
   ******************************************************************************
   * @attention
@@ -47,6 +47,7 @@ typedef enum
   W6X_STATUS_TIMEOUT             = 3,     /*!< Operation timeout */
   W6X_STATUS_UNEXPECTED_RESPONSE = 4,     /*!< Unexpected response */
   W6X_STATUS_NOT_SUPPORTED       = 5,     /*!< Operation not supported */
+  W6X_STATUS_UNKNOWN             = 6,     /*!< Unknown status */
 } W6X_Status_t;
 
 /**
@@ -66,7 +67,7 @@ typedef enum
 
 #define W6X_SYS_FS_FILENAME_SIZE      32  /*!< Maximum size of the filename */
 
-#define W6X_SYS_FS_MAX_FILES          20  /*!< Maximum number of files */
+#define W6X_SYS_FS_MAX_FILES          32  /*!< Maximum number of files */
 
 /** @} */
 
@@ -76,11 +77,11 @@ typedef enum
   * @{
   */
 /* ===================================================================== */
-#define W6X_WIFI_MAX_SSID_SIZE          32                        /*!< Maximum size of the SSID */
+#define W6X_WIFI_MAX_SSID_SIZE          32U                 /*!< Maximum size of the SSID */
 
-#define W6X_WIFI_MAX_PASSWORD_SIZE      63                        /*!< Maximum size of the password */
+#define W6X_WIFI_MAX_PASSWORD_SIZE      63U                 /*!< Maximum size of the password */
 
-#define W6X_WIFI_MAX_CONNECTED_STATIONS 4                         /*!< Maximum number of connected stations */
+#define W6X_WIFI_MAX_CONNECTED_STATIONS 4U                  /*!< Maximum number of connected stations */
 
 /* W6X_event_id_t */
 #define W6X_WIFI_EVT_CONNECTED_ID                      102  /*!< No param */
@@ -93,7 +94,9 @@ typedef enum
 #define W6X_WIFI_EVT_STA_DISCONNECTED_ID               111  /*!< Not yet used */
 #define W6X_WIFI_EVT_DIST_STA_IP_ID                    112  /*!< Not yet used */
 
-#define W6X_WIFI_MAX_TWT_FLOWS                         8  /*!< Maximum number of TWT flows */
+#define W6X_WIFI_MAX_TWT_FLOWS                         8U   /*!< Maximum number of TWT flows */
+
+#define W6X_WIFI_MAX_SSID_LIST_SIZE                    5U  /*!< Maximum number of SSIDs in the credentials list */
 
 /**
   * @brief  Wi-Fi Scan type enumeration
@@ -130,6 +133,7 @@ typedef enum
   W6X_WIFI_AP_SECURITY_WPA_PSK = 0x02,       /*!< Wi-Fi Protected Access */
   W6X_WIFI_AP_SECURITY_WPA2_PSK = 0x03,      /*!< Wi-Fi Protected Access 2 */
   W6X_WIFI_AP_SECURITY_WPA3_PSK = 0x04,      /*!< Wi-Fi Protected Access 3 */
+  W6X_WIFI_AP_SECURITY_UNKNOWN = 0x05,       /*!< Other modes */
 } W6X_WiFi_ApSecurityType_e;
 
 /**
@@ -190,6 +194,52 @@ typedef enum
   W6X_WIFI_ANTENNA_DYNAMIC,                       /*!< Dynamic antenna selection */
   W6X_WIFI_ANTENNA_UNKNOWN,                       /*!< Unknown antenna selection */
 } W6X_WiFi_AntennaMode_e;
+
+/**
+  * @brief  Wi-Fi status codes
+  * When an error action is taking place, the status code can help indicate the failure reason.
+  */
+#define W6X_WIFI_LIST(X) \
+  X(WLAN_FW_SUCCESSFUL, 0) \
+  X(WLAN_FW_TX_AUTH_FRAME_ALLOCATE_FAILURE, 1) \
+  X(WLAN_FW_AUTHENTICATION_FAILURE, 2) \
+  X(WLAN_FW_AUTH_ALGO_FAILURE, 3) \
+  X(WLAN_FW_TX_ASSOC_FRAME_ALLOCATE_FAILURE, 4) \
+  X(WLAN_FW_ASSOCIATE_FAILURE, 5) \
+  X(WLAN_FW_DEAUTH_BY_AP_WHEN_NOT_CONNECTION, 6) \
+  X(WLAN_FW_DEAUTH_BY_AP_WHEN_CONNECTION, 7) \
+  X(WLAN_FW_4WAY_HANDSHAKE_ERROR_PSK_TIMEOUT_FAILURE, 8) \
+  X(WLAN_FW_4WAY_HANDSHAKE_TX_DEAUTH_FRAME_TRANSMIT_FAILURE, 9) \
+  X(WLAN_FW_4WAY_HANDSHAKE_TX_DEAUTH_FRAME_ALLOCATE_FAILURE, 10) \
+  X(WLAN_FW_AUTH_OR_ASSOC_RESPONSE_TIMEOUT_FAILURE, 11) \
+  X(WLAN_FW_SCAN_NO_BSSID_AND_CHANNEL, 12) \
+  X(WLAN_FW_CREATE_CHANNEL_CTX_FAILURE_WHEN_JOIN_NETWORK, 13) \
+  X(WLAN_FW_JOIN_NETWORK_FAILURE, 14) \
+  X(WLAN_FW_ADD_STA_FAILURE, 15) \
+  X(WLAN_FW_BEACON_LOSS, 16) \
+  X(WLAN_FW_NETWORK_SECURITY_NOMATCH, 17) \
+  X(WLAN_FW_NETWORK_WEPLEN_ERROR, 18) \
+  X(WLAN_FW_DISCONNECT_BY_USER_WITH_DEAUTH, 19) \
+  X(WLAN_FW_DISCONNECT_BY_USER_NO_DEAUTH, 20) \
+  X(WLAN_FW_DISCONNECT_BY_FW_PS_TX_NULLFRAME_FAILURE, 21) \
+  X(WLAN_FW_TRAFFIC_LOSS, 22) \
+  X(WLAN_FW_SWITCH_CHANNEL_FAILURE, 23) \
+  X(WLAN_FW_AUTH_OR_ASSOC_RESPONSE_CFM_FAILURE, 24) \
+  X(WLAN_FW_REASSOCIATE_STARING, 25) \
+  X(WLAN_FW_LAST, 26)
+
+/**
+  * @brief  Wi-Fi state enumeration macro
+  */
+#define ENUM_ENTRY(name, value) name = value,
+
+/**
+  * @brief  Wi-Fi state error enumeration
+  */
+typedef enum
+{
+  W6X_WIFI_LIST(ENUM_ENTRY)
+} W6X_WiFi_Status_e;
 
 /** @} */
 
@@ -263,17 +313,17 @@ typedef enum
 #define W6X_NET_DNS_ADDRTYPE_IPV4_IPV6 2    /*!< Try to resolve IPv4 first, try IPv6 if IPv4 fails only */
 
 /** SNI maximum supported size in bytes */
-#define W6X_NET_SNI_MAX_SIZE   64
+#define W6X_NET_SNI_MAX_SIZE   64U
 
 /**
   * @brief  DHCP Client type enumeration
   */
 typedef enum
 {
-  W6X_NET_DHCP_DISABLED       = 0,      /*!< DHCP disabled */
-  W6X_NET_DHCP_STA_ENABLED    = 1,      /*!< DHCP client enabled for station */
-  W6X_NET_DHCP_AP_ENABLED     = 2,      /*!< DHCP server enabled for Soft-AP */
-  W6X_NET_DHCP_STA_AP_ENABLED = 3,      /*!< DHCP client enabled for station and DHCP server for Soft-AP */
+  W6X_NET_DHCP_DISABLED       = 0U,     /*!< DHCP disabled */
+  W6X_NET_DHCP_STA_ENABLED    = 1U,     /*!< DHCP client enabled for station */
+  W6X_NET_DHCP_AP_ENABLED     = 2U,     /*!< DHCP server enabled for Soft-AP */
+  W6X_NET_DHCP_STA_AP_ENABLED = 3U,     /*!< DHCP client enabled for station and DHCP server for Soft-AP */
 } W6X_Net_DhcpType_e;
 
 /**
@@ -342,13 +392,13 @@ typedef enum
   */
 typedef enum
 {
-  W6X_MQTT_STATE_UNINIT                = 0,   /*!< MQTT client uninitialized */
-  W6X_MQTT_STATE_USRCFG_DONE           = 1,   /*!< User configuration done */
-  W6X_MQTT_STATE_CONNCFG_DONE          = 2,   /*!< Connection configuration done */
-  W6X_MQTT_STATE_DISCONNECTED          = 3,   /*!< MQTT client disconnected */
-  W6X_MQTT_STATE_CONNECTED             = 4,   /*!< MQTT client connected */
-  W6X_MQTT_STATE_CONNECTED_NO_SUB      = 5,   /*!< MQTT client connected but not subscribed */
-  W6X_MQTT_STATE_CONNECTED_SUBSCRIBED  = 6,   /*!< MQTT client connected and subscribed */
+  W6X_MQTT_STATE_UNINIT                = 0UL,   /*!< MQTT client uninitialized */
+  W6X_MQTT_STATE_USRCFG_DONE           = 1UL,   /*!< User configuration done */
+  W6X_MQTT_STATE_CONNCFG_DONE          = 2UL,   /*!< Connection configuration done */
+  W6X_MQTT_STATE_DISCONNECTED          = 3UL,   /*!< MQTT client disconnected */
+  W6X_MQTT_STATE_CONNECTED             = 4UL,   /*!< MQTT client connected */
+  W6X_MQTT_STATE_CONNECTED_NO_SUB      = 5UL,   /*!< MQTT client connected but not subscribed */
+  W6X_MQTT_STATE_CONNECTED_SUBSCRIBED  = 6UL,   /*!< MQTT client connected and subscribed */
 } W6X_MQTT_State_e;
 
 /** @} */
@@ -399,25 +449,25 @@ typedef enum
 #define W6X_BLE_MAX_CHAR_NBR                           W61_BLE_MAX_CHAR_NBR
 
 /** BLE Device Address size */
-#define W6X_BLE_BD_ADDR_SIZE                           6
+#define W6X_BLE_BD_ADDR_SIZE                           6U
 
 /** BLE Device Name size */
-#define W6X_BLE_DEVICE_NAME_SIZE                       26
+#define W6X_BLE_DEVICE_NAME_SIZE                       26U
 
 /** BLE Manufacturer Data size */
-#define W6X_BLE_MANUF_DATA_SIZE                        30
+#define W6X_BLE_MANUF_DATA_SIZE                        30U
 
-/** BLE Service/Characteristic UUID maximum size size */
-#define W6X_BLE_MAX_UUID_SIZE                          17
-
-/** Maximum BLE advertising data length */
-#define W6X_BLE_MAX_ADV_DATA_LENGTH                    31
+/** BLE Service/Characteristic UUID maximum size */
+#define W6X_BLE_MAX_UUID_SIZE                          17U
 
 /** Maximum BLE advertising data length */
-#define W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH              31
+#define W6X_BLE_MAX_ADV_DATA_LENGTH                    31U
+
+/** Maximum BLE scan response data length */
+#define W6X_BLE_MAX_SCAN_RESP_DATA_LENGTH              31U
 
 /** Maximum BLE notification/indication data length */
-#define W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH              247
+#define W6X_BLE_MAX_NOTIF_IND_DATA_LENGTH              247U
 /**
   * @brief  BLE characteristic property index enumeration
   */
@@ -454,8 +504,9 @@ typedef enum
   */
 typedef enum
 {
-  W6X_BLE_CONN_ROLE_CLIENT = 0,
-  W6X_BLE_CONN_ROLE_SERVER = 2,
+  W6X_BLE_CONN_ROLE_CENTRAL = 0,
+  W6X_BLE_CONN_ROLE_PERIPH = 1,
+  W6X_BLE_CONN_ROLE_UNKNOWN = 0xFF
 } W6X_Ble_Conn_Role_e;
 
 /**
@@ -533,6 +584,7 @@ typedef enum
 
 /** @} */
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_HTTP_Public_Constants ST67W6X HTTP Constants
   * @ingroup  ST67W6X_API_HTTP
@@ -701,13 +753,10 @@ typedef enum
 #define NET_INET6_ATON          W6X_Net_Inet6_aton
 #endif /* NET_INET6_ATON */
 
-#if (ST67_ARCH == W6X_ARCH_T02)
-#include "lwip/sockets.h"
-#else
 /**
   * @brief  Convert 16-bit value from host byte order to network byte order
   */
-#define PP_HTONS(x)    ((uint16_t)((((x) & (uint16_t)0x00ffU) << 8) | (((x) & (uint16_t)0xff00U) >> 8)))
+#define PP_HTONS(x)    ((uint16_t)((((uint16_t)(x) & 0x00FFU) << 8U) | (((uint16_t)(x) & 0xFF00U) >> 8U)))
 
 /**
   * @brief  Convert 16-bit value from host byte order to network byte order
@@ -717,31 +766,37 @@ typedef enum
 /**
   * @brief  Convert 32-bit value from host byte order to network byte order
   */
-#define PP_HTONL(x)    ((((x) & 0x000000ffUL) << 24) | \
-                        (((x) & 0x0000ff00UL) <<  8) | \
-                        (((x) & 0x00ff0000UL) >>  8) | \
-                        (((x) & 0xff000000UL) >> 24))
+#define PP_HTONL(x)    ((((uint32_t)(x) & 0x000000FFUL) << 24U) | \
+                        (((uint32_t)(x) & 0x0000FF00UL) <<  8U) | \
+                        (((uint32_t)(x) & 0x00FF0000UL) >>  8U) | \
+                        (((uint32_t)(x) & 0xFF000000UL) >> 24U))
 #endif /* ST67_ARCH */
 
 /**
   * @brief  Convert 4-bytes array to 32-bit value in big-endian
   */
-#define ATON(x)        (uint32_t)(((x)[3] << 24) + ((x)[2] << 16) + ((x)[1]  << 8) + (x)[0])
+#define ATON(x)        (uint32_t)(((uint32_t)(x)[3] << 24U) | \
+                                  ((uint32_t)(x)[2] << 16U) | \
+                                  ((uint32_t)(x)[1] <<  8U) | \
+                                  (uint32_t)(x)[0])
 
 /**
   * @brief  Convert 4-bytes array to 32-bit value in little-endian
   */
-#define ATON_R(x)      (uint32_t)(((x)[0] << 24) + ((x)[1] << 16) + ((x)[2]  << 8) + (x)[3])
+#define ATON_R(x)      (uint32_t)(((uint32_t)(x)[0] << 24U) | \
+                                  ((uint32_t)(x)[1] << 16U) | \
+                                  ((uint32_t)(x)[2] <<  8U) | \
+                                  (uint32_t)(x)[3])
 
 /**
   * @brief  Convert 32-bit value to 4-bytes array
   */
 #define NTOA_R(x, a)   do { \
-                            (a)[3] = (uint8_t)((x) >> 24); \
-                            (a)[2] = (uint8_t)((x) >> 16); \
-                            (a)[1] = (uint8_t)((x) >> 8); \
+                            (a)[3] = (uint8_t)((x) >> 24U); \
+                            (a)[2] = (uint8_t)((x) >> 16U); \
+                            (a)[1] = (uint8_t)((x) >> 8U); \
                             (a)[0] = (uint8_t)(x); \
-                          } while(0)
+                          } while(false)
 /** @} */
 
 /* Exported types ------------------------------------------------------------*/
@@ -819,8 +874,8 @@ typedef struct
   */
 typedef struct
 {
-  char *name;                                 /*!< Certificate name */
-  char *content;                              /*!< Certificate content */
+  char *name;                                 /*!< Certificate name (null-terminated). The buffer is owned by the application. */
+  char *content;                              /*!< Certificate content (e.g. PEM, null-terminated). The buffer is owned by the application. */
 } W6X_Certificate_t;
 
 /**
@@ -838,10 +893,10 @@ typedef struct
 typedef struct
 {
 #if (LFS_ENABLE == 1)
-  EfLfsInfo_t lfs_files_list[20];         /*!< List of files in LFS */
-  uint32_t nb_files;                    /*!< Number of files */
+  EfLfsInfo_t lfs_files_list[W6X_SYS_FS_MAX_FILES]; /*!< List of files in LFS */
+  uint32_t nb_files;                                /*!< Number of files */
 #endif /* LFS_ENABLE */
-  W6X_FS_FilesList_t ncp_files_list;    /*!< List of files in NCP */
+  W6X_FS_FilesList_t ncp_files_list;                /*!< List of files in NCP */
 } W6X_FS_FilesListFull_t;
 
 /** @} */
@@ -929,6 +984,8 @@ typedef struct
   uint32_t WPS;
   /** Connect to Access Point with WEP encryption. 0: WEP not used (default), 1: WEP used */
   uint32_t WEP;
+  /** Connect using secured credentials */
+  uint32_t Secured;
 } W6X_WiFi_Connect_Opts_t;
 
 /**
@@ -951,6 +1008,17 @@ typedef struct
   /** Wi-Fi protocol used for the connection */
   W6X_WiFi_Protocol_e Protocol;
 } W6X_WiFi_Connect_t;
+
+/**
+  * @brief  Wi-Fi credentials list
+  */
+typedef struct
+{
+  /** Number of stored credentials */
+  uint32_t Count;
+  /** Array of stored SSID strings (5 entries, each with max size W6X_WIFI_MAX_SSID_SIZE + 1) */
+  uint8_t SSID[W6X_WIFI_MAX_SSID_LIST_SIZE][W6X_WIFI_MAX_SSID_SIZE + 1];
+} W6X_WiFi_CredentialsList_t;
 
 /**
   * @brief  Wi-Fi Soft-AP configuration structure
@@ -1093,7 +1161,7 @@ typedef size_t socklen_t;
 typedef uint8_t sa_family_t;
 
 /**
-  * @brief  Socket address structure for Internet address family
+  * @brief  Socket address structure for Internet address port type
   */
 typedef uint16_t in_port_t;
 
@@ -1247,13 +1315,13 @@ typedef struct
   uint8_t MQClientId[32];         /*!< Client ID */
   uint8_t MQUserName[32];         /*!< User name. Not required when the scheme is greater or equal to 1 */
   uint8_t MQUserPwd[32];          /*!< User password. Not required when the scheme is greater or equal to 1 */
-  uint8_t CertificateName[64];    /*!< Client Certificate Name. Required when the scheme is greater or equal to 2 */
-  char *CertificateContent;       /*!< Client Certificate Content. Required when the scheme is greater or equal to 2 */
-  uint8_t PrivateKeyName[64];     /*!< Client Private key. Required when the scheme is greater or equal to 2 */
-  char *PrivateKeyContent;        /*!< Client Private key Content. Required when the scheme is greater or equal to 2 */
-  uint8_t CACertificateName[64];  /*!< CA certificate. Required when the scheme is greater or equal to 2 */
-  char *CACertificateContent;     /*!< CA certificate Content. Required when the scheme is greater or equal to 2 */
-  uint32_t SNI_enabled;           /*!< Server Name Indication (SNI) enabled */
+  uint8_t CertificateName[32];    /*!< Client Certificate Name. Required when the scheme is greater or equal to 2 */
+  char *CertificateContent;       /*!< Client Certificate Content. Required when the scheme is greater or equal to 2. Buffer owned by the application (e.g. PEM, null-terminated). */
+  uint8_t PrivateKeyName[32];     /*!< Client Private key. Required when the scheme is greater or equal to 2 */
+  char *PrivateKeyContent;        /*!< Client Private key Content. Required when the scheme is greater or equal to 2. Buffer owned by the application (e.g. PEM, null-terminated). */
+  uint8_t CACertificateName[32];  /*!< CA certificate. Required when the scheme is greater or equal to 2 */
+  char *CACertificateContent;     /*!< CA certificate Content. Required when the scheme is greater or equal to 2. Buffer owned by the application (e.g. PEM, null-terminated). */
+  uint8_t SNI[W6X_NET_SNI_MAX_SIZE];                /*!< Server Name Indication (SNI). Max size ::W6X_NET_SNI_MAX_SIZE bytes. */
   uint32_t KeepAlive;             /*!< Keep Alive interval using MQTT ping. Range [0, 7200]. 0 is forced to 120 */
   uint32_t DisableCleanSession;   /*!< Skip cleaning the MQTT session */
   uint8_t WillTopic[64];          /*!< Last Will and Testament (LWT) topic */
@@ -1267,8 +1335,8 @@ typedef struct
   */
 typedef struct
 {
-  uint8_t *p_recv_data;           /*!< Pointer to Data buffer allocated by the application */
-  uint32_t recv_data_buf_size;    /*!< Length of the buffer to contain received topic + message strings */
+  uint8_t *p_recv_data;           /*!< Pointer to data buffer allocated by the application */
+  uint32_t recv_data_buf_size;    /*!< Length of p_recv_data in bytes (must contain received topic + message strings) */
 } W6X_MQTT_Data_t;
 
 /** @} */
@@ -1328,7 +1396,7 @@ typedef struct
   int16_t RSSI;                                       /*!< Signal strength of BLE connection */
   uint8_t IsConnected;                                /*!< Connection status */
   uint8_t conn_handle;                                /*!< Connection handle */
-  uint8_t conn_role;                                  /*!< Connection role: 0: connected as a master, 1: connected as a slave */
+  W6X_Ble_Conn_Role_e conn_role;                      /*!< Connection role: 0: connected as a Central, 1: connected as a Peripheral */
   uint8_t DeviceName[W6X_BLE_DEVICE_NAME_SIZE];       /*!< BLE device name */
   uint8_t ManufacturerData[W6X_BLE_MANUF_DATA_SIZE];  /*!< Device manufacturer data */
   uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];               /*!< BD address of BLE Device */
@@ -1342,7 +1410,7 @@ typedef struct
 {
   uint8_t IsConnected;                                /*!< Connection status */
   uint8_t conn_handle;                                /*!< Connection handle */
-  uint8_t conn_role;                                  /*!< Connection role: 0: connected as a master, 1: connected as a slave */
+  W6X_Ble_Conn_Role_e conn_role;                      /*!< Connection role: 0: connected as a Central, 1: connected as a Peripheral */
   uint8_t BDAddr[W6X_BLE_BD_ADDR_SIZE];               /*!< BD address of BLE Device */
   uint8_t bd_addr_type;                               /*!< Type of BD address */
   uint32_t PassKey;                                   /*!< BLE Security passkey */
@@ -1438,15 +1506,21 @@ typedef struct
   */
 typedef struct
 {
+  /* coverity[misra_c_2012_rule_5_9_violation : FALSE] */
   W6X_WiFi_App_cb_t     APP_wifi_cb;                            /*!< Callback for Wi-Fi events */
+  /* coverity[misra_c_2012_rule_5_9_violation : FALSE] */
   W6X_Net_App_cb_t      APP_net_cb;                             /*!< Callback for Network events */
+  /* coverity[misra_c_2012_rule_5_9_violation : FALSE] */
   W6X_MQTT_App_cb_t     APP_mqtt_cb;                            /*!< Callback for MQTT events */
+  /* coverity[misra_c_2012_rule_5_9_violation : FALSE] */
   W6X_Ble_App_cb_t      APP_ble_cb;                             /*!< Callback for BLE events */
+  /* coverity[misra_c_2012_rule_5_9_violation : FALSE] */
   W6X_Error_cb_t        APP_error_cb;                           /*!< Callback for error events */
 } W6X_App_Cb_t;
 
 /** @} */
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_HTTP_Public_Types ST67W6X HTTP Types
   * @ingroup  ST67W6X_API_HTTP
@@ -1459,7 +1533,8 @@ typedef struct
   */
 typedef struct
 {
-  uint8_t *data;              /*!< Data buffer */
+  uint8_t *data;              /*!< Data buffer (application-owned) */
+  uint32_t buffer_size;       /*!< Size of the data buffer */
   int32_t length;             /*!< Data length */
 } W6X_HTTP_buffer_t;
 
@@ -1504,7 +1579,7 @@ typedef int32_t (*W6X_HTTP_data_cb_t)(void *arg, W6X_HTTP_buffer_t *p, int32_t e
 typedef struct
 {
   W6X_HTTP_Content_Type_e type;               /*!< HTTP POST/PUT Content type */
-  char *data;                                 /*!< Pointer to data buffer */
+  char *data;                                 /*!< Pointer to data buffer (application-owned). Length is provided to the request API. */
 } W6X_HTTP_Post_Data_t;
 
 /**
@@ -1516,7 +1591,7 @@ typedef struct
   uint16_t proxy_port;                        /*!< Proxy port */
   const ip_addr_t *proxy_addr;                /*!< Proxy address */
   W6X_Certificate_t https_certificate;        /*!< HTTPS certificate */
-  char *server_name;                          /*!< Server name */
+  char *server_name;                          /*!< Server name (null-terminated, application-owned). Used e.g. for TLS SNI/Host header depending on usage. */
   W6X_HTTP_headers_done_cb_t headers_done_fn; /*!< Headers done callback */
   W6X_HTTP_result_cb_t result_fn;             /*!< Result callback */
   void *callback_arg;                         /*!< Callback argument */
@@ -1527,6 +1602,7 @@ typedef struct
 } W6X_HTTP_connection_t;
 
 /** @} */
+#endif /* ST67_ARCH */
 
 /* ===================================================================== */
 /** @defgroup ST67W6X_API_Netif_Public_Types ST67W6X Network Interface Types

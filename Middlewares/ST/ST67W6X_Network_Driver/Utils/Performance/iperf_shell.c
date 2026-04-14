@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    iperf_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Iperf shell command implementation
   ******************************************************************************
   * @attention
@@ -31,8 +31,8 @@
   * @{
   */
 
-#define IPERF_DEFAULT_PORT          5001            /*!< Default port */
-#define IPERF_DEFAULT_TIME          10              /*!< Default time */
+#define IPERF_DEFAULT_PORT          5001U           /*!< Default port */
+#define IPERF_DEFAULT_TIME          10U             /*!< Default time */
 #define IPERF_NO_BW_LIMIT           -1              /*!< No bandwidth limit */
 #define IPERF_DEFAULT_BW_LIMIT      1               /*!< UDP default bandwidth limit */
 
@@ -45,7 +45,7 @@
   */
 
 /** Macro to compare the argument with the input string */
-#define IPERF_CMP_ARG(s) ((strncmp(argv[current_arg], (s), 2) == 0) && strlen(argv[current_arg]) == 2)
+#define IPERF_CMP_ARG(s) ((strncmp(argv[current_arg], (s), 2) == 0) && (strlen(argv[current_arg]) == 2U))
 
 /** @} */
 
@@ -70,6 +70,9 @@ static const char *iperf_usage[] =
   "-S <tos>:         TOS",
   "-n <MB>:          number of MB to send/recv",
   "-P <priority>:    traffic task priority",
+#if (IPERF_V6 == 1)
+  "-V:               IPv6 mode",
+#endif /* IPERF_V6 */
 #if (IPERF_DUAL_MODE == 1)
   "-d:               dual mode",
 #endif /* IPERF_DUAL_MODE */
@@ -100,21 +103,23 @@ int32_t iperf_cmd(int32_t argc, char **argv);
 int32_t iperf_cmd(int32_t argc, char **argv)
 {
   int32_t current_arg = 1;
-  int32_t o_c = 0;
-  int32_t o_s = 0;
-  int32_t o_u = 0;
-  int32_t o_p = IPERF_DEFAULT_PORT;
-  int32_t o_l = 0;
-  int32_t o_i = 0;
-  int32_t o_t = IPERF_DEFAULT_TIME;
+  uint32_t o_c = 0;
+  uint32_t o_s = 0;
+  uint32_t o_u = 0;
+  uint16_t o_p = IPERF_DEFAULT_PORT;
+  uint16_t o_l = 0;
+  uint32_t o_i = 0;
+  uint32_t o_t = IPERF_DEFAULT_TIME;
   int32_t o_b = IPERF_DEFAULT_BW_LIMIT;
-  int32_t o_S = 0;
-  int32_t o_n = 0;
+  uint8_t o_S = 0;
+  uint32_t o_n = 0;
+#if (IPERF_V6 == 1)
   uint8_t o_V = 0;
+#endif /* IPERF_V6 */
 #if (IPERF_DUAL_MODE == 1)
   int32_t o_d = 0;
 #endif /* IPERF_DUAL_MODE */
-  int32_t o_P = IPERF_TRAFFIC_TASK_PRIORITY;
+  uint8_t o_P = IPERF_TRAFFIC_TASK_PRIORITY;
 
   union
   {
@@ -150,13 +155,13 @@ int32_t iperf_cmd(int32_t argc, char **argv)
     /* Abort running iperf */
     else if (IPERF_CMP_ARG("-a"))
     {
-      iperf_stop();
+      (void)iperf_stop();
       return SHELL_STATUS_OK;
     }
     /* Client mode with server address */
     else if (IPERF_CMP_ARG("-c"))
     {
-      ++o_c;
+      o_c = 1U;
       current_arg++;
       if (current_arg == argc)
       {
@@ -179,12 +184,12 @@ int32_t iperf_cmd(int32_t argc, char **argv)
     /* Server mode */
     else if (IPERF_CMP_ARG("-s"))
     {
-      ++o_s;
+      o_s = 1U;
     }
     /* UDP mode. Default is TCP */
     else if (IPERF_CMP_ARG("-u"))
     {
-      ++o_u;
+      o_u = 1U;
     }
     /* Port number */
     else if (IPERF_CMP_ARG("-p"))
@@ -194,7 +199,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_p = atoi(argv[current_arg]);
+      o_p = (uint16_t)atoi(argv[current_arg]);
     }
     /* Buffer size */
     else if (IPERF_CMP_ARG("-l"))
@@ -204,7 +209,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_l = atoi(argv[current_arg]);
+      o_l = (uint16_t)atoi(argv[current_arg]);
     }
     /* Interval time to display current bandwidth */
     else if (IPERF_CMP_ARG("-i"))
@@ -214,7 +219,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_i = atoi(argv[current_arg]);
+      o_i = (uint32_t)atoi(argv[current_arg]);
     }
     /* Duration of the execution. Client mode */
     else if (IPERF_CMP_ARG("-t"))
@@ -224,7 +229,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_t = atoi(argv[current_arg]);
+      o_t = (uint32_t)atoi(argv[current_arg]);
     }
     /* Bandwidth limit. Client mode */
     else if (IPERF_CMP_ARG("-b"))
@@ -244,7 +249,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_S = atoi(argv[current_arg]);
+      o_S = (uint8_t)atoi(argv[current_arg]);
     }
     /* Number of bytes to send/recv */
     else if (IPERF_CMP_ARG("-n"))
@@ -254,7 +259,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_n = atoi(argv[current_arg]);
+      o_n = (uint32_t)atoi(argv[current_arg]);
     }
     /* Traffic task priority */
     else if (IPERF_CMP_ARG("-P"))
@@ -264,7 +269,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      o_P = atoi(argv[current_arg]);
+      o_P = (uint8_t)atoi(argv[current_arg]);
     }
 #if (IPERF_DUAL_MODE == 1)
     /* Dual mode */
@@ -273,10 +278,12 @@ int32_t iperf_cmd(int32_t argc, char **argv)
       ++o_d;
     }
 #endif /* IPERF_DUAL_MODE */
+#if (IPERF_V6 == 1)
     else if (IPERF_CMP_ARG("-V"))
     {
-      o_V++;
+      o_V = 1U;
     }
+#endif /* IPERF_V6 */
     else
     {
       return SHELL_STATUS_UNKNOWN_ARGS;
@@ -285,9 +292,9 @@ int32_t iperf_cmd(int32_t argc, char **argv)
     current_arg++;
   }
 
-  memset(&cfg, 0, sizeof(cfg));
+  (void)memset(&cfg, 0, sizeof(cfg));
 #if (IPERF_V6 == 1)
-  if (o_V)
+  if (o_V == 1U)
   {
     cfg.type = IPERF_IP_TYPE_IPV6;
   }
@@ -297,19 +304,19 @@ int32_t iperf_cmd(int32_t argc, char **argv)
     cfg.type = IPERF_IP_TYPE_IPV4;
   }
 
-  if (!((o_c && !o_s) || (!o_c && o_s)))
+  if (((o_c == 0U) && (o_s == 0U)) || ((o_c == 1U) && (o_s == 1U)))
   {
     SHELL_E("client/server required\n");
     return SHELL_STATUS_ERROR;
   }
 
   /* Client or Server mode */
-  if (o_c)
+  if (o_c == 1U)
   {
 #if (IPERF_V6 == 1)
     if (cfg.type == IPERF_IP_TYPE_IPV6)
     {
-      memcpy(cfg.destination_ip6, &dest_addr.ipv6.sin6_addr, sizeof(cfg.destination_ip6));
+      (void)memcpy(cfg.destination_ip6, &dest_addr.ipv6.sin6_addr, sizeof(cfg.destination_ip6));
     }
     else
 #endif /* LWIP_IPV6 */
@@ -324,7 +331,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   }
 
   /* UDP or TCP mode */
-  if (o_u)
+  if (o_u == 1U)
   {
     cfg.flag |= IPERF_FLAG_UDP;
   }
@@ -335,7 +342,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
 
 #if (IPERF_DUAL_MODE == 1)
   /* Dual mode */
-  if (o_c && !o_u && o_d)
+  if ((o_c == 1U) && (o_u == 0U) && (o_d == 1U))
   {
     cfg.flag |= IPERF_FLAG_DUAL;
   }
@@ -345,21 +352,21 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   cfg.sport = o_p;
   cfg.dport = o_p;
   cfg.interval = o_i;
-  cfg.time = o_t;
+  cfg.duration = o_t;
 
   /* Minimum duration is interval */
-  if (cfg.time < cfg.interval)
+  if (cfg.duration < cfg.interval)
   {
-    cfg.time = cfg.interval;
+    cfg.duration = cfg.interval;
   }
 
   cfg.bw_lim = o_b;
   cfg.tos = o_S;
   /* Convert MB parameter to bytes */
-  cfg.num_bytes = o_n * 1000 * 1000;
+  cfg.num_bytes = o_n * 1000U * 1000U;
 
   /* No bandwidth limit */
-  if (cfg.bw_lim <= 0 || !o_u)
+  if ((cfg.bw_lim <= 0) || (o_u == 0U))
   {
     cfg.bw_lim = IPERF_NO_BW_LIMIT;
   }
@@ -367,7 +374,7 @@ int32_t iperf_cmd(int32_t argc, char **argv)
   cfg.traffic_task_priority = o_P;
 
   /* Start the iperf execution */
-  iperf_start(&cfg);
+  (void)iperf_start(&cfg);
   return SHELL_STATUS_OK;
 }
 

@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    ping.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Ping application
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -54,35 +54,29 @@
 /* USER CODE END GV */
 
 /* Private defines -----------------------------------------------------------*/
-/** Event flag indicating ping successfully completed */
-#define EVT_PING_DONE                 (1<<0)
-
-/** Event flag indicating ping error occurred */
-#define EVT_PING_ERROR                (1<<1)
-
 /** Identifier for the ICMP echo request */
-#define PING_ID                       0xAFAF
+#define PING_ID                       0xAFAFU
 
 /** Maximum payload size for ICMP echo request */
-#define MAX_PAYLOAD_SIZE              1024
+#define MAX_PAYLOAD_SIZE              1024U
 
 /** Default number of echo requests to send */
-#define PING_DEFAULT_COUNT            4
+#define PING_DEFAULT_COUNT            4U
 
 /** Default interval between echo requests - in milliseconds */
-#define PING_DEFAULT_INTERVAL         1000
+#define PING_DEFAULT_INTERVAL         1000U
 
 /** Maximum ping receive timeout - in milliseconds */
-#define PING_MAX_RCV_TIMEO            3500
+#define PING_MAX_RCV_TIMEO            3500U
 
 /** DNS resolve timeout - in milliseconds */
-#define DNS_RESOLVE_TIMEOUT           5000
+#define DNS_RESOLVE_TIMEOUT           5000U
 
 /** Default payload size for ICMP echo request */
-#define PING_DEFAULT_SIZE             64
+#define PING_DEFAULT_SIZE             64U
 
 /** Maximum payload size for ICMP echo request */
-#define PING_MAX_SIZE                 10000
+#define PING_MAX_SIZE                 10000U
 
 /* USER CODE BEGIN PD */
 
@@ -97,7 +91,7 @@ typedef struct
   ip_addr_t resolved_ip;      /*!< Resolved IP address */
   volatile int32_t done;      /*!< Flag to indicate if resolution is done */
   int32_t result;             /*!< Result of the resolution */
-} dns_resolve_context_t;
+} ping_dns_resolve_context_t;
 
 /* USER CODE BEGIN PTD */
 
@@ -116,17 +110,20 @@ typedef struct
 
 /* Private function prototypes -----------------------------------------------*/
 /**
-  * @brief  Send ICMP echo request (IPv4 or IPv6)
-  * @param  params: pointer to unified ping parameters structure
-  * @return ping status. -1 if error, 0 if success
- */
-static int32_t send_ping(ping_params_t *params);
+  * Ping ipv4 function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval 0 on success, -1 otherwise
+  */
+int32_t ping_ipv4_cmd(int32_t argc, char **argv);
 
 /**
-  * @brief  Task to initialize and run the ping application (IPv4/IPv6)
-  * @param  pvParameters: Task parameters
+  * Ping ipv6 function
+  * @param  argc: number of arguments
+  * @param  argv: pointer to the arguments
+  * @retval 0 on success, -1 otherwise
   */
-static void ping_task(void *pvParameters);
+int32_t ping_ipv6_cmd(int32_t argc, char **argv);
 
 /**
   * @brief  Common CLI entry to parse args and start ping task
@@ -143,7 +140,7 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6);
   * @param  ipaddr: pointer to the resolved IP address (NULL if failed)
   * @param  arg: user-supplied argument (unused)
   */
-static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
+static void ping_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
 
 /**
   * @brief  Get IPv6 or IPv4 address from URL using DNS
@@ -152,40 +149,14 @@ static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, 
   * @param  out_ip: the returned IP address
   * @retval 0 on success, -1 on failure, -2 on timeout
   */
-static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_addr_t *out_ip);
+static int32_t ping_resolve_host_address(const char *hostUrl, uint32_t use_ipv6, ip_addr_t *out_ip);
 
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Functions Definition ------------------------------------------------------*/
-int32_t ping_ipv4_cmd(int32_t argc, char **argv)
-{
-  return ping_common_cmd(argc, argv, 0);
-}
-
-SHELL_CMD_EXPORT_ALIAS(ping_ipv4_cmd, ping, ping <hostname> [ -c count [1; max(uint16_t) - 1] ]
-                       [ -s size [1; 1470] ] [ -i interval [100; 3500] ] [ -t timeout [100; 3500] ]);
-
-int32_t ping_ipv6_cmd(int32_t argc, char **argv)
-{
-#if (LWIP_IPV6 == 1)
-  return ping_common_cmd(argc, argv, 1);
-#else
-  LogError("IPv6 is not supported\n");
-  return -1;
-#endif /*LWIP_IPV6 */
-}
-
-SHELL_CMD_EXPORT_ALIAS(ping_ipv6_cmd, ping6, ping6 <hostname> [ -c count [1; max(uint16_t) - 1] ]
-                       [ -s size [1; 1470] ] [ -i interval [100; 3500] ] [ -t timeout [100; 3500] ]);
-
-/* USER CODE BEGIN FD */
-
-/* USER CODE END FD */
-
-/* Private Functions Definition ----------------------------------------------*/
-static int32_t send_ping(ping_params_t *params)
+int32_t send_ping(ping_context_t *ping_context)
 {
   int32_t ret = -1;
   int32_t sd = -1;
@@ -214,24 +185,24 @@ static int32_t send_ping(ping_params_t *params)
   int32_t chosen_index = -1;
 #endif /* LWIP_IPV6 */
 #if LWIP_SO_SNDRCVTIMEO_NONSTANDARD
-  int32_t timeout = LWIP_MAX(params->timeout, params->interval_ms);
+  int32_t timeout = LWIP_MAX(ping_context->timeout, ping_context->interval_ms);
 #else
   struct timeval timeout;
-  timeout.tv_sec = LWIP_MAX(params->timeout, params->interval_ms) / 1000;
-  timeout.tv_usec = (LWIP_MAX(params->timeout, params->interval_ms) % 1000) * 1000;
+  timeout.tv_sec = LWIP_MAX(ping_context->timeout, ping_context->interval_ms) / 1000;
+  timeout.tv_usec = (LWIP_MAX(ping_context->timeout, ping_context->interval_ms) % 1000) * 1000;
 #endif /* LWIP_SO_SNDRCVTIMEO_NONSTANDARD */
 
   struct netif *netif_sta = netif_get_interface(NETIF_STA);
   struct netif *netif_ap = netif_get_interface(NETIF_AP);
-  struct netif *netif = NULL;
+  struct netif *netif_cur = NULL;
 
 #if (LWIP_IPV6 == 1)
-  if (params->ipv6)
+  if (ping_context->ipv6)
   {
     /* IPv6 setup */
     /* Consider only STA interface */
-    netif = netif_sta;
-    if ((netif == NULL) || !netif_is_link_up(netif))
+    netif_cur = netif_sta;
+    if ((netif_cur == NULL) || !netif_is_link_up(netif_cur))
     {
       LogError("Default network interface not set\n");
       goto _err;
@@ -241,7 +212,7 @@ static int32_t send_ping(ping_params_t *params)
     struct sockaddr_in6 *to6 = (struct sockaddr_in6 *)&to;
     to6->sin6_len    = sizeof(*to6);
     to6->sin6_family = AF_INET6;
-    if (lwip_inet_pton(AF_INET6, params->dst_addr, &to6->sin6_addr) != 1)
+    if (lwip_inet_pton(AF_INET6, ping_context->dst_addr, &to6->sin6_addr) != 1)
     {
       LogError("Unable to translate address\n");
       goto _err;
@@ -255,7 +226,7 @@ static int32_t send_ping(ping_params_t *params)
       /* Find a valid link-local address on STA */
       if (ip6_addr_isvalid(netif_ip6_addr_state(netif_sta, 0)))
       {
-        netif = netif_sta;
+        netif_cur = netif_sta;
         chosen_index = 0;
       }
       else
@@ -271,20 +242,20 @@ static int32_t send_ping(ping_params_t *params)
       {
         if (ip6_addr_isvalid(netif_ip6_addr_state(netif_sta, idx)))
         {
-          netif = netif_sta;
+          netif_cur = netif_sta;
           chosen_index = idx;
           break;
         }
       }
     }
 
-    if ((netif == NULL) || (chosen_index < 0))
+    if (chosen_index < 0)
     {
       LogError("No suitable IPv6 source address available\n");
       goto _err;
     }
 
-    ip6_addr_t const *src_ip6 = netif_ip6_addr(netif, chosen_index);
+    ip6_addr_t const *src_ip6 = netif_ip6_addr(netif_cur, chosen_index);
     if (ip6_addr_isany(src_ip6))
     {
       LogError("No valid IPv6 address assigned to network interface\n");
@@ -305,7 +276,7 @@ static int32_t send_ping(ping_params_t *params)
     struct sockaddr_in *to4 = (struct sockaddr_in *)&to;
     to4->sin_len    = sizeof(*to4);
     to4->sin_family = AF_INET;
-    if (lwip_inet_pton(AF_INET, params->dst_addr, &to4->sin_addr) != 1)
+    if (lwip_inet_pton(AF_INET, ping_context->dst_addr, &to4->sin_addr) != 1)
     {
       LogError("Unable to translate address!\n");
       goto _err;
@@ -313,16 +284,16 @@ static int32_t send_ping(ping_params_t *params)
 
     /* Compare the subnet mask to determine which interface to use */
     ip4_addr_t dest_ip4;
-    memcpy(&dest_ip4, &to4->sin_addr, sizeof(ip4_addr_t));
+    (void)memcpy(&dest_ip4, &to4->sin_addr, sizeof(ip4_addr_t));
     if (netif_is_link_up(netif_ap) &&
         ip4_addr_netcmp(&dest_ip4, netif_ip4_addr(netif_ap), netif_ip4_netmask(netif_ap)) &&
         (!ip4_addr_isany(netif_ip4_addr(netif_ap))))
     {
-      netif = netif_ap;
+      netif_cur = netif_ap;
     }
     else if (netif_is_link_up(netif_sta))
     {
-      netif = netif_sta;
+      netif_cur = netif_sta;
     }
     else
     {
@@ -330,18 +301,18 @@ static int32_t send_ping(ping_params_t *params)
       goto _err;
     }
 
-    if (ip4_addr_isany(netif_ip4_addr(netif)))
+    if (ip4_addr_isany(netif_ip4_addr(netif_cur)))
     {
       LogError("No valid IPv4 address assigned to network interface\n");
       goto _err;
     }
   }
 
-  ping_size = sizeof(struct icmp_echo_hdr) + params->size;
+  ping_size = sizeof(struct icmp_echo_hdr) + ping_context->size;
 
   /* Prepare the ICMP echo request packet */
 #if (LWIP_IPV6 == 1)
-  if (params->ipv6)
+  if (ping_context->ipv6)
   {
     /* Allocate memory for send packet */
     send_packet = pvPortMalloc(ping_size);
@@ -358,8 +329,8 @@ static int32_t send_ping(ping_params_t *params)
       goto _err;
     }
 
-    memset(send_packet, 0, sizeof(struct icmp6_echo_hdr));
-    memset(&send_packet[sizeof(struct icmp6_echo_hdr)], 'A', params->size);
+    (void)memset(send_packet, 0, sizeof(struct icmp6_echo_hdr));
+    (void)memset(&send_packet[sizeof(struct icmp6_echo_hdr)], 'A', ping_context->size);
 
     icmph6 = (struct icmp6_echo_hdr *)send_packet;
     /* Fill in the ICMPv6 header */
@@ -384,8 +355,8 @@ static int32_t send_ping(ping_params_t *params)
       goto _err;
     }
 
-    memset(send_packet, 0, sizeof(struct icmp_echo_hdr));
-    memset(&send_packet[sizeof(struct icmp_echo_hdr)], 'A', params->size);
+    (void)memset(send_packet, 0, sizeof(struct icmp_echo_hdr));
+    (void)memset(&send_packet[sizeof(struct icmp_echo_hdr)], 'A', ping_context->size);
 
     icmphdr = (struct icmp_echo_hdr *)send_packet;
     /* Fill in the ICMP header */
@@ -394,7 +365,8 @@ static int32_t send_ping(ping_params_t *params)
   }
 
   /* Request a socket descriptor sd */
-  if ((sd = lwip_socket(domain, SOCK_RAW, protocol)) < 0)
+  sd = lwip_socket(domain, SOCK_RAW, protocol);
+  if (sd < 0)
   {
     LogError("Failed to get socket descriptor: %" PRIi32 "\n", errno);
     goto _err;
@@ -404,7 +376,7 @@ static int32_t send_ping(ping_params_t *params)
 
   /* Bind the socket to the source address */
 #if (LWIP_IPV6 == 1)
-  if (params->ipv6)
+  if (ping_context->ipv6)
   {
     if (lwip_bind(sd, (struct sockaddr *)&src_addr6, sizeof(src_addr6)) < 0)
     {
@@ -414,7 +386,7 @@ static int32_t send_ping(ping_params_t *params)
   }
 #endif /* LWIP_IPV6 */
 
-  for (int32_t seq_num = 0; seq_num < params->count; seq_num++)
+  for (int32_t seq_num = 0; seq_num < ping_context->count; seq_num++)
   {
     uint32_t sent_ok = 0;
 
@@ -424,7 +396,7 @@ static int32_t send_ping(ping_params_t *params)
 
     /* Update the ICMP header for each packet */
 #if (LWIP_IPV6 == 1)
-    if (params->ipv6)
+    if (ping_context->ipv6)
     {
       icmph6->seqno = lwip_htons(seq_num);
       /* lets LwIP handle the ICMPv6 checksum. */
@@ -442,19 +414,20 @@ static int32_t send_ping(ping_params_t *params)
     send_tick = xTaskGetTickCount();
 
     /* Send the ICMP echo request with up to 5 retries on transient errors */
-    for (uint32_t send_attempts = 0; send_attempts < 5 && !sent_ok; send_attempts++)
+    for (uint32_t send_attempts = 0; send_attempts < 5U; send_attempts++)
     {
       ret = lwip_sendto(sd, send_packet, ping_size, 0, (struct sockaddr *)&to, sizeof(to));
 
       if (ret < 0)
       {
-        LogError("sendto() failed (attempt %d): %" PRIi32 "\n", send_attempts + 1, errno);
+        LogError("sendto() failed (attempt %d): %" PRIi32 "\n", send_attempts + 1U, errno);
         vTaskDelay(pdMS_TO_TICKS(50)); /* brief backoff before retry */
       }
       else
       {
-        sent_ok = 1;
+        sent_ok = true;
         packets_sent++;
+        break;
       }
     }
 
@@ -470,11 +443,11 @@ static int32_t send_ping(ping_params_t *params)
      * subsequent sequences, we keep receiving until we either get the matching
      * Echo Reply for the current sequence, or the socket read times out.
      */
-    for (uint32_t tries = 0; tries < 5 && matched == 0; tries++)
+    for (uint32_t tries = 0; tries < 5U; tries++)
     {
       from.ss_family = AF_INET;
 #if (LWIP_IPV6 == 1)
-      if (params->ipv6)
+      if (ping_context->ipv6)
       {
         ret = lwip_recvfrom(sd, recv_packet, ping_size + sizeof(struct ip6_hdr), 0,
                             (struct sockaddr *)&from, (socklen_t *)&fromlen);
@@ -505,6 +478,7 @@ static int32_t send_ping(ping_params_t *params)
             recv_tick = xTaskGetTickCount();
             recv_time_ms = (recv_tick - send_tick) * portTICK_PERIOD_MS;
             matched = 1;
+            break;
           }
         }
         else
@@ -521,6 +495,7 @@ static int32_t send_ping(ping_params_t *params)
             recv_tick = xTaskGetTickCount();
             recv_time_ms = (recv_tick - send_tick) * portTICK_PERIOD_MS;
             matched = 1;
+            break;
           }
         }
       }
@@ -532,9 +507,9 @@ static int32_t send_ping(ping_params_t *params)
       total_ping_time_ms += recv_time_ms;
       packets_received++;
       LogInfo("Ping: %" PRIu32 " ms\n", recv_time_ms);
-      if (params->interval_ms > recv_time_ms)
+      if (ping_context->interval_ms > recv_time_ms)
       {
-        vTaskDelay(pdMS_TO_TICKS(params->interval_ms - recv_time_ms));
+        vTaskDelay(pdMS_TO_TICKS(ping_context->interval_ms - recv_time_ms));
       }
     }
     else
@@ -547,78 +522,81 @@ static int32_t send_ping(ping_params_t *params)
   }
 
   /* If the ping was aborted or no packets were sent */
-  if (packets_sent == 0)
+  if (packets_sent == 0U)
   {
     LogError("No ping received\n");
+    ping_context->ping_sent = 0;
     ret = -1;
   }
   else /* Ping completed. Display the statistics */
   {
     LogInfo("%" PRIi32 " packets transmitted, %" PRIi32 " received, %" PRIi32 "%% packet loss, time %" PRIu32 "ms\n",
-            packets_sent, packets_received, ((packets_sent - packets_received) * 100) / packets_sent,
-            packets_received ? (total_ping_time_ms / packets_received) : 0);
+            packets_sent, packets_received, ((packets_sent - packets_received) * 100U) / packets_sent,
+            (packets_received > 0U) ? (total_ping_time_ms / packets_received) : 0U);
+    ping_context->ping_rcv = packets_received;
+    ping_context->ping_tot_time_ms = total_ping_time_ms;
+    ping_context->ping_sent = packets_sent;
     /* Set return value according to whether the ping was aborted */
     ret = aborted ? -1 : 0;
   }
 
 _err:
-  if (send_packet)
+  if (send_packet != NULL)
   {
     vPortFree(send_packet);
   }
-  if (recv_packet)
+  if (recv_packet != NULL)
   {
     vPortFree(recv_packet);
   }
   if (sd >= 0)
   {
-    lwip_close(sd);
+    (void)lwip_close(sd);
   }
   return ret;
 }
 
-static void ping_task(void *pvParameters)
+/* USER CODE BEGIN FD */
+
+/* USER CODE END FD */
+
+/* Private Functions Definition ----------------------------------------------*/
+int32_t ping_ipv4_cmd(int32_t argc, char **argv)
 {
-  int32_t ret;
-  ping_params_t *params = (ping_params_t *)pvParameters;
-
-  /* Start the ping request */
-  ret = send_ping(params);
-
-  /* Set the event flag to notify the end of the ping task if the event group is created */
-  if (params->event != NULL)
-  {
-    if (ret == 0)
-    {
-      /* Notify that the ping task completed successfully */
-      xEventGroupSetBits(params->event, EVT_PING_DONE);
-    }
-    else
-    {
-      /* Notify that the ping task completed with error */
-      xEventGroupSetBits(params->event, EVT_PING_ERROR);
-    }
-  }
-
-  vTaskDelete(NULL);
+  return ping_common_cmd(argc, argv, 0);
 }
+
+SHELL_CMD_EXPORT_ALIAS(ping_ipv4_cmd, ping, ping <hostname> [ -c count [1; max(uint16_t) - 1] ]
+                       [ -s size [1; 1470] ] [ -i interval [100; 3500] ] [ -t timeout [100; 3500] ]);
+
+int32_t ping_ipv6_cmd(int32_t argc, char **argv)
+{
+#if (LWIP_IPV6 == 1)
+  return ping_common_cmd(argc, argv, 1);
+#else
+  LogError("IPv6 is not supported\n");
+  return -1;
+#endif /*LWIP_IPV6 */
+}
+
+SHELL_CMD_EXPORT_ALIAS(ping_ipv6_cmd, ping6, ping6 <hostname> [ -c count [1; max(uint16_t) - 1] ]
+                       [ -s size [1; 1470] ] [ -i interval [100; 3500] ] [ -t timeout [100; 3500] ]);
 
 static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
 {
   /* Create the ping task */
-  static ping_params_t params = {0};
+  static ping_context_t ping_context = {0};
   int32_t current_arg = 2;
   ip_addr_t ipaddr;
-  int32_t ret = SHELL_STATUS_ERROR;
 
   if (argc < 2)
   {
     LogError("Missing %s address argument\n", ipv6 ? "IPv6" : "IPv4");
     return SHELL_STATUS_UNKNOWN_ARGS;
   }
-  if (!ipaddr_aton(argv[1], &ipaddr))
+  if (ipaddr_aton(argv[1], &ipaddr) == 0)
   {
-    int32_t dns_res = ResolveHostAddress(argv[1], ipv6, &ipaddr);
+    int32_t dns_res = ping_resolve_host_address(argv[1], ipv6, &ipaddr);
     if (dns_res != 0)
     {
       LogError("Invalid %s address or DNS failed: %s\n", ipv6 ? "IPv6" : "IPv4", argv[1]);
@@ -628,15 +606,15 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
     LogInfo("Resolved %s address for %s: %s\n", ipv6 ? "IPv6" : "IPv4", argv[1], ipaddr_ntoa(&ipaddr));
   }
   /* Store destination string */
-  strncpy(params.dst_addr, ipaddr_ntoa(&ipaddr), sizeof(params.dst_addr) - 1);
-  params.dst_addr[sizeof(params.dst_addr) - 1] = '\0';
+  (void)strncpy(ping_context.dst_addr, ipaddr_ntoa(&ipaddr), sizeof(ping_context.dst_addr) - 1U);
+  ping_context.dst_addr[sizeof(ping_context.dst_addr) - 1U] = '\0';
 
-  params.count = PING_DEFAULT_COUNT;
-  params.interval_ms = PING_DEFAULT_INTERVAL;
-  params.size = PING_DEFAULT_SIZE;
-  params.timeout = PING_MAX_RCV_TIMEO;
+  ping_context.count = PING_DEFAULT_COUNT;
+  ping_context.interval_ms = PING_DEFAULT_INTERVAL;
+  ping_context.size = PING_DEFAULT_SIZE;
+  ping_context.timeout = PING_MAX_RCV_TIMEO;
 #if (LWIP_IPV6 == 1)
-  params.ipv6 = ipv6;
+  ping_context.ipv6 = ipv6;
 #else
   ipv6 = 0;
 #endif /* LWIP_IPV6 */
@@ -646,12 +624,12 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
     /* Count option */
     if (strncmp(argv[current_arg], "-c", 2) == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      params.count = atoi(argv[current_arg + 1]);
-      if (params.count < 1)
+      ping_context.count = (uint16_t)atoi(argv[current_arg + 1]);
+      if (ping_context.count < 1U)
       {
         LogError("Ping count is invalid.\n");
         return SHELL_STATUS_ERROR;
@@ -661,12 +639,12 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
     /* Interval option */
     else if (strncmp(argv[current_arg], "-i", 2) == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      params.interval_ms = atoi(argv[current_arg + 1]);
-      if (params.interval_ms < 100 || params.interval_ms > PING_MAX_RCV_TIMEO)
+      ping_context.interval_ms = (uint32_t)atoi(argv[current_arg + 1]);
+      if ((ping_context.interval_ms < 100U) || (ping_context.interval_ms > PING_MAX_RCV_TIMEO))
       {
         LogError("Ping interval is invalid, valid range : [100;%" PRIu32 "]\n", PING_MAX_RCV_TIMEO);
         return SHELL_STATUS_ERROR;
@@ -676,12 +654,12 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
     /* Size option */
     else if (strcmp(argv[current_arg], "-s") == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      params.size = atoi(argv[current_arg + 1]);
-      if ((params.size < 1) || (params.size > PING_MAX_SIZE))
+      ping_context.size = (size_t)atoi(argv[current_arg + 1]);
+      if ((ping_context.size < 1U) || (ping_context.size > PING_MAX_SIZE))
       {
         LogError("Ping size is invalid, valid range : [1;%" PRIu32 "].\n", PING_MAX_SIZE);
         return SHELL_STATUS_ERROR;
@@ -691,12 +669,12 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
     /* Timeout option */
     else if (strcmp(argv[current_arg], "-t") == 0)
     {
-      if (current_arg + 1 >= argc)
+      if ((current_arg + 1) >= argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      params.timeout = atoi(argv[current_arg + 1]);
-      if ((params.timeout < 1) || (params.timeout > PING_MAX_RCV_TIMEO))
+      ping_context.timeout = (uint32_t)atoi(argv[current_arg + 1]);
+      if ((ping_context.timeout < 1U) || (ping_context.timeout > PING_MAX_RCV_TIMEO))
       {
         LogError("Ping timeout is invalid, valid range : [1;%" PRIu32 "].\n", PING_MAX_RCV_TIMEO);
         return SHELL_STATUS_ERROR;
@@ -709,26 +687,7 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
     }
   }
 
-  /* Create the event group to synchronize with the end of the ping task execution */
-  params.event = xEventGroupCreate();
-  if (pdPASS != xTaskCreate(ping_task, ipv6 ? "Ping IPv6" : "Ping IPv4", 512, &params, 24, NULL))
-  {
-    return ret;
-  }
-
-  /* Wait for the ping task to complete */
-  if (EVT_PING_DONE == xEventGroupWaitBits(params.event, EVT_PING_DONE | EVT_PING_ERROR,
-                                           pdTRUE, pdFALSE, (params.count + 2) * PING_MAX_RCV_TIMEO))
-  {
-    ret = SHELL_STATUS_OK;
-  }
-
-  if (params.event)
-  {
-    vEventGroupDelete(params.event);
-    params.event = NULL;
-  }
-  return ret;
+  return send_ping(&ping_context);
 }
 
 /**
@@ -737,9 +696,9 @@ static int32_t ping_common_cmd(int32_t argc, char **argv, uint32_t ipv6)
   * @param  ipaddr: pointer to the resolved IP address (NULL if failed)
   * @param  arg: user-supplied argument (unused)
   */
-static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
+static void ping_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
 {
-  dns_resolve_context_t *ctx = (dns_resolve_context_t *)arg;
+  ping_dns_resolve_context_t *ctx = (ping_dns_resolve_context_t *)arg;
   if (ipaddr)
   {
     ctx->resolved_ip = *ipaddr;
@@ -752,26 +711,19 @@ static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, 
   ctx->done = 1;
 }
 
-/**
-  * @brief  Get IPv6 or IPv4 address from URL using DNS
-  * @param  hostUrl: Host URL
-  * @param  use_ipv6: 0 for ipv4, 1 for ipv6
-  * @param  out_ip: the returned IP address
-  * @retval 0 on success, -1 on failure, -2 on timeout
-  */
-static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_addr_t *out_ip)
+static int32_t ping_resolve_host_address(const char *hostUrl, uint32_t use_ipv6, ip_addr_t *out_ip)
 {
-  if (!hostUrl || !out_ip)
+  if ((hostUrl == NULL) || (out_ip == NULL))
   {
     return -1;
   }
 
-  dns_resolve_context_t ctx;
-  memset(&ctx, 0, sizeof(ctx));
+  ping_dns_resolve_context_t ctx;
+  (void)memset(&ctx, 0, sizeof(ctx));
   ctx.result = -1;
 
   uint8_t addrtype = use_ipv6 ? LWIP_DNS_ADDRTYPE_IPV6 : LWIP_DNS_ADDRTYPE_IPV4;
-  err_t err = dns_gethostbyname_addrtype(hostUrl, &ctx.resolved_ip, lwip_dns_lookup_callback, &ctx, addrtype);
+  err_t err = dns_gethostbyname_addrtype(hostUrl, &ctx.resolved_ip, ping_dns_lookup_callback, &ctx, addrtype);
   if (err == ERR_OK)
   {
     if ((use_ipv6 && IP_IS_V6(&ctx.resolved_ip)) || (!use_ipv6 && IP_IS_V4(&ctx.resolved_ip)))
@@ -807,6 +759,10 @@ static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_add
     }
     LogError("DNS Lookup failed\n");
     return -1;
+  }
+  else
+  {
+    /* Immediate failure */
   }
 
   LogError("DNS Lookup immediate failure\n");

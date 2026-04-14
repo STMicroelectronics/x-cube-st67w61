@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    main_app.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   main_app program body
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -82,7 +82,7 @@ typedef struct
 /* USER CODE END PTD */
 
 /* Private defines -----------------------------------------------------------*/
-#define EVENT_FLAG_SCAN_DONE   (1<<1)             /*!< Scan done event bitmask */
+#define EVENT_FLAG_SCAN_DONE   (1UL << 1U)        /*!< Scan done event bitmask */
 
 #define WIFI_SCAN_TIMEOUT      10000              /*!< Delay before to declare the scan in failure */
 
@@ -188,7 +188,8 @@ int32_t APP_shell_quit(int32_t argc, char **argv);
 /* Functions Definition ------------------------------------------------------*/
 void main_app(void)
 {
-  int32_t ret = 0;
+  W6X_Status_t ret;
+  EventBits_t eventBits = 0;
 
   /* USER CODE BEGIN main_app_1 */
 
@@ -212,8 +213,10 @@ void main_app(void)
 
   /* Initialize the logging utilities */
   LoggingInit();
+#if (SHELL_ENABLE == 1)
   /* Initialize the shell utilities on UART instance */
   ShellInit();
+#endif /* SHELL_ENABLE */
 
   LogInfo("#### Welcome to %s Application #####\n", app_info.name);
   LogInfo("# build: %s %s\n", __TIME__, __DATE__);
@@ -231,11 +234,11 @@ void main_app(void)
   App_cb.APP_ble_cb = APP_ble_cb;
   App_cb.APP_mqtt_cb = APP_mqtt_cb;
   App_cb.APP_error_cb = APP_error_cb;
-  W6X_RegisterAppCb(&App_cb);
+  (void)W6X_RegisterAppCb(&App_cb);
 
   /* Initialize the ST67W6X Driver */
   ret = W6X_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
@@ -243,7 +246,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Wi-Fi module */
   ret = W6X_WiFi_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
@@ -252,7 +255,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Network module */
   ret = W6X_Net_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
@@ -264,11 +267,13 @@ void main_app(void)
   /* USER CODE END main_app_3 */
   /* Run a Wi-Fi scan to retrieve the list of all nearby Access Points */
   scan_event_flags = xEventGroupCreate();
-  W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
+  (void)W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
 
   /* Wait to receive the EVENT_FLAG_SCAN_DONE event. The scan is declared as failed after 'ScanTimeout' delay */
-  if ((int32_t)xEventGroupWaitBits(scan_event_flags, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
-                                   pdMS_TO_TICKS(WIFI_SCAN_TIMEOUT)) != EVENT_FLAG_SCAN_DONE)
+  eventBits = xEventGroupWaitBits(scan_event_flags, EVENT_FLAG_SCAN_DONE,
+                                  pdTRUE, pdFALSE,
+                                  pdMS_TO_TICKS(WIFI_SCAN_TIMEOUT));
+  if ((eventBits & EVENT_FLAG_SCAN_DONE) == 0U)
   {
     LogError("Scan Failed\n");
     goto _err;
@@ -276,10 +281,10 @@ void main_app(void)
 
   /* Connect the device to the pre-defined Access Point */
   LogInfo("\nConnecting to Local Access Point\n");
-  strncpy((char *)ConnectOpts.SSID, WIFI_SSID, W6X_WIFI_MAX_SSID_SIZE);
-  strncpy((char *)ConnectOpts.Password, WIFI_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
+  (void)strncpy((char *)ConnectOpts.SSID, WIFI_SSID, W6X_WIFI_MAX_SSID_SIZE);
+  (void)strncpy((char *)ConnectOpts.Password, WIFI_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
   ret = W6X_WiFi_Connect(&ConnectOpts);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to connect, %" PRIi32 "\n", ret);
     goto _err;
@@ -301,7 +306,7 @@ void main_app(void)
 
   /* Define the default factor to apply to AP DTIM interval when connected */
   ret = W6X_WiFi_SetDTIM(WIFI_DTIM);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize the DTIM, %" PRIi32 "\n", ret);
     goto _err;
@@ -312,7 +317,7 @@ void main_app(void)
   ret = W6X_Net_Ping((uint8_t *)"www.google.com", 64, ping_count, 1000, 1500, &average_ping, &ping_received_response);
   if (ret == W6X_STATUS_OK)
   {
-    if (ping_received_response == 0)
+    if (ping_received_response == 0U)
     {
       /* No response or ping in timeout */
       LogError("No ping received\n");
@@ -323,7 +328,7 @@ void main_app(void)
       /* Print the ping statistic with latency and packet loss */
       LogInfo("%" PRIu16 " packets transmitted, %" PRIu16 " received, %" PRIu16 "%% packet loss, time %" PRIu32 "ms\n",
               ping_count, ping_received_response,
-              100 * (ping_count - ping_received_response) / ping_count, average_ping);
+              100U * (ping_count - ping_received_response) / ping_count, average_ping);
     }
   }
   else
@@ -347,14 +352,14 @@ void main_app(void)
 
 #if (SHELL_ENABLE == 1)
   LogInfo("\nApplication runs in CLI mode. Type help or quit to exit.\n");
-  while (quit_msg == 0)
+  while (quit_msg == 0U)
   {
-    vTaskDelay(1000);
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 #endif /* SHELL_ENABLE */
 
   /* Disconnect the device from the Access Point */
-  ret = W6X_WiFi_Disconnect(1);
+  ret = W6X_WiFi_Disconnect(1U);
   if (ret == W6X_STATUS_OK)
   {
     LogInfo("Wi-Fi Disconnect success\n");
@@ -401,60 +406,38 @@ _err:
   LogInfo("##### Application end\n");
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin);
-
-void HAL_GPIO_EXTI_Callback(uint16_t pin)
-{
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_1 */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_1 */
-  /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
-  {
-    if (HAL_GPIO_ReadPin(SPI_RDY_GPIO_Port, SPI_RDY_Pin) == GPIO_PIN_SET)
-    {
-      HAL_GPIO_EXTI_Rising_Callback(pin);
-    }
-    else
-    {
-      HAL_GPIO_EXTI_Falling_Callback(pin);
-    }
-  }
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_End */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_End */
-}
-
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Rising_Callback_1 */
 
   /* USER CODE END EXTI_Rising_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_txn_data_ready();
+    (void)spi_on_txn_data_ready();
   }
   /* USER CODE BEGIN EXTI_Rising_Callback_End */
 
   /* USER CODE END EXTI_Rising_Callback_End */
 }
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Falling_Callback_1 */
 
   /* USER CODE END EXTI_Falling_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_header_ack();
+    (void)spi_on_header_ack();
   }
 
   /* Callback when user button is pressed */
-  if (pin == USER_BUTTON_Pin)
+  if (GPIO_Pin == USER_BUTTON_Pin)
   {
   }
   /* USER CODE BEGIN EXTI_Falling_Callback_End */
@@ -475,7 +458,7 @@ static void APP_wifi_scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *Scan_result
   LogInfo("SCAN DONE\n");
   LogInfo(" Cb informed APP that WIFI SCAN DONE.\n");
   W6X_WiFi_PrintScan(Scan_results);
-  xEventGroupSetBits(scan_event_flags, EVENT_FLAG_SCAN_DONE);
+  (void)xEventGroupSetBits(scan_event_flags, EVENT_FLAG_SCAN_DONE);
   /* USER CODE BEGIN APP_wifi_scan_cb_End */
 
   /* USER CODE END APP_wifi_scan_cb_End */
@@ -501,6 +484,7 @@ static void APP_wifi_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Wi-Fi events unmanaged */
       break;
   }
   /* USER CODE BEGIN APP_wifi_cb_End */
@@ -525,6 +509,7 @@ static void APP_net_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Net events unmanaged */
       break;
   }
   /* USER CODE BEGIN APP_net_cb_End */

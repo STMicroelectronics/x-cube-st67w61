@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    shell.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the definition of the Shell API
   ******************************************************************************
   * @attention
@@ -36,8 +36,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SHELL_H__
-#define __SHELL_H__
+#ifndef SHELL_H
+#define SHELL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +45,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdio.h>
+#include <stdbool.h>
 #include "shell_default_config.h"
 
 /* Exported constants --------------------------------------------------------*/
@@ -88,13 +89,8 @@ enum input_stat
   WAIT_NORMAL,    /*!< normal status */
   WAIT_SPEC_KEY,  /*!< wait special key */
   WAIT_FUNC_KEY,  /*!< wait function key */
+  WAIT_EXT_KEY,   /*!< wait extended key */
 };
-
-/** shell signal function typedef */
-typedef void (*shell_sig_func_ptr)(int32_t);
-
-/** shell function system call typedef */
-typedef int32_t (*syscall_func)(void);
 
 /** shell command function typedef */
 typedef int32_t (*cmd_function_t)(int32_t argc, char **argv);
@@ -108,21 +104,8 @@ typedef struct shell_syscall
 #if (SHELL_USING_DESCRIPTION == 1)
   const char *desc; /*!< description of system call */
 #endif /* SHELL_USING_DESCRIPTION */
-  syscall_func func; /*!< the function address of system call */
+  cmd_function_t func; /*!< the function address of system call */
 } shell_syscall_t;
-
-/**
-  * @brief  System variable table
-  */
-typedef struct shell_sysvar
-{
-  const char *name; /*!< the name of variable */
-#if (SHELL_USING_DESCRIPTION == 1)
-  const char *desc; /*!< description of system variable */
-#endif /* SHELL_USING_DESCRIPTION */
-  uint8_t type; /*!< the type of variable */
-  void *var;    /*!< the address of variable */
-} shell_sysvar_t;
 
 /**
   * @brief  Shell structure
@@ -131,6 +114,10 @@ struct shell
 {
   /** shell status */
   enum input_stat stat;
+  /** shell overwrite mode flag */
+  uint8_t overwrite_mode;
+  /** shell control mode flag */
+  uint8_t control_mode;
   /** shell history command position */
   uint16_t current_history;
   /** shell history command count */
@@ -138,7 +125,7 @@ struct shell
   /** shell history command buffer */
   char cmd_history[SHELL_HISTORY_LINES][SHELL_CMD_SIZE];
   /** shell command buffer */
-  char line[SHELL_CMD_SIZE];
+  char line[SHELL_CMD_SIZE + 1];
   /** shell cursor position on the line */
   uint16_t line_position;
   /** shell current position on the line */
@@ -146,18 +133,22 @@ struct shell
   /** shell prompt */
   char *prompt_custom;
   /** shell printf function */
-  void (*shell_printf)(char *fmt, ...);
-  /** shell signal function */
-  volatile shell_sig_func_ptr shell_sig_func;
+  void (*shell_printf_fn)(char *fmt, ...);
   /** shell start of system call table */
   shell_syscall_t *syscall_table_begin;
   /** shell end of system call table */
   shell_syscall_t *syscall_table_end;
-  /** shell start of system variable table */
-  shell_sysvar_t *sysvar_table_begin;
-  /** shell end of system variable table */
-  shell_sysvar_t *sysvar_table_end;
 };
+
+/**
+  * @brief  Shell queue internal typedef
+  */
+typedef struct QueueDefinition shell_queue_def_t;
+
+/**
+  * @brief  Shell queue handle typedef
+  */
+typedef shell_queue_def_t *shell_queue_handle_t;
 
 /** @} */
 
@@ -194,12 +185,12 @@ struct shell
   */
 
 /** Print output without color */
-#define SHELL_PRINT_NOCOLOR(fmt, ...)           \
-  do {                                          \
-    struct shell *shell = shell_get_instance(); \
-    shell->shell_printf(fmt, ##__VA_ARGS__);    \
-    SHELL_FLUSH_OUT;                            \
-  } while (0)
+#define SHELL_PRINT_NOCOLOR(fmt, ...)                     \
+  do {                                                    \
+    struct shell *shell_hdl = shell_get_instance();       \
+    (void)shell_hdl->shell_printf_fn(fmt, ##__VA_ARGS__); \
+    SHELL_FLUSH_OUT;                                      \
+  } while(false)
 
 #ifndef SHELL_PRINTF
 #define SHELL_PRINTF(fmt, ...) SHELL_PRINT_NOCOLOR(fmt, ##__VA_ARGS__)
@@ -218,19 +209,19 @@ struct shell
  * WHITE    37
  */
 /** Start colorized output */
-#define _SHELL_COLOR_HDR(n) shell->shell_printf("\033[" #n "m")
+#define SHELL_COLOR_HDR(n) shell_hdl->shell_printf_fn("\033[" #n "m")
 /** End colorized output */
-#define _SHELL_COLOR_END    shell->shell_printf("\033[0m")
+#define SHELL_COLOR_END    shell_hdl->shell_printf_fn("\033[0m")
 
 /** Print output with color */
-#define SHELL_PRINT(color_n, fmt, ...)          \
-  do {                                          \
-    struct shell *shell = shell_get_instance(); \
-    _SHELL_COLOR_HDR(color_n);                  \
-    shell->shell_printf(fmt, ##__VA_ARGS__);    \
-    SHELL_FLUSH_OUT;                            \
-    _SHELL_COLOR_END;                           \
-  } while (0)
+#define SHELL_PRINT(color_n, fmt, ...)                    \
+  do {                                                    \
+    struct shell *shell_hdl = shell_get_instance();       \
+    SHELL_COLOR_HDR(color_n);                             \
+    (void)shell_hdl->shell_printf_fn(fmt, ##__VA_ARGS__); \
+    SHELL_FLUSH_OUT;                                      \
+    SHELL_COLOR_END;                                      \
+  } while(false)
 
 #define SHELL_PROMPT(fmt, ...) SHELL_PRINT(36, fmt, ##__VA_ARGS__)
 
@@ -250,42 +241,46 @@ struct shell
 #define SHELL_E(fmt, ...)      SHELL_PRINT_NOCOLOR(fmt, ##__VA_ARGS__)
 #endif /* SHELL_USING_COLOR */
 
-#if (SHELL_ENABLE == 1)
-#if (SHELL_USING_DESCRIPTION == 1)
-/** Export a command to module shell with description */
-#define SHELL_FUNCTION_EXPORT_CMD(name, cmd, desc)                                                      \
-  const char __fsym_##cmd##_name[] __attribute__((section(".rodata.name"))) = #cmd;                     \
-  const char __fsym_##cmd##_desc[] __attribute__((section(".rodata.name"))) = #desc;                    \
-  __attribute__((used)) const struct shell_syscall __fsym_##cmd __attribute__((section("FSymTab"))) =   \
-      { \
-        __fsym_##cmd##_name,                                                                            \
-        __fsym_##cmd##_desc,                                                                            \
-        (syscall_func)&name                                                                             \
-      };
-
-#else /* SHELL_USING_DESCRIPTION */
-/** Export a command to module shell */
-#define SHELL_FUNCTION_EXPORT_CMD(name, cmd, desc)                                                      \
-  const char __fsym_##cmd##_name[] = #cmd;                                                              \
-  __attribute__((used)) const struct shell_syscall __fsym_##cmd __attribute__((section("FSymTab"))) =   \
-      { \
-        __fsym_##cmd##_name,                                                                            \
-        (syscall_func)&name                                                                             \
-      };
-#endif /* SHELL_USING_DESCRIPTION */
-#else  /* SHELL_ENABLE */
-/** weak command export */
-#define SHELL_FUNCTION_EXPORT_CMD(name, cmd, desc)
-#endif /* SHELL_ENABLE */
-
 /**
+  * \def SHELL_CMD_EXPORT_ALIAS( ... )
   * @brief  This macro exports a command to module shell
-  * @param  command the name of command
-  * @param  alias the alias of command
+  * @param  name the name of command
+  * @param  cmd the alias of command
   * @param  desc the description of command, which will show in help
   */
-#define SHELL_CMD_EXPORT_ALIAS(command, alias, desc) \
-  SHELL_FUNCTION_EXPORT_CMD(command, alias, desc)
+
+#if (SHELL_ENABLE == 1)
+/**
+  * \def SHELL_CMD_EXPORT_ALIAS_WITH_DESC( ... )
+  * @brief  This macro exports a command to module shell with description
+  * @param  name the name of command
+  * @param  cmd the alias of command
+  * @param  desc_str the description of command, which will show in help
+  */
+#if (SHELL_USING_DESCRIPTION == 1)
+#define SHELL_CMD_EXPORT_ALIAS_WITH_DESC(name, cmd, desc_str)                                           \
+  const char fsym_##cmd##_name[] __attribute__((section(".rodata.name"))) = #cmd;                       \
+  const char fsym_##cmd##_desc[] __attribute__((section(".rodata.name"))) = desc_str;                   \
+  __attribute__((used)) const struct shell_syscall fsym_##cmd __attribute__((section("FSymTab"))) =     \
+      { \
+        (fsym_##cmd##_name),                                                                            \
+        fsym_##cmd##_desc,                                                                              \
+        (cmd_function_t)&(name)                                                                         \
+      };
+#define SHELL_CMD_EXPORT_ALIAS(name, cmd, desc) SHELL_CMD_EXPORT_ALIAS_WITH_DESC(name, cmd, #desc)
+#else
+#define SHELL_CMD_EXPORT_ALIAS_WITH_DESC(name, cmd, desc_str)                                           \
+  const char fsym_##cmd##_name[] __attribute__((section(".rodata.name"))) = #cmd;                       \
+  __attribute__((used)) const struct shell_syscall fsym_##cmd __attribute__((section("FSymTab"))) =     \
+      { \
+        (fsym_##cmd##_name),                                                                            \
+        (cmd_function_t)&(name)                                                                         \
+      };
+#define SHELL_CMD_EXPORT_ALIAS(name, cmd, desc) SHELL_CMD_EXPORT_ALIAS_WITH_DESC(name, cmd, "")
+#endif /* SHELL_USING_DESCRIPTION */
+#else  /* SHELL_ENABLE */
+#define SHELL_CMD_EXPORT_ALIAS(name, cmd, desc)
+#endif /* SHELL_ENABLE */
 
 /** @} */
 
@@ -297,9 +292,9 @@ struct shell
 /**
   * @brief  Initialize the shell based on FreeRTOS. It creates a task that read the input chars from the uart and parse
   *         the input using the upper layer shell API. The output of the shell is sent to the stream buffer ::tx_stream.
-  * @param  xLogQueue [IN] specifies the queue where to send all the output produced by the shell
+  * @param  shell_queue [IN] specifies the queue where to send all the output produced by the shell
   */
-void shell_freertos_init(void *xLogQueue);
+void shell_freertos_init(shell_queue_handle_t shell_queue);
 
 /**
   * @brief  Deinitialize the shell. It stops the shell task and release all the resources used by the shell
@@ -318,18 +313,10 @@ void shell_freertos_on_new_data(uint8_t uart_rxbyte);
   */
 struct shell *shell_get_instance(void);
 
-/**
-  * @brief  This function will execute the shell signal
-  * @param  sig the signal (SHELL_SIGINT)
-  * @param  func the signal function
-  * @return the previous signal function
-  */
-shell_sig_func_ptr shell_signal(int32_t sig, shell_sig_func_ptr func);
-
 /** @} */
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* __SHELL_H__ */
+#endif /* SHELL_H */

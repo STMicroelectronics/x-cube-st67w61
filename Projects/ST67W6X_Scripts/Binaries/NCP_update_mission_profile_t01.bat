@@ -3,14 +3,44 @@
 set RED=[0;31m
 set NC=[0m
 
-REM === Optional argument to select specific version of SDK ===
-set SDK_VERSION=
-if not "%1"=="" set SDK_VERSION=%1
+set "SCRIPT_DIR=%~dp0"
+set "NCP_BIN_DIR=%SCRIPT_DIR%NCP_Binaries"
+set "SDK_VERSION=%~1"
+set "SELECTED_VERSION="
+set "SELECTED_BINARY="
+set "DEFAULT_CONFIG_FILE=mission_t01_flash_prog_cfg.ini"
+set "CONFIG_FILE=mission_t01_flash_prog_cfg_auto.ini"
+set "BINARY_PREFIX=st67w611m_mission_t01"
 
-if "%SDK_VERSION%"=="2.0.89" (
-    set "CONFIG_FILE=mission_t01_flash_prog_cfg_v2.0.89.ini"
+REM === Optional argument to select specific version of SDK ===
+if defined SDK_VERSION goto :resolve_requested_version
+goto :resolve_latest_version
+
+:resolve_requested_version
+if exist "%NCP_BIN_DIR%\%BINARY_PREFIX%_v%SDK_VERSION%.bin" (
+    set "SELECTED_VERSION=%SDK_VERSION%"
 ) else (
-    set "CONFIG_FILE=mission_t01_flash_prog_cfg.ini"
+    echo Requested SDK version %SDK_VERSION% is not available in %NCP_BIN_DIR%
+    goto :error
+)
+goto :version_resolved
+
+:resolve_latest_version
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "$ErrorActionPreference='Stop'; Get-ChildItem -LiteralPath '%NCP_BIN_DIR%' -Filter '%BINARY_PREFIX%_v*.bin' | ForEach-Object { if ($_.BaseName -match '%BINARY_PREFIX%_v(?<ver>\d+\.\d+\.\d+)$') { [version]$Matches.ver } } | Sort-Object -Descending | Select-Object -First 1 | ForEach-Object { $_.ToString() }"`) do set "SELECTED_VERSION=%%i"
+if "%SELECTED_VERSION%"=="" (
+    echo No compliant mission t01 binaries found in %NCP_BIN_DIR%
+    goto :error
+)
+
+:version_resolved
+
+set "SELECTED_BINARY=%BINARY_PREFIX%_v%SELECTED_VERSION%.bin"
+echo Selected mission t01 binary: %SELECTED_BINARY%
+
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $template='%NCP_BIN_DIR%\%DEFAULT_CONFIG_FILE%'; $output='%NCP_BIN_DIR%\%CONFIG_FILE%'; $binary='%SELECTED_BINARY%'; $updated=Get-Content -LiteralPath $template | ForEach-Object { if ($_ -match '^filedir\s*=\s*\./%BINARY_PREFIX%_v.*\.bin\s*$') { 'filedir = ./' + $binary } else { $_ } }; Set-Content -LiteralPath $output -Value $updated -Encoding Ascii"
+if %ERRORLEVEL% neq 0 (
+    echo Failed to generate %CONFIG_FILE%
+    goto :error
 )
 
 REM === Warning message ===
@@ -26,13 +56,14 @@ if errorlevel 1 goto :continue
 
 :abort
 echo Operation aborted.
+call :cleanup_generated_config
 exit /B
 
 :continue
 REM === Set CubeProgrammer path ===
 set "CUBEPROGRAMMER=C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin"
 set "PATH=%CUBEPROGRAMMER%;%PATH%"
-set "current_dir=%~dp0"
+set "current_dir=%SCRIPT_DIR%"
 
 REM === Find the STLink Virtual COM Port using PowerShell ===
 set "COMADDR="
@@ -112,8 +143,18 @@ mode %COMADDR% baud=2000000 parity=N data=8 stop=1 >nul
 echo Buffers for %COMADDR% have been flushed
 
 echo NCP Flashing in progress ...
+set /a FLASH_RETRY=0
+
+:run_qconn_flash
 %current_dir%QConn_Flash\QConn_Flash_Cmd.exe --port %COMADDR% --config %current_dir%NCP_Binaries\%CONFIG_FILE% --efuse=%current_dir%\NCP_Binaries\efusedata.bin
-if %ERRORLEVEL% neq 0 goto :error
+if %ERRORLEVEL% equ 0 goto :qconn_flash_done
+if %FLASH_RETRY% geq 1 goto :error
+echo QConn_Flash_Cmd failed. Retrying once...
+set /a FLASH_RETRY+=1
+timeout /t 1 /nobreak >nul
+goto :run_qconn_flash
+
+:qconn_flash_done
 
 if "%BOARD_ID%" == "NUCLEO-N657X0-Q" (
     echo "Set the boot mode in development mode (BOOT1 switch position is 2-3, BOOT0 switch position doesn't matter)"
@@ -135,8 +176,15 @@ if "%BOARD_ID%" == "NUCLEO-N657X0-Q" (
 )
 
 pause
+call :cleanup_generated_config
 exit /B
 
 :error
 echo %RED%!!!! Error detected !!!!%NC%
+call :cleanup_generated_config
 pause
+exit /B
+
+:cleanup_generated_config
+if exist "%NCP_BIN_DIR%\%CONFIG_FILE%" del /q "%NCP_BIN_DIR%\%CONFIG_FILE%"
+exit /B

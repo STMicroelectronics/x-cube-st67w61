@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    logshell_ctrl.h
-  * @author  GPM Application Team
-  * @brief   Header for logshell_ctrl.h
+  * @author  ST67 Application Team
+  * @brief   Header for logshell_ctrl module
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -19,8 +19,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __LOGSHELL_CTRL_H
-#define __LOGSHELL_CTRL_H
+#ifndef LOGSHELL_CTRL_H
+#define LOGSHELL_CTRL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,4 +76,4 @@ void ShellInit(void);
 }
 #endif /* __cplusplus */
 
-#endif /* __LOGSHELL_CTRL_H */
+#endif /* LOGSHELL_CTRL_H */

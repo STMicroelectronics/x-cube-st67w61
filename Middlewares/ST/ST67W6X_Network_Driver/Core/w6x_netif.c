@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_netif.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x Net interface API
   ******************************************************************************
   * @attention
@@ -37,7 +37,7 @@
   * @{
   */
 
-static W61_Object_t *p_DrvObj = NULL;         /*!< Global W61 context pointer */
+static W61_Object_t *W6X_Netif_drv_obj = NULL;         /*!< Global W61 context pointer */
 
 /** @} */
 
@@ -50,80 +50,84 @@ static W61_Object_t *p_DrvObj = NULL;         /*!< Global W61 context pointer */
 W6X_Status_t W6X_Netif_Init(W6X_Net_if_cb_t *net_if_cb)
 {
   /* Get the global W61 context pointer */
-  p_DrvObj = W61_ObjGet();
-  NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
+  W6X_Netif_drv_obj = W61_ObjGet();
+  NULL_ASSERT(W6X_Netif_drv_obj, W6X_Obj_Null_str);
 
-  if (p_DrvObj->NetCtx.Supported != 0)
+  if (W6X_Netif_drv_obj->NetCtx.Supported != 0U)
   {
     NET_LOG_ERROR("Netif module not supported\n");
     return W6X_STATUS_ERROR;
   }
 
-  if (BusIo_SPI_Bind(SPI_MSG_CTRL_TRAFFIC_NETWORK_STA, 16, net_if_cb->rxd_sta_notify_fn) != 0)
+  if (BusIo_SPI_Bind(SPI_MSG_CTRL_TRAFFIC_NETWORK_STA, (int32_t)W6X_NETIF_STA_RXQ_DEPTH,
+                     net_if_cb->rxd_sta_notify_fn) != 0)
   {
     SYS_LOG_ERROR("Bind Network Traffic Station failed\n");
     return W6X_STATUS_ERROR;
   }
 
-  if (BusIo_SPI_Bind(SPI_MSG_CTRL_TRAFFIC_NETWORK_AP, 8, net_if_cb->rxd_ap_notify_fn) != 0)
+  if (BusIo_SPI_Bind(SPI_MSG_CTRL_TRAFFIC_NETWORK_AP, (int32_t)W6X_NETIF_AP_RXQ_DEPTH,
+                     net_if_cb->rxd_ap_notify_fn) != 0)
   {
     SYS_LOG_ERROR("Bind Network Traffic AP failed\n");
     return W6X_STATUS_ERROR;
   }
 
-  p_DrvObj->Callbacks.Netif_cb.link_sta_up_fn = net_if_cb->link_sta_up_fn;
-  p_DrvObj->Callbacks.Netif_cb.link_sta_down_fn = net_if_cb->link_sta_down_fn;
-  p_DrvObj->Callbacks.Netif_cb.link_ap_up_fn = net_if_cb->link_ap_up_fn;
-  p_DrvObj->Callbacks.Netif_cb.link_ap_down_fn = net_if_cb->link_ap_down_fn;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_sta_up_fn = net_if_cb->link_sta_up_fn;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_sta_down_fn = net_if_cb->link_sta_down_fn;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_ap_up_fn = net_if_cb->link_ap_up_fn;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_ap_down_fn = net_if_cb->link_ap_down_fn;
 
   return W6X_STATUS_OK;
 }
 
 void W6X_Netif_DeInit(void)
 {
-  if (p_DrvObj == NULL)
+  if (W6X_Netif_drv_obj == NULL)
   {
     return; /* Nothing to do */
   }
-  p_DrvObj->Callbacks.Netif_cb.link_sta_up_fn = NULL;
-  p_DrvObj->Callbacks.Netif_cb.link_sta_down_fn = NULL;
-  p_DrvObj->Callbacks.Netif_cb.link_ap_up_fn = NULL;
-  p_DrvObj->Callbacks.Netif_cb.link_ap_down_fn = NULL;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_sta_up_fn = NULL;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_sta_down_fn = NULL;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_ap_up_fn = NULL;
+  W6X_Netif_drv_obj->Callbacks.Netif_cb.link_ap_down_fn = NULL;
 }
 
-int32_t W6X_Netif_output(uint32_t link_id, uint8_t *pBuf, uint32_t len)
+int32_t W6X_Netif_output(uint32_t link_id, uint8_t *buf, uint32_t len)
 {
   uint8_t type;
 
-  switch (link_id)
+  if (link_id == W6X_NET_IF_STA)
   {
-    case W6X_NET_IF_STA:
-      type = SPI_MSG_CTRL_TRAFFIC_NETWORK_STA;
-      break;
-    case W6X_NET_IF_AP:
-      type = SPI_MSG_CTRL_TRAFFIC_NETWORK_AP;
-      break;
-    default:
-      return -1;
+    type = SPI_MSG_CTRL_TRAFFIC_NETWORK_STA;
+  }
+  else if (link_id == W6X_NET_IF_AP)
+  {
+    type = SPI_MSG_CTRL_TRAFFIC_NETWORK_AP;
+  }
+  else
+  {
+    return -1;
   }
 
-  return BusIo_SPI_SendData(type, pBuf, len, pdMS_TO_TICKS(10000));
+  return BusIo_SPI_SendData(type, buf, len, pdMS_TO_TICKS(10000));
 }
 
 int32_t W6X_Netif_input(uint32_t link_id, void **buffer, uint8_t **data)
 {
   uint8_t type;
 
-  switch (link_id)
+  if (link_id == W6X_NET_IF_STA)
   {
-    case W6X_NET_IF_STA:
-      type = SPI_MSG_CTRL_TRAFFIC_NETWORK_STA;
-      break;
-    case W6X_NET_IF_AP:
-      type = SPI_MSG_CTRL_TRAFFIC_NETWORK_AP;
-      break;
-    default:
-      return -1;
+    type = SPI_MSG_CTRL_TRAFFIC_NETWORK_STA;
+  }
+  else if (link_id == W6X_NET_IF_AP)
+  {
+    type = SPI_MSG_CTRL_TRAFFIC_NETWORK_AP;
+  }
+  else
+  {
+    return -1;
   }
 
   return BusIo_SPI_ReceivePtr(type, buffer, data, 0);

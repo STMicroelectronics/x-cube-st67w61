@@ -5,6 +5,11 @@
 
 \section log_intro Introduction
 
+This page describes the logging utility shipped with the ST67W6X middleware.
+It focuses on the middleware-provided deferred logging mechanism (queue + output task),
+configuration knobs, and how to integrate logging output with other UART-based services
+such as the shell.
+
 The **logging component** provides 4 logging macros listed in increasing order of verbosity:
 
 - LogError()
@@ -14,7 +19,7 @@ The **logging component** provides 4 logging macros listed in increasing order o
 
 The **logging component** features:
 
-- differed logging. Message is built within the calling function and sent to a log queue. The log queue is consumed by an output task. This limit the real time impact of logging.
+- deferred logging. Message is built within the calling function and sent to a log queue. The log queue is consumed by an output task. This limits the real-time impact of logging.
 - Standard log levels See https://www.FreeRTOS.org/logging.html
 - Add metadata to the log message such as timestamp, filename and line number, taskname. Metadata inclusion is configurable.
 - Memory consumption scales with needs (dynamic allocation of log buffer). Maximum Size is configurable.
@@ -24,6 +29,10 @@ The **logging component** features:
 For example, LogError() is only called when there is an error so is the least verbose, whereas LogDebug() is called more frequently to provide debug level information.
 
 \section log_getting_started Getting started
+
+The logging component is designed for FreeRTOS-based projects. Log messages are formatted
+in the calling task context and then queued to a dedicated output task. This minimizes time
+spent in time-critical code paths.
 
 To use the logging a developer must follow the steps below:
 
@@ -38,7 +47,7 @@ to fine tune the logging component for a specific application. To learn more abo
 options look at the default configuration in `logging_config_template.h`. This file provide a default value
 for all the configuration options. This means that the user configuration file can be empty.
 
-An important parameter is the `LOG_LEVEL`. It defines the global verbosity level. Valid values for are:
+An important parameter is the `LOG_LEVEL`. It defines the global verbosity level. Valid values are:
 
 - ::LOG_NONE (turns logging off)
 - ::LOG_ERROR
@@ -56,20 +65,21 @@ The LOG_LEVEL can be redefined for specific portion of the application. For exam
 #include "logging.h"
 ```
 
-**NOTE**: All the log messages with a log level minor than `LOG_LEVEL` are stripped from the final application binary.
+> [!NOTE]
+> All the log messages with a log level lower than `LOG_LEVEL` are stripped from the final application binary.
 
 \subsection log_gs_init Logging initialization
 
 The section \ref log_fw_arch "Firmware architecture" gives more technical details about the logging implementation.
-For the moment we need to know how to initialize the logging component. Because it is composed by two parts, an
-high level API and a low level driver, a developer must initialize both. for example:
+For the moment we need to know how to initialize the logging component. Because it is composed of two parts, a
+high level API and a low level driver, a developer must initialize both. For example:
 
 ```c
 /* file: MeExample.c */
 
 #include "logging.h"
 
-static void LogOutput(const char *message);
+static void LogOutput(const char *message)
 {
   /* Here this application writer can output on UART, ITM, USB..*/
   printf("%s", message);
@@ -80,12 +90,15 @@ void MyInitFunc(void)
   /* Initialize the high level logging service. */
   vLoggingInit(LogOutput);
 
-  /* Sent a message in the log. */
+  /* Send a message in the log. */
   LogInfo(("Hello logging!\r\n"));
 }
 ```
 
-**NOTE**: The logging must be initialized and used after the scheduler is started!!
+> [!NOTE]
+> The logging must be initialized and used after the scheduler is started!!
+
+If logging is used before the scheduler starts, the queue/output task may not be available and messages may be lost.
 
 \subsection log_gs_use_case Logging use case
 
@@ -98,7 +111,7 @@ After the logging component has been initialized it is straightforward to use it
 
 void MyFunc(void)
 {
-  /* Sent a message in the log. */
+  /* Send a message in the log. */
   LogInfo(("Module Func\r\n"));
 
   if (error_is_detected)
@@ -145,6 +158,9 @@ generate this entry in the log:
 
 \subsection log_inc_shell Add Shell output
 
+When logging and shell share the same physical interface (typically UART), the middleware can route both streams
+through a single queue. This avoids interleaved or corrupted output when multiple tasks print concurrently.
+
 The logging component has a low level driver ready to be used. This driver uses the UART to send the log messages to a
 terminal (e.g. [Tera Term](https://teratermproject.github.io/index-en.html) terminal emulator running in a host PC). It is common for an embedded
 application to provide, other than a logging service, a way to control the application, at least during the development,
@@ -186,7 +202,7 @@ to initialize the driver with LogOutput implementing ITM output, the logging ini
 
 #include "logging.h"
 
-static void LogOutput(const char *message);
+static void LogOutput(const char *message)
 {
   for (int32_t i = 0; i < strlen(message); i++)
   {
@@ -199,13 +215,13 @@ void MyInitFunc(void)
   /* Initialize the high level logging service. */
   vLoggingInit(LogOutput);
 
-  /* Sent a message in the log. */
+  /* Send a message in the log. */
   LogInfo(("Hello logging!\r\n"));
 }
 ```
 
-This driver allows to free the UART for other purpose (e.g. SHELL), but the data are transmitted in a synchronous way.
+This driver allows to free the UART for other purposes (e.g. SHELL), but the data are transmitted in a synchronous way.
 
 \subsection log_fw_arch_other Other considerations
 
-It is important to note the at OutputTask has low priority to minimize real time impact of the logging system . Still, it must have enough time to consume the message from the queue and free allocated memory.
+It is important to note that OutputTask has low priority to minimize the real-time impact of the logging system. Still, it must have enough time to consume messages from the queue and free allocated memory.

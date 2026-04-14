@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    https_client.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Https client application.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -200,7 +200,7 @@ static const wind_dir_t wind_dir_list[] =
   {247.5, "SW"},
   {292.5, "W"},
   {337.5, "NW"},
-  {361, "N"},
+  {361.0, "N"},
 };
 
 /* USER CODE BEGIN PV */
@@ -304,19 +304,20 @@ int32_t https_client_weather(char *city, float latitude, float longitude)
   }
 
   /* Create the URL */
-  snprintf(url, sizeof(url), WEATHER_URL_REQUEST, (double)city_latitude, (double)city_longitude, weather_metrics[0]);
+  (void)snprintf(url, sizeof(url), WEATHER_URL_REQUEST,
+                 (double)city_latitude, (double)city_longitude, weather_metrics[0]);
 
   i = 1;
   /* Add the metrics parameters to the URL */
   while (weather_metrics[i] != NULL)
   {
-    strncat(url, ",", strlen(",") + 1);
-    strncat(url, weather_metrics[i], strlen(weather_metrics[i]) + 1);
+    (void)strncat(url, ",", strlen(",") + 1);
+    (void)strncat(url, weather_metrics[i], strlen(weather_metrics[i]) + 1);
     i++;
   }
 
   token = strstr(url, "//");
-  if ((token == NULL) || (strlen(token) < 3))
+  if ((token == NULL) || (strlen(token) < 3U))
   {
     LogError("Mal-formed URL\n");
     return -1;
@@ -363,7 +364,7 @@ int32_t https_client_weather(char *city, float latitude, float longitude)
     {
       return -1;
     }
-    strncpy(location_name, city, strlen(city));
+    (void)strncpy(location_name, city, strlen(city));
     location_name[strlen(city)] = '\0';
     settings.recv_fn_arg = location_name;
   }
@@ -374,7 +375,7 @@ int32_t https_client_weather(char *city, float latitude, float longitude)
   W6X_Status_t ret =  W6X_HTTP_Client_Request(&addr, 443, uri, method, NULL, 0, NULL, NULL, NULL, NULL, &settings);
   if (ret != W6X_STATUS_OK)
   {
-    if (location_name)
+    if (location_name != NULL)
     {
       vPortFree(location_name);
     }
@@ -420,7 +421,7 @@ static int32_t HTTPS_recv_cb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
   /* USER CODE BEGIN HTTPS_recv_cb_1 */
 
   /* USER CODE END HTTPS_recv_cb_1 */
-  if (p->data == NULL)
+  if ((p == NULL) || (p->data == NULL))
   {
     return ret;
   }
@@ -435,19 +436,22 @@ static int32_t HTTPS_recv_cb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
     return -1;
   }
   /* Parse the JSON and return the root object */
-  if ((root = cJSON_Parse((const char *)json_start)) == NULL)
+  root = cJSON_Parse((const char *)json_start);
+  if (root == NULL)
   {
     LogError("Processing error of JSON message\n");
     return -1;
   }
   /* Get the data "daily_units" from the root content */
-  if ((daily_units = cJSON_GetObjectItemCaseSensitive(root, "daily_units")) == NULL)
+  daily_units = cJSON_GetObjectItemCaseSensitive(root, "daily_units");
+  if (daily_units == NULL)
   {
     LogError("Did not find daily_units tag\n");
     goto _err;
   }
   /* Get the data "daily" from the root content */
-  if ((daily = cJSON_GetObjectItemCaseSensitive(root, "daily")) == NULL)
+  daily = cJSON_GetObjectItemCaseSensitive(root, "daily");
+  if (daily == NULL)
   {
     LogError("Did not find daily tag\n");
     goto _err;
@@ -540,7 +544,7 @@ static int32_t HTTPS_recv_cb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
       if (weather_codes_list[i].code == weather_code_value)
       {
         /* Weather code found. Copy the weather code string */
-        strncpy(weather_code_string, weather_codes_list[i].string, sizeof(weather_code_string) - 1);
+        (void)strncpy(weather_code_string, weather_codes_list[i].string, sizeof(weather_code_string) - 1);
         break;
       }
       i++;
@@ -549,7 +553,7 @@ static int32_t HTTPS_recv_cb(void *arg, W6X_HTTP_buffer_t *p, int32_t err)
     /* Convert the wind dir from degrees to cardinal direction */
     float wind_dir_value = cJSON_GetArrayItem(wind_dir, day)->valuedouble;
     char *wind_dir_string = NULL;
-    for (i = 0; i < sizeof(wind_dir_list) / sizeof(wind_dir_t); i++)
+    for (i = 0; i < (sizeof(wind_dir_list) / sizeof(wind_dir_t)); i++)
     {
       if (wind_dir_value < wind_dir_list[i].dir)
       {

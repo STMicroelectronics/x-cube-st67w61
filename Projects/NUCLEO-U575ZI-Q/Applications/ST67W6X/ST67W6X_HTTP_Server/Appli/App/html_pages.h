@@ -1,13 +1,14 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    html_pages.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   index.html conversion in hex array
   * @note    Auto generated file, DO NOT MODIFY
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -16,6 +17,7 @@
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef HTML_PAGES_H

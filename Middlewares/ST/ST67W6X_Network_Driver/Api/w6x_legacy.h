@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_legacy.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the legacy W6x core resources definitions
   ******************************************************************************
   * @attention
@@ -87,6 +87,7 @@ static inline W6X_Status_t W6X_WiFi_StartSta(void)
   return W6X_WiFi_Station_Start();
 }
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /**
   * @brief  This function set the Wi-Fi STA host name
   * @param  Hostname: Hostname to set
@@ -119,17 +120,19 @@ static inline W6X_Status_t W6X_WiFi_GetStaIpAddress(uint8_t Ip_addr[4], uint8_t 
 {
   return W6X_Net_Station_GetIPAddress(Ip_addr, Gateway_addr, Netmask_addr);
 }
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
 
 /**
   * @brief  This function retrieves the Wi-Fi station MAC address
-  * @param  Mac: MAC address of the interface
+  * @param  mac: MAC address of the interface
   * @return Operation status
   */
-static inline W6X_Status_t W6X_WiFi_GetStaMacAddress(uint8_t Mac[6])
+static inline W6X_Status_t W6X_WiFi_GetStaMacAddress(uint8_t mac[6])
 {
-  return W6X_WiFi_Station_GetMACAddress(Mac);
+  return W6X_WiFi_Station_GetMACAddress(mac);
 }
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /**
   * @brief  This function set the Wi-Fi interface's IP address
   * @param  Ipaddr: IP address to set
@@ -172,16 +175,17 @@ static inline W6X_Status_t W6X_WiFi_SetDnsAddress(uint32_t *Dns_enable, uint8_t 
   (void)Dns_enable; /* unused */
   return W6X_Net_SetDnsAddress(Dns1_addr, Dns2_addr, Dns3_addr);
 }
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
 
 /**
   * @brief  This function retrieves the Wi-Fi station state
-  * @param  State: Station state
-  * @param  ConnectData: Connection data
+  * @param  state: Station state
+  * @param  connect_data: Connection data
   * @return Operation status
   */
-static inline W6X_Status_t W6X_WiFi_GetStaState(W6X_WiFi_StaStateType_e *State, W6X_WiFi_Connect_t *ConnectData)
+static inline W6X_Status_t W6X_WiFi_GetStaState(W6X_WiFi_StaStateType_e *state, W6X_WiFi_Connect_t *connect_data)
 {
-  return W6X_WiFi_Station_GetState(State, ConnectData);
+  return W6X_WiFi_Station_GetState(state, connect_data);
 }
 
 /**
@@ -215,34 +219,35 @@ static inline W6X_Status_t W6X_WiFi_GetApConfig(W6X_WiFi_ApConfig_t *ap_config)
 
 /**
   * @brief  List the connected stations
-  * @param  ConnectedSta: Connected stations structure
+  * @param  connected_sta: Connected stations structure
   * @return Operation status
   */
-static inline W6X_Status_t W6X_WiFi_ListConnectedSta(W6X_WiFi_Connected_Sta_t *ConnectedSta)
+static inline W6X_Status_t W6X_WiFi_ListConnectedSta(W6X_WiFi_Connected_Sta_t *connected_sta)
 {
-  return W6X_WiFi_AP_ListConnectedStations(ConnectedSta);
+  return W6X_WiFi_AP_ListConnectedStations(connected_sta);
 }
 
 /**
   * @brief  Disconnect station from the Soft-AP
-  * @param  MAC: MAC address of the station to disconnect
+  * @param  mac: MAC address of the station to disconnect
   * @return Operation status
   */
-static inline W6X_Status_t W6X_WiFi_DisconnectSta(uint8_t MAC[6])
+static inline W6X_Status_t W6X_WiFi_DisconnectSta(uint8_t mac[6])
 {
-  return W6X_WiFi_AP_DisconnectStation(MAC);
+  return W6X_WiFi_AP_DisconnectStation(mac);
 }
 
 /**
   * @brief  This function retrieves the Wi-Fi Soft-AP MAC address
-  * @param  Mac: MAC address of the interface
+  * @param  mac: MAC address of the interface
   * @return Operation status
   */
-static inline W6X_Status_t W6X_WiFi_GetApMacAddress(uint8_t Mac[6])
+static inline W6X_Status_t W6X_WiFi_GetApMacAddress(uint8_t mac[6])
 {
-  return W6X_WiFi_AP_GetMACAddress(Mac);
+  return W6X_WiFi_AP_GetMACAddress(mac);
 }
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /**
   * @brief  Get the Soft-AP IP addresses
   * @param  Ipaddr: IP address of the Soft-AP
@@ -284,6 +289,7 @@ static inline W6X_Status_t W6X_WiFi_SetDhcp(W6X_WiFi_DhcpType_e *State, uint32_t
 {
   return W6X_Net_SetDhcp(State, Operate, lease_time);
 }
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
 
 /**
   * @brief  Setup Target Wake Time (TWT) for the Wi-Fi station
@@ -315,6 +321,7 @@ static inline W6X_Status_t W6X_WiFi_TeardownTWT(W6X_WiFi_TWT_Teardown_Params_t *
   return W6X_WiFi_TWT_Teardown(twt_params);
 }
 
+#if (ST67_ARCH == W6X_ARCH_T01)
 /**
   * @brief  Get IP address from URL using DNS
   * @param  location: Host URL
@@ -424,42 +431,55 @@ static inline int32_t W6X_Net_Tls_Credential_Delete(uint32_t tag, W6X_Net_Tls_Cr
   return W6X_Net_TLS_Credential_Delete(tag, type);
 }
 
+#endif /* (ST67_ARCH == W6X_ARCH_T01) */
+
 /**
   * @brief  Indicate the Characteristic Value from the Server to a Client
   * @param  service_index: index of the service containing characteristic to indicate
   * @param  char_index: index of the characteristic to indicate
-  * @param  pdata: pointer to the data to indicate
+  * @param  data: pointer to the data to indicate
   * @param  req_len: length of the data to indicate
   * @param  sent_data_len: length of the data sent
   * @param  timeout: timeout in ms
   * @return Operation status
   */
 static inline W6X_Status_t W6X_Ble_ServerSendIndication(uint8_t service_index, uint8_t char_index,
-                                                        void *pdata, uint32_t req_len, uint32_t *sent_data_len,
+                                                        void *data, uint32_t req_len, uint32_t *sent_data_len,
                                                         uint32_t timeout)
 {
   uint8_t conn_handle = 0;
   return W6X_Ble_ServerIndicate(conn_handle, service_index, char_index,
-                                pdata, req_len, sent_data_len, timeout);
+                                data, req_len, sent_data_len, timeout);
 }
 
 /**
   * @brief  Notify the Characteristic Value from the Server to a Client
   * @param  service_index: index of the service containing characteristic to notify
   * @param  char_index: index of the characteristic to notify
-  * @param  pdata: pointer to the data to notify
+  * @param  data: pointer to the data to notify
   * @param  req_len: length of the data to notify
   * @param  sent_data_len: length of the data sent
   * @param  timeout: timeout in ms
   * @return Operation status
   */
 static inline W6X_Status_t W6X_Ble_ServerSendNotification(uint8_t service_index, uint8_t char_index,
-                                                          void *pdata, uint32_t req_len, uint32_t *sent_data_len,
+                                                          void *data, uint32_t req_len, uint32_t *sent_data_len,
                                                           uint32_t timeout)
 {
   uint8_t conn_handle = 0;
   return W6X_Ble_ServerNotify(conn_handle, service_index, char_index,
-                              pdata, req_len, sent_data_len, timeout);
+                              data, req_len, sent_data_len, timeout);
+}
+
+/**
+  * @brief  BLE enter remote passkey
+  * @param  conn_handle: BLE connection handle
+  * @param  passkey: BLE security passkey
+  * @return Operation status
+  */
+static inline W6X_Status_t W6X_Ble_SecuritySetPassKey(uint8_t conn_handle, uint32_t passkey)
+{
+  return W6X_Ble_SecurityEnterRemotePassKey(conn_handle, passkey);
 }
 
 #ifdef __cplusplus

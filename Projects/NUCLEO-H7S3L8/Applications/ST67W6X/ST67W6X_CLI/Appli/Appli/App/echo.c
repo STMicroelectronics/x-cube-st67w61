@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    echo.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Test an echo with a server
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -30,6 +30,7 @@
 #include "common_parser.h" /* Common Parser functions */
 
 #include "shell.h"
+#include "FreeRTOS.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -58,22 +59,22 @@
 
 #ifndef ECHO_TRANSFER_SIZE_START
 /** Minimal size of a packet */
-#define ECHO_TRANSFER_SIZE_START    1000
+#define ECHO_TRANSFER_SIZE_START    1000U
 #endif /* ECHO_TRANSFER_SIZE_START */
 
 #ifndef ECHO_TRANSFER_SIZE_MAX
 /** Maximal size of a packet */
-#define ECHO_TRANSFER_SIZE_MAX      2000
+#define ECHO_TRANSFER_SIZE_MAX      2000U
 #endif /* ECHO_TRANSFER_SIZE_MAX */
 
 #ifndef ECHO_TRANSFER_SIZE_ITER
 /** To increment the size of a group of packets */
-#define ECHO_TRANSFER_SIZE_ITER     250
+#define ECHO_TRANSFER_SIZE_ITER     250U
 #endif /* ECHO_TRANSFER_SIZE_ITER */
 
 #ifndef ECHO_ITERATION_COUNT
 /** Number of packets to be sent */
-#define ECHO_ITERATION_COUNT        10
+#define ECHO_ITERATION_COUNT        10U
 #endif /* ECHO_ITERATION_COUNT */
 
 /* USER CODE BEGIN PD */
@@ -87,7 +88,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /** Buffer to send and receive data */
-static uint8_t buffer[ECHO_TRANSFER_SIZE_MAX + 1];
+static uint8_t *echo_buffer = NULL;
 
 /* USER CODE BEGIN PV */
 
@@ -176,20 +177,22 @@ SHELL_CMD_EXPORT_ALIAS(echo_sizes_loop, echo, echo [ iteration ]);
 /* Private Functions Definition ----------------------------------------------*/
 static void fill_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 {
-  uint8_t value;
-
   /* USER CODE BEGIN fill_buffer_1 */
 
   /* USER CODE END fill_buffer_1 */
-
-  for (uint32_t byte = 0; byte < len - 1; byte++)
+  if (len == 0U)
   {
-    value = (uint8_t)(byte + offset);
+    return;
+  }
+
+  for (uint32_t byte = 0; byte < (len - 1U); byte++)
+  {
+    uint8_t value = (uint8_t)(byte + offset);
 
     /* Work around for tcpbin.com echo server, avoid CR values */
-    if (value == 0x0D)
+    if (value == 0x0DU)
     {
-      value = 0x0C;
+      value = 0x0CU;
     }
     *buff++ = value;
   }
@@ -204,29 +207,28 @@ static void fill_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 
 static uint32_t check_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 {
-  uint8_t expected_value;
   uint32_t error_count = 0;
 
   /* USER CODE BEGIN check_buffer_1 */
 
   /* USER CODE END check_buffer_1 */
 
-  for (uint32_t byte = 0; byte < len ; byte++)
+  for (uint32_t byte = 0; byte < len; byte++)
   {
-    expected_value = ((byte + offset) & 0xff);
+    uint8_t expected_value = (uint8_t)(byte + offset);
     /* Work around for tcpbin.com echo server, last value is LF (\n) */
-    if (byte == len - 1)
+    if (byte == (len - 1U))
     {
-      expected_value =  0x0A;
+      expected_value =  0x0AU;
     }
 
     /* Work around for tcpbin.com echo server, avoid CR values */
-    if (expected_value != 0x0D)
+    if (expected_value != 0x0DU)
     {
       if (buff[byte] != expected_value)
       {
         LogInfo("Received data are different from data sent \"%" PRIu16 "\" <> \"%" PRIu16 "\" at index %" PRIu32 "\n",
-                (uint8_t)(byte & 0xff), buff[byte], byte);
+                (uint8_t)(byte & 0xFFU), buff[byte], byte);
         error_count++;
       }
     }
@@ -244,8 +246,8 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
   struct sockaddr_in addr_t = {0};
   uint8_t echo_server_addr[4] = {192, 168, 8, 1};
 
-  uint32_t tstart;
-  uint32_t tstop;
+  uint32_t tstart = 0U;
+  uint32_t tstop = 0U;
   uint32_t transferred_bytes;
   uint32_t transferred_total = 0;
   uint32_t error_count = 0;
@@ -254,18 +256,31 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
   uint16_t echo_server_port = ECHO_SERVER_PORT;
   int32_t net_ret = 0;
   int32_t ret_code = -1;
-  int32_t sock;
+  int32_t sock = -1;
 
   /* USER CODE BEGIN echo_process_1 */
 
   /* USER CODE END echo_process_1 */
 
+  if (echo_buffer != NULL)
+  {
+    LogError("echo buffer already allocated\n");
+    goto end;
+  }
+
+  echo_buffer = pvPortMalloc(ECHO_TRANSFER_SIZE_MAX + 1U);
+  if (echo_buffer == NULL)
+  {
+    LogError("echo buffer allocation failed\n");
+    goto end;
+  }
+
   /* Resolve IP Address from the input URL */
-  net_ret = W6X_Net_ResolveHostAddress(echo_server_url, echo_server_addr);
-  if (net_ret != W6X_STATUS_OK)
+  net_ret = (int32_t)W6X_Net_ResolveHostAddress(echo_server_url, echo_server_addr);
+  if (net_ret != 0)
   {
     LogError("DNS resolution failed for %s\n", echo_server_url);
-    return ret_code; /* Socket not created yet: direct return avoids unnecessary cleanup jump */
+    goto end; /* Socket not created yet: direct return avoids unnecessary cleanup jump */
   }
   LogInfo("IP Address from Hostname [%s]: " IPSTR "\n", echo_server_url, IP2STR(echo_server_addr));
 
@@ -304,19 +319,19 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
 
   for (uint32_t i = 0; i < send_loop; i++)
   {
-    fill_buffer(buffer, len, i);
+    fill_buffer(echo_buffer, len, i);
     {
       transferred_bytes = 0;
       do
       {
-        int32_t count_done = W6X_Net_Send(sock, &buffer[transferred_bytes], len - transferred_bytes, 0);
+        int32_t count_done = W6X_Net_Send(sock, &echo_buffer[transferred_bytes], len - transferred_bytes, 0);
 
         if (count_done < 0)
         {
           LogError("Failed to send data to echo server (%" PRId32 "), try again\n", count_done);
           count_done = 0;
         }
-        transferred_bytes += count_done;
+        transferred_bytes += (uint32_t)count_done;
       } while (transferred_bytes < len);
 
       /* Update cumulative number with data that have been sent. */
@@ -324,15 +339,16 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
     }
 
     /* Reset the buffer of data reception. */
-    memset(buffer, 0x00, sizeof(buffer));
+    (void)memset(echo_buffer, 0x00, ECHO_TRANSFER_SIZE_MAX + 1U);
 
     transferred_bytes = 0;
     do
     {
-      int32_t count_done = W6X_Net_Recv(sock, &buffer[transferred_bytes], len - transferred_bytes, 0);
+      int32_t count_done = W6X_Net_Recv(sock, &echo_buffer[transferred_bytes], len - transferred_bytes, 0);
       if (count_done < 0)
       {
         LogError("\nReceive failed with %" PRId32 "\n", count_done);
+        ret_code = -1;
         goto end;
       }
       transferred_bytes += (uint32_t)count_done;
@@ -340,25 +356,13 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len)
 
     tstop = HAL_GetTick();
 
-    error_count = check_buffer(buffer, len, i);
+    error_count += check_buffer(echo_buffer, len, i);
 
     /* Update cumulative number with data that have been received. */
     transferred_total += transferred_bytes;
   }
 
-  if (error_count == 0)
-  {
-    uint32_t duration_ms = (tstop > tstart) ? (tstop - tstart) : 1U;
-    LogInfo("Successful Echo Transfer and receive %" PRId32 " x %" PRId32 " with %" PRId32 " bytes"
-            " in %" PRId32 " ms, br = %" PRId32 " Kbit/sec\n",
-            send_loop, len, transferred_total, duration_ms, (transferred_total * 8) / duration_ms);
-    ret_code = 0;
-  }
-  else
-  {
-    LogError("Error: Echo transfer, find %" PRId32 " different bytes\n", error_count);
-    ret_code = -2; /* Distinct code for data mismatch */
-  }
+  ret_code = 0; /* Success */
 
   /* USER CODE BEGIN echo_process_last */
 
@@ -377,6 +381,29 @@ end:
       LogInfo("Socket closed\n");
     }
   }
+
+  if (echo_buffer != NULL)
+  {
+    vPortFree(echo_buffer);
+    echo_buffer = NULL;
+  }
+
+  if ((ret_code == 0) && (error_count == 0U))
+  {
+    uint32_t duration_ms = (tstop > tstart) ? (tstop - tstart) : 1U;
+    LogInfo("Successful Echo Transfer and receive %" PRId32 " x %" PRId32 " with %" PRId32 " bytes"
+            " in %" PRId32 " ms, br = %" PRId32 " Kbit/sec\n",
+            send_loop, len, transferred_total, duration_ms, (transferred_total * 8U) / duration_ms);
+  }
+  else
+  {
+    if (error_count > 0U)
+    {
+      LogError("Error: Echo transfer, find %" PRId32 " different bytes\n", error_count);
+      ret_code = -2; /* Distinct code for data mismatch */
+    }
+  }
+
   return ret_code;
 }
 

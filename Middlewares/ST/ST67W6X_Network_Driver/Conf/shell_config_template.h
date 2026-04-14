@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    shell_config_template.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W6X Shell configuration module
   ******************************************************************************
   * @attention
@@ -47,19 +47,22 @@ extern "C" {
 #define SHELL_DEFAULT_NAME                      "w61"
 
 /** Console buffer size */
-#define SHELL_CONSOLEBUF_SIZE                   128
-
-/** Shell prompt maximum size */
-#define SHELL_PROMPT_SIZE                       20
+#define SHELL_CONSOLEBUF_SIZE                   128U
 
 /** Shell history maximum lines */
-#define SHELL_HISTORY_LINES                     5
+#define SHELL_HISTORY_LINES                     5U
 
 /** Shell command maximum size */
-#define SHELL_CMD_SIZE                          120
+#define SHELL_CMD_SIZE                          120U
 
 /** Shell argument maximum number */
-#define SHELL_ARG_NUM                           16
+#define SHELL_ARG_NUM                           24U
+
+/** Enable word operation support */
+#define SHELL_USING_WORD_OPERATION              1
+
+/** Enable function extension support */
+#define SHELL_USING_FUNC_EXT                    1
 
 /** Shell using color */
 #define SHELL_USING_COLOR                       1
@@ -68,25 +71,28 @@ extern "C" {
 #define SHELL_PRINT_STATUS                      0
 
 /** Maximum length of the string to be printed */
-#define SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH  2000
+#define SHELL_FREERTOS_MAX_PRINT_STRING_LENGTH  2000U
 
 /** Shell receive buffer size */
-#define SHELL_FREERTOS_RX_BUFF_SIZE             128
+#define SHELL_FREERTOS_RX_BUFF_SIZE             128U
 
 /** Shell receive thread stack size */
-#define SHELL_FREERTOS_RX_THREAD_STACK_SIZE     3072
+#define SHELL_FREERTOS_RX_THREAD_STACK_SIZE     2048U
 
 /** Shell receive thread priority */
 #define SHELL_FREERTOS_RX_THREAD_PRIO           5
 
 /** Flush the output */
-#define SHELL_FLUSH_OUT                         do { fflush(stdout); } while(0)
+#define SHELL_FLUSH_OUT                         do { (void)fflush(stdout); } while(false)
 
 /** Enable the shell command description */
 #define SHELL_USING_DESCRIPTION                 1
 
 /** Maximum number of characters to compare in the help command */
-#define SHELL_HELP_MAX_COMPARED_NB_CHAR         10
+#define SHELL_HELP_MAX_COMPARED_NB_CHAR         10U
+
+/** Shell help command description size */
+#define SHELL_HELP_DESC_SIZE                    110U
 
 /** Print log message */
 #define SHELL_LOG                               SHELL_DBG

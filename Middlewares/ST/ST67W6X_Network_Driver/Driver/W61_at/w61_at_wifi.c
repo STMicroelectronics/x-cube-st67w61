@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_at_wifi.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W61 WiFi AT module
   ******************************************************************************
   * @attention
@@ -25,7 +25,7 @@
 #include "common_parser.h" /* Common Parser functions */
 #include "event_groups.h"
 
-#if (SYS_DBG_ENABLE_TA4 >= 1)
+#if (defined(SYS_DBG_ENABLE_TA4) && (SYS_DBG_ENABLE_TA4 >= 1))
 #include "trcRecorder.h"
 #endif /* SYS_DBG_ENABLE_TA4 */
 
@@ -35,12 +35,12 @@
   * @{
   */
 
-#define W61_WIFI_RECONNECTION_INTERVAL            7200                    /*!< Reconnection interval in seconds */
-#define W61_WIFI_RECONNECTION_ATTEMPTS            1000                    /*!< Reconnection attempts */
-#define W61_WIFI_CONNECT_TIMEOUT                  3000                    /*!< Connect command status timeout */
+#define W61_WIFI_RECONNECTION_INTERVAL            7200U   /*!< Reconnection interval in seconds */
+#define W61_WIFI_RECONNECTION_ATTEMPTS            1000U   /*!< Reconnection attempts */
+#define W61_WIFI_CONNECT_TIMEOUT                  3000U   /*!< Connect command status timeout */
 
-#define W61_WIFI_COUNTRY_CODE_MAX                 5                       /*!< Maximum number of country codes */
-#define W61_WIFI_MAC_LENGTH                       17                      /*!< Length of a complete MAC address string */
+#define W61_WIFI_COUNTRY_CODE_MAX                 5U      /*!< Maximum number of country codes */
+#define W61_WIFI_MAC_LENGTH                       17U     /*!< Length of a complete MAC address string */
 
 /** @} */
 
@@ -83,6 +83,16 @@ MODEM_CMD_DECLARE(on_cmd_ap_liststa);
   * @return 0 on success, negative value on error
  */
 MODEM_CMD_DECLARE(on_cmd_twt_status);
+
+/**
+  * @brief  Callback function to handle Wi-Fi get SSID of stored credentials responses
+  * @param  data: pointer to the modem_cmd_handler_data structure
+  * @param  len: length of the data
+  * @param  argv: array of argument strings
+  * @param  argc: number of argument
+  * @return 0 on success, negative value on error
+ */
+MODEM_CMD_DEFINE(on_cmd_get_ssid);
 
 /**
   * @brief  Parses WiFi event and call related callback
@@ -137,13 +147,13 @@ W61_Status_t W61_WiFi_SetAutoConnect(W61_Object_t *Obj, uint32_t OnOff)
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  if (!((OnOff == 0) || (OnOff == 1)))
+  if (!((OnOff == 0U) || (OnOff == 1U)))
   {
     WIFI_LOG_ERROR("Invalid value passed to Autoconnect function\n");
     return ret;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWAUTOCONN=%" PRIu32 "\r\n", OnOff);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWAUTOCONN=%" PRIu32 "\r\n", OnOff);
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 
   if (ret == W61_STATUS_OK)
@@ -162,13 +172,13 @@ W61_Status_t W61_WiFi_GetAutoConnect(W61_Object_t *Obj, uint32_t *OnOff)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(OnOff);
 
-  strncpy(cmd, "AT+CWAUTOCONN?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWAUTOCONN?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWAUTOCONN:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -176,6 +186,13 @@ W61_Status_t W61_WiFi_GetAutoConnect(W61_Object_t *Obj, uint32_t *OnOff)
   *OnOff = atoi(argv[0]);
 
   return ret;
+}
+
+W61_Status_t W61_WiFi_Stop(W61_Object_t *Obj)
+{
+  W61_NULL_ASSERT(Obj);
+
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+CWMODE=0\r\n", W61_WIFI_TIMEOUT);
 }
 
 W61_Status_t W61_WiFi_Station_Start(W61_Object_t *Obj)
@@ -189,18 +206,18 @@ W61_Status_t W61_WiFi_SetScanOpts(W61_Object_t *Obj, W61_WiFi_Scan_Opts_t *ScanO
 {
   uint32_t max_cnt = 50;
   W61_WiFi_scan_type_e type = W61_WIFI_SCAN_ACTIVE;
-  uint8_t SSID[W61_WIFI_MAX_SSID_SIZE + 1] = {'\0'};
-  uint8_t MAC[6] = {'\0'};
+  uint8_t SSID[W61_WIFI_MAX_SSID_SIZE + 1] = {0};
+  uint8_t MAC[6] = {0};
   uint8_t channel = 0;
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(ScanOpts);
 
-  if ((ScanOpts->MaxCnt > 0) && (ScanOpts->MaxCnt < 50))
+  if ((ScanOpts->MaxCnt > 0U) && (ScanOpts->MaxCnt < 50U))
   {
     max_cnt = ScanOpts->MaxCnt;
   }
-  if ((ScanOpts->scan_type == 0) || (ScanOpts->scan_type == 1))
+  if ((ScanOpts->scan_type == W61_WIFI_SCAN_ACTIVE) || (ScanOpts->scan_type == W61_WIFI_SCAN_PASSIVE))
   {
     ScanOptions.scan_type = ScanOpts->scan_type;
   }
@@ -208,23 +225,23 @@ W61_Status_t W61_WiFi_SetScanOpts(W61_Object_t *Obj, W61_WiFi_Scan_Opts_t *ScanO
   {
     ScanOptions.scan_type = type;
   }
-  if (ScanOpts->SSID[0] != '\0')
+  if (ScanOpts->SSID[0] != 0U)
   {
-    memcpy(ScanOptions.SSID, ScanOpts->SSID, W61_WIFI_MAX_SSID_SIZE + 1);
+    (void)memcpy(ScanOptions.SSID, ScanOpts->SSID, W61_WIFI_MAX_SSID_SIZE + 1U);
   }
   else
   {
-    memcpy(ScanOptions.SSID, SSID, W61_WIFI_MAX_SSID_SIZE + 1);
+    (void)memcpy(ScanOptions.SSID, SSID, W61_WIFI_MAX_SSID_SIZE + 1U);
   }
-  if (ScanOpts->MAC[0] != '\0')
+  if (ScanOpts->MAC[0] != 0U)
   {
-    memcpy(ScanOptions.MAC, ScanOpts->MAC, 6);
+    (void)memcpy(ScanOptions.MAC, ScanOpts->MAC, 6);
   }
   else
   {
-    memcpy(ScanOptions.MAC, MAC, 6);
+    (void)memcpy(ScanOptions.MAC, MAC, 6);
   }
-  if ((ScanOpts->Channel > 0) && (ScanOpts->Channel < 13))
+  if ((ScanOpts->Channel > 0U) && (ScanOpts->Channel < 13U))
   {
     ScanOptions.Channel = ScanOpts->Channel;
   }
@@ -236,47 +253,47 @@ W61_Status_t W61_WiFi_SetScanOpts(W61_Object_t *Obj, W61_WiFi_Scan_Opts_t *ScanO
   /* The config of the scan options must be made before every scan
    * The second parameter is a bit mask to select the fields to display,
    * with the bytes 5,6 and 8 unused */
-  snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWLAPOPT=1,1695,-100,255,%" PRIu32 "\r\n", max_cnt);
+  (void)snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWLAPOPT=1,1695,-100,255,%" PRIu32 "\r\n", max_cnt);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
 W61_Status_t W61_WiFi_Scan(W61_Object_t *Obj)
 {
-  char MAC[20 + 1];
-  char SSID[W61_WIFI_MAX_SSID_SIZE + 3] = {'\0'}; /* Size + 2 if contains double-quote characters */
+  char MAC[21U];
+  char SSID[W61_WIFI_MAX_SSID_SIZE + 3U] = {'\0'}; /* Size + 2 if contains double-quote characters */
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
   if (Obj->WifiCtx.ScanResults.AP == NULL)
   {
     Obj->WifiCtx.ScanResults.AP = pvPortMalloc(sizeof(W61_WiFi_AP_t) * W61_WIFI_MAX_DETECTED_AP);
-    if ((Obj->WifiCtx.ScanResults.AP == NULL) && (W61_WIFI_MAX_DETECTED_AP != 0))
+    if (Obj->WifiCtx.ScanResults.AP == NULL)
     {
       WIFI_LOG_ERROR("Error: Unable to allocate memory for scan results\n");
       return W61_STATUS_ERROR;
     }
   }
 
-  if (Obj->WifiCtx.ScanResults.Count > 0)
+  if (Obj->WifiCtx.ScanResults.Count > 0U)
   {
-    memset(Obj->WifiCtx.ScanResults.AP, 0, sizeof(W61_WiFi_AP_t)* W61_WIFI_MAX_DETECTED_AP);
+    (void)memset(Obj->WifiCtx.ScanResults.AP, 0, sizeof(W61_WiFi_AP_t)* W61_WIFI_MAX_DETECTED_AP);
     Obj->WifiCtx.ScanResults.Count = 0;
   }
   Obj->WifiCtx.ScanResults.More = 0;
 
-  snprintf(MAC, 20, "\"" MACSTR "\"", MAC2STR(ScanOptions.MAC));
+  (void)snprintf(MAC, 20, "\"" MACSTR "\"", MAC2STR(ScanOptions.MAC));
   if (strcmp((char *)ScanOptions.SSID, "\0") == 0)
   {
-    snprintf(SSID, W61_WIFI_MAX_SSID_SIZE + 3, "%s", ScanOptions.SSID);
+    (void)snprintf(SSID, W61_WIFI_MAX_SSID_SIZE + 3U, "%s", ScanOptions.SSID);
   }
   else
   {
-    snprintf(SSID, W61_WIFI_MAX_SSID_SIZE + 3, "\"%s\"", ScanOptions.SSID);
+    (void)snprintf(SSID, W61_WIFI_MAX_SSID_SIZE + 3U, "\"%s\"", ScanOptions.SSID);
   }
 
-  snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWLAP=%" PRIu32 ",%s,%s,%" PRIu16 "\r\n",
-           (uint32_t)ScanOptions.scan_type, SSID,
-           strcmp(MAC, "\"00:00:00:00:00:00\"") == 0 ? "" : MAC, ScanOptions.Channel);
+  (void)snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWLAP=%" PRIu32 ",%s,%s,%" PRIu16 "\r\n",
+                 (uint32_t)ScanOptions.scan_type, SSID,
+                 (strcmp(MAC, "\"00:00:00:00:00:00\"") == 0) ? "" : MAC, ScanOptions.Channel);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
@@ -286,8 +303,8 @@ W61_Status_t W61_WiFi_SetReconnectionOpts(W61_Object_t *Obj, W61_WiFi_Connect_Op
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(ConnectOpts);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWRECONNCFG=%" PRIu16 ",%" PRIu16 "\r\n",
-           ConnectOpts->Reconnection_interval, ConnectOpts->Reconnection_nb_attempts);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWRECONNCFG=%" PRIu16 ",%" PRIu16 "\r\n",
+                 ConnectOpts->Reconnection_interval, ConnectOpts->Reconnection_nb_attempts);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
@@ -299,12 +316,7 @@ W61_Status_t W61_WiFi_Connect(W61_Object_t *Obj, W61_WiFi_Connect_Opts_t *Connec
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(ConnectOpts);
 
-  if (ConnectOpts->WPS)
-  {
-    return W61_AT_Common_SetExecute(Obj, (uint8_t *)"AT+WPS=1\r\n", W61_WIFI_TIMEOUT);
-  }
-
-  if (ConnectOpts->SSID[0] == '\0')
+  if ((ConnectOpts->WPS == 0U) && (ConnectOpts->SSID[0] == 0U))
   {
     WIFI_LOG_ERROR("SSID cannot be NULL\n");
     return ret;
@@ -322,24 +334,36 @@ W61_Status_t W61_WiFi_Connect(W61_Object_t *Obj, W61_WiFi_Connect_Opts_t *Connec
     ConnectOpts->Reconnection_nb_attempts = 0;
   }
 
-  /* Setup the SSID and Password as required parameters */
-  pos += snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWJAP=\"%s\",\"%s\",",
-                  ConnectOpts->SSID, ConnectOpts->Password);
-
-  /* Add optional BSSID parameters if defined */
-  if (ConnectOpts->MAC[0] != '\0')
+  if (ConnectOpts->WPS == 1U)
   {
-    pos += snprintf((char *)&cmd[pos], W61_CMDRSP_STRING_SIZE - pos,
-                    "\"" MACSTR "\"", MAC2STR(ConnectOpts->MAC));
+    (void)snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+WPS=1\r\n");
   }
-
-  /* Add optional WEP mode */
-  if (!((ConnectOpts->WEP == 0) || (ConnectOpts->WEP == 1)))
+  else if (ConnectOpts->Secured == 1U)
   {
-    WIFI_LOG_ERROR("WEP value is out of range [0;1]\n");
-    return ret;
+    /* Setup the secure SSID stored in credentials as required parameters */
+    (void)snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWJAPS=\"%s\"\r\n", ConnectOpts->SSID);
   }
-  snprintf((char *)&cmd[pos], W61_CMDRSP_STRING_SIZE - pos, ",%" PRIu32 "\r\n", ConnectOpts->WEP);
+  else
+  {
+    /* Setup the SSID and Password as required parameters */
+    pos += snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE, "AT+CWJAP=\"%s\",\"%s\",",
+                    ConnectOpts->SSID, ConnectOpts->Password);
+
+    /* Add optional BSSID parameters if defined */
+    if (ConnectOpts->MAC[0] != 0U)
+    {
+      pos += snprintf((char *)&cmd[pos], W61_CMDRSP_STRING_SIZE - pos,
+                      "\"" MACSTR "\"", MAC2STR(ConnectOpts->MAC));
+    }
+
+    /* Add optional WEP mode */
+    if (!((ConnectOpts->WEP == 0U) || (ConnectOpts->WEP == 1U)))
+    {
+      WIFI_LOG_ERROR("WEP value is out of range [0;1]\n");
+      return ret;
+    }
+    (void)snprintf((char *)&cmd[pos], W61_CMDRSP_STRING_SIZE - pos, ",%" PRIu32 "\r\n", ConnectOpts->WEP);
+  }
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_CONNECT_TIMEOUT);
 
   if ((ret == W61_STATUS_OK) && (W61_WiFi_SetReconnectionOpts(Obj, ConnectOpts) != W61_STATUS_OK))
@@ -367,40 +391,40 @@ W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi, W61_WiFi_
   W61_Status_t ret;
   W61_WiFi_StaStateType_e state;
 
-  strncpy(cmd, "AT+CWJAP?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWJAP?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWJAP:", &argc, argv, W61_WIFI_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 4)
+  if (argc < 4U)
   {
     return W61_STATUS_ERROR;
   }
   /* Parse the response */
-  if (argc >= 5)
+  if (argc >= 5U)
   {
     W61_AT_RemoveStrQuotes(argv[index]);
-    strncpy((char *)Obj->WifiCtx.SSID, argv[index], W61_WIFI_MAX_SSID_SIZE);
-    Obj->WifiCtx.SSID[W61_WIFI_MAX_SSID_SIZE] = '\0'; /* Ensure null termination */
+    (void)strncpy((char *)Obj->WifiCtx.SSID, argv[index], W61_WIFI_MAX_SSID_SIZE);
+    Obj->WifiCtx.SSID[W61_WIFI_MAX_SSID_SIZE] = 0; /* Ensure null termination */
     index++;
   }
 
   W61_AT_RemoveStrQuotes(argv[index]);
   Parser_StrToMAC(argv[index++], Obj->WifiCtx.APSettings.MAC_Addr);
   Obj->WifiCtx.STASettings.Channel = atoi(argv[index++]);
-  *Rssi = atoi(argv[index++]);
+  *Rssi = atoi(argv[index]);
 
   if (W61_SdkMinVersion(Obj, 2, 0, 97) == W61_STATUS_OK)
   {
     /* Get security type and protocol before disconnecting */
-    strncpy(cmd, "AT+CWSTATE?\r\n", sizeof(cmd));
+    (void)strncpy(cmd, "AT+CWSTATE?\r\n", sizeof(cmd));
     ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWSTATE:", &argc, argv, W61_WIFI_TIMEOUT);
     if (ret != W61_STATUS_OK)
     {
       return ret;
     }
-    if (argc < 4)
+    if (argc < 4U)
     {
       return W61_STATUS_ERROR;
     }
@@ -424,8 +448,69 @@ W61_Status_t W61_WiFi_Disconnect(W61_Object_t *Obj, uint32_t restore)
   char cmd[W61_CMDRSP_STRING_SIZE];
   W61_NULL_ASSERT(Obj);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWQAP=%" PRIu32 "\r\n", restore);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWQAP=%" PRIu32 "\r\n", restore);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
+}
+
+W61_Status_t W61_WiFi_AddCredentials(W61_Object_t *Obj, uint8_t SSID[W61_WIFI_MAX_SSID_SIZE + 1],
+                                     uint8_t Password[W61_WIFI_MAX_PASSWORD_SIZE + 1])
+{
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(SSID);
+  W61_NULL_ASSERT(Password);
+
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWCREDADD=\"%s\",\"%s\"\r\n", SSID, Password);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
+}
+
+W61_Status_t W61_WiFi_DeleteCredentials(W61_Object_t *Obj, uint8_t SSID[W61_WIFI_MAX_SSID_SIZE + 1])
+{
+  char cmd[W61_CMDRSP_STRING_SIZE];
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(SSID);
+
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWCREDDEL=\"%s\"\r\n", SSID);
+  return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
+}
+
+W61_Status_t W61_WiFi_GetCredentials(W61_Object_t *Obj, W61_WiFi_CredentialsList_t *credentials_list)
+{
+  W61_Status_t ret;
+  W61_NULL_ASSERT(Obj);
+  W61_NULL_ASSERT(credentials_list);
+
+  struct modem *mdm = (struct modem *) &Obj->Modem;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->handler.cmd_handler_data;
+
+  struct modem_cmd handlers[] =
+  {
+    MODEM_CMD("+CWCRED:", on_cmd_get_ssid, 1U, ""),
+  };
+
+  if (data == NULL)
+  {
+    return W61_STATUS_ERROR;
+  }
+  (void)xSemaphoreTake(data->sem_tx_lock, portMAX_DELAY);
+
+  /* Set the pointer to the buffer where the credentials will be stored */
+  mdm->rx_data = (void *)credentials_list;
+
+  /* Get the SSID of the stored credentials.
+    The multiline responses are in the form of
+    +CWCRED:"SSID1" */
+  ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
+                                      &mdm->handler,
+                                      handlers,
+                                      ARRAY_SIZE(handlers),
+                                      (const uint8_t *)"AT+CWCRED?\r\n",
+                                      mdm->sem_response,
+                                      W61_NCP_TIMEOUT,
+                                      MODEM_NO_TX_LOCK));
+
+  (void)xSemaphoreGive(data->sem_tx_lock);
+  return ret;
 }
 
 W61_Status_t W61_WiFi_Station_GetMACAddress(W61_Object_t *Obj, uint8_t *Mac)
@@ -437,13 +522,13 @@ W61_Status_t W61_WiFi_Station_GetMACAddress(W61_Object_t *Obj, uint8_t *Mac)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Mac);
 
-  strncpy(cmd, "AT+CIPSTAMAC?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CIPSTAMAC?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPSTAMAC:", &argc, argv, W61_WIFI_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -465,20 +550,20 @@ W61_Status_t W61_WiFi_GetCountryCode(W61_Object_t *Obj, uint32_t *Policy, char *
   W61_NULL_ASSERT(CountryString);
 
   CountryString[0] = '\0';
-  strncpy(cmd, "AT+CWCOUNTRY?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWCOUNTRY?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWCOUNTRY:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 2)
+  if (argc < 2U)
   {
     return W61_STATUS_ERROR;
   }
 
   *Policy = atoi(argv[0]);
   W61_AT_RemoveStrQuotes(argv[1]);
-  strncpy(CountryString, argv[1], 3);
+  (void)strncpy(CountryString, argv[1], 3);
 
   return ret;
 }
@@ -504,7 +589,7 @@ W61_Status_t W61_WiFi_SetCountryCode(W61_Object_t *Obj, uint32_t *Policy, char *
     return W61_STATUS_ERROR;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWCOUNTRY=%" PRIu32 ",\"%s\"\r\n", *Policy, CountryString);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWCOUNTRY=%" PRIu32 ",\"%s\"\r\n", *Policy, CountryString);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
 }
 
@@ -522,7 +607,7 @@ W61_Status_t W61_WiFi_SetDualMode(W61_Object_t *Obj)
     sta_state = 1;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWMODE=3,%" PRIu32 "\r\n", sta_state);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWMODE=3,%" PRIu32 "\r\n", sta_state);
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
 
   if (ret == W61_STATUS_OK)
@@ -543,7 +628,7 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(ApConfig);
 
-  if (ApConfig->SSID[0] == '\0')
+  if (ApConfig->SSID[0] == 0U)
   {
     WIFI_LOG_ERROR("SSID cannot be NULL\n");
     return ret;
@@ -577,6 +662,10 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
     WIFI_LOG_WARN("Channel value out of range, set to default value 1\n");
     ApConfig->Channel = 1;
   }
+  else
+  {
+    /* Nothing to do */
+  }
 
   if ((ApConfig->Security > W61_WIFI_AP_SECURITY_WPA3_PSK) || (ApConfig->Security == W61_WIFI_AP_SECURITY_WEP))
   {
@@ -586,7 +675,7 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
   else
   {
     if ((ApConfig->Security != W61_WIFI_AP_SECURITY_OPEN) &&
-        ((strlen((char *)ApConfig->Password) < 8) ||
+        ((strlen((char *)ApConfig->Password) < 8U) ||
          (strlen((char *)ApConfig->Password) > W61_WIFI_MAX_PASSWORD_SIZE)))
     {
       WIFI_LOG_ERROR("Password length incorrect, must be in following range [8;63]\n");
@@ -594,14 +683,14 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
     }
 
     /* Need to set the password to null if security selected is OPEN */
-    if ((ApConfig->Security == W61_WIFI_AP_SECURITY_OPEN) && (strlen((char *)ApConfig->Password) > 0))
+    if ((ApConfig->Security == W61_WIFI_AP_SECURITY_OPEN) && (strlen((char *)ApConfig->Password) > 0U))
     {
       WIFI_LOG_WARN("Password is not needed for open security, set to NULL\n");
-      ApConfig->Password[0] = '\0';
+      ApConfig->Password[0] = 0;
     }
   }
 
-  if (ApConfig->Hidden > 1)
+  if (ApConfig->Hidden > 1U)
   {
     WIFI_LOG_WARN("Hidden parameter is not supported, set to default value 0\n");
     ApConfig->Hidden = 0;
@@ -617,9 +706,10 @@ W61_Status_t W61_WiFi_AP_Start(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApConfig)
     return W61_STATUS_ERROR;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWSAP=\"%s\",\"%s\",%" PRIu32 ",%" PRIu16 ",%" PRIu32 ",%" PRIu32 "\r\n",
-           ApConfig->SSID, ApConfig->Password, ApConfig->Channel, ApConfig->Security,
-           ApConfig->MaxConnections, ApConfig->Hidden);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE,
+                 "AT+CWSAP=\"%s\",\"%s\",%" PRIu32 ",%" PRIu16 ",%" PRIu32 ",%" PRIu32 "\r\n",
+                 ApConfig->SSID, ApConfig->Password, ApConfig->Channel, ApConfig->Security,
+                 ApConfig->MaxConnections, ApConfig->Hidden);
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
 
   if (ret == W61_STATUS_OK)
@@ -643,13 +733,13 @@ W61_Status_t W61_WiFi_AP_Stop(W61_Object_t *Obj, uint8_t Reconnect)
     sta_state = 1;
   }
 
-  if (Reconnect == 0)
+  if (Reconnect == 0U)
   {
-    snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWMODE=1,0\r\n");
+    (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWMODE=1,0\r\n");
   }
   else
   {
-    snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWMODE=1,%" PRIu32 "\r\n", sta_state);
+    (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWMODE=1,%" PRIu32 "\r\n", sta_state);
   }
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
 
@@ -670,23 +760,23 @@ W61_Status_t W61_WiFi_AP_GetConfig(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApCon
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(ApConfig);
 
-  strncpy(cmd, "AT+CWSAP?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWSAP?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWSAP:", &argc, argv, W61_WIFI_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 6)
+  if (argc < 6U)
   {
     return W61_STATUS_ERROR;
   }
 
   W61_AT_RemoveStrQuotes(argv[0]);
-  strncpy((char *)ApConfig->SSID, argv[0], W61_WIFI_MAX_SSID_SIZE);
-  ApConfig->SSID[W61_WIFI_MAX_SSID_SIZE] = '\0'; /* Ensure null termination */
+  (void)strncpy((char *)ApConfig->SSID, argv[0], W61_WIFI_MAX_SSID_SIZE);
+  ApConfig->SSID[W61_WIFI_MAX_SSID_SIZE] = 0; /* Ensure null termination */
   W61_AT_RemoveStrQuotes(argv[1]);
-  strncpy((char *)ApConfig->Password, argv[1], W61_WIFI_MAX_PASSWORD_SIZE);
-  ApConfig->Password[W61_WIFI_MAX_PASSWORD_SIZE] = '\0'; /* Ensure null termination */
+  (void)strncpy((char *)ApConfig->Password, argv[1], W61_WIFI_MAX_PASSWORD_SIZE);
+  ApConfig->Password[W61_WIFI_MAX_PASSWORD_SIZE] = 0; /* Ensure null termination */
   ApConfig->Channel = (uint32_t)atoi(argv[2]);
   ApConfig->Security = (W61_WiFi_ApSecurityType_e)atoi(argv[3]);
   ApConfig->MaxConnections = (uint32_t)atoi(argv[4]);
@@ -697,7 +787,7 @@ W61_Status_t W61_WiFi_AP_GetConfig(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApCon
     return W61_STATUS_ERROR;
   }
 
-  memset(ApConfig->Password, 0, W61_WIFI_MAX_PASSWORD_SIZE + 1);
+  (void)memset(ApConfig->Password, 0, W61_WIFI_MAX_PASSWORD_SIZE + 1U);
   return ret;
 }
 
@@ -707,7 +797,7 @@ W61_Status_t W61_WiFi_AP_ListConnectedStations(W61_Object_t *Obj, W61_WiFi_Conne
   W61_NULL_ASSERT(Stations);
   W61_Status_t ret;
   struct modem *mdm = (struct modem *) &Obj->Modem;
-  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->handler.cmd_handler_data;
 
   struct modem_cmd handlers[] =
   {
@@ -724,7 +814,7 @@ W61_Status_t W61_WiFi_AP_ListConnectedStations(W61_Object_t *Obj, W61_WiFi_Conne
   Stations->Count = 0;
 
   ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
-                                      &mdm->modem_cmd_handler,
+                                      &mdm->handler,
                                       handlers,
                                       ARRAY_SIZE(handlers),
                                       (const uint8_t *)"AT+CWLIF\r\n",
@@ -742,7 +832,7 @@ W61_Status_t W61_WiFi_AP_DisconnectStation(W61_Object_t *Obj, uint8_t *MAC)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(MAC);
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWQIF=\"" MACSTR "\"\r\n", MAC2STR(MAC));
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWQIF=\"" MACSTR "\"\r\n", MAC2STR(MAC));
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
 }
 
@@ -756,13 +846,13 @@ W61_Status_t W61_WiFi_AP_GetMode(W61_Object_t *Obj, W61_WiFi_Protocol_e *Protoco
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Protocol);
 
-  strncpy(cmd, "AT+CWAPPROTO?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWAPPROTO?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWAPPROTO:", &argc, argv, W61_WIFI_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -785,6 +875,7 @@ W61_Status_t W61_WiFi_AP_GetMode(W61_Object_t *Obj, W61_WiFi_Protocol_e *Protoco
     default:
       SYS_LOG_ERROR("Invalid Wi-Fi protocol: %d\n", temp_protocol);
       return W61_STATUS_ERROR;
+      break;
   }
 
   return ret;
@@ -812,9 +903,10 @@ W61_Status_t W61_WiFi_AP_SetMode(W61_Object_t *Obj, W61_WiFi_Protocol_e Protocol
       break;
     default:
       return W61_STATUS_ERROR;
+      break;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWAPPROTO=%" PRIu32 "\r\n", temp_protocol);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWAPPROTO=%" PRIu32 "\r\n", temp_protocol);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_WIFI_TIMEOUT);
 }
 
@@ -827,13 +919,13 @@ W61_Status_t W61_WiFi_AP_GetMACAddress(W61_Object_t *Obj, uint8_t *Mac)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(Mac);
 
-  strncpy(cmd, "AT+CIPAPMAC?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CIPAPMAC?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CIPAPMAC:", &argc, argv, W61_WIFI_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -852,7 +944,7 @@ W61_Status_t W61_WiFi_SetDTIM(W61_Object_t *Obj, uint32_t dtim)
 
   if (W61_SdkMinVersion(Obj, 2, 0, 97) != W61_STATUS_OK)
   {
-    if (dtim == 0)
+    if (dtim == 0U)
     {
       WIFI_LOG_ERROR("DTIM value should be greater than 0\n");
       return W61_STATUS_ERROR;
@@ -867,7 +959,7 @@ W61_Status_t W61_WiFi_SetDTIM(W61_Object_t *Obj, uint32_t dtim)
     return W61_STATUS_ERROR;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+SLWKDTIM=%" PRIu32 "\r\n", dtim);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+SLWKDTIM=%" PRIu32 "\r\n", dtim);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
@@ -879,13 +971,13 @@ W61_Status_t W61_WiFi_GetDTIM_AP(W61_Object_t *Obj, uint32_t *dtim)
   uint16_t argc = 0;
   W61_NULL_ASSERT(Obj);
 
-  strncpy(cmd, "AT+GET_AP_DTIM?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+GET_AP_DTIM?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+DTIM:", &argc, argv, W61_WIFI_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -901,36 +993,36 @@ W61_Status_t W61_WiFi_TWT_Setup(W61_Object_t *Obj, W61_WiFi_TWT_Setup_Params_t *
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(twt_params);
 
-  if (twt_params->setup_type > 2)
+  if (twt_params->setup_type > 2U)
   {
     WIFI_LOG_ERROR("TWT setup type should be between [0; 2]\n");
     goto _err;
   }
-  if (twt_params->flow_type > 1)
+  if (twt_params->flow_type > 1U)
   {
     WIFI_LOG_ERROR("TWT flow type should be between [0; 1]\n");
     goto _err;
   }
-  if (twt_params->wake_int_exp > 31)
+  if (twt_params->wake_int_exp > 31U)
   {
     WIFI_LOG_ERROR("TWT wake interval exponent should be between [0; 31]\n");
     goto _err;
   }
-  if (twt_params->min_twt_wake_dur > 0xFF)
+  if (twt_params->min_twt_wake_dur > 0xFFU)
   {
     WIFI_LOG_ERROR("TWT minimum wake duration should be between [0; 255]\n");
     goto _err;
   }
-  if (twt_params->wake_int_mantissa > 0xFFFF)
+  if (twt_params->wake_int_mantissa > 0xFFFFU)
   {
     WIFI_LOG_ERROR("TWT wake interval mantissa should be between [0; 65535]\n");
     goto _err;
   }
 
-  snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE,
-           "AT+TWT_PARAM=%" PRIu16 ",%" PRIu16 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
-           twt_params->setup_type, twt_params->flow_type, twt_params->wake_int_exp,
-           twt_params->min_twt_wake_dur, twt_params->wake_int_mantissa);
+  (void)snprintf((char *)cmd, W61_CMDRSP_STRING_SIZE,
+                 "AT+TWT_PARAM=%" PRIu16 ",%" PRIu16 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
+                 twt_params->setup_type, twt_params->flow_type, twt_params->wake_int_exp,
+                 twt_params->min_twt_wake_dur, twt_params->wake_int_mantissa);
   ret = W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 
 _err:
@@ -940,7 +1032,7 @@ _err:
 W61_Status_t W61_WiFi_TWT_GetStatus(W61_Object_t *Obj, W61_WiFi_TWT_Status_t *twt_status)
 {
   struct modem *mdm = (struct modem *) &Obj->Modem;
-  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->modem_cmd_handler.cmd_handler_data;
+  struct modem_cmd_handler_data *data = (struct modem_cmd_handler_data *)mdm->handler.cmd_handler_data;
   W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(twt_status);
@@ -959,7 +1051,7 @@ W61_Status_t W61_WiFi_TWT_GetStatus(W61_Object_t *Obj, W61_WiFi_TWT_Status_t *tw
   mdm->rx_data = twt_status;
 
   ret = W61_Status(modem_cmd_send_ext(&mdm->iface,
-                                      &mdm->modem_cmd_handler,
+                                      &mdm->handler,
                                       handlers,
                                       ARRAY_SIZE(handlers),
                                       (const uint8_t *)"AT+TWT_STATUS?\r\n",
@@ -977,12 +1069,15 @@ W61_Status_t W61_WiFi_TWT_Teardown(W61_Object_t *Obj, W61_WiFi_TWT_Teardown_Para
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(twt_params);
 
-#if 0 /* TWT multi flow is not supported in current version */
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+TWT_TEARDOWN=0,%" PRIu16 ",%" PRIu16 "\r\n",
-           twt_params->all_twt, twt_params->id);
-#else
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+TWT_TEARDOWN=0,1,0\r\n");
-#endif /* TWT multi flow is not supported in current version */
+  if (W61_SdkMinVersion(Obj, 2, 0, 106) == W61_STATUS_OK)
+  {
+    (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+TWT_TEARDOWN=0,%" PRIu16 ",%" PRIu16 "\r\n",
+                   twt_params->all_twt, twt_params->id);
+  }
+  else
+  {
+    (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+TWT_TEARDOWN=0,1,0\r\n");
+  }
 
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
@@ -996,13 +1091,13 @@ W61_Status_t W61_WiFi_TWT_IsSupported(W61_Object_t *Obj, uint32_t *is_supported)
   W61_NULL_ASSERT(Obj);
   W61_NULL_ASSERT(is_supported);
 
-  strncpy(cmd, "AT+GET_TWT_SUPPORTED?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+GET_TWT_SUPPORTED?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+TWT_SUPPORT:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -1025,7 +1120,11 @@ W61_Status_t W61_WiFi_SetAntennaEnable(W61_Object_t *Obj, W61_WiFi_AntennaMode_e
     return W61_STATUS_ERROR;
   }
 
-  if (mode == W61_WIFI_ANTENNA_STATIC)
+  if (mode == W61_WIFI_ANTENNA_DISABLED)
+  {
+    /* Nothing to do, both dynamic and static enable are set to 0 */
+  }
+  else if (mode == W61_WIFI_ANTENNA_STATIC)
   {
     static_enable = 1;
   }
@@ -1040,8 +1139,8 @@ W61_Status_t W61_WiFi_SetAntennaEnable(W61_Object_t *Obj, W61_WiFi_AntennaMode_e
     return W61_STATUS_ERROR;
   }
 
-  snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWANTENABLE=%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
-           dynamic_enable, static_enable, pin);
+  (void)snprintf(cmd, W61_CMDRSP_STRING_SIZE, "AT+CWANTENABLE=%" PRIu32 ",%" PRIu32 ",%" PRIu32 "\r\n",
+                 dynamic_enable, static_enable, pin);
   return W61_AT_Common_SetExecute(Obj, (uint8_t *)cmd, W61_NCP_TIMEOUT);
 }
 
@@ -1055,28 +1154,28 @@ W61_Status_t W61_WiFi_GetAntennaEnable(W61_Object_t *Obj, W61_WiFi_AntennaMode_e
   W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
 
-  strncpy(cmd, "AT+CWANTENABLE?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWANTENABLE?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWANTENABLE:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 2)
+  if (argc < 2U)
   {
     return W61_STATUS_ERROR;
   }
 
   dynamic_enable = (uint32_t)atoi(argv[0]);
   static_enable = (uint32_t)atoi(argv[1]);
-  if ((dynamic_enable == 0) && (static_enable == 0))
+  if ((dynamic_enable == 0U) && (static_enable == 0U))
   {
     *mode = W61_WIFI_ANTENNA_DISABLED;
   }
-  else if (dynamic_enable == 1)
+  else if (dynamic_enable == 1U)
   {
     *mode = W61_WIFI_ANTENNA_DYNAMIC;
   }
-  else if ((dynamic_enable == 0) && (static_enable == 1))
+  else if ((dynamic_enable == 0U) && (static_enable == 1U))
   {
     *mode = W61_WIFI_ANTENNA_STATIC;
   }
@@ -1096,13 +1195,13 @@ W61_Status_t W61_WiFi_GetAntennaUsed(W61_Object_t *Obj, uint32_t *antenna_id)
   W61_Status_t ret;
   W61_NULL_ASSERT(Obj);
 
-  strncpy(cmd, "AT+CWANT?\r\n", sizeof(cmd));
+  (void)strncpy(cmd, "AT+CWANT?\r\n", sizeof(cmd));
   ret = W61_AT_Common_Query_Parse(Obj, cmd, "+CWANT:", &argc, argv, W61_NCP_TIMEOUT);
   if (ret != W61_STATUS_OK)
   {
     return ret;
   }
-  if (argc < 1)
+  if (argc < 1U)
   {
     return W61_STATUS_ERROR;
   }
@@ -1117,9 +1216,9 @@ MODEM_CMD_DEFINE(on_cmd_ap_liststa)
   struct modem *mdm = (struct modem *) data->user_data;
   W61_WiFi_Connected_Sta_t *stations = (W61_WiFi_Connected_Sta_t *)mdm->rx_data;
 
-  if ((argc >= 2) && (stations->Count < W61_WIFI_MAX_CONNECTED_STATIONS))
+  if ((argc >= 2U) && (stations->Count < W61_WIFI_MAX_CONNECTED_STATIONS))
   {
-    uint8_t count = stations->Count++;
+    uint32_t count = stations->Count++;
     Parser_StrToIP((char *)argv[0], stations->STA[count].IP);
     Parser_StrToMAC((char *)argv[1], stations->STA[count].MAC);
   }
@@ -1132,12 +1231,12 @@ MODEM_CMD_DEFINE(on_cmd_twt_status)
   struct modem *mdm = (struct modem *) data->user_data;
   W61_WiFi_TWT_Status_t *twt_status = (W61_WiFi_TWT_Status_t *)mdm->rx_data;
 
-  if ((argc >= 1) && (strcmp((char *)argv[0], "INACTIVE") == 0))
+  if ((argc >= 1U) && (strcmp((char *)argv[0], "INACTIVE") == 0))
   {
     twt_status->flow_count = 0;
     return 0;
   }
-  else if ((argc >= 7) && (strcmp((char *)argv[0], "ACTIVE") == 0))
+  else if ((argc >= 7U) && (strcmp((char *)argv[0], "ACTIVE") == 0))
   {
     uint32_t flow_index = atoi((char *)argv[1]);
     if (flow_index < W61_WIFI_MAX_TWT_FLOWS)
@@ -1156,11 +1255,27 @@ MODEM_CMD_DEFINE(on_cmd_twt_status)
   return 0;
 }
 
+MODEM_CMD_DEFINE(on_cmd_get_ssid)
+{
+  struct modem *mdm = (struct modem *) data->user_data;
+  W61_WiFi_CredentialsList_t *credentials_list = (W61_WiFi_CredentialsList_t *)mdm->rx_data;
+
+  if ((argc >= 1U) && (credentials_list->Count < W61_WIFI_MAX_SSID_LIST_SIZE))
+  {
+    /* Copy the SSID */
+    W61_AT_RemoveStrQuotes((char *)argv[0]);
+    (void)snprintf((char *)&credentials_list->SSID[credentials_list->Count],
+                   W61_WIFI_MAX_SSID_SIZE + 1U, "%s", argv[0]);
+    credentials_list->Count++; /* Increment the number of SSID */
+  }
+  return 0;
+}
+
 static void W61_WiFi_AT_Event(void *hObj, uint16_t *argc, char **argv)
 {
   W61_Object_t *Obj = (W61_Object_t *)hObj;
   W61_WiFi_CbParamData_t cb_param_wifi_data;
-  if ((Obj == NULL) || (*argc < 1))
+  if ((Obj == NULL) || (*argc < 1U))
   {
     return;
   }
@@ -1195,9 +1310,9 @@ static void W61_WiFi_AT_Event(void *hObj, uint16_t *argc, char **argv)
   if (strcmp(argv[0], "DISCONNECTED") == 0)
   {
     /* Reset the context structure with all the information relative to the previous connection */
-    memset(&Obj->NetCtx.Net_sta_info, 0, sizeof(Obj->NetCtx.Net_sta_info));
-    memset(&Obj->WifiCtx.SSID, 0, sizeof(Obj->WifiCtx.SSID));
-    memset(&Obj->WifiCtx.STASettings, 0, sizeof(Obj->WifiCtx.STASettings));
+    (void)memset(&Obj->NetCtx.Net_sta_info, 0, sizeof(Obj->NetCtx.Net_sta_info));
+    (void)memset(&Obj->WifiCtx.SSID, 0, sizeof(Obj->WifiCtx.SSID));
+    (void)memset(&Obj->WifiCtx.STASettings, 0, sizeof(Obj->WifiCtx.STASettings));
     if (Obj->ulcbs.UL_wifi_sta_cb != NULL)
     {
       Obj->ulcbs.UL_wifi_sta_cb(W61_WIFI_EVT_DISCONNECTED_ID, NULL);
@@ -1225,7 +1340,7 @@ static void W61_WiFi_AT_Event(void *hObj, uint16_t *argc, char **argv)
     return;
   }
 
-  if ((strcmp(argv[0], "STA_CONNECTED") == 0) && (*argc >= 2))
+  if ((strcmp(argv[0], "STA_CONNECTED") == 0) && (*argc >= 2U))
   {
     W61_AT_RemoveStrQuotes(argv[1]);
 
@@ -1246,7 +1361,7 @@ static void W61_WiFi_AT_Event(void *hObj, uint16_t *argc, char **argv)
     return;
   }
 
-  if ((strcmp(argv[0], "STA_DISCONNECTED") == 0) && (*argc >= 2))
+  if ((strcmp(argv[0], "STA_DISCONNECTED") == 0) && (*argc >= 2U))
   {
     /* Parse the MAC address */
     W61_AT_RemoveStrQuotes(argv[1]);
@@ -1266,7 +1381,7 @@ static void W61_WiFi_AT_Event(void *hObj, uint16_t *argc, char **argv)
     return;
   }
 
-  if ((strcmp(argv[0], "DIST_STA_IP") == 0) && (*argc >= 3))
+  if ((strcmp(argv[0], "DIST_STA_IP") == 0) && (*argc >= 3U))
   {
     /* Parse the MAC address */
     W61_AT_RemoveStrQuotes(argv[1]);
@@ -1310,11 +1425,11 @@ static void W61_WiFi_scan_result(void *hObj, uint16_t *argc, char **argv)
   }
 
   /* Parsing of arguments for scan result with 0x */
-  if (*argc >= 8)
+  if (*argc >= 8U)
   {
     if (scan_result->Count >= W61_WIFI_MAX_DETECTED_AP)
     {
-      if (scan_result->More == 0)
+      if (scan_result->More == 0U)
       {
         SYS_LOG_WARN("Maximum number of APs reached: %d\n", W61_WIFI_MAX_DETECTED_AP);
         scan_result->More = 1;
@@ -1325,7 +1440,7 @@ static void W61_WiFi_scan_result(void *hObj, uint16_t *argc, char **argv)
     /* Remove first '(' */
     scan_result->AP[scan_result->Count].Security = (W61_WiFi_SecurityType_e)atoi((char *)&argv[0][1]);
     W61_AT_RemoveStrQuotes((char *)argv[1]);
-    strncpy((char *)scan_result->AP[scan_result->Count].SSID, (char *)argv[1], W61_WIFI_MAX_SSID_SIZE);
+    (void)strncpy((char *)scan_result->AP[scan_result->Count].SSID, (char *)argv[1], W61_WIFI_MAX_SSID_SIZE);
     scan_result->AP[scan_result->Count].RSSI = atoi((char *)argv[2]);
     W61_AT_RemoveStrQuotes((char *)argv[3]);
     Parser_StrToMAC((char *)argv[3], scan_result->AP[scan_result->Count].MAC);
@@ -1350,6 +1465,7 @@ static void W61_WiFi_scan_result(void *hObj, uint16_t *argc, char **argv)
       default:
         SYS_LOG_ERROR("Invalid Wi-Fi version: %d\n", protocol);
         return;
+        break;
     }
     /* Remove last ')' */
     argv[7][1] = '\0';

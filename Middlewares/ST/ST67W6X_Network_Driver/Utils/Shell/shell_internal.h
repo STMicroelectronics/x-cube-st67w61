@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    shell_internal.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file is part of the shell module
   ******************************************************************************
   * @attention
@@ -43,9 +43,9 @@ extern "C" {
 void shell_handler(uint8_t data);
 /**
   * @brief  This function will initialize shell
-  * @param  shell_printf the print function
+  * @param  shell_printf_fn the print function
   */
-void shell_init(void (*shell_printf)(char *fmt, ...));
+void shell_init(void (*shell_printf_fn)(char *fmt, ...));
 
 /** @} */
 

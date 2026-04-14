@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    lwip_netif.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides initialization code for ST67W6X Network interface over LwIP
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -24,13 +24,14 @@
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include "lwip.h"
 #include "lwip_netif.h"
 
-#include <FreeRTOS.h>
-#include <task.h>
-#include <semphr.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -52,10 +53,10 @@ typedef struct
 
 /* Private defines -----------------------------------------------------------*/
 /** Bit indicating that STA interface has data ready to be processed */
-#define NET_IF_STA_RX_RDY       (1 << 0)
+#define NET_IF_STA_RX_RDY       (1UL << 0U)
 
 /** Bit indicating that AP interface has data ready to be processed */
-#define NET_IF_AP_RX_RDY        (1 << 1)
+#define NET_IF_AP_RX_RDY        (1UL << 1U)
 
 /* USER CODE BEGIN PD */
 
@@ -91,9 +92,9 @@ static struct pbuf_custom *netif_pbuf_alloc(void *buffer);
 
 /**
   * @brief  Custom free function for pbuf with driver buffer ptr
-  * @param  p Pointer to the pbuf structure to be freed
+  * @param  pb Pointer to the pbuf structure to be freed
   */
-static void netif_pbuf_free(struct pbuf *p);
+static void netif_pbuf_free(struct pbuf *pb);
 
 /**
   * @brief  Callback function to handle RX notification from STA interface
@@ -141,13 +142,13 @@ int32_t net_if_init(W6X_Net_if_cb_t *net_if_cb)
     return -1;
   }
 
-  if (pdPASS != xTaskCreate(netif_task, "netif", NETIF_TASK_STACK >> 2,
+  if (pdPASS != xTaskCreate(netif_task, "netif", NETIF_TASK_STACK >> 2U,
                             NULL, NETIF_TASK_PRIORITY, &netif_task_handle))
   {
     LogError("xTaskCreate failed to create netif task\n");
     return -1;
   }
-  vTaskDelay(100);
+  vTaskDelay(pdMS_TO_TICKS(100));
   return 0;
 }
 
@@ -197,6 +198,7 @@ err_t net_if_output(struct netif *net_if, struct pbuf *p_buf)
           break;
         default:
           status = ERR_VAL;
+          break;
       }
     }
   }
@@ -217,7 +219,7 @@ static struct pbuf_custom *netif_pbuf_alloc(void *buffer)
   {
     return NULL;
   }
-  memset(netif_pbuf, 0, sizeof(netif_pbuf_t));
+  (void)memset(netif_pbuf, 0, sizeof(netif_pbuf_t));
   /* Register the free callback to clean buffer when process of payload is completed */
   netif_pbuf->pb.custom_free_function = netif_pbuf_free;
 
@@ -236,19 +238,19 @@ static void netif_pbuf_free(struct pbuf *pb)
     netif_pbuf_t *netif_pbuf = CONTAINER_OF(pbufc, netif_pbuf_t, pb);
 
     /* Free the driver buffer and netif_pbuf */
-    W6X_Netif_free(netif_pbuf->buffer);
+    (void)W6X_Netif_free(netif_pbuf->buffer);
     vPortFree(netif_pbuf);
   }
 }
 
 static void netif_sta_notify_callback(void *arg)
 {
-  xTaskNotify(netif_task_handle, NET_IF_STA_RX_RDY, eSetBits);
+  (void)xTaskNotify(netif_task_handle, NET_IF_STA_RX_RDY, eSetBits);
 }
 
 static void netif_ap_notify_callback(void *arg)
 {
-  xTaskNotify(netif_task_handle, NET_IF_AP_RX_RDY, eSetBits);
+  (void)xTaskNotify(netif_task_handle, NET_IF_AP_RX_RDY, eSetBits);
 }
 
 static int32_t netif_rx_process(uint32_t link_id)
@@ -257,10 +259,10 @@ static int32_t netif_rx_process(uint32_t link_id)
   struct pbuf *pb;
   void *buffer = NULL;
   uint8_t *payload = NULL;
-  struct netif *netif = NULL;
+  struct netif *netif_cur = NULL;
 
-  netif = netif_get_interface(link_id);
-  if (netif == NULL)
+  netif_cur = netif_get_interface(link_id);
+  if (netif_cur == NULL)
   {
     vTaskDelay(pdMS_TO_TICKS(100));
     return -1;
@@ -272,36 +274,36 @@ static int32_t netif_rx_process(uint32_t link_id)
   {
     if (buffer)
     {
-      W6X_Netif_free(buffer); /* Free the buffer even if in error */
+      (void)W6X_Netif_free(buffer); /* Free the buffer even if in error */
     }
     return ret;
   }
 
   /* Allocate new pbuf custom element */
-  struct pbuf_custom *pbuf_custom = netif_pbuf_alloc(buffer);
-  if (pbuf_custom == NULL)
+  struct pbuf_custom *pbufc = netif_pbuf_alloc(buffer);
+  if (pbufc == NULL)
   {
     LogError("Memory allocation failure\n");
-    W6X_Netif_free(buffer);
+    (void)W6X_Netif_free(buffer);
     vTaskDelay(pdMS_TO_TICKS(100));
     return -1;
   }
 
   /* Setup the pbuf_custom structure and return the subfield pbuf */
-  pb = pbuf_alloced_custom(PBUF_RAW, ret, PBUF_REF, pbuf_custom, payload, ret);
+  pb = pbuf_alloced_custom(PBUF_RAW, ret, PBUF_REF, pbufc, payload, ret);
   if (pb == NULL)
   {
     LogError("Memory allocation failure\n");
-    W6X_Netif_free(buffer);
+    (void)W6X_Netif_free(buffer);
     vTaskDelay(pdMS_TO_TICKS(100));
     return -1;
   }
 
   /* Call the upper layer callback */
-  if (netif->input(pb, netif))
+  if (netif_cur->input(pb, netif_cur))
   {
     LogError("Input ERROR\n");
-    W6X_Netif_free(buffer);
+    (void)W6X_Netif_free(buffer);
     netif_pbuf_free(pb);
     return -1;
   }
@@ -314,12 +316,12 @@ static void netif_task(void *arg)
   int32_t ret = 0;
   uint32_t netif_event = 0;
 
-  while (1)
+  while (true)
   {
-    xTaskNotifyWait(0, NET_IF_STA_RX_RDY | NET_IF_AP_RX_RDY, &netif_event, portMAX_DELAY);
+    (void)xTaskNotifyWait(0, NET_IF_STA_RX_RDY | NET_IF_AP_RX_RDY, &netif_event, portMAX_DELAY);
     do
     {
-      if (netif_event & NET_IF_STA_RX_RDY)
+      if ((netif_event & NET_IF_STA_RX_RDY) != 0U)
       {
         ret = netif_rx_process(NETIF_STA);
         if (ret <= 0)
@@ -328,7 +330,7 @@ static void netif_task(void *arg)
         }
       }
 
-      if (netif_event & NET_IF_AP_RX_RDY)
+      if ((netif_event & NET_IF_AP_RX_RDY) != 0U)
       {
         ret = netif_rx_process(NETIF_AP);
         if (ret <= 0)
@@ -336,7 +338,7 @@ static void netif_task(void *arg)
           netif_event &= ~NET_IF_AP_RX_RDY;
         }
       }
-    } while (netif_event);
+    } while (netif_event != 0U);
   }
 }
 

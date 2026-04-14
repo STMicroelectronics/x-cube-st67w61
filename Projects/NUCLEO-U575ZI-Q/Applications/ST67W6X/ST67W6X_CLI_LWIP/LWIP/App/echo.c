@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    echo.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Test an echo with a server
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -22,7 +22,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <stdint.h>
-#include <stdlib.h> /* strtoul */
+#include <stdlib.h>
+#include <stdbool.h>
 
 #include "echo.h"
 #include "main.h"
@@ -32,8 +33,8 @@
 #include "common_parser.h" /* Common Parser functions */
 
 #include "shell.h"
-#include <FreeRTOS.h>
-#include <task.h>
+#include "FreeRTOS.h"
+#include "task.h"
 #include "lwip.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
@@ -57,7 +58,7 @@ typedef struct
   ip_addr_t resolved_ip;      /*!< Resolved IP address */
   volatile int32_t done;      /*!< Flag to indicate if resolution is done */
   int32_t result;             /*!< Result of the resolution */
-} dns_resolve_context_t;
+} echo_dns_resolve_context_t;
 
 /* USER CODE BEGIN PTD */
 
@@ -76,26 +77,26 @@ typedef struct
 
 #ifndef ECHO_TRANSFER_SIZE_START
 /** Minimal size of a packet */
-#define ECHO_TRANSFER_SIZE_START    1000
+#define ECHO_TRANSFER_SIZE_START    1000U
 #endif /* ECHO_TRANSFER_SIZE_START */
 
 #ifndef ECHO_TRANSFER_SIZE_MAX
 /** Maximal size of a packet */
-#define ECHO_TRANSFER_SIZE_MAX      2000
+#define ECHO_TRANSFER_SIZE_MAX      2000U
 #endif /* ECHO_TRANSFER_SIZE_MAX */
 
 #ifndef ECHO_TRANSFER_SIZE_ITER
 /** To increment the size of a group of packets */
-#define ECHO_TRANSFER_SIZE_ITER     250
+#define ECHO_TRANSFER_SIZE_ITER     250U
 #endif /* ECHO_TRANSFER_SIZE_ITER */
 
 #ifndef ECHO_ITERATION_COUNT
 /** Number of packets to be sent */
-#define ECHO_ITERATION_COUNT        10
+#define ECHO_ITERATION_COUNT        10U
 #endif /* ECHO_ITERATION_COUNT */
 
 /** Maximal number of iterations for the echo test */
-#define ECHO_MAX_ITERATION_COUNT    1000
+#define ECHO_MAX_ITERATION_COUNT    1000U
 
 /** DNS resolve timeout in milliseconds */
 #define DNS_RESOLVE_TIMEOUT_MS      5000
@@ -114,7 +115,7 @@ typedef struct
 
 /* Private variables ---------------------------------------------------------*/
 /** Buffer to send and receive data */
-static uint8_t buffer[ECHO_TRANSFER_SIZE_MAX + 1];
+static uint8_t *echo_buffer = NULL;
 
 /* USER CODE BEGIN PV */
 
@@ -145,7 +146,7 @@ static uint32_t check_buffer(uint8_t *buff, uint32_t len, uint32_t offset);
   * @param  use_ipv6: 0 for ipv4, 1 for ipv6
   * @retval number of errors
   */
-static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6);
+static int32_t echo_process(uint32_t send_loop, uint32_t len, bool use_ipv6);
 
 /**
   * @brief  DNS lookup callback function for lwIP
@@ -153,7 +154,7 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
   * @param  ipaddr: pointer to the resolved IP address (NULL if failed)
   * @param  arg: user-supplied argument (unused)
   */
-static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
+static void echo_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg);
 
 /**
   * @brief  Get IPv6 or IPv4 address from URL using DNS
@@ -162,7 +163,7 @@ static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, 
   * @param  out_ip: the returned IP address
   * @retval 0 on success, -1 on failure, -2 on timeout
   */
-static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_addr_t *out_ip);
+static int32_t echo_resolve_host_address(const char *hostUrl, bool use_ipv6, ip_addr_t *out_ip);
 
 /* USER CODE BEGIN PFP */
 
@@ -174,7 +175,7 @@ int32_t echo_sizes_loop(int32_t argc, char **argv)
   int32_t status;
   uint32_t iteration_count = ECHO_ITERATION_COUNT; /* Number of packets to be sent */
   uint32_t packet_size = ECHO_TRANSFER_SIZE_START; /* Minimal size of a packet */
-  uint32_t use_ipv6 = false;
+  bool use_ipv6 = false;
 
   /* USER CODE BEGIN echo_sizes_loop_1 */
 
@@ -188,7 +189,7 @@ int32_t echo_sizes_loop(int32_t argc, char **argv)
       if (argv[current_arg][0] != '-')
       {
         iteration_count = (uint32_t)atoi(argv[current_arg]);
-        if ((iteration_count == 0) || (iteration_count > ECHO_MAX_ITERATION_COUNT))
+        if ((iteration_count == 0U) || (iteration_count > ECHO_MAX_ITERATION_COUNT))
         {
           return -254;
         }
@@ -242,20 +243,22 @@ SHELL_CMD_EXPORT_ALIAS(echo_sizes_loop, echo, echo [ iteration [1; 1000] ] [-v [
 /* Private Functions Definition ----------------------------------------------*/
 static void fill_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 {
-  uint8_t value;
-
   /* USER CODE BEGIN fill_buffer_1 */
 
   /* USER CODE END fill_buffer_1 */
-
-  for (uint32_t byte = 0; byte < len - 1; byte++)
+  if (len == 0U)
   {
-    value = (uint8_t)(byte + offset);
+    return;
+  }
+
+  for (uint32_t byte = 0; byte < (len - 1U); byte++)
+  {
+    uint8_t value = (uint8_t)(byte + offset);
 
     /* Work around for tcpbin.com echo server, avoid CR values */
-    if (value == 0x0D)
+    if (value == 0x0DU)
     {
-      value = 0x0C;
+      value = 0x0CU;
     }
     *buff++ = value;
   }
@@ -270,29 +273,28 @@ static void fill_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 
 static uint32_t check_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
 {
-  uint8_t expected_value;
   uint32_t error_count = 0;
 
   /* USER CODE BEGIN check_buffer_1 */
 
   /* USER CODE END check_buffer_1 */
 
-  for (uint32_t byte = 0; byte < len ; byte++)
+  for (uint32_t byte = 0; byte < len; byte++)
   {
-    expected_value = ((byte + offset) & 0xff);
+    uint8_t expected_value = (uint8_t)(byte + offset);
     /* Work around for tcpbin.com echo server, last value is LF (\n) */
-    if (byte == len - 1)
+    if (byte == (len - 1U))
     {
-      expected_value =  0x0A;
+      expected_value =  0x0AU;
     }
 
     /* Work around for tcpbin.com echo server, avoid CR values */
-    if (expected_value != 0x0D)
+    if (expected_value != 0x0DU)
     {
       if (buff[byte] != expected_value)
       {
         LogInfo("Received data are different from data sent \"%" PRIu16 "\" <> \"%" PRIu16 "\" at index %" PRIu32 "\n",
-                (uint8_t)(byte & 0xff), buff[byte], byte);
+                (uint8_t)(byte & 0xFFU), buff[byte], byte);
         error_count++;
       }
     }
@@ -305,7 +307,7 @@ static uint32_t check_buffer(uint8_t *buff, uint32_t len, uint32_t offset)
   return error_count;
 }
 
-static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
+static int32_t echo_process(uint32_t send_loop, uint32_t len, bool use_ipv6)
 {
   struct sockaddr_in addr_t = {0};
   int32_t domain = AF_INET;
@@ -325,8 +327,8 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
   timeout.tv_usec = (ECHO_TIMEOUT_MS % 1000) * 1000;
 #endif /* LWIP_SO_SNDRCVTIMEO_NONSTANDARD */
 
-  uint32_t tstart;
-  uint32_t tstop;
+  uint32_t tstart = 0U;
+  uint32_t tstop = 0U;
   uint32_t transferred_bytes;
   uint32_t transferred_total = 0;
   uint32_t error_count = 0;
@@ -335,17 +337,31 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
   uint16_t echo_server_port = ECHO_SERVER_PORT;
   int32_t net_ret = 0;
   int32_t ret_code = -1;
-  int32_t sock;
+  int32_t sock = -1;
 
   /* USER CODE BEGIN echo_process_1 */
 
   /* USER CODE END echo_process_1 */
 
+  if (echo_buffer != NULL)
+  {
+    LogError("echo buffer already allocated\n");
+    goto end;
+  }
+
+  echo_buffer = pvPortMalloc(ECHO_TRANSFER_SIZE_MAX + 1U);
+  if (echo_buffer == NULL)
+  {
+    LogError("echo buffer allocation failed\n");
+    goto end;
+  }
+
   /* Resolve IP Address from the input URL */
-  if (ResolveHostAddress(echo_server_url, use_ipv6, &resolved_ip) != 0)
+  net_ret = echo_resolve_host_address(echo_server_url, use_ipv6, &resolved_ip);
+  if (net_ret != 0)
   {
     LogError("DNS resolution failed for %s\n", echo_server_url);
-    return ret_code; /* Socket not created yet: direct return avoids unnecessary cleanup jump */
+    goto end; /* Socket not created yet: direct return avoids unnecessary cleanup jump */
   }
   LogInfo("Resolved %s address: %s\n", use_ipv6 ? "IPv6" : "IPv4", ipaddr_ntoa(&resolved_ip));
 
@@ -376,7 +392,7 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
   {
     addr6_t.sin6_family = AF_INET6;
     addr6_t.sin6_port = PP_HTONS(echo_server_port);
-    memcpy(&addr6_t.sin6_addr, ip_2_ip6(&resolved_ip), sizeof(addr6_t.sin6_addr));
+    (void)memcpy(&addr6_t.sin6_addr, ip_2_ip6(&resolved_ip), sizeof(addr6_t.sin6_addr));
 
     LogInfo("Connecting the socket to %s (IPv6)\n", echo_server_url);
     net_ret = lwip_connect(sock, (struct sockaddr *)&addr6_t, sizeof(addr6_t));
@@ -410,19 +426,19 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
 
   for (uint32_t i = 0; i < send_loop; i++)
   {
-    fill_buffer(buffer, len, i);
+    fill_buffer(echo_buffer, len, i);
     {
       transferred_bytes = 0;
       do
       {
-        int32_t count_done = lwip_send(sock, &buffer[transferred_bytes], len - transferred_bytes, 0);
+        int32_t count_done = lwip_send(sock, &echo_buffer[transferred_bytes], len - transferred_bytes, 0);
 
         if (count_done < 0)
         {
           LogError("Failed to send data to echo server (%" PRId32 "), try again\n", count_done);
           count_done = 0;
         }
-        transferred_bytes += count_done;
+        transferred_bytes += (uint32_t)count_done;
       } while (transferred_bytes < len);
 
       /* Update cumulative number with data that have been sent. */
@@ -430,15 +446,16 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
     }
 
     /* Reset the buffer of data reception. */
-    memset(buffer, 0x00, sizeof(buffer));
+    (void)memset(echo_buffer, 0x00, ECHO_TRANSFER_SIZE_MAX + 1U);
 
     transferred_bytes = 0;
     do
     {
-      int32_t count_done = lwip_recv(sock, &buffer[transferred_bytes], len - transferred_bytes, 0);
+      int32_t count_done = lwip_recv(sock, &echo_buffer[transferred_bytes], len - transferred_bytes, 0);
       if (count_done < 0)
       {
         LogError("\nReceive failed with %" PRId32 "\n", count_done);
+        ret_code = -1;
         goto end;
       }
       transferred_bytes += (uint32_t)count_done;
@@ -446,25 +463,13 @@ static int32_t echo_process(uint32_t send_loop, uint32_t len, uint32_t use_ipv6)
 
     tstop = HAL_GetTick();
 
-    error_count = check_buffer(buffer, len, i);
+    error_count += check_buffer(echo_buffer, len, i);
 
     /* Update cumulative number with data that have been received. */
     transferred_total += transferred_bytes;
   }
 
-  if (error_count == 0)
-  {
-    uint32_t duration_ms = (tstop > tstart) ? (tstop - tstart) : 1U;
-    LogInfo("Successful Echo Transfer and receive %" PRId32 " x %" PRId32 " with %" PRId32 " bytes"
-            " in %" PRId32 " ms, br = %" PRId32 " Kbit/sec\n",
-            send_loop, len, transferred_total, duration_ms, (transferred_total * 8) / duration_ms);
-    ret_code = 0;
-  }
-  else
-  {
-    LogError("Error: Echo transfer, find %" PRId32 " different bytes\n", error_count);
-    ret_code = -2; /* Distinct code for data mismatch */
-  }
+  ret_code = 0; /* Success */
 
   /* USER CODE BEGIN echo_process_last */
 
@@ -485,12 +490,35 @@ end:
     /* Delay to Allow lwIP to free resources */
     vTaskDelay(pdMS_TO_TICKS(20));
   }
+
+  if (echo_buffer != NULL)
+  {
+    vPortFree(echo_buffer);
+    echo_buffer = NULL;
+  }
+
+  if ((ret_code == 0) && (error_count == 0U))
+  {
+    uint32_t duration_ms = (tstop > tstart) ? (tstop - tstart) : 1U;
+    LogInfo("Successful Echo Transfer and receive %" PRId32 " x %" PRId32 " with %" PRId32 " bytes"
+            " in %" PRId32 " ms, br = %" PRId32 " Kbit/sec\n",
+            send_loop, len, transferred_total, duration_ms, (transferred_total * 8U) / duration_ms);
+  }
+  else
+  {
+    if (error_count > 0U)
+    {
+      LogError("Error: Echo transfer, find %" PRId32 " different bytes\n", error_count);
+      ret_code = -2; /* Distinct code for data mismatch */
+    }
+  }
+
   return ret_code;
 }
 
-static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
+static void echo_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, void *arg)
 {
-  dns_resolve_context_t *ctx = (dns_resolve_context_t *)arg;
+  echo_dns_resolve_context_t *ctx = (echo_dns_resolve_context_t *)arg;
   if (ipaddr)
   {
     ctx->resolved_ip = *ipaddr;
@@ -503,19 +531,19 @@ static void lwip_dns_lookup_callback(const char *name, const ip_addr_t *ipaddr, 
   ctx->done = 1;
 }
 
-static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_addr_t *out_ip)
+static int32_t echo_resolve_host_address(const char *hostUrl, bool use_ipv6, ip_addr_t *out_ip)
 {
-  if (!hostUrl || !out_ip)
+  if ((hostUrl == NULL) || (out_ip == NULL))
   {
     return -1;
   }
 
-  dns_resolve_context_t ctx;
-  memset(&ctx, 0, sizeof(ctx));
+  echo_dns_resolve_context_t ctx;
+  (void)memset(&ctx, 0, sizeof(ctx));
   ctx.result = -1;
 
   uint8_t addrtype = use_ipv6 ? LWIP_DNS_ADDRTYPE_IPV6 : LWIP_DNS_ADDRTYPE_IPV4;
-  err_t err = dns_gethostbyname_addrtype(hostUrl, &ctx.resolved_ip, lwip_dns_lookup_callback, &ctx, addrtype);
+  err_t err = dns_gethostbyname_addrtype(hostUrl, &ctx.resolved_ip, echo_dns_lookup_callback, &ctx, addrtype);
   if (err == ERR_OK)
   {
     if ((use_ipv6 && IP_IS_V6(&ctx.resolved_ip)) || (!use_ipv6 && IP_IS_V4(&ctx.resolved_ip)))
@@ -530,7 +558,7 @@ static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_add
   {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTick = startTick + pdMS_TO_TICKS(DNS_RESOLVE_TIMEOUT_MS);
-    while (!ctx.done)
+    while (ctx.done == 0)
     {
       vTaskDelay(pdMS_TO_TICKS(10));
       if ((int32_t)(xTaskGetTickCount() - timeoutTick) >= 0)
@@ -551,6 +579,10 @@ static int32_t ResolveHostAddress(const char *hostUrl, uint32_t use_ipv6, ip_add
     }
     LogError("DNS Lookup failed\n");
     return -1;
+  }
+  else
+  {
+    /* Immediate failure */
   }
 
   LogError("DNS Lookup immediate failure\n");

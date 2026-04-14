@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_ble.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x BLE API
   ******************************************************************************
   * @attention
@@ -18,6 +18,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <inttypes.h>
+#include <string.h>
 #include "w6x_api.h"       /* Prototypes of the functions implemented in this file */
 #include "w61_at_api.h"    /* Prototypes of the functions called by this file */
 #include "w6x_internal.h"
@@ -61,12 +62,18 @@
   * @ingroup  ST67W6X_Private_BLE
   * @{
   */
-static W61_Object_t *p_DrvObj = NULL; /*!< Global W61 context pointer */
+static W61_Object_t *W6X_Ble_drv_obj = NULL; /*!< Global W61 context pointer */
 
 #if (W6X_ASSERT_ENABLE == 1)
 /** W6X BLE init error string */
 static const char W6X_Ble_Uninit_str[] = "W6X BLE module not initialized";
 #endif /* W6X_ASSERT_ENABLE */
+
+/** BLE Connection Role string */
+static const char *const W6X_Ble_Role_str[] =
+{
+  "Central", "Peripheral", "Unknown"
+};
 
 /** @} */
 
@@ -95,25 +102,26 @@ static void W6X_Ble_PrintServicesAndCharacteristics(W6X_Ble_Service_t ServicesTa
 /** @addtogroup ST67W6X_API_BLE_Public_Functions
   * @{
   */
-W6X_Status_t W6X_Ble_GetInitMode(W6X_Ble_Mode_e *Mode)
+W6X_Status_t W6X_Ble_GetInitMode(W6X_Ble_Mode_e *mode)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get the BLE initialization mode */
-  return TranslateErrorStatus(W61_Ble_GetInitMode(p_DrvObj, (W61_Ble_Mode_e *) Mode));
+  return TranslateErrorStatus(W61_Ble_GetInitMode(W6X_Ble_drv_obj, (W61_Ble_Mode_e *) mode));
 }
 
-W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_len)
+W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *recv_data, size_t max_len)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
   W6X_App_Cb_t *p_cb_handler;
-  W6X_Ble_Mode_e tmp_mode;
+  W6X_Ble_Mode_e current_mode;
   uint32_t ps_mode = 0;
   uint32_t clock_source = 0;
+  char device_name[W6X_BLE_DEVICE_NAME_SIZE + 1] = {0};
 
   /* Get the global W61 context pointer */
-  p_DrvObj = W61_ObjGet();
-  NULL_ASSERT(p_DrvObj, W6X_Obj_Null_str);
+  W6X_Ble_drv_obj = W61_ObjGet();
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Obj_Null_str);
 
   p_cb_handler = W6X_GetCbHandler(); /* Check that application callback is registered */
   if ((p_cb_handler == NULL) || (p_cb_handler->APP_ble_cb == NULL))
@@ -129,11 +137,11 @@ W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_
     return ret;
   }
 
-  if (ps_mode == 1)
+  if (ps_mode == 1U)
   {
     /* Low Power Mode is enabled */
     /* Ensure current W61 clock is correctly setup to support BLE in low power */
-    ret = TranslateErrorStatus(W61_GetClockSource(p_DrvObj, &clock_source));
+    ret = TranslateErrorStatus(W61_GetClockSource(W6X_Ble_drv_obj, &clock_source));
     if (ret != W6X_STATUS_OK)
     {
       BLE_LOG_ERROR("Get W61 clock source failed\n");
@@ -141,7 +149,7 @@ W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_
     }
 
     /* External oscillator must be used to support BLE in Low Power */
-    if (clock_source == 1)
+    if (clock_source == 1U)
     {
       BLE_LOG_WARN("External Clock oscillator must be used to support BLE in power save mode\n");
       ret = W6X_SetPowerMode(0); /* Disable low power */
@@ -155,176 +163,191 @@ W6X_Status_t W6X_Ble_Init(W6X_Ble_Mode_e mode, uint8_t *p_recv_data, size_t max_
   }
 
   /* Register W61 driver callbacks */
-  W61_RegisterULcb(p_DrvObj,
-                   NULL,
-                   NULL,
-                   NULL,
-                   NULL,
-                   W6X_Ble_cb);
+  (void)W61_RegisterULcb(W6X_Ble_drv_obj,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         W6X_Ble_cb);
 
   /* Initialize BLE Data buffer */
-  ret = TranslateErrorStatus(W61_Ble_Init(p_DrvObj, (uint8_t) mode, p_recv_data, (uint32_t)max_len));
-  if (W6X_STATUS_OK == ret)
+  ret = TranslateErrorStatus(W61_Ble_Init(W6X_Ble_drv_obj, (uint8_t) mode, recv_data, (uint32_t)max_len));
+  if (W6X_STATUS_OK != ret)
   {
-    ret = W6X_Ble_GetInitMode(&tmp_mode); /* Check if the BLE mode is correctly set */
-    if ((W6X_STATUS_OK == ret) && (tmp_mode != mode))
-    {
-      ret = W6X_STATUS_ERROR; /* Error: BLE mode not correctly set */
-    }
+    goto _err;
+  }
+
+  ret = W6X_Ble_GetInitMode(&current_mode); /* Check if the BLE mode is correctly set */
+  if ((W6X_STATUS_OK == ret) && (current_mode != mode))
+  {
+    ret = W6X_STATUS_ERROR; /* Error: BLE mode not correctly set */
+    goto _err;
   }
 
   /* Save the BLE mode */
-  p_DrvObj->BleCtx.NetSettings.Mode = (W61_Ble_Mode_e)mode;
+  W6X_Ble_drv_obj->BleCtx.NetSettings.Mode = (W61_Ble_Mode_e)mode;
 
-  if (W6X_Ble_SetDeviceName(W6X_BLE_HOSTNAME) != W6X_STATUS_OK) /* Set device name */
+  /* Set device name */
+  (void)strncpy(device_name, W6X_BLE_HOSTNAME, W6X_BLE_DEVICE_NAME_SIZE);
+  device_name[W6X_BLE_DEVICE_NAME_SIZE] = '\0'; /* Ensure null termination */
+  if (W6X_Ble_SetDeviceName(device_name) != W6X_STATUS_OK)
   {
     BLE_LOG_ERROR("Failed to set device name\n");
     ret = W6X_STATUS_ERROR;
+    goto _err;
   }
 
+  /* Update BLE state */
+  W6X_Ble_drv_obj->ResetCfg.Ble_status = W61_MODULE_STATE_INIT;
+  return W6X_STATUS_OK;
+
+_err:
+  W6X_Ble_DeInit(); /* Deinitialize BLE in case of failure */
   return ret;
 }
 
 void W6X_Ble_DeInit(void)
 {
-  if (p_DrvObj == NULL)
+  if (W6X_Ble_drv_obj == NULL)
   {
     return; /* Nothing to do */
   }
-  W61_Ble_DeInit(p_DrvObj); /* Deinitialize BLE */
-  p_DrvObj = NULL; /* Reset the global pointer */
+  (void)W61_Ble_DeInit(W6X_Ble_drv_obj); /* Deinitialize BLE */
+  W6X_Ble_drv_obj->ResetCfg.Ble_status = W61_MODULE_STATE_NOT_INIT; /* Update BLE state */
+  W6X_Ble_drv_obj = NULL; /* Reset the global pointer */
 }
 
-W6X_Status_t W6X_Ble_SetRecvDataPtr(uint8_t *p_recv_data, uint32_t recv_data_buf_size)
+W6X_Status_t W6X_Ble_SetRecvDataPtr(uint8_t *recv_data, uint32_t recv_data_buf_size)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Update the BLE Data buffer */
-  return TranslateErrorStatus(W61_Ble_SetRecvDataPtr(p_DrvObj, p_recv_data, recv_data_buf_size));
+  return TranslateErrorStatus(W61_Ble_SetRecvDataPtr(W6X_Ble_drv_obj, recv_data, recv_data_buf_size));
 }
 
 W6X_Status_t W6X_Ble_SetTxPower(uint32_t power)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set BLE Tx Power */
-  return TranslateErrorStatus(W61_Ble_SetTxPower(p_DrvObj, power));
+  return TranslateErrorStatus(W61_Ble_SetTxPower(W6X_Ble_drv_obj, power));
 }
 
-W6X_Status_t W6X_Ble_GetTxPower(uint32_t *Power)
+W6X_Status_t W6X_Ble_GetTxPower(uint32_t *power)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get BLE Tx Power */
-  return TranslateErrorStatus(W61_Ble_GetTxPower(p_DrvObj, Power));
+  return TranslateErrorStatus(W61_Ble_GetTxPower(W6X_Ble_drv_obj, power));
 }
 
 W6X_Status_t W6X_Ble_AdvStart(void)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Start BLE advertising */
-  return TranslateErrorStatus(W61_Ble_AdvStart(p_DrvObj));
+  return TranslateErrorStatus(W61_Ble_AdvStart(W6X_Ble_drv_obj));
 }
 
 W6X_Status_t W6X_Ble_AdvStop(void)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Stop BLE advertising */
-  return TranslateErrorStatus(W61_Ble_AdvStop(p_DrvObj));
+  return TranslateErrorStatus(W61_Ble_AdvStop(W6X_Ble_drv_obj));
 }
 
-W6X_Status_t W6X_Ble_GetBDAddress(uint8_t *BdAddr)
+W6X_Status_t W6X_Ble_GetBDAddress(uint8_t bd_addr[6])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get the BD address */
-  return TranslateErrorStatus(W61_Ble_GetBDAddress(p_DrvObj, BdAddr));
+  return TranslateErrorStatus(W61_Ble_GetBDAddress(W6X_Ble_drv_obj, bd_addr));
 }
 
 W6X_Status_t W6X_Ble_Disconnect(uint32_t conn_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Disconnect BLE */
-  return TranslateErrorStatus(W61_Ble_Disconnect(p_DrvObj, conn_handle));
+  return TranslateErrorStatus(W61_Ble_Disconnect(W6X_Ble_drv_obj, conn_handle));
 }
 
 W6X_Status_t W6X_Ble_ExchangeMTU(uint32_t conn_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Exchange BLE MTU length */
-  return TranslateErrorStatus(W61_Ble_ExchangeMTU(p_DrvObj, conn_handle));
+  return TranslateErrorStatus(W61_Ble_ExchangeMTU(W6X_Ble_drv_obj, conn_handle));
 }
 
-W6X_Status_t W6X_Ble_SetBdAddress(const uint8_t *bdaddr)
+W6X_Status_t W6X_Ble_SetBdAddress(const uint8_t bd_addr[6])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set the BD address */
-  return TranslateErrorStatus(W61_Ble_SetBDAddress(p_DrvObj, bdaddr));
+  return TranslateErrorStatus(W61_Ble_SetBDAddress(W6X_Ble_drv_obj, bd_addr));
 }
 
-W6X_Status_t W6X_Ble_SetDeviceName(char *name)
+W6X_Status_t W6X_Ble_SetDeviceName(char name[W6X_BLE_DEVICE_NAME_SIZE])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set the host name */
-  return TranslateErrorStatus(W61_Ble_SetDeviceName(p_DrvObj, name));
+  return TranslateErrorStatus(W61_Ble_SetDeviceName(W6X_Ble_drv_obj, name));
 }
 
-W6X_Status_t W6X_Ble_GetDeviceName(char *DeviceName)
+W6X_Status_t W6X_Ble_GetDeviceName(char device_name[W6X_BLE_DEVICE_NAME_SIZE])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get the host name */
-  return TranslateErrorStatus(W61_Ble_GetDeviceName(p_DrvObj, DeviceName));
+  return TranslateErrorStatus(W61_Ble_GetDeviceName(W6X_Ble_drv_obj, device_name));
 }
 
-W6X_Status_t W6X_Ble_SetAdvData(const char *advdata)
+W6X_Status_t W6X_Ble_SetAdvData(const char *adv_data)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set the advertising data */
-  return TranslateErrorStatus(W61_Ble_SetAdvData(p_DrvObj, advdata));
+  return TranslateErrorStatus(W61_Ble_SetAdvData(W6X_Ble_drv_obj, adv_data));
 }
 
-W6X_Status_t W6X_Ble_SetScanRespData(const char *scanrespdata)
+W6X_Status_t W6X_Ble_SetScanRespData(const char *scan_resp_data)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set the scan response data */
-  return TranslateErrorStatus(W61_Ble_SetScanRespData(p_DrvObj, scanrespdata));
+  return TranslateErrorStatus(W61_Ble_SetScanRespData(W6X_Ble_drv_obj, scan_resp_data));
 }
 
 W6X_Status_t W6X_Ble_SetAdvParam(uint32_t adv_int_min, uint32_t adv_int_max,
                                  W6X_Ble_AdvType_e adv_type, W6X_Ble_AdvChannel_e adv_channel)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set advertising parameters */
-  return TranslateErrorStatus(W61_Ble_SetAdvParam(p_DrvObj, adv_int_min, adv_int_max,
+  return TranslateErrorStatus(W61_Ble_SetAdvParam(W6X_Ble_drv_obj, adv_int_min, adv_int_max,
                                                   (uint8_t)adv_type, (uint8_t)adv_channel));
 }
 
-W6X_Status_t W6X_Ble_GetAdvParam(uint32_t *AdvIntMin, uint32_t *AdvIntMax,
-                                 W6X_Ble_AdvType_e *AdvType, W6X_Ble_AdvChannel_e *ChannelMap)
+W6X_Status_t W6X_Ble_GetAdvParam(uint32_t *adv_int_min, uint32_t *adv_int_max,
+                                 W6X_Ble_AdvType_e *adv_type, W6X_Ble_AdvChannel_e *channel_map)
 {
   W6X_Status_t ret;
   uint32_t AdvType_tmp;
   uint32_t ChannelMap_tmp;
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get advertising parameters */
-  ret = TranslateErrorStatus(W61_Ble_GetAdvParam(p_DrvObj, AdvIntMin, AdvIntMax, &AdvType_tmp, &ChannelMap_tmp));
+  ret = TranslateErrorStatus(W61_Ble_GetAdvParam(W6X_Ble_drv_obj, adv_int_min, adv_int_max, &AdvType_tmp,
+                                                 &ChannelMap_tmp));
 
   if (ret == W6X_STATUS_OK)
   {
     /* Return the advertising parameters */
-    *AdvType = (W6X_Ble_AdvType_e)AdvType_tmp;
-    *ChannelMap = (W6X_Ble_AdvChannel_e)ChannelMap_tmp;
+    *adv_type = (W6X_Ble_AdvType_e)AdvType_tmp;
+    *channel_map = (W6X_Ble_AdvChannel_e)ChannelMap_tmp;
   }
   return ret;
 }
@@ -333,201 +356,202 @@ W6X_Status_t W6X_Ble_SetConnParam(uint32_t conn_handle, uint32_t conn_int_min,
                                   uint32_t conn_int_max, uint32_t latency, uint32_t timeout)
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
   /* Check the connection interval range */
-  if ((conn_int_min < 0x6) || (conn_int_min > 0xC80) || (conn_int_max < 0x6) || (conn_int_max > 0xC80) ||
+  if ((conn_int_min < 0x6U) || (conn_int_min > 0xC80U) || (conn_int_max < 0x6U) || (conn_int_max > 0xC80U) ||
       (conn_int_max < conn_int_min))
   {
     BLE_LOG_ERROR("Invalid connection interval values\n");
     return ret;
   }
   /* Check the latency */
-  if (latency > 0x1F3) /* 499 */
+  if (latency > 0x1F3U) /* 499 */
   {
     BLE_LOG_ERROR("Invalid Latency value\n");
     return ret;
   }
   /* Check the timeout */
-  if ((timeout < 0xA) || (timeout > 0xC80)) /* 10ms to 32s */
+  if ((timeout < 0xAU) || (timeout > 0xC80U)) /* 10ms to 32s */
   {
     BLE_LOG_ERROR("Invalid timeout value\n");
     return ret;
   }
 
   /* Set Connection parameters */
-  return TranslateErrorStatus(W61_Ble_SetConnParam(p_DrvObj, conn_handle, conn_int_min, conn_int_max,
+  return TranslateErrorStatus(W61_Ble_SetConnParam(W6X_Ble_drv_obj, conn_handle, conn_int_min, conn_int_max,
                                                    latency, timeout));
 }
 
-W6X_Status_t W6X_Ble_GetConnParam(uint32_t *ConnHandle, uint32_t *ConnIntMin,
-                                  uint32_t *ConnIntMax, uint32_t *ConnIntCurrent, uint32_t *Latency, uint32_t *Timeout)
+W6X_Status_t W6X_Ble_GetConnParam(uint32_t *conn_handle, uint32_t *conn_int_min,
+                                  uint32_t *conn_int_max, uint32_t *conn_int_current,
+                                  uint32_t *latency, uint32_t *timeout)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get Connection parameters */
-  return TranslateErrorStatus(W61_Ble_GetConnParam(p_DrvObj, ConnHandle, ConnIntMin, ConnIntMax,
-                                                   ConnIntCurrent, Latency, Timeout));
+  return TranslateErrorStatus(W61_Ble_GetConnParam(W6X_Ble_drv_obj, conn_handle, conn_int_min, conn_int_max,
+                                                   conn_int_current, latency, timeout));
 }
 
-W6X_Status_t W6X_Ble_GetConn(uint32_t *ConnHandle, uint8_t *RemoteBDAddr)
+W6X_Status_t W6X_Ble_GetConn(uint32_t *conn_handle, uint8_t remote_bd_addr[6])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get Connection information */
-  return TranslateErrorStatus(W61_Ble_GetConn(p_DrvObj, ConnHandle, RemoteBDAddr));
+  return TranslateErrorStatus(W61_Ble_GetConn(W6X_Ble_drv_obj, conn_handle, remote_bd_addr));
 }
 
-W6X_Status_t W6X_Ble_Connect(uint32_t conn_handle, uint8_t *RemoteBDAddr)
+W6X_Status_t W6X_Ble_Connect(uint32_t conn_handle, uint8_t remote_bd_addr[6])
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Connect to a remote device */
-  return TranslateErrorStatus(W61_Ble_Connect(p_DrvObj, conn_handle, RemoteBDAddr));
+  return TranslateErrorStatus(W61_Ble_Connect(W6X_Ble_drv_obj, conn_handle, remote_bd_addr));
 }
 
-W6X_Status_t W6X_Ble_StartScan(W6X_Ble_Scan_Result_cb_t cb)
+W6X_Status_t W6X_Ble_StartScan(W6X_Ble_Scan_Result_cb_t scan_result_cb)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
-  NULL_ASSERT(cb, "Invalid callback");
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(scan_result_cb, "Invalid callback");
 
   /* Set the scan callback */
-  p_DrvObj->BleCtx.scan_done_cb = (W61_Ble_Scan_Result_cb_t)cb;
+  W6X_Ble_drv_obj->BleCtx.scan_done_cb = (W61_Ble_Scan_Result_cb_t)scan_result_cb;
 
   /* Start the scan */
-  return TranslateErrorStatus(W61_Ble_Scan(p_DrvObj, 1));
+  return TranslateErrorStatus(W61_Ble_Scan(W6X_Ble_drv_obj, 1));
 }
 
-void W6X_Ble_Print_Scan(W6X_Ble_Scan_Result_t *Scan_results)
+void W6X_Ble_Print_Scan(W6X_Ble_Scan_Result_t *scan_results)
 {
-  NULL_ASSERT_VOID(p_DrvObj, W6X_Ble_Uninit_str);
-  if ((Scan_results == NULL) || (Scan_results->Detected_Peripheral == NULL))
+  NULL_ASSERT_VOID(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
+  if ((scan_results == NULL) || (scan_results->Detected_Peripheral == NULL))
   {
     return;
   }
 
   /* Print the scan results */
-  for (uint32_t count = 0; count < Scan_results->Count; count++)
+  for (uint32_t count = 0; count < scan_results->Count; count++)
   {
     /* Print the mandatory fields from the scan results */
     BLE_LOG_INFO("Scanned device: Addr : " BDADDRSTR ", RSSI : %" PRIi16 "  %s\n",
-                 BDADDR2STR(Scan_results->Detected_Peripheral[count].BDAddr),
-                 Scan_results->Detected_Peripheral[count].RSSI, Scan_results->Detected_Peripheral[count].DeviceName);
-    vTaskDelay(15); /* Wait few ms to avoid logging buffer overflow */
+                 BDADDR2STR(scan_results->Detected_Peripheral[count].BDAddr),
+                 scan_results->Detected_Peripheral[count].RSSI, scan_results->Detected_Peripheral[count].DeviceName);
+    vTaskDelay(pdMS_TO_TICKS(15)); /* Wait few ms to avoid logging buffer overflow */
   }
 }
 
-W6X_Status_t W6X_Ble_StopScan()
+W6X_Status_t W6X_Ble_StopScan(void)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Stop the scan */
-  return TranslateErrorStatus(W61_Ble_Scan(p_DrvObj, 0));
+  return TranslateErrorStatus(W61_Ble_Scan(W6X_Ble_drv_obj, 0));
 }
 
 W6X_Status_t W6X_Ble_SetScanParam(W6X_Ble_ScanType_e scan_type, W6X_Ble_AddrType_e own_addr_type,
                                   W6X_Ble_FilterPolicy_e filter_policy, uint32_t scan_interval, uint32_t scan_window)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set scan parameters */
-  return TranslateErrorStatus(W61_Ble_SetScanParam(p_DrvObj, (uint8_t) scan_type, (uint8_t) own_addr_type,
+  return TranslateErrorStatus(W61_Ble_SetScanParam(W6X_Ble_drv_obj, (uint8_t) scan_type, (uint8_t) own_addr_type,
                                                    (uint8_t) filter_policy, scan_interval, scan_window));
 }
 
-W6X_Status_t W6X_Ble_GetScanParam(W6X_Ble_ScanType_e *ScanType, W6X_Ble_AddrType_e *AddrType,
-                                  W6X_Ble_FilterPolicy_e *ScanFilter, uint32_t *ScanInterval, uint32_t *ScanWindow)
+W6X_Status_t W6X_Ble_GetScanParam(W6X_Ble_ScanType_e *scan_type, W6X_Ble_AddrType_e *addr_type,
+                                  W6X_Ble_FilterPolicy_e *scan_filter, uint32_t *scan_interval, uint32_t *scan_window)
 {
   W6X_Status_t ret;
   uint32_t ScanType_tmp = 0;
   uint32_t AddrType_tmp = 0;
   uint32_t ScanFilter_tmp = 0;
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get scan parameters */
-  ret = TranslateErrorStatus(W61_Ble_GetScanParam(p_DrvObj, &ScanType_tmp, &AddrType_tmp, &ScanFilter_tmp, ScanInterval,
-                                                  ScanWindow));
+  ret = TranslateErrorStatus(W61_Ble_GetScanParam(W6X_Ble_drv_obj, &ScanType_tmp, &AddrType_tmp,
+                                                  &ScanFilter_tmp, scan_interval, scan_window));
   if (ret == W6X_STATUS_OK)
   {
     /* Return the scan parameters */
-    *ScanType = (W6X_Ble_ScanType_e)ScanType_tmp;
-    *AddrType = (W6X_Ble_AddrType_e)AddrType_tmp;
-    *ScanFilter = (W6X_Ble_FilterPolicy_e)ScanFilter_tmp;
+    *scan_type = (W6X_Ble_ScanType_e)ScanType_tmp;
+    *addr_type = (W6X_Ble_AddrType_e)AddrType_tmp;
+    *scan_filter = (W6X_Ble_FilterPolicy_e)ScanFilter_tmp;
   }
   return ret;
 }
 
 W6X_Status_t W6X_Ble_SetDataLength(uint32_t conn_handle, uint32_t tx_bytes, uint32_t tx_trans_time)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set the data length */
-  return TranslateErrorStatus(W61_Ble_SetDataLength(p_DrvObj, conn_handle, tx_bytes, tx_trans_time));
+  return TranslateErrorStatus(W61_Ble_SetDataLength(W6X_Ble_drv_obj, conn_handle, tx_bytes, tx_trans_time));
 }
 
 /* GATT Server APIs */
 W6X_Status_t W6X_Ble_CreateService(uint8_t service_index, const char *service_uuid, uint8_t uuid_type)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
-  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1))
+  if (service_index > (W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U))
   {
-    BLE_LOG_ERROR("Invalid service index, must be less than %" PRIi32 "\n", W6X_BLE_MAX_CREATED_SERVICE_NBR - 1);
+    BLE_LOG_ERROR("Invalid service index, must be less than %" PRIi32 "\n", W6X_BLE_MAX_CREATED_SERVICE_NBR - 1U);
     return W6X_STATUS_ERROR;
   }
 
   /* Create a service */
-  return TranslateErrorStatus(W61_Ble_CreateService(p_DrvObj, service_index, service_uuid, uuid_type));
+  return TranslateErrorStatus(W61_Ble_CreateService(W6X_Ble_drv_obj, service_index, service_uuid, uuid_type));
 }
 
 W6X_Status_t W6X_Ble_DeleteService(uint8_t service_index)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Delete a service */
-  return TranslateErrorStatus(W61_Ble_DeleteService(p_DrvObj, service_index));
+  return TranslateErrorStatus(W61_Ble_DeleteService(W6X_Ble_drv_obj, service_index));
 }
 
 W6X_Status_t W6X_Ble_CreateCharacteristic(uint8_t service_index, uint8_t char_index, const char *char_uuid,
                                           uint8_t uuid_type, uint8_t char_property, uint8_t char_permission)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
-  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1))
+  if (char_index > (W6X_BLE_MAX_CHAR_NBR - 1U))
   {
-    BLE_LOG_ERROR("Invalid characteristic index, must be less than %" PRIi32 "\n", W6X_BLE_MAX_CHAR_NBR - 1);
+    BLE_LOG_ERROR("Invalid characteristic index, must be less than %" PRIi32 "\n", W6X_BLE_MAX_CHAR_NBR - 1U);
     return W6X_STATUS_ERROR;
   }
 
   /* Create a characteristic */
-  return TranslateErrorStatus(W61_Ble_CreateCharacteristic(p_DrvObj, service_index, char_index, char_uuid,
+  return TranslateErrorStatus(W61_Ble_CreateCharacteristic(W6X_Ble_drv_obj, service_index, char_index, char_uuid,
                                                            uuid_type, char_property, char_permission));
 }
 
-W6X_Status_t W6X_Ble_GetServicesAndCharacteristics(W6X_Ble_Service_t ServicesTable[])
+W6X_Status_t W6X_Ble_GetServicesAndCharacteristics(W6X_Ble_Service_t services_table[])
 {
   W6X_Status_t ret = W6X_STATUS_ERROR;
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get services */
-  for (int32_t srv_idx = 0; srv_idx < W61_BLE_MAX_CREATED_SERVICE_NBR; srv_idx++)
+  for (uint8_t srv_idx = 0; srv_idx < W61_BLE_MAX_CREATED_SERVICE_NBR; srv_idx++)
   {
     /* Get the service information */
-    ret = TranslateErrorStatus(W61_Ble_GetService(p_DrvObj,
-                                                  (W61_Ble_Service_t *)(&ServicesTable[srv_idx]),
+    ret = TranslateErrorStatus(W61_Ble_GetService(W6X_Ble_drv_obj,
+                                                  (W61_Ble_Service_t *)(&services_table[srv_idx]),
                                                   srv_idx));
-    if ((ret != W6X_STATUS_OK) || (ServicesTable[srv_idx].service_idx == (W61_BLE_MAX_CREATED_SERVICE_NBR + 1)))
+    if ((ret != W6X_STATUS_OK) || (services_table[srv_idx].service_idx == (W61_BLE_MAX_CREATED_SERVICE_NBR + 1U)))
     {
       /* No more services */
       break;
     }
     /* Get characteristics for each service */
-    for (int32_t char_idx = 0; char_idx < W6X_BLE_MAX_CHAR_NBR; char_idx++)
+    for (uint8_t char_idx = 0; char_idx < W6X_BLE_MAX_CHAR_NBR; char_idx++)
     {
       ret = TranslateErrorStatus(
-              W61_Ble_GetCharacteristic(p_DrvObj,
-                                        (W61_Ble_Characteristic_t *)(&ServicesTable[srv_idx].charac[char_idx]),
+              W61_Ble_GetCharacteristic(W6X_Ble_drv_obj,
+                                        (W61_Ble_Characteristic_t *)(&services_table[srv_idx].charac[char_idx]),
                                         srv_idx, char_idx));
-      if ((ret != W6X_STATUS_OK) || (ServicesTable[srv_idx].charac[char_idx].char_idx == (W6X_BLE_MAX_CHAR_NBR + 1)))
+      if ((ret != W6X_STATUS_OK) || (services_table[srv_idx].charac[char_idx].char_idx == (W6X_BLE_MAX_CHAR_NBR + 1U)))
       {
         /* No more characteristics for this service */
         break;
@@ -537,180 +561,200 @@ W6X_Status_t W6X_Ble_GetServicesAndCharacteristics(W6X_Ble_Service_t ServicesTab
 
   if (ret == W6X_STATUS_OK)
   {
-    W6X_Ble_PrintServicesAndCharacteristics(ServicesTable);
+    W6X_Ble_PrintServicesAndCharacteristics(services_table);
   }
   return ret;
 }
 
 W6X_Status_t W6X_Ble_RegisterCharacteristics(void)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Register characteristics */
-  return TranslateErrorStatus(W61_Ble_RegisterCharacteristics(p_DrvObj));
+  return TranslateErrorStatus(W61_Ble_RegisterCharacteristics(W6X_Ble_drv_obj));
 }
 
 W6X_Status_t W6X_Ble_ServerNotify(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
-                                  void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
+                                  void *data, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Send a notification */
-  return TranslateErrorStatus(W61_Ble_ServerSendNotification(p_DrvObj, conn_handle, service_index, char_index,
-                                                             (uint8_t *)pdata, req_len, sent_data_len, timeout));
+  return TranslateErrorStatus(W61_Ble_ServerSendNotification(W6X_Ble_drv_obj, conn_handle, service_index, char_index,
+                                                             (uint8_t *)data, req_len, sent_data_len, timeout));
 }
 
 W6X_Status_t W6X_Ble_ServerIndicate(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
-                                    void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
+                                    void *data, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Send an indication */
-  return TranslateErrorStatus(W61_Ble_ServerSendIndication(p_DrvObj, conn_handle, service_index, char_index,
-                                                           (uint8_t *)pdata, req_len, sent_data_len, timeout));
+  return TranslateErrorStatus(W61_Ble_ServerSendIndication(W6X_Ble_drv_obj, conn_handle, service_index, char_index,
+                                                           (uint8_t *)data, req_len, sent_data_len, timeout));
 }
 
-W6X_Status_t W6X_Ble_ServerSetReadData(uint8_t service_index, uint8_t char_index, void *pdata, uint32_t req_len,
+W6X_Status_t W6X_Ble_ServerSetReadData(uint8_t service_index, uint8_t char_index, void *data, uint32_t req_len,
                                        uint32_t *sent_data_len, uint32_t timeout)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set the data to read */
-  return TranslateErrorStatus(W61_Ble_ServerSetReadData(p_DrvObj, service_index, char_index, (uint8_t *)pdata,
+  return TranslateErrorStatus(W61_Ble_ServerSetReadData(W6X_Ble_drv_obj, service_index, char_index, (uint8_t *)data,
                                                         req_len, sent_data_len, timeout));
 }
 
 /* GATT Client APIs */
 W6X_Status_t W6X_Ble_RemoteServiceDiscovery(uint8_t conn_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Discover services of a remote device */
-  return TranslateErrorStatus(W61_Ble_RemoteServiceDiscovery(p_DrvObj, conn_handle));
+  return TranslateErrorStatus(W61_Ble_RemoteServiceDiscovery(W6X_Ble_drv_obj, conn_handle));
 }
 
 W6X_Status_t W6X_Ble_RemoteCharDiscovery(uint8_t conn_handle, uint8_t service_index)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Discover characteristics of a remote device */
-  return TranslateErrorStatus(W61_Ble_RemoteCharDiscovery(p_DrvObj, conn_handle, service_index));
+  return TranslateErrorStatus(W61_Ble_RemoteCharDiscovery(W6X_Ble_drv_obj, conn_handle, service_index));
 }
 
 W6X_Status_t W6X_Ble_ClientWriteData(uint8_t conn_handle, uint8_t service_index, uint8_t char_index,
-                                     void *pdata, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
+                                     void *data, uint32_t req_len, uint32_t *sent_data_len, uint32_t timeout)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Write data to a characteristic */
-  return TranslateErrorStatus(W61_Ble_ClientWriteData(p_DrvObj, conn_handle, service_index, char_index,
-                                                      (uint8_t *)pdata, req_len, sent_data_len, timeout));
+  return TranslateErrorStatus(W61_Ble_ClientWriteData(W6X_Ble_drv_obj, conn_handle, service_index, char_index,
+                                                      (uint8_t *)data, req_len, sent_data_len, timeout));
 }
 
 W6X_Status_t W6X_Ble_ClientReadData(uint8_t conn_handle, uint8_t service_index, uint8_t char_index)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Read data from a characteristic */
-  return TranslateErrorStatus(W61_Ble_ClientReadData(p_DrvObj, conn_handle, service_index, char_index));
+  return TranslateErrorStatus(W61_Ble_ClientReadData(W6X_Ble_drv_obj, conn_handle, service_index, char_index));
 }
 
 W6X_Status_t W6X_Ble_ClientSubscribeChar(uint8_t conn_handle, uint8_t char_value_handle, uint8_t char_prop)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Subscribe to a characteristic */
-  return TranslateErrorStatus(W61_Ble_ClientSubscribeChar(p_DrvObj, conn_handle, char_value_handle, char_prop));
+  return TranslateErrorStatus(W61_Ble_ClientSubscribeChar(W6X_Ble_drv_obj, conn_handle, char_value_handle, char_prop));
 }
 
 W6X_Status_t W6X_Ble_ClientUnsubscribeChar(uint8_t conn_handle, uint8_t char_value_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Unsubscribe from a characteristic */
-  return TranslateErrorStatus(W61_Ble_ClientUnsubscribeChar(p_DrvObj, conn_handle, char_value_handle));
+  return TranslateErrorStatus(W61_Ble_ClientUnsubscribeChar(W6X_Ble_drv_obj, conn_handle, char_value_handle));
 }
 
 /* Security APIs */
 W6X_Status_t W6X_Ble_SetSecurityParam(W6X_Ble_SecurityParameter_e security_parameter)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Set security parameters */
-  return TranslateErrorStatus(W61_Ble_SetSecurityParam(p_DrvObj, (uint8_t) security_parameter));
+  return TranslateErrorStatus(W61_Ble_SetSecurityParam(W6X_Ble_drv_obj, (uint8_t) security_parameter));
 }
 
-W6X_Status_t W6X_Ble_GetSecurityParam(W6X_Ble_SecurityParameter_e *SecurityParameter)
+W6X_Status_t W6X_Ble_GetSecurityParam(W6X_Ble_SecurityParameter_e *security_parameter)
 {
   W6X_Status_t ret;
   uint32_t SecurityParam_tmp = 0;
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get security parameters */
-  ret = TranslateErrorStatus(W61_Ble_GetSecurityParam(p_DrvObj, &SecurityParam_tmp));
+  ret = TranslateErrorStatus(W61_Ble_GetSecurityParam(W6X_Ble_drv_obj, &SecurityParam_tmp));
   if (ret == W6X_STATUS_OK)
   {
-    *SecurityParameter = (W6X_Ble_SecurityParameter_e) SecurityParam_tmp;
+    *security_parameter = (W6X_Ble_SecurityParameter_e) SecurityParam_tmp;
   }
   return ret;
 }
 
 W6X_Status_t W6X_Ble_SecurityStart(uint8_t conn_handle, uint8_t security_level)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Start BLE security */
-  return TranslateErrorStatus(W61_Ble_SecurityStart(p_DrvObj, conn_handle, security_level));
+  return TranslateErrorStatus(W61_Ble_SecurityStart(W6X_Ble_drv_obj, conn_handle, security_level));
 }
 
 W6X_Status_t W6X_Ble_SecurityPassKeyConfirm(uint8_t conn_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Confirm the passkey */
-  return TranslateErrorStatus(W61_Ble_SecurityPassKeyConfirm(p_DrvObj, conn_handle));
+  return TranslateErrorStatus(W61_Ble_SecurityPassKeyConfirm(W6X_Ble_drv_obj, conn_handle));
 }
 
 W6X_Status_t W6X_Ble_SecurityPairingConfirm(uint8_t conn_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Confirm the pairing */
-  return TranslateErrorStatus(W61_Ble_SecurityPairingConfirm(p_DrvObj, conn_handle));
+  return TranslateErrorStatus(W61_Ble_SecurityPairingConfirm(W6X_Ble_drv_obj, conn_handle));
 }
 
-W6X_Status_t W6X_Ble_SecuritySetPassKey(uint8_t conn_handle, uint32_t passkey)
+W6X_Status_t W6X_Ble_SecurityEnterRemotePassKey(uint8_t conn_handle, uint32_t passkey)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
-  /* Set the passkey */
-  return TranslateErrorStatus(W61_Ble_SecuritySetPassKey(p_DrvObj, conn_handle, passkey));
+  /* Enter remote passkey */
+  return TranslateErrorStatus(W61_Ble_SecurityEnterRemotePassKey(W6X_Ble_drv_obj, conn_handle, passkey));
 }
 
 W6X_Status_t W6X_Ble_SecurityPairingCancel(uint8_t conn_handle)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Cancel the pairing */
-  return TranslateErrorStatus(W61_Ble_SecurityPairingCancel(p_DrvObj, conn_handle));
+  return TranslateErrorStatus(W61_Ble_SecurityPairingCancel(W6X_Ble_drv_obj, conn_handle));
 }
 
-W6X_Status_t W6X_Ble_SecurityUnpair(uint8_t *RemoteBDAddr, W6X_Ble_AddrType_e remote_addr_type)
+W6X_Status_t W6X_Ble_SecurityUnpair(uint8_t remote_bd_addr[6], W6X_Ble_AddrType_e remote_addr_type)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Unpair a device */
-  return TranslateErrorStatus(W61_Ble_SecurityUnpair(p_DrvObj, RemoteBDAddr, (uint32_t) remote_addr_type));
+  return TranslateErrorStatus(W61_Ble_SecurityUnpair(W6X_Ble_drv_obj, remote_bd_addr, (uint32_t) remote_addr_type));
 }
 
-W6X_Status_t W6X_Ble_SecurityGetBondedDeviceList(W6X_Ble_Bonded_Devices_Result_t *RemoteBondedDevices)
+W6X_Status_t W6X_Ble_SecurityGetBondedDeviceList(W6X_Ble_Bonded_Devices_Result_t *remote_bonded_devices)
 {
-  NULL_ASSERT(p_DrvObj, W6X_Ble_Uninit_str);
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
 
   /* Get the list of bonded devices */
   return TranslateErrorStatus(W61_Ble_SecurityGetBondedDeviceList(
-                                p_DrvObj, (W61_Ble_Bonded_Devices_Result_t *)RemoteBondedDevices));
+                                W6X_Ble_drv_obj, (W61_Ble_Bonded_Devices_Result_t *)remote_bonded_devices));
 }
+
+W6X_Status_t W6X_Ble_SetGapAppearance(uint16_t appearance_value)
+{
+  NULL_ASSERT(W6X_Ble_drv_obj, W6X_Ble_Uninit_str);
+
+  /* Set GAP appearance */
+  return TranslateErrorStatus(W61_Ble_SetGapAppearance(W6X_Ble_drv_obj, appearance_value));
+}
+
+const char *W6X_Ble_RoleToStr(W6X_Ble_Conn_Role_e role)
+{
+  /* Check if the protocol is unknown */
+  if (role > W6X_BLE_CONN_ROLE_PERIPH)
+  {
+    return "Unknown";
+  }
+  /* Return the protocol string */
+  return W6X_Ble_Role_str[role];
+}
+
 /** @} */
 
 /* Private Functions Definition ----------------------------------------------*/
@@ -793,7 +837,7 @@ static void W6X_Ble_cb(W61_event_id_t event_id, void *event_args)
 
     case W61_BLE_EVT_SCAN_DONE_ID:
       BLE_LOG_DEBUG("BLE scan done\n"); /* Call the scan done callback */
-      p_DrvObj->BleCtx.scan_done_cb(&p_DrvObj->BleCtx.ScanResults);
+      W6X_Ble_drv_obj->BleCtx.scan_done_cb(&W6X_Ble_drv_obj->BleCtx.ScanResults);
       break;
 
     case W61_BLE_EVT_SERVICE_FOUND_ID:
@@ -847,13 +891,14 @@ static void W6X_Ble_cb(W61_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* BLE events unmanaged */
       break;
   }
 }
 
 static void W6X_Ble_PrintServicesAndCharacteristics(W6X_Ble_Service_t ServicesTable[])
 {
-  for (int32_t i = 0; i < W61_BLE_MAX_CREATED_SERVICE_NBR; i++) /* Loop through the services */
+  for (uint8_t i = 0; i < W61_BLE_MAX_CREATED_SERVICE_NBR; i++) /* Loop through the services */
   {
     if (i == ServicesTable[i].service_idx) /* Check if the service is valid */
     {
@@ -861,7 +906,7 @@ static void W6X_Ble_PrintServicesAndCharacteristics(W6X_Ble_Service_t ServicesTa
       BLE_LOG_INFO("Service: %" PRIu16 ", UUID: " UUID128STR "\n", ServicesTable[i].service_idx,
                    UUID128TOSTR(ServicesTable[i].service_uuid));
 
-      for (int32_t k = 0; k < W6X_BLE_MAX_CHAR_NBR; k++) /* Loop through the characteristics */
+      for (uint8_t k = 0; k < W6X_BLE_MAX_CHAR_NBR; k++) /* Loop through the characteristics */
       {
         if (k == ServicesTable[i].charac[k].char_idx) /* Check if the characteristic is valid */
         {

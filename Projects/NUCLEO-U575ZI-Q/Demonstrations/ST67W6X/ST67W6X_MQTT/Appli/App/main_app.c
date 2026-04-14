@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    main_app.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   main_app program body
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -67,6 +67,7 @@
 
 /* Global variables ----------------------------------------------------------*/
 /** RTC handle */
+/* coverity[misra_c_2012_rule_8_5_violation : FALSE] */
 extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN GV */
@@ -100,7 +101,7 @@ typedef struct
 
 /* Private defines -----------------------------------------------------------*/
 /** Scan done event bitmask */
-#define EVENT_FLAG_SCAN_DONE            (1<<1)
+#define EVENT_FLAG_SCAN_DONE            (1UL << 1U)
 
 /** Delay before to declare the scan in failure */
 #define WIFI_SCAN_TIMEOUT               10000
@@ -109,7 +110,7 @@ typedef struct
 #define SUBSCRIPTION_THREAD_PRIO        24
 
 /** Stack size of the subscription process task */
-#define SUBSCRIPTION_TASK_STACK_SIZE    1024
+#define SUBSCRIPTION_TASK_STACK_SIZE    1024U
 
 #ifndef SNTP_TIMEZONE
 /** SNTP timezone configuration */
@@ -118,12 +119,12 @@ typedef struct
 
 #ifndef MQTT_TOPIC_BUFFER_SIZE
 /** Subscribed topic max buffer size */
-#define MQTT_TOPIC_BUFFER_SIZE          100
+#define MQTT_TOPIC_BUFFER_SIZE          100U
 #endif /* MQTT_TOPIC_BUFFER_SIZE */
 
 #ifndef MQTT_MSG_BUFFER_SIZE
 /** Subscribed message max buffer size */
-#define MQTT_MSG_BUFFER_SIZE            600
+#define MQTT_MSG_BUFFER_SIZE            600U
 #endif /* MQTT_MSG_BUFFER_SIZE */
 
 #ifndef MQTT_HOST_NAME
@@ -168,23 +169,23 @@ typedef struct
 
 #ifndef MQTT_CERTIFICATE
 /** MQTT Client Certificate. Required when the scheme is greater or equal to 3 */
-#define MQTT_CERTIFICATE                "client_1.crt"
+#define MQTT_CERTIFICATE                "client_mqtt.crt"
 #endif /* MQTT_CERTIFICATE */
 
 #ifndef MQTT_KEY
 /** MQTTClient Private key. Required when the scheme is greater or equal to 3 */
-#define MQTT_KEY                        "client_1.key"
+#define MQTT_KEY                        "client_mqtt.key"
 #endif /* MQTT_KEY */
 
 #ifndef MQTT_CA_CERTIFICATE
 /** MQTT Client CA certificate. Required when the scheme is greater or equal to 2 */
-#define MQTT_CA_CERTIFICATE             "ca_1.crt"
+#define MQTT_CA_CERTIFICATE             "ca_mqtt.crt"
 #endif /* MQTT_CA_CERTIFICATE */
 
-#ifndef MQTT_SNI_ENABLED
-/** MQTT Server Name Indication (SNI) enabled */
-#define MQTT_SNI_ENABLED                1
-#endif /* MQTT_SNI_ENABLED */
+#ifndef MQTT_SNI
+/** MQTT Server Name Indication (SNI) */
+#define MQTT_SNI                        "server.local"
+#endif /* MQTT_SNI */
 
 #ifndef MQTT_KEEP_ALIVE
 /** Keep Alive interval using MQTT ping. Range [0, 7200]. 0 is forced to 120 */
@@ -271,8 +272,8 @@ static W6X_MQTT_Connect_t mqtt_config =
   /** Client Private key
     * Required when the scheme is greater or equal to 3 */
   .PrivateKeyName = MQTT_KEY,
-  /** Server Name Indication (SNI) enabled */
-  .SNI_enabled = MQTT_SNI_ENABLED,
+  /** Server Name Indication (SNI) */
+  .SNI = MQTT_SNI,
   /** Keep Alive interval using MQTT ping. Range [0, 7200]. 0 is forced to 120 */
   .KeepAlive = MQTT_KEEP_ALIVE,
   /** Skip cleaning the MQTT session */
@@ -310,77 +311,100 @@ static const APP_Info_t app_info =
 /* USER CODE BEGIN PV */
 #if (LFS_ENABLE == 0)
 /** Certificate Authority (CA) content */
-static const char ca_cert[] =
+static const char ca_certificate[] =
   "-----BEGIN CERTIFICATE-----\r\n"
-  "MIIDBzCCAe+gAwIBAgIUC2PjWg8acdlkI8rQQfQ+lnYYehowDQYJKoZIhvcNAQEL\r\n"
-  "BQAwEjEQMA4GA1UEAwwHTVFUVCBDQTAgFw0yNTA1MjcxODE0NTFaGA8yMDU1MDcw\r\n"
-  "OTE4MTQ1MVowEjEQMA4GA1UEAwwHTVFUVCBDQTCCASIwDQYJKoZIhvcNAQEBBQAD\r\n"
-  "ggEPADCCAQoCggEBAMxnl/G5ANi2O7B4/NRkaJF7GC36IcUJSfhxujCe+9RqbS20\r\n"
-  "bgZyo3o4SDTr5oyEyRzW/xzdCHd2zDUcllRT6JbAsVMGl9q1LXdyVEcCoB3lAvSw\r\n"
-  "YKliUibpIG2gcBI7D/jz65RSSejRECy5jAhUCdcH37tQe9Tjsa7BZ4T9NpEguFny\r\n"
-  "hVWnN/SLytczRQoUROZDiZCzzTjaPwYgBXC6VQ8cCdF7SgIDZ9C+onRUE1MQE0iF\r\n"
-  "z5my4GzA/g+6q/PaW3b2RLEiTPduQhM6uRPhKrjw4V955CYjXf655aclEMVNR44/\r\n"
-  "ZOMavLzMxQUaFEYyK7aOx8jGiI61rTuiTqdmdmcCAwEAAaNTMFEwHQYDVR0OBBYE\r\n"
-  "FETlZW7jUwuflGlWgUyYPpP/hNbPMB8GA1UdIwQYMBaAFETlZW7jUwuflGlWgUyY\r\n"
-  "PpP/hNbPMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAGFG97Jt\r\n"
-  "tPlyAzYCdihtrXBIKx+05nwQubEkqudKWy5gCo9MTW95QS2D9FY7ebO/k1wuyH4v\r\n"
-  "PmlIxOZjNq52WFjCENOFB437WkDkjbeJ0z/qrjn2UwBG9nxw7nbyRiWV6BPJnNe7\r\n"
-  "UL1kRQE1NhPilbpFlUTIM3goUKU9eOTQux32ASZ6/9W8dYpVfZ/MS1ZTHc1K8RJt\r\n"
-  "wbiCpq5tLp3DP2JH8PJVS2FfK+6dEsHhcprbH+uajcTIWfcKzpzSc1UTzC1MGh/3\r\n"
-  "vNBgSgWv5f4DUKaUU1cGZt3BB2XjoBQbU3IirKMsmBEgB09IyotmGLgYv+zkDUkT\r\n"
-  "oW2t00Hmkrht79A=\r\n"
+  "MIIFnTCCA4WgAwIBAgIUICOrwxxFibK7vrxKJg0hakN6hncwDQYJKoZIhvcNAQEL\r\n"
+  "BQAwXTELMAkGA1UEBhMCRlIxDjAMBgNVBAcMBVBhcmlzMRswGQYDVQQKDBJTVE1p\r\n"
+  "Y3JvZWxlY3Ryb25pY3MxDzANBgNVBAsMBlJvb3RDQTEQMA4GA1UEAwwHUm9vdCBD\r\n"
+  "QTAgFw0yNjAyMjcxMjUyMzNaGA8yMDU2MDQxMDEyNTIzM1owXTELMAkGA1UEBhMC\r\n"
+  "RlIxDjAMBgNVBAcMBVBhcmlzMRswGQYDVQQKDBJTVE1pY3JvZWxlY3Ryb25pY3Mx\r\n"
+  "DzANBgNVBAsMBlJvb3RDQTEQMA4GA1UEAwwHUm9vdCBDQTCCAiIwDQYJKoZIhvcN\r\n"
+  "AQEBBQADggIPADCCAgoCggIBAKWZUAuZoTFFPTt8+dDFNLjgcChLWMCVBQZoul96\r\n"
+  "5lNPLpINLFLehE1lBunFI4dik19890xwZzgTNcVTFBEVCWmf4WCXgPKvwYoFTsto\r\n"
+  "uAZCmwIjigUAXslGuwoi7lgQyg8U+Gs3ieYE0NYXasZrBMo84Q7iIik3k/qhpbF3\r\n"
+  "MaMcySPBfHMKTS2uXEPja4WN0sAgcd8KP/SuiiKCclMGDGaRcHHeUG+AzgkjZa1U\r\n"
+  "f5F8DLckMGZnMLCPp6nb9mh5zSODXd3nvRtOotxiQqGypl6IgaJIfTDK/BP+gahu\r\n"
+  "nP2o2lmjyrTUqXvydRGDdZ+CGWAw/Bmpq9pL0i6aEG/zLw2EgYNj4n1cFiHjAivX\r\n"
+  "jEIRLb18LXUL9yPSYqGk4TV8gDNdx9f68vxt2xPGtDcKIDs/gM7ZmTZWmYJEnu6X\r\n"
+  "F/FK+N9LuDC5tb1G75vYAzgypG74EB1ATSqBDki+njsBL9kIDRKcdAPrwFxjqDYU\r\n"
+  "YNpMcAyDtrxup2pHKzkgYVFwc1GDW9F8ujgxt0vfTf8sy+bKhbf+cIR7xet+2AYw\r\n"
+  "RJIwr7j4x/XvHH/YE5v3RAPAhPGKRDCrXsRp3yt4nAuZNiUyOB96yTgtryGaQtqk\r\n"
+  "Ewl5CTf7Wnt/An4QJp1fJ6TUmyXOuJ+RXe6laE0mChI1eLh9XMIRWae+YZtFYBX0\r\n"
+  "OXepAgMBAAGjUzBRMB0GA1UdDgQWBBQTn9rw1XoTUC6t/h5nG3NBuC7noTAfBgNV\r\n"
+  "HSMEGDAWgBQTn9rw1XoTUC6t/h5nG3NBuC7noTAPBgNVHRMBAf8EBTADAQH/MA0G\r\n"
+  "CSqGSIb3DQEBCwUAA4ICAQA8lbKXZ1B5fnHnzJVede5FI72ma6lOKzR00JfkmePt\r\n"
+  "Fnud9rg4IcOLF15OQRUb8sVyLoom5R5aweCD41nBabGjsCLbWYQN7nRz+iT+n6pO\r\n"
+  "nn0+XICStzFyNq7haADVl5LFJ96u6Csj5ymWnbyhRSZntszn3P7jfoieXnuTNfpK\r\n"
+  "N223bhIB3LWk3C4x8lqLLYT5LhqkVwm/zPXkRdx1RFsHIsjTrsWz/dqrwa89r81F\r\n"
+  "tZ8xw9bybQuchVY2bPla/WhqM4CRmcyszU6d7sJu2jr4exug48dW54exYHS+6ql6\r\n"
+  "HjiNA1POVnA4WojqzOimVtL6z97CYr3dxuChBOUgz44m+zGjiKCiF3AXGuX5CAUD\r\n"
+  "YWcCa8mvHsiLnt77mLeNhLBkLsN99lScutApalw7jnjr1KPYMV2QcCmCAvNDjZm6\r\n"
+  "3qmkUbPYCQXcyF00o0QhFJjdvHFMBGefz8wmk4+VBLufuBWKYmcNxrkSbiwTDPyk\r\n"
+  "jLluPIcQWr7mOiUGEulQSG9mHdSfXbHuBtyDI21oj929LYCyZDLMc9+deroksk9P\r\n"
+  "uM98Gqpja70SpHayoFYmjNEGmB7HFhIgOdGwOyrJ6Io2MTbkus6MGvF1Cuo9zmDw\r\n"
+  "fiimw5+3OzbbtrXcTA7TiCboRLw5pT3fadGANEbPljx2HTLGwiekodMrvtyedkZD\r\n"
+  "Qw==\r\n"
   "-----END CERTIFICATE-----\r\n";
 
 /** Client Certificate content */
-static const char client_cert[] =
+static const char client_certificate[] =
   "-----BEGIN CERTIFICATE-----\r\n"
-  "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\r\n"
+  "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\r\n"
+  "ryVA6qIrAmgq/YPIeQ6xZNyVZIMV\r\n"
   "-----END CERTIFICATE-----\r\n";
 
 /** Client Private Key content */
 static const char client_key[] =
   "-----BEGIN PRIVATE KEY-----\r\n"
-  "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDEgwrvHPmin/tl\r\n"
-  "SGwi5EtOrS+81/mnKWD4/7aU6VNBNM2f6+B+gq70J2mbAJDQ5G/KiY7Gz6m2mjEm\r\n"
-  "HsyoKrH5AFJ0L3WOlpCq1lhMr9bgTgSfRhunDGEEGCulKD9IEN9E/mQfl1m1k8gw\r\n"
-  "ouT/PeXk9RRedog9tlLyY80zC4eBmdGj0uGatZeqmtrgQSgYyXbx+6QOw5vtcKyX\r\n"
-  "/UlwoP4ZaiziCG1V/YeolNNwrrnlZwvtLRopcvd326EjoQWo+qjkIzGKCXvp1l1Z\r\n"
-  "/uy6YT8XO9Ps0WjeHjY9OzYev/8Mheu2QzoKH7aLvtUOzeUj8Ef71ZVkqI5D8FGZ\r\n"
-  "Bxi+f0HbAgMBAAECggEAJI8emyKgXL13tz2UhJ9FVWNJ9M+Xbh54IIruTGDmMMTi\r\n"
-  "lmR7NP4aD2k/r+sYhgxhseQKkHk04ThpeWaUe5rJ1oHVVTE5JShkzKuo7Mdv6fYJ\r\n"
-  "zRntbhQS/oCCqizFLSKabwsG1IvDUFEolsfPY57/5KsluXdC3HxNjTO9CsiT0qvY\r\n"
-  "Pi0jdVx8vvpdFuJfLq0c+5OBDRyKk0KnXFrhd8T9cGPh5dNaDApgR4axm/Bt2fDn\r\n"
-  "biQHDZt20QYBAKK2DHcXB0xzaRjzwnxgwnXDtlGfLJhTijqUZyf/adzDWucUeXvI\r\n"
-  "CMlJeVlkib87rm6E0IbWlr7fzXz8u/9aXlGOV68MfQKBgQDopD5VPlQdCNf99tlR\r\n"
-  "NB9QseUrQDxR0qKi4vlECPRhspFF1McXyfi9ZKORARX1e6nj5DealVcYmEesYTpf\r\n"
-  "uei/5mAs+FF2xPCp/Wbq/1iojFzExxuKjnOPzLW/bsNLgQgLzsDQAooueng/fySc\r\n"
-  "qQdElSPRek3tpPHUdYWhlKwkHwKBgQDYPiGhrB299TsDmmWElfwIUNqQ8Jfnf62D\r\n"
-  "A6cwUZY5aovhm/v5kEBJmc7oCFsoSSLt36uTeExymDbuNJ4V6kJD5eOhrLPFc9dd\r\n"
-  "iAZJjtQw/693vYNA5+dm8EKrTR2rH7tyT8V4uW1o171U3hGL8OLr/6+vhS0c4Pab\r\n"
-  "ga06tZnKxQKBgBmsBjTh6+ZIU41y8AhF+C6vctqS/BULaWcQJPGdC1q8mcta751w\r\n"
-  "bEJ6GJKnzASK4PSE+p3UXQgZxc7/67EkksqaYYKU5Gh20xfvHqxQATiYRKRyVFe1\r\n"
-  "4Iq9zFCTqHlsg7bJ2f0aSqVWXm6jWSbwgBzRWGKFXJQc35LSZSyve0+BAoGBAIUC\r\n"
-  "Gn+uNZEdIRKDSoQ2GRMoYHgcdOMhBqH6gkDXPjbM0YORBXkpAFIFOF5CnYd3DPQR\r\n"
-  "yyBnM2adN9RnKwHB2MaYxd4xM1Z1fXf7bhqaruwAqXZWbEBlJFGN4QQq59/VIeAb\r\n"
-  "LxSlwaVmZf+opFRWc83DtNWabfhAa4+VQO9GunUdAoGAB0KKhfO/oCnuukqo6A9K\r\n"
-  "a78NkT93ysS1CjlzWZrLM43BBJecEh0vgXJh7RWGUWgUGyThZis1SgYcio2dMSbJ\r\n"
-  "h+4WwztCwhXgpZQQ05aL6wZ0pA8k0WVLebtK6yaUo4rKhecsZC5giBlyDsqqTzJL\r\n"
-  "jwiT9Myy3iHKMHrIG95vODU=\r\n"
+  "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCV+g342mQI2gCa\r\n"
+  "rCfoKYk5HI6ZLNsScUrmqUvMnMBYph+AdC8GhbdfkkvikFUlM9G3Qm8gnGdTvsji\r\n"
+  "u1BywFw3kkrqT8vrPvU/8iRzhQNEZE+QtxHAkp/6axTEpEaEhg3cITnl95Q4IHcs\r\n"
+  "X9rjbqlcR4EkQtvEQDpqfmnF/d6Y0zbZW/PcAnbdu/apG7xFzt9DvWVlKDCLBvNr\r\n"
+  "H6qyEkwneC7RgKzGaX7mxmoUeCFE99XRJcUMFraMCaD+ZE/d0Gba5SG2eJN+0Z18\r\n"
+  "b1XiAfY3mE8VdZljivNjaCOV3Y5Mw0cEqFnZggU1qbhVdEbOtaoDWwF/YacdQz7Y\r\n"
+  "j6dAuh9dAgMBAAECggEAPP4LBZvnV9Q0r7J4rkmKFXBgK7oaw8bQQ7sw6N8MuGCi\r\n"
+  "6g4V+8yQlSz9cH/rKKyIysMZR4Vj3iJ2NwMfhfNl7XGwxta54wthGObkXRiIih1T\r\n"
+  "YFKbRRo8Nk6rDQeT6BxOcaoPjk8f9614WdMHxTuBY9Zuli0cjBTkzN9pK8yBZNvN\r\n"
+  "JXHxgDb/GTQ4ZWEZhh0fBNwXMF9oMbEn59K7Hh6XzsM85EV4M60LvvSiD/m94Oys\r\n"
+  "3C6dFL7UaDJ2rmThLlItrCRzE+/2FgbjCAmEv2X2NXDzNEenZoCF9X1ie3v6caIT\r\n"
+  "KdNyIZs5Vsaa4eWQdZYDthQUZjbNuK73CgxjqdJ0bwKBgQDSop6hjamHxUXpsaRv\r\n"
+  "wHlDz7TXbYx/eyeCLtQESnKedYoSSWPw6tArMlLfQkFiuFh5lXIis08CvRYDf4Ns\r\n"
+  "G/eglXO/iIF2lMm+bLEn5MGA+EwpuLHw7fvTpP6udLmElFa6hbmUyj/XgsZlIPA9\r\n"
+  "Bl3UiLQi0s1/pNcb0ubZCdgPvwKBgQC2Rwdn+7W9gd1N9qPX79WagxuJ4DRUm21C\r\n"
+  "vz2Ve2YMb7UR7+p5sktrtUEolXuPvfahJ+9FDIpaZigJRp2ySzcrMGHufLeW4UB/\r\n"
+  "ZnPVWqtEBaQrpshWu5JHlycQAhjzFveEc9expHN/Fm5WkSDxma1NU2016hot+lz+\r\n"
+  "Ajsm0cYX4wKBgQCwehmIZ8V7gLhDxVdtXgj73MG6oQlPIeMHOq7ebXW89+PX0G+Q\r\n"
+  "wVvqZT5z2fIogSV3sNOw6SSwubYA9kwpPwFpJO6WsgsuTBj/l9eSAiJyKRa++gT0\r\n"
+  "RKByQdI0Xo203AgSPMoxNIbqzKHmxwMhTf09fc/XQWF1qamkoT5S5+GDxwKBgDsz\r\n"
+  "2r31TVQd5+k4oIK0TSaASuN/RL/uM5CoWLJCgCSt65vF1txsAn8bQeySkK1hP8ec\r\n"
+  "FuTQa+dsorhQjUupjmOitUwmieKhirdWaWz0pAfV5TqgUxWImrxR5cgXRk8+OGp2\r\n"
+  "zanPBgxTFsdbH94Y0eb5n9ERFiu005tU0i2LmNGNAoGARw3oORmknMdOOuDTtOl8\r\n"
+  "yiIMzm6lmSIHI0hpJPPrVz1zzJY6CWwf9rvcGy3Rp+RpoYYgpgMFpfUeeH5zB7L7\r\n"
+  "2d+Irfu5wuoWp5ImmAveFIHAdR9rqbzjz3M+/EEg/OKRUKSGHnfdExkhhZFKpJ+B\r\n"
+  "ItceYk1hkNpYvnACWDpoIAc=\r\n"
   "-----END PRIVATE KEY-----\r\n";
 #endif /* LFS_ENABLE */
 
@@ -438,7 +462,7 @@ static void APP_wifi_scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *Scan_result
 /**
   * @brief  Initialize the low power manager
   */
-static void LowPowerManagerInit(void);
+void LowPowerManagerInit(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -447,7 +471,8 @@ static void LowPowerManagerInit(void);
 /* Functions Definition ------------------------------------------------------*/
 void main_app(void)
 {
-  int32_t ret = 0;
+  W6X_Status_t ret;
+  EventBits_t eventBits = 0;
 
   /* USER CODE BEGIN main_app_1 */
 
@@ -476,15 +501,19 @@ void main_app(void)
   W6X_Net_Time_t net_time = {0};
   uint8_t SNTP_Enable = 0;
   int16_t SNTP_Timezone = 0;
-  RTC_TimeTypeDef time = {0};
-  RTC_DateTypeDef date = {0};
+  RTC_TimeTypeDef rtc_time = {0};
+  RTC_DateTypeDef rtc_date = {0};
 
+#if (LOW_POWER_MODE > LOW_POWER_DISABLE)
   LowPowerManagerInit();
+#endif /* LOW_POWER_MODE */
 
   /* Initialize the logging utilities */
   LoggingInit();
+#if (SHELL_ENABLE == 1)
   /* Initialize the shell utilities on UART instance */
   ShellInit();
+#endif /* SHELL_ENABLE == 1 */
 
   LogInfo("#### Welcome to %s Application #####\n", app_info.name);
   LogInfo("# build: %s %s\n", __TIME__, __DATE__);
@@ -502,11 +531,11 @@ void main_app(void)
   App_cb.APP_ble_cb = APP_ble_cb;
   App_cb.APP_mqtt_cb = APP_mqtt_cb;
   App_cb.APP_error_cb = APP_error_cb;
-  W6X_RegisterAppCb(&App_cb);
+  (void)W6X_RegisterAppCb(&App_cb);
 
   /* Initialize the ST67W6X Driver */
   ret = W6X_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Driver, %" PRIi32 "\n", ret);
     goto _err;
@@ -514,7 +543,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Wi-Fi module */
   ret = W6X_WiFi_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Wi-Fi component, %" PRIi32 "\n", ret);
     goto _err;
@@ -523,7 +552,7 @@ void main_app(void)
 
   /* Initialize the ST67W6X Network module */
   ret = W6X_Net_Init();
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X Net component, %" PRIi32 "\n", ret);
     goto _err;
@@ -534,7 +563,7 @@ void main_app(void)
   mqtt_recv_data.p_recv_data = mqtt_buffer;
   mqtt_recv_data.recv_data_buf_size = MQTT_TOPIC_BUFFER_SIZE + MQTT_MSG_BUFFER_SIZE;
   ret = W6X_MQTT_Init(&mqtt_recv_data);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize ST67W6X MQTT component, %" PRIi32 "\n", ret);
     goto _err;
@@ -547,11 +576,13 @@ void main_app(void)
   /* Run a Wi-Fi scan to retrieve the list of all nearby Access Points */
   scan_event_flags = xEventGroupCreate();
 
-  W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
+  (void)W6X_WiFi_Scan(&Opts, &APP_wifi_scan_cb);
 
   /* Wait to receive the EVENT_FLAG_SCAN_DONE event. The scan is declared as failed after 'ScanTimeout' delay */
-  if ((int32_t)xEventGroupWaitBits(scan_event_flags, EVENT_FLAG_SCAN_DONE, pdTRUE, pdFALSE,
-                                   pdMS_TO_TICKS(WIFI_SCAN_TIMEOUT)) != EVENT_FLAG_SCAN_DONE)
+  eventBits = xEventGroupWaitBits(scan_event_flags, EVENT_FLAG_SCAN_DONE,
+                                  pdTRUE, pdFALSE,
+                                  pdMS_TO_TICKS(WIFI_SCAN_TIMEOUT));
+  if ((eventBits & EVENT_FLAG_SCAN_DONE) == 0U)
   {
     LogError("Scan Failed\n");
     goto _err;
@@ -559,10 +590,10 @@ void main_app(void)
 
   /* Connect the device to the pre-defined Access Point */
   LogInfo("\nConnecting to Local Access Point\n");
-  strncpy((char *)ConnectOpts.SSID, WIFI_SSID, W6X_WIFI_MAX_SSID_SIZE);
-  strncpy((char *)ConnectOpts.Password, WIFI_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
+  (void)strncpy((char *)ConnectOpts.SSID, WIFI_SSID, W6X_WIFI_MAX_SSID_SIZE);
+  (void)strncpy((char *)ConnectOpts.Password, WIFI_PASSWORD, W6X_WIFI_MAX_PASSWORD_SIZE);
   ret = W6X_WiFi_Connect(&ConnectOpts);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to connect, %" PRIi32 "\n", ret);
     goto _err;
@@ -584,14 +615,14 @@ void main_app(void)
 
   /* Define the default factor to apply to AP DTIM interval when connected */
   ret = W6X_WiFi_SetDTIM(WIFI_DTIM);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to initialize the DTIM, %" PRIi32 "\n", ret);
     goto _err;
   }
 
   ret = W6X_WiFi_Station_GetMACAddress(Mac);
-  if (ret)
+  if (ret != W6X_STATUS_OK)
   {
     LogError("Failed to get the MAC Address, %" PRIi32 "\n", ret);
     goto _err;
@@ -602,12 +633,12 @@ void main_app(void)
 
   if (ret == W6X_STATUS_OK)
   {
-    if ((SNTP_Enable == 0) || (SNTP_Timezone != SNTP_TIMEZONE))
+    if ((SNTP_Enable == 0U) || (SNTP_Timezone != SNTP_TIMEZONE))
     {
       /* Configure the SNTP client with default SNTP servers */
       ret = W6X_Net_SNTP_SetConfiguration(1, SNTP_TIMEZONE, (uint8_t *)"0.pool.ntp.org",
                                           (uint8_t *)"time.google.com", NULL);
-      vTaskDelay(5000); /* Wait few seconds to execute the first request */
+      vTaskDelay(pdMS_TO_TICKS(5000)); /* Wait few seconds to execute the first request */
     }
   }
 
@@ -623,26 +654,26 @@ void main_app(void)
     LogInfo("SNTP Time: %s\n", net_time.raw);
 
     /* Set the Time in RTC IP */
-    time.Hours = net_time.hours;
-    time.Minutes = net_time.minutes;
-    time.Seconds = net_time.seconds;
-    time.TimeFormat = RTC_HOURFORMAT12_AM;
-    time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-    time.StoreOperation = RTC_STOREOPERATION_RESET;
+    rtc_time.Hours = net_time.hours;
+    rtc_time.Minutes = net_time.minutes;
+    rtc_time.Seconds = net_time.seconds;
+    rtc_time.TimeFormat = RTC_HOURFORMAT12_AM;
+    rtc_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    rtc_time.StoreOperation = RTC_STOREOPERATION_RESET;
 
-    if (HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN) != HAL_OK)
+    if (HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN) != HAL_OK)
     {
       LogError("Process Time failed\n");
       goto _err;
     }
 
     /* Set the Date in RTC IP */
-    date.Year = net_time.year - 2000;    /* Convert the year to 2-digits format */
-    date.Month = net_time.month;
-    date.Date = net_time.day;
-    date.WeekDay = net_time.day_of_week;
+    rtc_date.Year = net_time.year - 2000U;    /* Convert the year to 2-digits format */
+    rtc_date.Month = net_time.month;
+    rtc_date.Date = net_time.day;
+    rtc_date.WeekDay = net_time.day_of_week;
 
-    if (HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN) != HAL_OK)
+    if (HAL_RTC_SetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN) != HAL_OK)
     {
       LogError("Process Time failed\n");
       goto _err;
@@ -670,9 +701,9 @@ void main_app(void)
 
   /* USER CODE BEGIN main_app_cert */
 #if (LFS_ENABLE == 0)
-  mqtt_config.CertificateContent = (char *)client_cert;
+  mqtt_config.CertificateContent = (char *)client_certificate;
   mqtt_config.PrivateKeyContent = (char *)client_key;
-  mqtt_config.CACertificateContent = (char *)ca_cert;
+  mqtt_config.CACertificateContent = (char *)ca_certificate;
 #endif /* LFS_ENABLE */
 
   /* USER CODE END main_app_cert */
@@ -701,17 +732,18 @@ void main_app(void)
 
   /* Add a new task to process the received message of subscribed topics */
   sub_msg_queue = xQueueCreate(10, sizeof(APP_MQTT_Data_t));
-  xTaskCreate(Subscription_process_task, (char *)"mqtt_sub",
-              SUBSCRIPTION_TASK_STACK_SIZE >> 2, NULL, SUBSCRIPTION_THREAD_PRIO, &sub_task_handle);
+  (void)xTaskCreate(Subscription_process_task, (char *)"mqtt_sub",
+                    SUBSCRIPTION_TASK_STACK_SIZE >> 2U,
+                    NULL, SUBSCRIPTION_THREAD_PRIO, &sub_task_handle);
 
   /* Subscribe to a control topic with topic_level based on ClientID */
-  snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/devices/%s/control", mqtt_config.MQClientId);
+  (void)snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/devices/%s/control", mqtt_config.MQClientId);
   LogInfo("Subscribing to topic %s.\n", mqtt_topic);
   ret = W6X_MQTT_Subscribe(mqtt_topic);
-  memset(mqtt_topic, 0, sizeof(mqtt_topic));
+  (void)memset(mqtt_topic, 0, sizeof(mqtt_topic));
 
   /* Subscribe to a sensor topic with topic_level based on ClientID */
-  snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/sensors/%s", mqtt_config.MQClientId);
+  (void)snprintf((char *)mqtt_topic, MQTT_TOPIC_BUFFER_SIZE, "/sensors/%s", mqtt_config.MQClientId);
   LogInfo("Subscribing to topic %s.\n", mqtt_topic);
   ret = W6X_MQTT_Subscribe(mqtt_topic);
 
@@ -723,11 +755,11 @@ void main_app(void)
     W6X_WiFi_Connect_t ConnectData = {0};
 
     /* Get the current date and time */
-    HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+    (void)HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+    (void)HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN);
 
     /* Get the Wi-Fi station state to retrieve the RSSI value */
-    W6X_WiFi_Station_GetState(&State, &ConnectData);
+    (void)W6X_WiFi_Station_GetState(&State, &ConnectData);
 
     /* Create the json string message with:
      * - current date and time
@@ -740,7 +772,7 @@ void main_app(void)
     len = snprintf((char *)mqtt_pubmsg, MQTT_MSG_BUFFER_SIZE, "{\n \"state\": {\n \"reported\": {\n "
                    "   \"time\": \"%02" PRIu16 "-%02" PRIu16 "-%02" PRIu16 " %02" PRIu16 ":%02" PRIu16 ":%02" PRIu16
                    "\", \"mac\": \"" MACSTR "\", \"rssi\": %" PRIi32 "\n",
-                   date.Year, date.Month, date.Date, time.Hours, time.Minutes, time.Seconds,
+                   rtc_date.Year, rtc_date.Month, rtc_date.Date, rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds,
                    MAC2STR(Mac), ConnectData.Rssi);
 
     /* USER CODE BEGIN main_app_6 */
@@ -748,7 +780,7 @@ void main_app(void)
     if (sensor_initialized)
     {
       /* Read the sensor values of the components on the MEMS expansion board */
-      Sys_Sensors_Read(&sensors_data);
+      (void)Sys_Sensors_Read(&sensors_data);
 
       /* Append the json string message with:
        * - environmental sensor values
@@ -763,26 +795,29 @@ void main_app(void)
 
     /* USER CODE END main_app_6 */
 
-    snprintf((char *)&mqtt_pubmsg[len], MQTT_MSG_BUFFER_SIZE - len, "\n  }\n }\n}");
+    len += snprintf((char *)&mqtt_pubmsg[len], MQTT_MSG_BUFFER_SIZE - len, "\n  }\n }\n}");
+
+    /* Prevent missing null-terminated character */
+    mqtt_pubmsg[len] = 0U;
 
     /* Publish the message on a topic with topic_level based on ClientID */
-    ret = W6X_MQTT_Publish(mqtt_topic, mqtt_pubmsg, strlen((char *)mqtt_pubmsg), MQTT_PUBLISH_QOS, MQTT_PUBLISH_RETAIN);
+    ret = W6X_MQTT_Publish(mqtt_topic, mqtt_pubmsg, len, MQTT_PUBLISH_QOS, MQTT_PUBLISH_RETAIN);
     if (ret == W6X_STATUS_OK)
     {
       LogInfo("MQTT Publish OK\n");
     }
-    vTaskDelay(2000);
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 #if (TEST_AUTOMATION_ENABLE == 1)
   while ((ret == W6X_STATUS_OK) && (subscription_received == false));
-#else
-  while (ret == W6X_STATUS_OK);
-#endif /* TEST_AUTOMATION_ENABLE */
-
   if (ret != W6X_STATUS_OK)
   {
     LogError("MQTT Failure\n");
   }
+#else
+  while (ret == W6X_STATUS_OK);
+  LogError("MQTT Failure\n");
+#endif /* TEST_AUTOMATION_ENABLE */
 
   /* Close the MQTT connection */
   ret = W6X_MQTT_Disconnect();
@@ -846,60 +881,38 @@ _err:
   LogInfo("##### Application end\n");
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin);
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin);
-
-void HAL_GPIO_EXTI_Callback(uint16_t pin)
-{
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_1 */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_1 */
-  /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
-  {
-    if (HAL_GPIO_ReadPin(SPI_RDY_GPIO_Port, SPI_RDY_Pin) == GPIO_PIN_SET)
-    {
-      HAL_GPIO_EXTI_Rising_Callback(pin);
-    }
-    else
-    {
-      HAL_GPIO_EXTI_Falling_Callback(pin);
-    }
-  }
-  /* USER CODE BEGIN HAL_GPIO_EXTI_Callback_End */
-
-  /* USER CODE END HAL_GPIO_EXTI_Callback_End */
-}
-
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Rising_Callback_1 */
 
   /* USER CODE END EXTI_Rising_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_txn_data_ready();
+    (void)spi_on_txn_data_ready();
   }
   /* USER CODE BEGIN EXTI_Rising_Callback_End */
 
   /* USER CODE END EXTI_Rising_Callback_End */
 }
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t pin)
+/* coverity[misra_c_2012_rule_5_8_violation : FALSE] */
+/* coverity[misra_c_2012_rule_8_6_violation : FALSE] */
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   /* USER CODE BEGIN EXTI_Falling_Callback_1 */
 
   /* USER CODE END EXTI_Falling_Callback_1 */
   /* Callback when data is available in Network CoProcessor to enable SPI Clock */
-  if (pin == SPI_RDY_Pin)
+  if (GPIO_Pin == SPI_RDY_Pin)
   {
-    spi_on_header_ack();
+    (void)spi_on_header_ack();
   }
 
   /* Callback when user button is pressed */
-  if (pin == USER_BUTTON_Pin)
+  if (GPIO_Pin == USER_BUTTON_Pin)
   {
   }
   /* USER CODE BEGIN EXTI_Falling_Callback_End */
@@ -917,7 +930,7 @@ static void Subscription_process_task(void *arg)
   /* USER CODE BEGIN Subscription_process_task_1 */
 
   /* USER CODE END Subscription_process_task_1 */
-  int32_t ret;
+  BaseType_t ret;
   APP_MQTT_Data_t mqtt_data = {0};
   cJSON *json = NULL;
   cJSON *root = NULL;
@@ -934,7 +947,7 @@ static void Subscription_process_task(void *arg)
   {
     /* Wait a new message from the subscribed topics */
     ret = xQueueReceive(sub_msg_queue, &mqtt_data, 2000);
-    if (ret)
+    if (ret > 0)
     {
       LogInfo("MQTT Subscription Received on topic %s\n", (char *)mqtt_data.topic);
 
@@ -1031,7 +1044,7 @@ static void Subscription_process_task(void *arg)
           if (cJSON_IsTrue(json) == true)
           {
             LogInfo("  %s requested in 1s ...\n", json->string);
-            vTaskDelay(1000);
+            vTaskDelay(pdMS_TO_TICKS(1000));
             HAL_NVIC_SystemReset();
           }
         }
@@ -1112,7 +1125,7 @@ static void APP_wifi_scan_cb(int32_t status, W6X_WiFi_Scan_Result_t *Scan_result
   LogInfo("SCAN DONE\n");
   LogInfo(" Cb informed APP that WIFI SCAN DONE.\n");
   W6X_WiFi_PrintScan(Scan_results);
-  xEventGroupSetBits(scan_event_flags, EVENT_FLAG_SCAN_DONE);
+  (void)xEventGroupSetBits(scan_event_flags, EVENT_FLAG_SCAN_DONE);
   /* USER CODE BEGIN APP_wifi_scan_cb_End */
 
   /* USER CODE END APP_wifi_scan_cb_End */
@@ -1138,6 +1151,7 @@ static void APP_wifi_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Wi-Fi events unmanaged */
       break;
   }
   /* USER CODE BEGIN APP_wifi_cb_End */
@@ -1161,6 +1175,7 @@ static void APP_net_cb(W6X_event_id_t event_id, void *event_args)
       break;
 
     default:
+      /* Net events unmanaged */
       break;
   }
   /* USER CODE BEGIN APP_net_cb_End */
@@ -1193,7 +1208,7 @@ static void APP_mqtt_cb(W6X_event_id_t event_id, void *event_args)
       mqtt_data.topic = pvPortMalloc(mqtt_data.topic_length);
 
       /* Copy the received topic in allocated buffer */
-      snprintf((char *)mqtt_data.topic, mqtt_data.topic_length, "%s", mqtt_recv_data.p_recv_data);
+      (void)snprintf((char *)mqtt_data.topic, mqtt_data.topic_length, "%s", mqtt_recv_data.p_recv_data);
 
       /* Get the received message length */
       mqtt_data.message_length = p_param_mqtt_data->message_length + 1;
@@ -1201,14 +1216,15 @@ static void APP_mqtt_cb(W6X_event_id_t event_id, void *event_args)
       mqtt_data.message = pvPortMalloc(mqtt_data.message_length);
 
       /* Copy the received message in allocated buffer */
-      snprintf((char *)mqtt_data.message, mqtt_data.message_length, "%s",
-               mqtt_recv_data.p_recv_data + mqtt_data.topic_length);
+      (void)snprintf((char *)mqtt_data.message, mqtt_data.message_length, "%s",
+                     mqtt_recv_data.p_recv_data + mqtt_data.topic_length);
 
       /* Push the new mqtt_data into the sub_msg_queue */
-      xQueueSendToBack(sub_msg_queue, &mqtt_data, 0);
+      (void)xQueueSendToBack(sub_msg_queue, &mqtt_data, 0);
       break;
 
     default:
+      /* MQTT events unmanaged */
       break;
   }
   /* USER CODE BEGIN APP_mqtt_cb_End */
@@ -1234,7 +1250,7 @@ static void APP_error_cb(W6X_Status_t ret_w6x, char const *func_name)
   /* USER CODE END APP_error_cb_2 */
 }
 
-static void LowPowerManagerInit(void)
+void LowPowerManagerInit(void)
 {
   /* USER CODE BEGIN LowPowerManagerInit_1 */
 
@@ -1262,11 +1278,11 @@ static void LowPowerManagerInit(void)
 
 #if (LOW_POWER_MODE < LOW_POWER_STDBY_ENABLE)
   /* Disable Stand-by mode */
-  UTIL_LPM_SetOffMode((1 << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
+  UTIL_LPM_SetOffMode((1UL << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
 #endif /* LOW_POWER_MODE */
 #if (LOW_POWER_MODE < LOW_POWER_STOP_ENABLE)
   /* Disable Stop Mode */
-  UTIL_LPM_SetStopMode((1 << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
+  UTIL_LPM_SetStopMode((1UL << CFG_LPM_APPLI_ID), UTIL_LPM_DISABLE);
 #endif /* LOW_POWER_MODE */
 #endif /* LOW_POWER_MODE */
 

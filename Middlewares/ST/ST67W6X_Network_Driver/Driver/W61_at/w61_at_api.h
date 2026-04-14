@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_at_api.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the API definitions of the W61 AT driver
   ******************************************************************************
   * @attention
@@ -91,9 +91,29 @@ typedef enum
   W61_MODULE_ID_P = 3,                    /*!< Module ID -P Model */
 } W61_ModuleID_e;
 
+/**
+  * @brief  W61 Module State enumeration
+  */
+typedef enum
+{
+  W61_MODULE_STATE_NOT_INIT = 0,          /*!< Module state not initialized */
+  W61_MODULE_STATE_INIT = 1,              /*!< Module state initialized */
+  W61_MODULE_STATE_INIT_PENDING = 2,      /*!< Module state initialization pending */
+} W61_ModuleState_e;
+
+/**
+  * @brief  W61 Reset mode enumeration
+  */
+typedef enum
+{
+  W61_RESET_MODE_SOFT = 0,                /*!< Soft reset */
+  W61_RESET_MODE_RESTORE = 1,             /*!< Restore reset */
+  W61_RESET_MODE_FWU = 2,                 /*!< Firmware update reset */
+} W61_ResetMode_e;
+
 #define W61_SYS_FS_FILENAME_SIZE      32  /*!< Maximum size of the filename */
 
-#define W61_SYS_FS_MAX_FILES          20  /*!< Maximum number of files */
+#define W61_SYS_FS_MAX_FILES          32  /*!< Maximum number of files */
 
 /** @} */
 
@@ -104,28 +124,30 @@ typedef enum
   */
 /* ===================================================================== */
 /* W61_event_id_t */
-#define W61_WIFI_EVT_SCAN_DONE_ID                      1  /*!< event_args parameter to be casted to W61_WiFi_Scan_Result_t */
-#define W61_WIFI_EVT_CONNECTED_ID                      2  /*!< no param */
-#define W61_WIFI_EVT_DISCONNECTED_ID                   3  /*!< no param */
-#define W61_WIFI_EVT_GOT_IP_ID                         4  /*!< no param */
-#define W61_WIFI_EVT_CONNECTING_ID                     5  /*!< no param */
-#define W61_WIFI_EVT_REASON_ID                         6  /*!< no param */
+#define W61_WIFI_EVT_SCAN_DONE_ID                      1U  /*!< event_args parameter to be casted to W61_WiFi_Scan_Result_t */
+#define W61_WIFI_EVT_CONNECTED_ID                      2U  /*!< no param */
+#define W61_WIFI_EVT_DISCONNECTED_ID                   3U  /*!< no param */
+#define W61_WIFI_EVT_GOT_IP_ID                         4U  /*!< no param */
+#define W61_WIFI_EVT_CONNECTING_ID                     5U  /*!< no param */
+#define W61_WIFI_EVT_REASON_ID                         6U  /*!< no param */
 
 #define W61_WIFI_EVT_STA_CONNECTED_ID                  10 /*!< event_args parameter to be casted to MAC ??? */
 #define W61_WIFI_EVT_STA_DISCONNECTED_ID               11 /*!< event_args parameter to be casted to MAC ??? */
 #define W61_WIFI_EVT_DIST_STA_IP_ID                    12 /*!< event_args parameter to be casted to MAC+IP ??? */
 
-#define W61_WIFI_MAX_SSID_SIZE                         32 /*!< Maximum size of the SSID */
+#define W61_WIFI_MAX_SSID_SIZE                         32U /*!< Maximum size of the SSID */
 
-#define W61_WIFI_MAX_PASSWORD_SIZE                     63 /*!< Maximum size of the password */
+#define W61_WIFI_MAX_PASSWORD_SIZE                     63U /*!< Maximum size of the password */
 
-#define W61_WIFI_MAX_HOSTNAME_SIZE                     32 /*!< Maximum size of the hostname */
+#define W61_WIFI_MAX_HOSTNAME_SIZE                     32U /*!< Maximum size of the hostname */
 
-#define W61_WIFI_MAX_CONNECTED_STATIONS                4  /*!< Maximum number of connected stations */
+#define W61_WIFI_MAX_CONNECTED_STATIONS                4U  /*!< Maximum number of connected stations */
 
-#define W61_WIFI_MAX_TWT_FLOWS                         8  /*!< Maximum number of TWT flows */
+#define W61_WIFI_MAX_TWT_FLOWS                         8U  /*!< Maximum number of TWT flows */
 
-#define W61_CMD_MATCH_BUFF_SIZE                       256 /*!< Maximum size for modem cmd handler match_buf */
+#define W61_CMD_MATCH_BUFF_SIZE                       256U /*!< Maximum size for modem cmd handler match_buf */
+
+#define W61_WIFI_MAX_SSID_LIST_SIZE                    5U  /*!< Maximum number of SSIDs in the credentials list */
 
 /**
   * @brief  Wi-Fi IPv4/IPv6 layer version
@@ -241,11 +263,11 @@ typedef enum
   */
 /* ===================================================================== */
 /* W61_event_id_t */
-#define W61_NET_EVT_SOCK_DATA_ID                       50 /*!< event_args parameter to be casted to W61_Net_CbParamData_t */
-#define W61_NET_EVT_SOCK_CONNECTED_ID                  51 /*!< event_args parameter to be casted to W61_Net_CbParamData_t */
-#define W61_NET_EVT_SOCK_DISCONNECTED_ID               52 /*!< event_args parameter to be casted to W61_Net_CbParamData_t */
+#define W61_NET_EVT_SOCK_DATA_ID                       50U /*!< event_args parameter to be casted to W61_Net_CbParamData_t */
+#define W61_NET_EVT_SOCK_CONNECTED_ID                  51U /*!< event_args parameter to be casted to W61_Net_CbParamData_t */
+#define W61_NET_EVT_SOCK_DISCONNECTED_ID               52U /*!< event_args parameter to be casted to W61_Net_CbParamData_t */
 
-#define W61_NET_MAX_CONNECTIONS                 5     /*!< Maximum number of Network connections */
+#define W61_NET_MAX_CONNECTIONS                        5U /*!< Maximum number of Network connections */
 
 /**
   * @brief  DNS resolved type
@@ -296,9 +318,9 @@ typedef enum
   */
 /* ===================================================================== */
 /* W61_event_id_t */
-#define W61_MQTT_EVT_CONNECTED_ID                      60 /*!< no param */
-#define W61_MQTT_EVT_DISCONNECTED_ID                   61 /*!< no param */
-#define W61_MQTT_EVT_SUBSCRIPTION_RECEIVED_ID          62 /*!< no param */
+#define W61_MQTT_EVT_CONNECTED_ID                      60U /*!< no param */
+#define W61_MQTT_EVT_DISCONNECTED_ID                   61U /*!< no param */
+#define W61_MQTT_EVT_SUBSCRIPTION_RECEIVED_ID          62U /*!< no param */
 
 /** @} */
 
@@ -309,29 +331,29 @@ typedef enum
   */
 /* ===================================================================== */
 /* W61_event_id_t */
-#define W61_BLE_EVT_CONNECTED_ID                       21 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_DISCONNECTED_ID                    22 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_CONNECTION_PARAM_ID                23 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_READ_ID                            24 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_WRITE_ID                           25 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_SERVICE_FOUND_ID                   26 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_CHAR_FOUND_ID                      27 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_INDICATION_STATUS_ENABLED_ID       28 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_INDICATION_STATUS_DISABLED_ID      29 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_NOTIFICATION_STATUS_ENABLED_ID     30 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_NOTIFICATION_STATUS_DISABLED_ID    31 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_NOTIFICATION_DATA_ID               32 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_MTU_SIZE_ID                        33 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PAIRING_FAILED_ID                  34 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PAIRING_COMPLETED_ID               35 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PAIRING_CONFIRM_ID                 36 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PAIRING_CANCELED_ID                37 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PASSKEY_ENTRY_ID                   38 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PASSKEY_DISPLAY_ID                 39 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_PASSKEY_CONFIRM_ID                 40 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_SCAN_DONE_ID                       41 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_INDICATION_ACK_ID                  42 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
-#define W61_BLE_EVT_INDICATION_NACK_ID                 43 /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_CONNECTED_ID                       21U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_DISCONNECTED_ID                    22U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_CONNECTION_PARAM_ID                23U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_READ_ID                            24U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_WRITE_ID                           25U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_SERVICE_FOUND_ID                   26U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_CHAR_FOUND_ID                      27U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_INDICATION_STATUS_ENABLED_ID       28U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_INDICATION_STATUS_DISABLED_ID      29U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_NOTIFICATION_STATUS_ENABLED_ID     30U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_NOTIFICATION_STATUS_DISABLED_ID    31U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_NOTIFICATION_DATA_ID               32U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_MTU_SIZE_ID                        33U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PAIRING_FAILED_ID                  34U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PAIRING_COMPLETED_ID               35U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PAIRING_CONFIRM_ID                 36U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PAIRING_CANCELED_ID                37U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PASSKEY_ENTRY_ID                   38U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PASSKEY_DISPLAY_ID                 39U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_PASSKEY_CONFIRM_ID                 40U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_SCAN_DONE_ID                       41U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_INDICATION_ACK_ID                  42U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
+#define W61_BLE_EVT_INDICATION_NACK_ID                 43U /*!< event_args parameter to be casted to W61_Ble_CbParamData_t */
 
 #define W61_BLE_BD_ADDR_SIZE                           6  /*!< BLE BD Address size */
 #define W61_BLE_BD_ADDR_STRING_SIZE                    17 /*!< Length of a complete BD address string */
@@ -425,32 +447,6 @@ typedef enum
   * @{
   */
 /* ===================================================================== */
-
-/**
-  * @brief  IO Init Bus callback
-  */
-typedef int32_t (*W61_IO_Init_cb_t)(uint8_t);
-
-/**
-  * @brief  IO DeInit Bus callback
-  */
-typedef int32_t (*W61_IO_DeInit_cb_t)(void);
-
-/**
-  * @brief  IO Delay Bus callback
-  */
-typedef void (*W61_IO_Delay_cb_t)(uint32_t);
-
-/**
-  * @brief  IO Send Bus callback
-  */
-typedef int32_t (*W61_IO_Send_cb_t)(uint8_t, uint8_t *, uint16_t, uint32_t);
-
-/**
-  * @brief  IO Receive Bus callback
-  */
-typedef int32_t (*W61_IO_Receive_cb_t)(uint8_t, uint8_t *, uint16_t, uint32_t);
-
 /**
   * @brief  W61 events type
   */
@@ -499,18 +495,6 @@ typedef struct
   W61_UpperLayer_mqtt_cb_t UL_mqtt_cb;            /*!< Callback for MQTT events */
   W61_UpperLayer_ble_cb_t UL_ble_cb;              /*!< Callback for BLE events */
 } W61_UL_Cb_t;
-
-/**
-  * @brief  IO Bus functions
-  */
-typedef struct
-{
-  W61_IO_Init_cb_t IO_Init;                       /*!< IO_Init Bus function */
-  W61_IO_DeInit_cb_t IO_DeInit;                   /*!< IO_DeInit Bus function */
-  W61_IO_Delay_cb_t IO_Delay;                     /*!< IO_Delay Bus function */
-  W61_IO_Send_cb_t IO_Send;                       /*!< IO_Send Bus function */
-  W61_IO_Receive_cb_t IO_Receive;                 /*!< IO_Receive Bus function */
-} W61_IO_t;
 
 /**
   * @brief  W61 module version structure
@@ -643,7 +627,7 @@ typedef struct
 /**
   * @brief  Wi-Fi scan result callback
   */
-typedef void(* W61_WiFi_Scan_Result_cb_t)(int32_t status, W61_WiFi_Scan_Result_t *Scan_results);
+typedef void(* W61_WiFi_Scan_Result_cb_t)(int32_t status, W61_WiFi_Scan_Result_t *entry);
 
 /**
   * @brief  Wi-Fi connection options
@@ -664,7 +648,20 @@ typedef struct
   uint32_t WPS;
   /** Connect to Access Point with WEP encryption. 0: WEP not used (default), 1: WEP used */
   uint32_t WEP;
+  /** Connect using secured credentials */
+  uint32_t Secured;
 } W61_WiFi_Connect_Opts_t;
+
+/**
+  * @brief  Wi-Fi credentials list
+  */
+typedef struct
+{
+  /** Number of stored credentials */
+  uint32_t Count;
+  /** Array of stored SSID strings (5 entries, each with max size W61_WIFI_MAX_SSID_SIZE + 1) */
+  uint8_t SSID[W61_WIFI_MAX_SSID_LIST_SIZE][W61_WIFI_MAX_SSID_SIZE + 1];
+} W61_WiFi_CredentialsList_t;
 
 /**
   * @brief  Wi-Fi internal context
@@ -961,7 +958,7 @@ typedef struct
 typedef struct
 {
   uint8_t char_idx;                                     /*!< Characteristic index */
-  uint8_t uuid_type;                                    /*!< UUID type (16-bit or 128-bit) */
+  W61_Ble_UuidType_e uuid_type;                         /*!< UUID type (16-bit or 128-bit) */
   char char_uuid[W61_BLE_MAX_UUID_SIZE];                /*!< Characteristic UUID */
   uint8_t char_property;                                /*!< Characteristic Property */
   uint8_t char_permission;                              /*!< Characteristic Permission */
@@ -976,7 +973,7 @@ typedef struct
 {
   uint8_t service_idx;                                  /*!< Service index */
   uint8_t service_type;                                 /*!< Service type */
-  uint8_t uuid_type;                                    /*!< UUID type (16-bit or 128-bit) */
+  W61_Ble_UuidType_e uuid_type;                         /*!< UUID type (16-bit or 128-bit) */
   char service_uuid[W61_BLE_MAX_UUID_SIZE];             /*!< Service UUID */
   W61_Ble_Characteristic_t charac;                      /*!< Service characteristic */
 } W61_Ble_Service_t;
@@ -1056,7 +1053,7 @@ typedef struct
 /**
   * @brief  BLE scan result callback
   */
-typedef void(* W61_Ble_Scan_Result_cb_t)(W61_Ble_Scan_Result_t *Ble_Scan_results);
+typedef void(* W61_Ble_Scan_Result_cb_t)(W61_Ble_Scan_Result_t *entry);
 
 /**
   * @brief  BLE internal context
@@ -1167,8 +1164,8 @@ typedef int32_t (*W61_AT_Event_data_cb_t)(uint32_t event_id, struct modem_cmd_ha
 typedef struct modem
 {
   TaskHandle_t modem_task_handle;                         /*!< Modem task handle */
-  struct modem_cmd_handler modem_cmd_handler;             /*!< Modem command handler */
-  struct modem_cmd_handler_data modem_cmd_handler_data;   /*!< Modem command handler data */
+  struct modem_cmd_handler handler;                       /*!< Modem command handler */
+  struct modem_cmd_handler_data handler_data;             /*!< Modem command handler data */
   struct modem_iface iface;                               /*!< Modem interface */
   SemaphoreHandle_t sem_tx_ready;                         /*!< TX ready semaphore */
   SemaphoreHandle_t sem_response;                         /*!< Response semaphore */
@@ -1199,6 +1196,21 @@ typedef struct
 } W61_Callback_t;
 
 /**
+  * @brief  W61 Reset configuration structure
+  */
+typedef struct
+{
+  uint32_t FWU_requested;                                 /*!< Firmware update requested */
+  int32_t PS_mode;                                        /*!< Power save mode */
+  W61_ModuleState_e WiFi_status;                          /*!< Wi-Fi status to restore to after module reset */
+  W61_ModuleState_e Net_status;                           /*!< Network status to restore to after module reset */
+  W61_ModuleState_e Ble_status;                           /*!< BLE status to restore to after module reset */
+  int32_t Ble_mode;                                       /*!< BLE mode to restore to after module reset */
+  uint8_t *Ble_BuffRecvData;                              /*!< Pointer to BLE received data buffer */
+  int32_t Ble_BuffRecvDataSize;                           /*!< Size of BLE received data buffer */
+} W61_ResetCfg_t;
+
+/**
   * @brief  W61 Object structure
   */
 typedef struct
@@ -1207,6 +1219,7 @@ typedef struct
   W61_UL_Cb_t ulcbs;                                      /*!< Upper Layer Callbacks */
   W61_LowPowerCfg_t LowPowerCfg;                          /*!< Low Power configuration */
   W61_Callback_t Callbacks;                               /*!< Callbacks for different events */
+  W61_ResetCfg_t ResetCfg;                                /*!< Reset configuration */
   W61_Ble_Ctx_t BleCtx;                                   /*!< BLE context */
   W61_Wifi_Ctx_t WifiCtx;                                 /*!< Wi-Fi context */
   W61_Net_Ctx_t NetCtx;                                   /*!< Net context */
@@ -1221,6 +1234,9 @@ typedef struct
 
 /** Default timeout (ms) for module readiness */
 #define W61_READY_DEFAULT_TIMEOUT_MS  (4000U)
+
+/** Time (ms) to wait for module ready after firmware update finish */
+#define W61_FWU_READY_TIMEOUT_MS      (30000U)
 
 /* ===================================================================== */
 /** @defgroup ST67W61_AT_System_Macros ST67W61 AT Driver System Macros
@@ -1490,18 +1506,12 @@ W61_Status_t W61_DeInit(W61_Object_t *Obj);
 W61_Status_t W61_WaitForReady(W61_Object_t *Obj, uint32_t time_ms);
 
 /**
-  * @brief  Reset To factory defaults
-  * @param  Obj: pointer to module handle
-  * @return Operation status
-  */
-W61_Status_t W61_ResetToFactoryDefault(W61_Object_t *Obj);
-
-/**
   * @brief  Reset the module
   * @param  Obj: pointer to module handle
+  * @param  mode: reset mode (0: normal reset, 1: restore to default state, 2: install new firmware)
   * @return Operation status
   */
-W61_Status_t W61_Reset(W61_Object_t *Obj);
+W61_Status_t W61_Reset(W61_Object_t *Obj, W61_ResetMode_e mode);
 
 /**
   * @brief  Get current remaining heap size in NCP
@@ -1521,14 +1531,6 @@ W61_Status_t W61_GetNcpHeapState(W61_Object_t *Obj, uint32_t *RemainingHeap, uin
 W61_Status_t W61_GetStoreMode(W61_Object_t *Obj, uint32_t *mode);
 
 /**
-  * @brief  Set the parameter store mode
-  * @param  Obj: pointer to module handle
-  * @param  mode: store mode
-  * @return Operation status
-  */
-W61_Status_t W61_SetStoreMode(W61_Object_t *Obj, uint32_t mode);
-
-/**
   * @brief  Read the EFUSE content
   * @param  Obj: pointer to module handle
   * @param  addr: address of EFUSE to read
@@ -1537,13 +1539,6 @@ W61_Status_t W61_SetStoreMode(W61_Object_t *Obj, uint32_t mode);
   * @return Operation Status
   */
 W61_Status_t W61_ReadEFuse(W61_Object_t *Obj, uint32_t addr, uint32_t nbytes, uint8_t *data);
-
-/**
-  * @brief  Reset the module
-  * @param  Obj: pointer to module handle
-  * @return Operation status
-  */
-W61_Status_t W61_ResetModule(W61_Object_t *Obj);
 
 /**
   * @brief  Get the module information
@@ -1622,13 +1617,6 @@ W61_Status_t W61_FS_ListFiles(W61_Object_t *Obj, W61_FS_FilesList_t *files_list)
   * @return Operation status
   */
 W61_Status_t W61_FWU_starts(W61_Object_t *Obj, uint32_t enable);
-
-/**
-  * @brief  Send AT command to stop FWU process and reboot the module using the new firmware
-  * @param  Obj: pointer to module handle
-  * @return Operation status
-  */
-W61_Status_t W61_FWU_Finish(W61_Object_t *Obj);
 
 /**
   * @brief  Send AT command to send FWU data buf of size len
@@ -1738,6 +1726,13 @@ W61_Status_t W61_WiFi_Init(W61_Object_t *Obj);
 W61_Status_t W61_WiFi_DeInit(W61_Object_t *Obj);
 
 /**
+  * @brief  Deactivate Wi-Fi mode
+  * @param  Obj: pointer to module handle
+  * @return Operation status
+  */
+W61_Status_t W61_WiFi_Stop(W61_Object_t *Obj);
+
+/**
   * @brief  Activate STA mode
   * @param  Obj: pointer to module handle
   * @return Operation status
@@ -1793,6 +1788,32 @@ W61_Status_t W61_WiFi_GetConnectInfo(W61_Object_t *Obj, int32_t *Rssi, W61_WiFi_
   * @return Operation status
   */
 W61_Status_t W61_WiFi_Disconnect(W61_Object_t *Obj, uint32_t restore);
+
+/**
+  * @brief  Add Wi-Fi credentials to secure storage
+  * @param  Obj: pointer to module handle
+  * @param  SSID: pointer to the SSID string
+  * @param  Password: pointer to the password string
+  * @return Operation status
+  */
+W61_Status_t W61_WiFi_AddCredentials(W61_Object_t *Obj, uint8_t SSID[W61_WIFI_MAX_SSID_SIZE + 1],
+                                     uint8_t Password[W61_WIFI_MAX_PASSWORD_SIZE + 1]);
+
+/**
+  * @brief  Delete Wi-Fi credentials from secure storage
+  * @param  Obj: pointer to module handle
+  * @param  SSID: pointer to the SSID string
+  * @return Operation status
+  */
+W61_Status_t W61_WiFi_DeleteCredentials(W61_Object_t *Obj, uint8_t SSID[W61_WIFI_MAX_SSID_SIZE + 1]);
+
+/**
+  * @brief  Get the list of stored Wi-Fi credentials
+  * @param  Obj: pointer to module handle
+  * @param  credentials_list: pointer to the credentials list structure
+  * @return Operation status
+  */
+W61_Status_t W61_WiFi_GetCredentials(W61_Object_t *Obj, W61_WiFi_CredentialsList_t *credentials_list);
 
 /**
   * @brief  Chooses if auto connect should be On or Off
@@ -1870,10 +1891,10 @@ W61_Status_t W61_WiFi_AP_GetConfig(W61_Object_t *Obj, W61_WiFi_ApConfig_t *ApCon
 /**
   * @brief  List all connected stations
   * @param  Obj: pointer to module handle
-  * @param  Sta: pointer to the connected stations structure
+  * @param  Stations: pointer to the connected stations structure
   * @return W61_Status_t
   */
-W61_Status_t W61_WiFi_AP_ListConnectedStations(W61_Object_t *Obj, W61_WiFi_Connected_Sta_t *Sta);
+W61_Status_t W61_WiFi_AP_ListConnectedStations(W61_Object_t *Obj, W61_WiFi_Connected_Sta_t *Stations);
 
 /**
   * @brief  Disconnect a station from the Soft-AP
@@ -2211,12 +2232,12 @@ W61_Status_t W61_Net_GetSocketInformation(W61_Object_t *Obj, uint8_t Socket, W61
   * @param  Obj: pointer to module handle
   * @param  Socket: number of the socket
   * @param  pdata: pointer to data
-  * @param  req_len: nr of bytes of the data to be sent
+  * @param  Reqlen: nr of bytes of the data to be sent
   * @param  SentLen: pointer to variable which contains nr of bytes  sent
   * @param  Timeout: timeout in ms
   * @return Operation status
   */
-W61_Status_t W61_Net_SendData(W61_Object_t *Obj, uint8_t Socket, uint8_t *pdata, uint32_t req_len,
+W61_Status_t W61_Net_SendData(W61_Object_t *Obj, uint8_t Socket, uint8_t *pdata, uint32_t Reqlen,
                               uint32_t *SentLen, uint32_t Timeout);
 
 /**
@@ -2226,13 +2247,13 @@ W61_Status_t W61_Net_SendData(W61_Object_t *Obj, uint8_t Socket, uint8_t *pdata,
   * @param  IpAddress: IP address of remote host to send data to
   * @param  Port: Port of remote host to send data to
   * @param  pdata: pointer to data
-  * @param  req_len: nr of bytes of the data to be sent
+  * @param  Reqlen: nr of bytes of the data to be sent
   * @param  SentLen: pointer to variable which contains nr of bytes  sent
   * @param  Timeout: timeout in ms
   * @return Operation status
   */
 W61_Status_t W61_Net_SendData_Non_Connected(W61_Object_t *Obj, uint8_t Socket, char *IpAddress, uint32_t Port,
-                                            uint8_t *pdata, uint32_t req_len, uint32_t *SentLen, uint32_t Timeout);
+                                            uint8_t *pdata, uint32_t Reqlen, uint32_t *SentLen, uint32_t Timeout);
 
 /**
   * @brief  Set Receive buffer length when reading data from socket
@@ -2253,25 +2274,16 @@ W61_Status_t W61_Net_SetReceiveBufferLen(W61_Object_t *Obj, uint8_t Socket, uint
 W61_Status_t W61_Net_GetReceiveBufferLen(W61_Object_t *Obj, uint8_t Socket, uint32_t *BufLen);
 
 /**
-  * @brief  Inquire W61 to check if socket data is available on a socket (Passive mode)
-  * @param  Obj: pointer to module handle
-  * @param  Socket: number of the socket
-  * @param  AvailableDataSize: pointer where to return the available data size on a socket
-  * @return Operation status
-  */
-W61_Status_t W61_Net_IsDataAvailableOnSocket(W61_Object_t *Obj, uint8_t Socket, uint32_t *AvailableDataSize);
-
-/**
   * @brief  Pull data from W61 on a socket (Passive mode)
   * @param  Obj: pointer to module handle
   * @param  Socket: number of the socket
-  * @param  req_len: nr of bytes of the data to be sent
+  * @param  Reqlen: nr of bytes of the data to be sent
   * @param  pData: pointer to data
   * @param  Receivedlen: pointer to variable which contains nr of bytes  sent
   * @param  Timeout: timeout in ms
   * @return Operation status
   */
-W61_Status_t W61_Net_PullDataFromSocket(W61_Object_t *Obj, uint8_t Socket, uint32_t req_len, uint8_t *pData,
+W61_Status_t W61_Net_PullDataFromSocket(W61_Object_t *Obj, uint8_t Socket, uint32_t Reqlen, uint8_t *pData,
                                         uint32_t *Receivedlen, uint32_t Timeout);
 
 /**
@@ -2422,8 +2434,8 @@ W61_Status_t W61_MQTT_SetUserConfiguration(W61_Object_t *Obj, uint32_t Scheme, u
   * @return Operation status
   */
 W61_Status_t W61_MQTT_GetUserConfiguration(W61_Object_t *Obj, uint8_t ClientId[32], uint8_t Username[32],
-                                           uint8_t Password[32], uint8_t Certificate[64], uint8_t PrivateKey[64],
-                                           uint8_t CaCertificate[64]);
+                                           uint8_t Password[32], uint8_t Certificate[32], uint8_t PrivateKey[32],
+                                           uint8_t CaCertificate[32]);
 
 /**
   * @brief  Send AT command to set MQTT configuration
@@ -2452,7 +2464,7 @@ W61_Status_t W61_MQTT_SetConfiguration(W61_Object_t *Obj, uint32_t KeepAlive, ui
   * @return Operation status
   */
 W61_Status_t W61_MQTT_GetConfiguration(W61_Object_t *Obj, uint32_t *KeepAlive, uint32_t *DisableCleanSession,
-                                       uint8_t WillTopic[128], uint8_t WillMessage[128], uint32_t *WillQos,
+                                       uint8_t WillTopic[64], uint8_t WillMessage[64], uint32_t *WillQos,
                                        uint32_t *WillRetain);
 
 /**
@@ -2808,10 +2820,10 @@ W61_Status_t W61_Ble_DeleteService(W61_Object_t *Obj, uint8_t service_index);
   * @brief  List BLE Services created
   * @param  Obj: pointer to module handle
   * @param  ServiceInfo: pointer to get the existing service
-  * @param  service_idx: index of the service to get
+  * @param  service_index: index of the service to get
   * @return Operation status
   */
-W61_Status_t W61_Ble_GetService(W61_Object_t *Obj, W61_Ble_Service_t *ServiceInfo, int8_t service_idx);
+W61_Status_t W61_Ble_GetService(W61_Object_t *Obj, W61_Ble_Service_t *ServiceInfo, int8_t service_index);
 
 /**
   * @brief  Create BLE Characteristic
@@ -2996,13 +3008,13 @@ W61_Status_t W61_Ble_SecurityPassKeyConfirm(W61_Object_t *Obj, uint8_t conn_hand
 W61_Status_t W61_Ble_SecurityPairingConfirm(W61_Object_t *Obj, uint8_t conn_handle);
 
 /**
-  * @brief  BLE set pass key
+  * @brief  BLE enter remote pass key
   * @param  Obj: pointer to module handle
   * @param  conn_handle: BLE connection handle
   * @param  passkey: BLE security pass key
   * @return Operation status
   */
-W61_Status_t W61_Ble_SecuritySetPassKey(W61_Object_t *Obj, uint8_t conn_handle, uint32_t passkey);
+W61_Status_t W61_Ble_SecurityEnterRemotePassKey(W61_Object_t *Obj, uint8_t conn_handle, uint32_t passkey);
 
 /**
   * @brief  BLE pairing cancel
@@ -3029,6 +3041,15 @@ W61_Status_t W61_Ble_SecurityUnpair(W61_Object_t *Obj, uint8_t *RemoteBDAddr, ui
   */
 W61_Status_t W61_Ble_SecurityGetBondedDeviceList(W61_Object_t *Obj,
                                                  W61_Ble_Bonded_Devices_Result_t *RemoteBondedDevices);
+
+/**
+  * @brief  BLE set GAP appearance
+  * @param  Obj: pointer to module handle
+  * @param  appearance_value: GAP appearance value
+  * @return Operation status
+  */
+W61_Status_t W61_Ble_SetGapAppearance(W61_Object_t *Obj, uint16_t appearance_value);
+
 /** @} */
 
 #ifdef __cplusplus

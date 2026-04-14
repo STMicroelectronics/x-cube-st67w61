@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    main.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Main program body
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -135,6 +135,10 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
+  /** Configure LSE Drive Capability
+  */
+  HAL_PWR_EnableBkUpAccess();
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -156,7 +160,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL2.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL2.PLLM = 4;
   RCC_OscInitStruct.PLL2.PLLN = 25;
-  RCC_OscInitStruct.PLL2.PLLP = 4;
+  RCC_OscInitStruct.PLL2.PLLP = 5;
   RCC_OscInitStruct.PLL2.PLLQ = 2;
   RCC_OscInitStruct.PLL2.PLLR = 2;
   RCC_OscInitStruct.PLL2.PLLS = 1;

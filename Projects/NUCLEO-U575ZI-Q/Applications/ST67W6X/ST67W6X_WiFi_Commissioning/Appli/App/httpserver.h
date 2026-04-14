@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    httpserver.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Http server declarations.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -36,16 +36,6 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
-/**
-  * @brief  Structure to handle ping information for Wi-Fi commissioning application
-  */
-typedef struct
-{
-  int32_t count;                  /*!< Number of ping to send */
-  int32_t delay;                  /*!< Delay between pings */
-  int32_t loss;                   /*!< Packet loss percentage */
-} PingInfos_t;
-
 /* USER CODE BEGIN ET */
 
 /* USER CODE END ET */

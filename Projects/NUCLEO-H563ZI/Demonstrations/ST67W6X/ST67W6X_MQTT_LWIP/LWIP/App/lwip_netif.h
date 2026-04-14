@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    lwip_netif.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for the configuration of the ST67W6X Network interface over LwIP
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __LWIP_NETIF_H
-#define __LWIP_NETIF_H
+#ifndef LWIP_NETIF_H
+#define LWIP_NETIF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +39,7 @@ extern "C" {
 #define NETIF_TASK_PRIORITY     50
 
 /** Netif task stack size */
-#define NETIF_TASK_STACK        2048
+#define NETIF_TASK_STACK        2048U
 
 /* USER CODE BEGIN EC */
 
@@ -69,4 +69,4 @@ err_t net_if_output(struct netif *net_if, struct pbuf *p_buf);
 }
 #endif /* __cplusplus */
 
-#endif /* __LWIP_NETIF_H */
+#endif /* LWIP_NETIF_H */

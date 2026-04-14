@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    httpserver.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Http server application.
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
 #include "httpserver.h"
@@ -64,6 +65,16 @@ typedef enum
 } HttpServer_response_e;
 
 /**
+  * @brief  Structure to handle ping information for Wi-Fi commissioning application
+  */
+typedef struct
+{
+  uint16_t count;   /*!< Number of ping to send */
+  uint32_t delay;   /*!< Delay between pings */
+  uint32_t loss;    /*!< Packet loss percentage */
+} PingInfos_t;
+
+/**
   * @brief  HTTP server response structure
   */
 typedef struct
@@ -71,6 +82,7 @@ typedef struct
   HttpServer_response_e response_type;  /*!< Type of response */
   const char *request;                  /*!< Request string */
   const char *response;                 /*!< Response string */
+  size_t resp_len;                      /*!< Response string length */
 } HttpServer_response_t;
 
 /* USER CODE BEGIN PTD */
@@ -82,13 +94,13 @@ typedef struct
 #define STA_POLLING_THREAD_PRIO        30
 
 /** Stack size of the user pins polling task */
-#define STA_POLLING_TASK_STACK_SIZE    512
+#define STA_POLLING_TASK_STACK_SIZE    512U
 
 /** Priority of the web server child task */
 #define WEBSERVER_CHILD_THREAD_PRIO    29
 
 /** Stack size of the web server child task */
-#define HTTP_CHILD_TASK_STACK_SIZE     2048
+#define HTTP_CHILD_TASK_STACK_SIZE     2048U
 
 /** HTTP server port */
 #define HTTP_PORT                      80
@@ -97,25 +109,25 @@ typedef struct
 #define SOCKET_TIMEOUT_MS              1000
 
 /** Event flag for connection status update */
-#define EVENT_FLAG_STATION_STATUS      (1<<1)
+#define EVENT_FLAG_STATION_STATUS      (1UL << 1U)
 
 /** Timeout for the pin status update in ms */
 #define STATION_STATUS_TIMEOUT_MS      9000
 
 /** Buffer size for the child task */
-#define HTTP_CHILD_TASK_BUFFER_SIZE    1024
+#define HTTP_CHILD_TASK_BUFFER_SIZE    1024U
 
 /** Maximum bytes to send in one step */
-#define MAX_BYTES_TO_SEND              4096
+#define MAX_BYTES_TO_SEND              4096U
 
 /** Number of ping to send */
-#define PING_COUNT                     5
+#define PING_COUNT                     5U
 /** Size of the ping request */
-#define PING_SIZE                      64
+#define PING_SIZE                      64U
 /** Time interval between two ping requests */
-#define PING_INTERVAL                  1000
+#define PING_INTERVAL                  1000U
 /** Percent convert number */
-#define PING_PERCENT                   100
+#define PING_PERCENT                   100U
 
 /* USER CODE BEGIN PD */
 
@@ -155,13 +167,13 @@ static const char response_post[] =
 /** Response content depending on the request */
 HttpServer_response_t http_server_responses[] =
 {
-  {INDEX_HTML,      "GET / ",                                     response_index_html},
-  {FAVICON_SVG,     "GET /favicon.ico",                           response_favicon_svg},
-  {ST_LOGO_SVG,     "GET /ST_logo_2020_white_no_tagline_rgb.svg", response_st_logo_svg},
-  {PING,            "GET /ping",                                  NULL},
-  {CREDENTIALS,     "POST /credential",                           response_post},
-  {STA_STATE,       "GET /connect_status",                        NULL},
-  {DISCONNECT,      "GET /disconnect",                            NULL},
+  {INDEX_HTML,      "GET / ",                                     response_index_html,  sizeof(response_index_html)},
+  {FAVICON_SVG,     "GET /favicon.ico",                           response_favicon_svg, sizeof(response_favicon_svg)},
+  {ST_LOGO_SVG,     "GET /ST_logo_2020_white_no_tagline_rgb.svg", response_st_logo_svg, sizeof(response_st_logo_svg)},
+  {PING,            "GET /ping",                                  NULL,                 0U},
+  {CREDENTIALS,     "POST /credential",                           response_post,        sizeof(response_post)},
+  {STA_STATE,       "GET /connect_status",                        NULL,                 0U},
+  {DISCONNECT,      "GET /disconnect",                            NULL,                 0U},
 };
 
 /* USER CODE BEGIN PV */
@@ -215,26 +227,26 @@ void http_server_socket(void *arg)
   TaskHandle_t staPolling_handle = NULL;
   const int32_t domain = AF_INET;
   int32_t sock = -1;
-  uint16_t port = HTTP_PORT;
   struct sockaddr_in s_addr_in_t = { 0 };
-  uint8_t ip_addr[4] = {0};
+  int32_t fct_start = 9;
+  uint16_t port = HTTP_PORT;
+  uint8_t ip_address[4] = {0};
   uint8_t netmask_addr[4] = {0};
   int32_t timeout = (int32_t)pdMS_TO_TICKS(SOCKET_TIMEOUT_MS);
-  int32_t fct_start = 9;
 
   /* USER CODE BEGIN http_server_socket_1 */
 
   /* USER CODE END http_server_socket_1 */
 
   /* Get the soft-AP current IP address */
-  if (W6X_Net_AP_GetIPAddress(ip_addr, netmask_addr) != W6X_STATUS_OK)
+  if (W6X_Net_AP_GetIPAddress(ip_address, netmask_addr) != W6X_STATUS_OK)
   {
     LogError("Get soft-AP IP failed\n");
     goto _err;
   }
 
-  LogInfo("Soft-AP IP address : " IPSTR "\n", IP2STR(ip_addr));
-  s_addr_in_t.sin_addr.s_addr = ATON(ip_addr);
+  LogInfo("Soft-AP IP address : " IPSTR "\n", IP2STR(ip_address));
+  s_addr_in_t.sin_addr.s_addr = ATON(ip_address);
   s_addr_in_t.sin_port = PP_HTONS(port);
   s_addr_in_t.sin_family = AF_INET;
 
@@ -292,14 +304,14 @@ void http_server_socket(void *arg)
   /* Creation of a thread to get the Wi-Fi credentials */
   sta_handle = xEventGroupCreate();
   if (pdPASS != xTaskCreate((TaskFunction_t)station_status_verification_task, "StaStatusPolling",
-                            STA_POLLING_TASK_STACK_SIZE >> 2,
+                            STA_POLLING_TASK_STACK_SIZE >> 2U,
                             &fct_start, STA_POLLING_THREAD_PRIO, &staPolling_handle))
   {
     LogInfo("User station task creation failed\n");
     goto _err;
   }
 
-  while (credentials == 0)
+  while (credentials == 0U)
   {
     struct sockaddr remotehost_t;
     uint32_t remotehost_size = sizeof(remotehost_t);
@@ -308,7 +320,7 @@ void http_server_socket(void *arg)
     int32_t newconn = W6X_Net_Accept(sock, (struct sockaddr *)&remotehost_t, (socklen_t *)&remotehost_size);
     if (newconn < 0)
     {
-      vTaskDelay(200);
+      vTaskDelay(pdMS_TO_TICKS(200));
       LogInfo("\n Failed to accept new client requests.\n");
     }
     else
@@ -316,19 +328,19 @@ void http_server_socket(void *arg)
       /* Create a temporary thread to process the incoming HTTP request */
       char thread_name[14];
       const size_t thread_name_len = sizeof(thread_name);
-      snprintf(thread_name, thread_name_len, "HTTP_%08" PRIX32, newconn);
-      thread_name[thread_name_len - 1] = '\0';
+      (void)snprintf(thread_name, thread_name_len, "HTTP_%08" PRIX32, newconn);
+      thread_name[thread_name_len - 1U] = '\0';
 
       LogDebug("\n Creation of temporary thread to process an incoming HTTP request : %" PRIi32 "\n", newconn);
       if (pdPASS != xTaskCreate((TaskFunction_t)http_server_serve_task, thread_name,
-                                HTTP_CHILD_TASK_STACK_SIZE >> 2,
+                                HTTP_CHILD_TASK_STACK_SIZE >> 2U,
                                 &newconn, WEBSERVER_CHILD_THREAD_PRIO, NULL))
       {
         LogInfo("%s task creation failed\n", thread_name);
       }
       /* Delay added to avoid looping and going in the blocking accept just after receiving the credentials
        * that imply to go out of this loop (could need to stop the soft-AP) */
-      vTaskDelay(500);
+      vTaskDelay(pdMS_TO_TICKS(500));
     }
   }
 
@@ -337,15 +349,18 @@ void http_server_socket(void *arg)
   /* USER CODE END http_server_socket_last */
 
   /* Set the bit to answer to the request of the clients */
-  xEventGroupSetBits(sta_handle, EVENT_FLAG_STATION_STATUS);
+  (void)xEventGroupSetBits(sta_handle, EVENT_FLAG_STATION_STATUS);
   /* Delay to give the hand to the task processing the corresponding request */
-  vTaskDelay(1000);
+  vTaskDelay(pdMS_TO_TICKS(1000));
   vTaskDelete(staPolling_handle);
 _err:
   /* Error case */
-  if ((sock >= 0) && (W6X_Net_Shutdown(sock, 1) != W6X_STATUS_OK))
+  if (sock >= 0)
   {
-    LogError("Failed to close server socket\n");
+    if (W6X_Net_Shutdown(sock, 1) != 0)
+    {
+      LogError("Failed to close server socket\n");
+    }
   }
   return;
 }
@@ -360,9 +375,10 @@ static void http_server_serve_task(void *arg)
   int32_t client = *((int32_t *)arg);
   int32_t bytes_received;
   int32_t recv_total_len = 0;
+  bool request_complete = false;
   /* Allocate considering the biggest buffer the client can send */
-  size_t recv_buffer_len = HTTP_CHILD_TASK_BUFFER_SIZE;
-  char *recv_buffer = (char *)pvPortMalloc(recv_buffer_len);
+  ssize_t recv_buffer_len = HTTP_CHILD_TASK_BUFFER_SIZE;
+  char *recv_buffer = (char *)pvPortMalloc(recv_buffer_len + 1);
   if (recv_buffer == NULL)
   {
     LogError("Unable to allocate recv buffer\n");
@@ -374,7 +390,7 @@ static void http_server_serve_task(void *arg)
   /* USER CODE END http_server_serve_task_1 */
 
   /* Avoid to reenter in process at 2nd input */
-  if (credentials == 1)
+  if (credentials == 1U)
   {
     goto _exit;
   }
@@ -384,35 +400,42 @@ static void http_server_serve_task(void *arg)
   do
   {
     bytes_received = W6X_Net_Recv(client, (uint8_t *)&recv_buffer[recv_total_len], recv_buffer_len, 0);
-    if (bytes_received < 0) /* No data received or error */
+    if (bytes_received <= 0) /* No data received or error */
     {
-      break;
-    }
-
-    /* Case where we have receive less than the buffer allocated */
-    if (bytes_received < recv_buffer_len)
-    {
-      recv_total_len += bytes_received;
       break;
     }
 
     recv_total_len += bytes_received;
-    recv_buffer_len -= bytes_received;
-  } while ((bytes_received != 0) && (recv_buffer_len > 0));
 
-  if (recv_total_len == 0)
+    /* Verify if we have receive the whole request or if we need to do another receive */
+    if (strncmp(&recv_buffer[recv_total_len - 4], "\r\n\r\n", 4) == 0)
+    {
+      /* The full request has been received leaving the reading loop */
+      request_complete = true;
+      break;
+    }
+
+    recv_buffer_len -= bytes_received;
+  } while (recv_buffer_len > 0);
+
+  if (!request_complete)
   {
-    LogError("No data read on the socket, closing the socket\n");
+    if (recv_total_len == 0)
+    {
+      LogError("No data read on the socket, closing the socket\n");
+    }
+    else
+    {
+      LogError("Data received does not contain the whole request, receive buffer is too small, closing the socket\n");
+    }
     goto _close;
   }
+
   LogDebug("\n %" PRIi32 " >>> %" PRIi32 " <<<\n", client, recv_total_len);
 
   /* Count can be negative. */
-  if (recv_total_len > 0)
-  {
-    recv_buffer[recv_total_len++] = '\0';
-    LogDebug("\n %" PRIi32 " >>> %s <<<\n", client, recv_buffer);
-  }
+  recv_buffer[recv_total_len] = '\0';
+  LogDebug("\n %" PRIi32 " >>> %s <<<\n", client, recv_buffer);
 
   /* USER CODE BEGIN http_server_serve_task_2 */
 
@@ -421,8 +444,8 @@ static void http_server_serve_task(void *arg)
   if (strncmp(recv_buffer, "GET /connect_status", 19) == 0)
   {
     LogInfo("\nPending request for the CONNECT STATUS received\n\n");
-    xEventGroupWaitBits(sta_handle, EVENT_FLAG_STATION_STATUS, pdTRUE, pdFALSE,
-                        pdMS_TO_TICKS(STATION_STATUS_TIMEOUT_MS));
+    (void)xEventGroupWaitBits(sta_handle, EVENT_FLAG_STATION_STATUS, pdTRUE, pdFALSE,
+                              pdMS_TO_TICKS(STATION_STATUS_TIMEOUT_MS));
   }
   else if (strncmp(recv_buffer, "POST /credential", 16) == 0)
   {
@@ -449,7 +472,7 @@ static void http_server_serve_task(void *arg)
         goto _close;
       }
       ptr[ptr_end - ptr - 1] = '\0'; /* Remove the last quote and terminate the SSID string */
-      strncpy((char *)connect_opt.SSID, ptr, W6X_WIFI_MAX_SSID_SIZE);
+      (void)strncpy((char *)connect_opt.SSID, ptr, W6X_WIFI_MAX_SSID_SIZE);
 
       ptr = strchr(ptr_end + 1, ':'); /* Move to the second argument */
       if (ptr == NULL)
@@ -465,11 +488,15 @@ static void http_server_serve_task(void *arg)
         goto _close;
       }
       ptr[ptr_end - ptr] = '\0'; /* Remove the last quote and terminate the SSID string */
-      strncpy((char *)connect_opt.Password, ptr, W6X_WIFI_MAX_PASSWORD_SIZE);
+      (void)strncpy((char *)connect_opt.Password, ptr, W6X_WIFI_MAX_PASSWORD_SIZE);
 
       /* Set parameter to 1 to exit socket server loop */
       credentials = 1;
     }
+  }
+  else
+  {
+    /* Unknown request */
   }
 
   /* Process the response */
@@ -480,7 +507,7 @@ static void http_server_serve_task(void *arg)
   /* USER CODE END http_server_serve_task_last */
 
 _close:
-  close_client(client);
+  (void)close_client(client);
 _exit:
   vPortFree(recv_buffer);
 _err:
@@ -495,17 +522,17 @@ static void station_status_verification_task(void *arg)
 
   /* USER CODE END station_status_verification_task_1 */
 
-  while (1)
+  while (true)
   {
     do /* Wait for the station state to change */
     {
-      vTaskDelay(300);
+      vTaskDelay(pdMS_TO_TICKS(300));
     } while (station_status == connection_state);
 
     /* Update the connection state */
     connection_state = station_status;
     /* Notify the HTTP server task */
-    xEventGroupSetBits(sta_handle, EVENT_FLAG_STATION_STATUS);
+    (void)xEventGroupSetBits(sta_handle, EVENT_FLAG_STATION_STATUS);
   }
 }
 
@@ -538,7 +565,7 @@ static int32_t http_server_write(int32_t client, const char *buffer, size_t buff
   return 0;
 }
 
-int32_t close_client(int32_t client)
+static int32_t close_client(int32_t client)
 {
   /* USER CODE BEGIN close_client_1 */
 
@@ -558,14 +585,14 @@ int32_t close_client(int32_t client)
 static void http_process_response(int32_t client, char *recv_buffer)
 {
   HttpServer_response_e response = UNKNOWN_RESPONSE;
-  char *response_data = NULL;
+  const char *response_data = response_error_404_html; /* Request not recognized, return 404 error */
+  size_t resp_len = sizeof(response_error_404_html);
   char response_template[250] =
   {
     "HTTP/1.1 200 OK\r\n"
     "Server: U5\r\n"
     "Access-Control-Allow-Origin: * \r\n"
     "Cache-Control: no-cache\r\n"
-    "Keep-Alive: timeout=2, max=2\r\n"
     "Connection: close\r\n"
     "Content-Type: text/html; charset=utf-8\r\n"
   };
@@ -575,12 +602,13 @@ static void http_process_response(int32_t client, char *recv_buffer)
   /* USER CODE END http_process_response_1 */
 
   /* Check the request to determine the response */
-  for (uint32_t i = 0; i < sizeof(http_server_responses) / sizeof(http_server_responses[0]); i++)
+  for (uint32_t i = 0; i < (sizeof(http_server_responses) / sizeof(http_server_responses[0])); i++)
   {
     if (strncmp(recv_buffer, http_server_responses[i].request, strlen(http_server_responses[i].request)) == 0)
     {
       response = http_server_responses[i].response_type;
       response_data = (char *)http_server_responses[i].response;
+      resp_len = http_server_responses[i].resp_len;
       break;
     }
   }
@@ -589,19 +617,15 @@ static void http_process_response(int32_t client, char *recv_buffer)
 
   /* USER CODE END http_process_response_2 */
 
-  if (response == UNKNOWN_RESPONSE) /* Request not recognized, return 404 error */
-  {
-    response_data = (char *)response_error_404_html;
-  }
-  else if (response == STA_STATE) /* Prepare a custom response for the button state */
+  if (response == STA_STATE) /* Prepare a custom response for the button state */
   {
     char data[60];
-    int32_t last_byte = strlen(response_template);
+    resp_len = strlen(response_template);
 
-    snprintf(data, sizeof(data), "{\"StaState\":%" PRIi32 "}", connection_state);
+    (void)snprintf(data, sizeof(data), "{\"StaState\":%" PRIi32 "}", connection_state);
 
-    snprintf(&response_template[last_byte], sizeof(response_template) - last_byte,
-             "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
+    resp_len += snprintf(&response_template[resp_len], sizeof(response_template) - resp_len,
+                         "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
 
     LogInfo("STA status :\n%s\n", data);
     response_data = response_template;
@@ -617,16 +641,16 @@ static void http_process_response(int32_t client, char *recv_buffer)
     uint16_t ping_received_response = 0;
 
     char gw_str[17] = {'\0'};
-    uint8_t ip_addr[4] = {0};
+    uint8_t ip_address[4] = {0};
     uint8_t gateway_addr[4] = {0};
     uint8_t netmask_addr[4] = {0};
 
     LogInfo("WIFI Ping\n");
     /* Get the IP Address of the Access Point */
-    if (W6X_STATUS_OK == W6X_Net_Station_GetIPAddress(ip_addr, gateway_addr, netmask_addr))
+    if (W6X_STATUS_OK == W6X_Net_Station_GetIPAddress(ip_address, gateway_addr, netmask_addr))
     {
       /* Convert the IP Address array into string */
-      snprintf(gw_str, 16, IPSTR, IP2STR(gateway_addr));
+      (void)snprintf(gw_str, 16, IPSTR, IP2STR(gateway_addr));
 
       /* Run the ping */
       if (W6X_STATUS_OK == W6X_Net_Ping((uint8_t *)gw_str, ping_size, ping_infos.count, ping_interval,
@@ -646,14 +670,14 @@ static void http_process_response(int32_t client, char *recv_buffer)
     }
     /* Prepare the HTTP content data */
     char data[70] = {0};
-    int32_t last_byte = strlen(response_template);
+    resp_len = strlen(response_template);
 
-    snprintf(data, sizeof(data), "{\"PingCount\":%" PRIi32 ",\"PingDelay\":%" PRIi32 ",\"PingLoss\":%" PRIi32 "}",
-             ping_infos.count, ping_infos.delay, ping_infos.loss);
+    (void)snprintf(data, sizeof(data), "{\"PingCount\":%" PRIu16 ",\"PingDelay\":%" PRIu32 ",\"PingLoss\":%" PRIu32 "}",
+                   ping_infos.count, ping_infos.delay, ping_infos.loss);
 
     /* Append the content length and the data to the response */
-    snprintf(&response_template[last_byte], sizeof(response_template) - last_byte,
-             "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
+    resp_len += snprintf(&response_template[resp_len], sizeof(response_template) - resp_len,
+                         "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
     LogInfo("Ping status :\n%s\n", data);
     response_data = response_template;
   }
@@ -672,19 +696,23 @@ static void http_process_response(int32_t client, char *recv_buffer)
       LogInfo("Disconnect FAILED\n");
     }
     char data[70] = {0};
-    int32_t last_byte = strlen(response_template);
+    resp_len = strlen(response_template);
 
-    snprintf(data, sizeof(data), "{\"Disconnect\":%" PRIi32 "}", disco_status);
+    (void)snprintf(data, sizeof(data), "{\"Disconnect\":%" PRIi32 "}", disco_status);
 
     /* Append the content length and the data to the response */
-    snprintf(&response_template[last_byte], sizeof(response_template) - last_byte,
-             "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
+    resp_len += snprintf(&response_template[resp_len], sizeof(response_template) - resp_len,
+                         "Content-Length: %" PRIu32 "\r\n\r\n%s", (uint32_t)strlen(data), data);
     response_data = response_template;
 
   }
+  else
+  {
+    /* Unknown request */
+  }
 
   /* Send the response */
-  if (1 == http_server_write(client, response_data, strlen(response_data)))
+  if (1 == http_server_write(client, response_data, resp_len))
   {
     return;
   }

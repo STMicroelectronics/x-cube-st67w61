@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    lfs_util_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   lfs utility user configuration
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -43,7 +43,7 @@ extern "C" {
 /** Disable assertions */
 #define LFS_NO_ASSERT
 
-/** Enable thread safe */
+/** Enable thread-safe */
 #define LFS_THREADSAFE
 
 /** Enable read-only filesystem */
@@ -54,7 +54,7 @@ extern "C" {
 /** Disable debug messages */
 #define LFS_NO_DEBUG
 
-/** Disable error messages */
+/** Disable warning messages */
 #define LFS_NO_WARN
 
 /* USER CODE BEGIN EC */

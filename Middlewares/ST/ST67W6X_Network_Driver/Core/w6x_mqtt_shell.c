@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w6x_mqtt_shell.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides code for W6x MQTT Shell Commands
   ******************************************************************************
   * @attention
@@ -123,13 +123,13 @@ int32_t W6X_Shell_MQTT_Configure(int32_t argc, char **argv)
     ret = SHELL_STATUS_ERROR;
     goto _err;
   }
-  memset(MQTT_Config, 0, sizeof(W6X_MQTT_Connect_t));
+  (void)memset(MQTT_Config, 0, sizeof(W6X_MQTT_Connect_t));
   MQTT_Config->KeepAlive = MQTT_KEEP_ALIVE_DEFAULT; /* Default keep alive */
 
   while (current_arg < argc)
   {
     /* Parse the scheme argument */
-    if ((strncmp(argv[current_arg], "-s", 2) == 0) && strlen(argv[current_arg]) == 2)
+    if ((strncmp(argv[current_arg], "-s", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -138,7 +138,7 @@ int32_t W6X_Shell_MQTT_Configure(int32_t argc, char **argv)
       }
       /* Parse the scheme value */
       MQTT_Config->Scheme = (uint32_t)atoi(argv[current_arg]);
-      if (MQTT_Config->Scheme > 4)
+      if (MQTT_Config->Scheme > 4U)
       {
         SHELL_E("Invalid scheme value\n");
         ret = SHELL_STATUS_ERROR;
@@ -146,72 +146,79 @@ int32_t W6X_Shell_MQTT_Configure(int32_t argc, char **argv)
       }
     }
     /* Parse the client id argument */
-    else if ((strncmp(argv[current_arg], "-i", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-i", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         goto _err;
       }
-      strncpy((char *)MQTT_Config->MQClientId, argv[current_arg], sizeof(MQTT_Config->MQClientId) - 1);
+      (void)strncpy((char *)MQTT_Config->MQClientId, argv[current_arg], sizeof(MQTT_Config->MQClientId) - 1U);
     }
     /* Parse the username argument */
-    else if ((strncmp(argv[current_arg], "-u", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-u", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         goto _err;
       }
-      strncpy((char *)MQTT_Config->MQUserName, argv[current_arg], sizeof(MQTT_Config->MQUserName) - 1);
+      (void)strncpy((char *)MQTT_Config->MQUserName, argv[current_arg], sizeof(MQTT_Config->MQUserName) - 1U);
     }
     /* Parse the password argument */
-    else if ((strncmp(argv[current_arg], "-pw", 3) == 0) && strlen(argv[current_arg]) == 3)
+    else if ((strncmp(argv[current_arg], "-pw", 3) == 0) && (strlen(argv[current_arg]) == 3U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         goto _err;
       }
-      strncpy((char *)MQTT_Config->MQUserPwd, argv[current_arg], sizeof(MQTT_Config->MQUserPwd) - 1);
+      (void)strncpy((char *)MQTT_Config->MQUserPwd, argv[current_arg], sizeof(MQTT_Config->MQUserPwd) - 1U);
     }
     /* Parse the certificate argument */
-    else if ((strncmp(argv[current_arg], "-c", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-c", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         goto _err;
       }
-      strncpy((char *)MQTT_Config->CertificateName, argv[current_arg], sizeof(MQTT_Config->CertificateName) - 1);
+      (void)strncpy((char *)MQTT_Config->CertificateName, argv[current_arg], sizeof(MQTT_Config->CertificateName) - 1U);
     }
     /* Parse the private key argument */
-    else if ((strncmp(argv[current_arg], "-k", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-k", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         goto _err;
       }
-      strncpy((char *)MQTT_Config->PrivateKeyName, argv[current_arg], sizeof(MQTT_Config->PrivateKeyName) - 1);
+      (void)strncpy((char *)MQTT_Config->PrivateKeyName, argv[current_arg], sizeof(MQTT_Config->PrivateKeyName) - 1U);
     }
     /* Parse the CA certificate argument */
-    else if ((strncmp(argv[current_arg], "-ca", 3) == 0) && strlen(argv[current_arg]) == 3)
+    else if ((strncmp(argv[current_arg], "-ca", 3) == 0) && (strlen(argv[current_arg]) == 3U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         goto _err;
       }
-      strncpy((char *)MQTT_Config->CACertificateName, argv[current_arg], sizeof(MQTT_Config->CACertificateName) - 1);
+      (void)strncpy((char *)MQTT_Config->CACertificateName, argv[current_arg],
+                    sizeof(MQTT_Config->CACertificateName) - 1U);
     }
-    /* Parse SNI enabled */
-    else if ((strncmp(argv[current_arg], "-sni", 4) == 0) && strlen(argv[current_arg]) == 4)
+    /* Parse SNI */
+    else if ((strncmp(argv[current_arg], "-sni", 4) == 0) && (strlen(argv[current_arg]) == 4U))
     {
-      MQTT_Config->SNI_enabled = 1;
+      current_arg++;
+      if (current_arg == argc)
+      {
+        goto _err;
+      }
+      (void)strncpy((char *)MQTT_Config->SNI, argv[current_arg],
+                    sizeof(MQTT_Config->SNI) - 1U);
     }
     /* Parse the keep alive argument */
-    else if ((strncmp(argv[current_arg], "-ka", 3) == 0) && strlen(argv[current_arg]) == 3)
+    else if ((strncmp(argv[current_arg], "-ka", 3) == 0) && (strlen(argv[current_arg]) == 3U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -219,7 +226,7 @@ int32_t W6X_Shell_MQTT_Configure(int32_t argc, char **argv)
         goto _err;
       }
       MQTT_Config->KeepAlive = (uint32_t)atoi(argv[current_arg]);
-      if ((MQTT_Config->KeepAlive < 1) || (MQTT_Config->KeepAlive > 7200))
+      if ((MQTT_Config->KeepAlive < 1U) || (MQTT_Config->KeepAlive > 7200U))
       {
         SHELL_E("Invalid keep alive value\n");
         ret = SHELL_STATUS_ERROR;
@@ -227,12 +234,12 @@ int32_t W6X_Shell_MQTT_Configure(int32_t argc, char **argv)
       }
     }
     /* Parse the clean session argument */
-    else if ((strncmp(argv[current_arg], "-cs", 3) == 0) && strlen(argv[current_arg]) == 3)
+    else if ((strncmp(argv[current_arg], "-cs", 3) == 0) && (strlen(argv[current_arg]) == 3U))
     {
       MQTT_Config->DisableCleanSession = 1;
     }
     /* Parse the LWT QoS argument */
-    else if ((strncmp(argv[current_arg], "-q", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-q", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -242,9 +249,13 @@ int32_t W6X_Shell_MQTT_Configure(int32_t argc, char **argv)
       MQTT_Config->WillQos = (uint32_t)atoi(argv[current_arg]);
     }
     /* Parse the LWT retain argument */
-    else if ((strncmp(argv[current_arg], "-r", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-r", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
-      MQTT_Config->WillRetain = 1;
+      MQTT_Config->WillRetain = 1U;
+    }
+    else
+    {
+      goto _err;
     }
 
     current_arg++;
@@ -272,7 +283,7 @@ _err:
 #if (SHELL_CMD_LEVEL >= 0)
 SHELL_CMD_EXPORT_ALIAS(W6X_Shell_MQTT_Configure, mqtt_configure,
                        mqtt_configure < -s Scheme > < -i ClientId > [ -u <Username> ] [ -pw <Password> ]
-                       [ -c <Certificate> ] [ -k <PrivateKey> ] [ -ca <CACertificate> ] [ -sni ]
+                       [ -c <Certificate> ] [ -k <PrivateKey> ] [ -ca <CACertificate> ] [ -sni <sni> ]
                        [ -ka <KeepAlive> ] [ -q <LWT_QoS> ] [ -cs ] [ -r ]);
 #endif /* SHELL_CMD_LEVEL */
 
@@ -301,16 +312,16 @@ int32_t W6X_Shell_MQTT_Connect(int32_t argc, char **argv)
         SHELL_PRINTF("MQTT ClientId:      %s\n", MQTT_Connect.MQClientId);
 
         /* Display the connection parameters if the scheme is greater than 0 */
-        if (MQTT_Connect.Scheme > 0)
+        if (MQTT_Connect.Scheme > 0U)
         {
           SHELL_PRINTF("MQTT UserName:      %s\n", MQTT_Connect.MQUserName);
           SHELL_PRINTF("MQTT UserPwd:       %s\n", MQTT_Connect.MQUserPwd);
         }
-        if (MQTT_Connect.Scheme > 1)
+        if (MQTT_Connect.Scheme > 1U)
         {
           SHELL_PRINTF("MQTT CACertificate: %s\n", MQTT_Connect.CACertificateName);
         }
-        if (MQTT_Connect.Scheme > 2)
+        if (MQTT_Connect.Scheme > 2U)
         {
           SHELL_PRINTF("MQTT Certificate:   %s\n", MQTT_Connect.CertificateName);
           SHELL_PRINTF("MQTT PrivateKey:    %s\n", MQTT_Connect.PrivateKeyName);
@@ -329,17 +340,17 @@ int32_t W6X_Shell_MQTT_Connect(int32_t argc, char **argv)
   while (current_arg < argc)
   {
     /* Parse the hostname argument */
-    if ((strncmp(argv[current_arg], "-h", 2) == 0) && strlen(argv[current_arg]) == 2)
+    if ((strncmp(argv[current_arg], "-h", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
       {
         return SHELL_STATUS_UNKNOWN_ARGS;
       }
-      strncpy((char *)MQTT_Connect.HostName, argv[current_arg], sizeof(MQTT_Connect.HostName) - 1);
+      (void)strncpy((char *)MQTT_Connect.HostName, argv[current_arg], sizeof(MQTT_Connect.HostName) - 1U);
     }
     /* Parse the port argument */
-    else if ((strncmp(argv[current_arg], "-p", 2) == 0) && strlen(argv[current_arg]) == 2)
+    else if ((strncmp(argv[current_arg], "-p", 2) == 0) && (strlen(argv[current_arg]) == 2U))
     {
       current_arg++;
       if (current_arg == argc)
@@ -349,7 +360,7 @@ int32_t W6X_Shell_MQTT_Connect(int32_t argc, char **argv)
 
       /* Parse the port value */
       MQTT_Connect.HostPort = (uint32_t)atoi(argv[current_arg]);
-      if (MQTT_Connect.HostPort > 65535)
+      if (MQTT_Connect.HostPort > 65535U)
       {
         SHELL_E("Invalid port value\n");
         return SHELL_STATUS_ERROR;
@@ -502,7 +513,7 @@ int32_t W6X_Shell_MQTT_Publish(int32_t argc, char **argv)
       if (current_arg < argc)
       {
         Qos = (uint32_t)atoi(argv[current_arg]);
-        if (Qos > 2)
+        if (Qos > 2U)
         {
           SHELL_E("Invalid QoS value\n");
           return SHELL_STATUS_ERROR;
@@ -517,6 +528,10 @@ int32_t W6X_Shell_MQTT_Publish(int32_t argc, char **argv)
     else if (strncmp(argv[current_arg], "-r", 2) == 0)
     {
       Retain = 1;
+    }
+    else
+    {
+      return SHELL_STATUS_UNKNOWN_ARGS;
     }
     current_arg++;
   }

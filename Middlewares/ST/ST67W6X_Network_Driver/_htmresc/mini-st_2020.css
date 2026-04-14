@@ -1109,7 +1109,8 @@ table {
     border-top: 0.0714285714rem solid var(--table-border-color); }
 
 table:not(.horizontal) {
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: visible;
   max-height: 100%; }
   table:not(.horizontal) thead, table:not(.horizontal) tbody {
     max-width: 100%;
@@ -1121,6 +1122,14 @@ table:not(.horizontal) {
     flex: 1 0 0%;
     overflow: hidden;
     text-overflow: ellipsis; }
+  table:not(.horizontal) th:first-child, table:not(.horizontal) td:first-child {
+    flex: 0 0 8ch; }
+  table:not(.horizontal) th:nth-child(n+2):not(:last-child), table:not(.horizontal) td:nth-child(n+2):not(:last-child) {
+    flex: 0 0 12ch; }
+  table:not(.horizontal) th:last-child, table:not(.horizontal) td:last-child {
+    flex: 1 1 auto;
+    overflow: visible;
+    text-overflow: clip; }
   table:not(.horizontal) thead {
     position: sticky;
     top: 0; }
@@ -1708,4 +1717,28 @@ img[alt="Cube logo"] { float: right; width: 30%; max-width: 10rem; min-width: 8r
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+}
+
+/* Pandoc alerts (markdown+alerts) */
+.important, .note, .tip, .warning, .caution {
+  margin: 0.75rem 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-left: 0.3rem solid;
+  border-radius: 4px;
+  background: #f8f9fb;
+}
+
+.important { border-left-color: #d63384; background: #fff1f7; }
+.note      { border-left-color: #0d6efd; background: #eef4ff; }
+.tip       { border-left-color: #198754; background: #eefaf3; }
+.warning   { border-left-color: #fd7e14; background: #fff6ee; }
+.caution   { border-left-color: #dc3545; background: #fff1f1; }
+
+.important > .title,
+.note > .title,
+.tip > .title,
+.warning > .title,
+.caution > .title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
 }

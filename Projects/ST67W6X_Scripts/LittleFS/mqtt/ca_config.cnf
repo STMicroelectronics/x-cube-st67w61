@@ -1,0 +1,16 @@
+[ req ]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[ req_distinguished_name ]
+countryName = FR
+localityName = Paris
+organizationName = STMicroelectronics
+organizationalUnitName = RootCA
+commonName = Root CA
+
+[ v3_req ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+basicConstraints = critical, CA:true

@@ -131,6 +131,30 @@
     .aligned-list .desc {
       margin-left: 12px;
     }
+    
+    /* Pandoc alerts (markdown+alerts) */
+    .important, .note, .tip, .warning, .caution {
+      margin: 0.75rem 0.5rem;
+      padding: 0.75rem 0.9rem;
+      border-left: 0.3rem solid;
+      border-radius: 4px;
+      background: #f8f9fb;
+    }
+    
+    .important { border-left-color: #d63384; background: #fff1f7; }
+    .note      { border-left-color: #0d6efd; background: #eef4ff; }
+    .tip       { border-left-color: #198754; background: #eefaf3; }
+    .warning   { border-left-color: #fd7e14; background: #fff6ee; }
+    .caution   { border-left-color: #dc3545; background: #fff1f1; }
+    
+    .important > .title,
+    .note > .title,
+    .tip > .title,
+    .warning > .title,
+    .caution > .title {
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
   </style>
 </head>
 
@@ -141,7 +165,7 @@
     <div style="max-width: 83.3333333333%; flex-basis: 83.3333333333%; flex: 0 0 auto;">
       <h1>X-CUBE-ST67W61 Expansion Package Projects list</h1>
 
-      <p class="copyright">Copyright 2024 STMicroelectronics</p>
+      <p class="copyright">Copyright 2025-2026 STMicroelectronics</p>
 
       <div class="picture">
         <img alt="" id="_x0000_i1025" src="../_htmresc/st_logo_2020.png"
@@ -198,29 +222,33 @@
       <ul>
         <li id="importantLink"><b>Applications</b> intends to demonstrate the product performance and how to use the different Middleware stacks available. The Applications are organized per product feature that need high level firmware bricks. Integration of applications that use several Middleware stacks are provided as well.</li>
         <li id="importantLink"><b>Demonstrations</b> aims to integrate and run the maximum of peripherals and Middleware stacks to showcase the product features and performance.</li>
+        <li id="importantLink"><b>Utilities</b> are dedicated to the product support and provide examples of how to manage the ST67W611M1 coprocessor.</li>
       </ul>
 
       <p>To run the example, you have to do the following:</p>
-      <div class="blockquote">
-          <p>These project require to use the ST67W611M Coprocessor binary st67w611m_mission_v2.0.97.bin.<br/>
-          Please follow the <b>NCP Binaries <a href="ST67W6X_Scripts/Binaries/README.md" target="_blank">README.md</a></b> instructions using the <b>NCP_update_mission_profile.bat</b> script.</p>
+      <div class="important">
+        <div class="title">
+          <p>Important</p>
+        </div>
+        <p>These project require to use the ST67W611M Coprocessor binary st67w611m_mission_tXX_v2.0.106.bin.<br/>
+        Please follow the <b>NCP Binaries <a href="ST67W6X_Scripts/Binaries/readme.html">readme.html</a></b> instructions using the
+        <strong>NCP_update_mission_profile_tXX.bat</strong> script.</p>
       </div>
-
       <ul>
         <li>Open the example using your preferred toolchain.</li>
         <li>Rebuild all files and load the image into target memory.</li>
         <li>Run the example by following the readme instructions.</li>
-        <li>
-          <i><u>Note</u>: refer to section "Development Toolchains and Compilers" and "Supported Devices and EVAL,
-            Nucleo
-            and Discovery boards" of the Firmware package release notes to know about the SW/HW environment used for the
-            Firmware development and validation. The correct operation of the provided examples is not guaranteed on
-            some
-            environments, for example when using different compiler or board versions.</i>
-        </li>
       </ul>
+      <div class="note">
+        <div class="title">
+          <p>Note</p>
+        </div>
+        <p>Refer to section "Development Toolchains and Compilers" and "Supported Devices and boards"<br/>
+        of the Firmware package release notes to know about the SW/HW environment used for the Firmware development and validation.</p>
+        <p>The correct operation of the provided examples is not guaranteed on some environments, example when using different compiler or board versions.</p>
+      </div>
 
-      <p>The provided Projects can be tailored to run on any compatible hardware.<br/>User must to adapt the SPI configuration and align
+      <p>The provided Projects can be tailored to run on any compatible hardware.<br/>User must to adapt the SPI configuration and align<br/>
         GPIO (SPI_CS, SPI_RDY, BOOT, CHIP_EN, USER_BUTTON) signals with the X-NUCLEO-67W61M1 Arduino connectors.</p>
 
       <h2 id="applications"><b>Projects Description</b></h2>
@@ -229,7 +257,7 @@
            In this table, the label <b style="color: green;">CubeMX</b> means the projects have been created using
            <a href="https://www.st.com/en/development-tools/stm32cubemx.html" target="_blank">STM32CubeMX</a> initialization code generator.<br/>
            Those projects can be opened with this tool to modify the IP, Clock domain and Middlewares configuration including the ST67W6X_Network_Driver delivered in X-CUBE-ST67W61 Expansion Package.<br/><br/>
-           The ioc files are generated for the STM32CubeMX 6.16.0 version.
+           The ioc files are generated for the STM32CubeMX 6.17.0 version.
       </div>
       </p>
       <table border='1' bgcolor='#f0f0fF' >
@@ -255,15 +283,15 @@
         </thead>
         <tbody>
           <tr>
-            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=10>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=11>
               <p id="ST67W6X_Network_Driver">Applications</p>
             </td>
-            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=12>
+            <td style="background-repeat: no-repeat;background-position: right center;background-color: #39A9DC;color: #FFF;" rowspan=13>
               <p id="ST67W6X_Network_Driver">ST67W6X_Network_Driver</p>
             </td>
             <td>ST67W6X_BLE_Commissioning</td>
             <td>This application aims to demonstrate the Wi-Fi credentials commissioning and FOTA over Bluetooth Low Energy.</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_BLE_Commissioning/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -271,7 +299,7 @@
           <tr>
             <td>ST67W6X_BLE_p2pClient</td>
             <td>This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT Client).</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_BLE_p2pClient/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -279,7 +307,7 @@
           <tr>
             <td>ST67W6X_BLE_p2pServer</td>
             <td>This application aims to demonstrate Point-to-Point communication using Bluetooth Low Energy (as GATT server).</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_BLE_p2pServer/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -287,31 +315,39 @@
           <tr>
             <td>ST67W6X_CLI</td>
             <td>This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi and Bluetooth LE solutions via command line interface (CLI).</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_CLI/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H7S3L8/Applications/ST67W6X/ST67W6X_CLI/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H563ZI/Applications/ST67W6X/ST67W6X_CLI/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-N657X0-Q/Applications/ST67W6X/ST67W6X_CLI/readme.html">CubeMX</a></td>
           </tr>
           <tr>
             <td>ST67W6X_CLI_LWIP</td>
             <td>This application aims to evaluate and to test the X-NUCLEO-67W61M1 Wi-Fi, Bluetooth LE and Network interface with LwIP solutions via command line interface (CLI).</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">-</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_CLI_LWIP/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H7S3L8/Applications/ST67W6X/ST67W6X_CLI_LWIP/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H563ZI/Applications/ST67W6X/ST67W6X_CLI_LWIP/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-N657X0-Q/Applications/ST67W6X/ST67W6X_CLI_LWIP/readme.html">CubeMX</a></td>
           </tr>
           <tr>
             <td>ST67W6X_Echo</td>
             <td>This application aims to demonstrate the TCP Echo feature over Wi-Fi.</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_Echo/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H7S3L8/Applications/ST67W6X/ST67W6X_Echo/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H563ZI/Applications/ST67W6X/ST67W6X_Echo/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-N657X0-Q/Applications/ST67W6X/ST67W6X_Echo/readme.html">CubeMX</a></td>
           </tr>
           <tr>
             <td>ST67W6X_FOTA</td>
             <td>This application aims to demonstrate the FOTA (Firmware update Over-The-Air) feature over Wi-Fi.</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_FOTA/readme.html">CubeMX</a></td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+            <td class="board">-</td>
+          </tr>
+          <tr>
+            <td>ST67W6X_FOTA_LWIP</td>
+            <td>This application demonstrates the FOTA (Firmware update Over-The-Air) feature over Wi-Fi using the STM32-hosted LwIP network stack and MbedTLS.</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_FOTA_LWIP/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -319,15 +355,15 @@
           <tr>
             <td>ST67W6X_HTTP_Server</td>
             <td>This application aims to demonstrate an HTTP server over Network API, hosted by a device configured as a soft access point (soft-AP).</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_HTTP_Server/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
           </tr>
           <tr>
             <td>ST67W6X_HTTPS_Client</td>
-            <td>This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different major capitals around the world.</td>
-            <td class="board">CubeMX</td>
+            <td>This application aims to demonstrate an HTTPS Client over Network API with basic GET requests to retrieve the weather from different cities.</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_HTTPS_Client/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -335,7 +371,7 @@
           <tr>
             <td>ST67W6X_WiFi_Commissioning</td>
             <td>This application aims to demonstrate the Wi-Fi credentials commissioning over Wi-Fi.</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Applications/ST67W6X/ST67W6X_WiFi_Commissioning/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -346,7 +382,7 @@
             </td>
             <td>ST67W6X_MQTT</td>
             <td>This demonstration aims to demonstrate an example of MQTT client over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Demonstrations/ST67W6X/ST67W6X_MQTT/readme.html">CubeMX</a></td>
             <td class="board">-</td>
             <td class="board">-</td>
             <td class="board">-</td>
@@ -356,7 +392,7 @@
             <td>This application aims to demonstrate an example of MQTT client over LwIP over Wi-Fi which connects to an MQTT broker in order to publish telemetry data and receive parameter updates or commands from the cloud.</td>
             <td class="board">-</td>
             <td class="board">-</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-H563ZI/Demonstrations/ST67W6X/ST67W6X_MQTT_LWIP/readme.html">CubeMX</a></td>
             <td class="board">-</td>
           </tr>
           <tr>
@@ -369,10 +405,10 @@
 
             <td>NCP_Loader</td>
             <td>This application aims to flash the ST67W611M binaries and to execute the Manufacturing test over STM32 UART link.</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
-            <td class="board">CubeMX</td>
+            <td class="board"><a href="NUCLEO-U575ZI-Q/Utilities/NCP/NCP_Loader/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H7S3L8/Utilities/NCP/NCP_Loader/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-H563ZI/Utilities/NCP/NCP_Loader/readme.html">CubeMX</a></td>
+            <td class="board"><a href="NUCLEO-N657X0-Q/Utilities/NCP/NCP_Loader/readme.html">CubeMX</a></td>
           </tr>
         </tbody>
       </table>

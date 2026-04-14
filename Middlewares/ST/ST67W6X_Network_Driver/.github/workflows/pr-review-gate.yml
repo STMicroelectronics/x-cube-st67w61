@@ -1,0 +1,58 @@
+name: PR Review Gate
+
+on:
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  review-gate:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu22-basic
+
+    steps:
+      - name: Validate PR review status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            // Keep only each reviewer's latest review state.
+            const latestStateByUser = new Map();
+            for (const review of reviews) {
+              const login = review.user && review.user.login;
+              if (!login) {
+                continue;
+              }
+              latestStateByUser.set(login, review.state);
+            }
+
+            const latestStates = Array.from(latestStateByUser.values());
+            const hasApproval = latestStates.includes('APPROVED');
+            const hasChangesRequested = latestStates.includes('CHANGES_REQUESTED');
+
+            const messages = [];
+            if (!hasApproval) {
+              messages.push('No current APPROVED review found.');
+            }
+            if (hasChangesRequested) {
+              messages.push('At least one reviewer currently has CHANGES_REQUESTED.');
+            }
+
+            if (messages.length > 0) {
+              core.setFailed(messages.join(' '));
+            } else {
+              core.info('Review gate passed: at least one approval and no active change requests.');
+            }

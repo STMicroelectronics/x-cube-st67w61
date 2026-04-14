@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    spi_port.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   SPI bus interface porting layer implementation
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -33,6 +33,7 @@
 
 #include "bsp_conf.h"
 #include "spi_port.h"
+#include "logging.h"
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
@@ -41,9 +42,6 @@
 /* USER CODE END Includes */
 
 /* Global variables ----------------------------------------------------------*/
-/** SPI handle */
-extern SPI_HandleTypeDef NCP_SPI_HANDLE;
-
 /* USER CODE BEGIN GV */
 
 /* USER CODE END GV */
@@ -66,6 +64,8 @@ extern SPI_HandleTypeDef NCP_SPI_HANDLE;
 /* Private variables ---------------------------------------------------------*/
 /** SPI transaction complete callback */
 static spi_transaction_complete_t spi_port_transaction_complete_cb = NULL;
+
+static const char spi_port_error_str[] = "SPI not initialized\n";
 
 /* USER CODE BEGIN PV */
 
@@ -95,16 +95,16 @@ void *spi_port_memcpy(void *dest, const void *src, unsigned int len)
   /* Copy 4-byte blocks */
   uint32_t *d32 = (uint32_t *)d;
   const uint32_t *s32 = (const uint32_t *)s;
-  while (len >= 4)
+  while (len >= 4U)
   {
     *d32++ = *s32++;
-    len -= 4;
+    len -= 4U;
   }
 
   /* Copy remaining bytes */
   d = (uint8_t *)d32;
   s = (const uint8_t *)s32;
-  while (len > 0)
+  while (len > 0U)
   {
     *d++ = *s++;
     len--;
@@ -124,6 +124,12 @@ int32_t spi_port_init(spi_transaction_complete_t transaction_complete_cb)
   /* USER CODE BEGIN spi_port_init_1 */
 
   /* USER CODE END spi_port_init_1 */
+  if (NCP_SPI_HANDLE.State == HAL_SPI_STATE_RESET)
+  {
+    LogError(spi_port_error_str);
+    return -1;
+  }
+
   /* Powering up the NCP using GPIO CHIP_EN */
   HAL_GPIO_WritePin(CHIP_EN_GPIO_Port, CHIP_EN_Pin, GPIO_PIN_SET);
 
@@ -167,6 +173,12 @@ int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t tim
   /* USER CODE END spi_port_transfer_1 */
   HAL_StatusTypeDef status;
 
+  if (NCP_SPI_HANDLE.State == HAL_SPI_STATE_RESET)
+  {
+    LogError(spi_port_error_str);
+    return -1;
+  }
+
 #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
   SCB_CleanInvalidateDCache_by_Addr(rx_buf, len);
 #endif /* __DCACHE_PRESENT */
@@ -189,7 +201,7 @@ int32_t spi_port_transfer(void *tx_buf, void *rx_buf, uint16_t len, uint32_t tim
 
   /* USER CODE END spi_port_transfer_2 */
 
-  return (status == HAL_OK ? 0 : -1);
+  return ((status == HAL_OK) ? 0 : -1);
   /* USER CODE BEGIN spi_port_transfer_End */
 
   /* USER CODE END spi_port_transfer_End */
@@ -201,6 +213,17 @@ int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len)
 
   /* USER CODE END spi_port_transfer_dma_1 */
   HAL_StatusTypeDef status;
+
+  if (NCP_SPI_HANDLE.State == HAL_SPI_STATE_RESET)
+  {
+    LogError(spi_port_error_str);
+    return -1;
+  }
+
+  if (NCP_SPI_HANDLE.hdmatx == NULL)
+  {
+    return -1;
+  }
 
 #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
   SCB_CleanInvalidateDCache_by_Addr(rx_buf, len);
@@ -235,7 +258,7 @@ int32_t spi_port_transfer_dma(void *tx_buf, void *rx_buf, uint16_t len)
 
   /* USER CODE END spi_port_transfer_dma_2 */
 
-  return (status == HAL_OK ? 0 : -1);
+  return ((status == HAL_OK) ? 0 : -1);
   /* USER CODE BEGIN spi_port_transfer_dma_End */
 
   /* USER CODE END spi_port_transfer_dma_End */
@@ -258,7 +281,7 @@ int32_t spi_port_set_cs(int32_t state)
   /* USER CODE BEGIN spi_port_set_cs_1 */
 
   /* USER CODE END spi_port_set_cs_1 */
-  if (state)
+  if (state == 1)
   {
     /* Activate Chip Select before starting transfer */
     HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);

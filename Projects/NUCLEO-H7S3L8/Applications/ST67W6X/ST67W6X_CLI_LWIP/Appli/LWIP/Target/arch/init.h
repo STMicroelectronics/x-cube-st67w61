@@ -31,13 +31,13 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __ARCH_INIT_H__
-#define __ARCH_INIT_H__
+#ifndef ARCH_INIT_H
+#define ARCH_INIT_H
 
 #define TCPIP_INIT_DONE(arg)  tcpip_init_done(arg)
 
 void tcpip_init_done(void *);
 int wait_for_tcpip_init(void);
 
-#endif /* __ARCH_INIT_H__ */
+#endif /* ARCH_INIT_H */
 

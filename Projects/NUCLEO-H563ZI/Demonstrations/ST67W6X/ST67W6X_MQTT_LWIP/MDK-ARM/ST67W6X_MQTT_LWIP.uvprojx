@@ -500,9 +500,14 @@
               <FilePath>../LWIP/App/dhcp_server_raw.c</FilePath>
             </File>
             <File>
-              <FileName>altcp_tls_mbedtls.c</FileName>
+              <FileName>http_client.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../LWIP/App/altcp_tls_mbedtls.c</FilePath>
+              <FilePath>../LWIP/App/http_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>altls_mbedtls.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\LWIP\App\altls_mbedtls.c</FilePath>
             </File>
             <File>
               <FileName>sntp.c</FileName>
@@ -925,6 +930,16 @@
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/block_cipher.c</FilePath>
             </File>
             <File>
+              <FileName>camellia.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/camellia.c</FilePath>
+            </File>
+            <File>
+              <FileName>ccm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ccm.c</FilePath>
+            </File>
+            <File>
               <FileName>cipher.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/cipher.c</FilePath>
@@ -933,6 +948,16 @@
               <FileName>cipher_wrap.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/cipher_wrap.c</FilePath>
+            </File>
+            <File>
+              <FileName>chacha20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/chacha20.c</FilePath>
+            </File>
+            <File>
+              <FileName>chachapoly.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/chachapoly.c</FilePath>
             </File>
             <File>
               <FileName>cmac.c</FileName>
@@ -948,6 +973,11 @@
               <FileName>ctr_drbg.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ctr_drbg.c</FilePath>
+            </File>
+            <File>
+              <FileName>debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/debug.c</FilePath>
             </File>
             <File>
               <FileName>des.c</FileName>
@@ -980,6 +1010,11 @@
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ecp_curves.c</FilePath>
             </File>
             <File>
+              <FileName>ecp_curves_new.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ecp_curves_new.c</FilePath>
+            </File>
+            <File>
               <FileName>entropy.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/entropy.c</FilePath>
@@ -993,6 +1028,11 @@
               <FileName>gcm.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/gcm.c</FilePath>
+            </File>
+            <File>
+              <FileName>hmac_drbg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/hmac_drbg.c</FilePath>
             </File>
             <File>
               <FileName>hkdf.c</FileName>
@@ -1080,6 +1120,86 @@
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/platform_util.c</FilePath>
             </File>
             <File>
+              <FileName>poly1305.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/poly1305.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_aead.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_aead.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_cipher.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_cipher.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_driver_wrappers_no_static.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_driver_wrappers_no_static.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_ecp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_ecp.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_ffdh.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_ffdh.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_hash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_hash.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_mac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_mac.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_pake.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_pake.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_rsa.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_rsa.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_se.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_se.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_crypto_slot_management.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_crypto_slot_management.c</FilePath>
+            </File>
+            <File>
+              <FileName>psa_util.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/psa_util.c</FilePath>
+            </File>
+            <File>
+              <FileName>ripemd160.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ripemd160.c</FilePath>
+            </File>
+            <File>
               <FileName>rsa.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/rsa.c</FilePath>
@@ -1108,6 +1228,11 @@
               <FileName>sha512.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/sha512.c</FilePath>
+            </File>
+            <File>
+              <FileName>ssl_debug_helpers_generated.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/mbedTLS/library/ssl_debug_helpers_generated.c</FilePath>
             </File>
             <File>
               <FileName>ssl_cache.c</FileName>

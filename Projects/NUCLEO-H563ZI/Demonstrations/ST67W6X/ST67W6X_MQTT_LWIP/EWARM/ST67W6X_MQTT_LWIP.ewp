@@ -1242,10 +1242,13 @@
                 <group>
                     <name>App</name>
                     <file>
-                        <name>$PROJ_DIR$\..\LWIP\App\altcp_tls_mbedtls.c</name>
+                        <name>$PROJ_DIR$\..\LWIP\App\altls_mbedtls.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\dhcp_server_raw.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\LWIP\App\http_client.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\LWIP\App\lwip.c</name>
@@ -1750,6 +1753,18 @@
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\block_cipher.c</name>
                 </file>
                 <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\camellia.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ccm.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\chacha20.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\chachapoly.c</name>
+                </file>
+                <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\cipher.c</name>
                 </file>
                 <file>
@@ -1763,6 +1778,9 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ctr_drbg.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\debug.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\des.c</name>
@@ -1783,6 +1801,9 @@
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ecp_curves.c</name>
                 </file>
                 <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ecp_curves_new.c</name>
+                </file>
+                <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\entropy.c</name>
                 </file>
                 <file>
@@ -1793,6 +1814,9 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\hkdf.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\hmac_drbg.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\md.c</name>
@@ -1843,6 +1867,54 @@
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\platform_util.c</name>
                 </file>
                 <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\poly1305.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_aead.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_cipher.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_client.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_driver_wrappers_no_static.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_ecp.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_ffdh.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_hash.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_mac.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_pake.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_rsa.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_se.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_crypto_slot_management.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\psa_util.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ripemd160.c</name>
+                </file>
+                <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\rsa.c</name>
                 </file>
                 <file>
@@ -1871,6 +1943,9 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_cookie.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_debug_helpers_generated.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\mbedTLS\library\ssl_msg.c</name>

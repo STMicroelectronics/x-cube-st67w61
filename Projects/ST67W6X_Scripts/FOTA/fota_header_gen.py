@@ -384,13 +384,13 @@ def do_header_c_gen(args: argparse.Namespace):
     header_content = f'''/**
   ******************************************************************************
   * @file    fota_header_struct.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   FOTA header structure definition
   * @note    Auto generated file, DO NOT MODIFY
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -413,7 +413,6 @@ extern "C" {{
 
 /* Exported constants --------------------------------------------------------*/
 #define MAGIC_NUMBER                    "{MAGIC_NUMBER}"
-#define FOTA_HEADER_SIZE                {FOTA_HEADER_SIZE}
 #define FOTA_PROTOCOL_VERSION           "{FOTA_PROTOCOL_VERSION}"
 
 '''
@@ -423,6 +422,8 @@ extern "C" {{
     header_content += generate_defines_recursive(HEADER_FIELDS_JSON)
     header_content += """\n/* Exported types ------------------------------------------------------------*/\ntypedef struct\n{\n"""
     for field, field_type in HEADER_FIELDS_C.items():
+        if field is RESERVED:
+            continue
         c_type = get_c_type(field_type)
         size = field_type.replace("s", "")
         header_content += get_c_variable(field, field_type, c_type, size)

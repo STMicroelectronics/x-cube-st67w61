@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    logging.c
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file is part of the FreeRTOS logging interface
   ******************************************************************************
   * @attention
@@ -91,17 +91,17 @@
 
 #ifndef LOG_INCLUDE_MAX_LENGTH
 /** Max metadata length */
-#define LOG_INCLUDE_MAX_LENGTH                  100
+#define LOG_INCLUDE_MAX_LENGTH                  100U
 #endif /* LOG_INCLUDE_MAX_LENGTH */
 
 #ifndef MAX_LOG_MESSAGE_LENGTH
 /** Max message length */
-#define MAX_LOG_MESSAGE_LENGTH                  2000
+#define MAX_LOG_MESSAGE_LENGTH                  2000U
 #endif /* MAX_LOG_MESSAGE_LENGTH */
 
 #ifndef MAX_LOG_QUEUE_LENGTH
 /** Max queue length */
-#define MAX_LOG_QUEUE_LENGTH                    200
+#define MAX_LOG_QUEUE_LENGTH                    200U
 #endif /* MAX_LOG_QUEUE_LENGTH */
 
 #ifndef MAX_LOG_LEVEL
@@ -111,17 +111,17 @@
 
 #ifndef MAX_LOG_MEMORY
 /** Max log level */
-#define MAX_LOG_MEMORY                          4096
+#define MAX_LOG_MEMORY                          4096U
 #endif /* MAX_LOG_MEMORY */
 
 #ifndef LOG_MESSAGE_ID
 /** Log id. must be unique per queue producer */
-#define LOG_MESSAGE_ID                          1
+#define LOG_MESSAGE_ID                          1U
 #endif /* LOG_MESSAGE_ID */
 
 #ifndef LOG_THREAD_STACK_SIZE
 /** Log thread stack size */
-#define LOG_THREAD_STACK_SIZE                   256
+#define LOG_THREAD_STACK_SIZE                   256U
 #endif /* LOG_THREAD_STACK_SIZE */
 
 #ifndef LOG_THREAD_PRIO
@@ -139,6 +139,9 @@
 #define LOG_FREE                                vPortFree
 #endif /* LOG_FREE */
 
+#if LOG_INCLUDE_MAX_LENGTH >= MAX_LOG_MESSAGE_LENGTH
+#error "LOG_INCLUDE_MAX_LENGTH must be lower than MAX_LOG_MESSAGE_LENGTH to ensure space for the log message"
+#endif /* LOG_INCLUDE_MAX_LENGTH check */
 /** @} */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -176,17 +179,17 @@ typedef struct
   */
 
 /**
-  * @brief  LogMessage_t structure definition
+  * @brief  Queue handle for logging messages
   */
-static QueueHandle_t xLogQueue = NULL;
+static QueueHandle_t LoggingQueue = NULL;
 
 /**
-  * @brief  LogMessage_t structure definition
+  * @brief  Output task handle
   */
 static TaskHandle_t OutputTaskHandle;
 
 /**
-  * @brief  LogMessage_t structure definition
+  * @brief  Log level strings
   */
 static const char *logLevelStrings[] =
 {
@@ -222,47 +225,47 @@ static LoggingConfig_t LoggingConfig =
 static void OutputTask(void *pvParameters);
 
 /* Functions Definition ------------------------------------------------------*/
-void *vLoggingInit(void (*LogOutput)(const char *message))
+void *vLoggingInit(void (*LogOutput_cb)(const char *message))
 {
   BaseType_t status;
   /* Default setting */
   LoggingConfig.VerboseLogLevel = LOG_DEBUG;
   LoggingConfig.allocated_log_mem = 0;
 
-  xLogQueue = NULL;
+  LoggingQueue = NULL;
 
-  if (LogOutput != NULL)
+  if (LogOutput_cb != NULL)
   {
-    LoggingConfig.log_output = LogOutput;
-    xLogQueue = xQueueCreate(MAX_LOG_QUEUE_LENGTH, sizeof(LogMessage_t *));
-    if (xLogQueue == NULL)
+    LoggingConfig.log_output = LogOutput_cb;
+    LoggingQueue = xQueueCreate(MAX_LOG_QUEUE_LENGTH, sizeof(LogMessage_t *));
+    if (LoggingQueue == NULL)
     {
-      printf("Log queue creation failed\n");
+      (void)printf("Log queue creation failed\n");
       return NULL;
     }
-    status = xTaskCreate(OutputTask, "OutputTask", LOG_THREAD_STACK_SIZE >> 2, NULL,
+    status = xTaskCreate(OutputTask, "OutputTask", LOG_THREAD_STACK_SIZE >> 2U, NULL,
                          LOG_THREAD_PRIO, &OutputTaskHandle);
     if (status != pdPASS)
     {
-      vQueueDelete(xLogQueue);
-      xLogQueue = NULL;
-      printf("Log task creation failed\n");
+      vQueueDelete(LoggingQueue);
+      LoggingQueue = NULL;
+      (void)printf("Log task creation failed\n");
       return NULL;
     }
   }
-  return xLogQueue;
+  return LoggingQueue;
 }
 
 void vLoggingSetVerbosity(uint32_t level)
 {
   if (level <= MAX_LOG_LEVEL)
   {
-    LoggingConfig.VerboseLogLevel  = level;
+    LoggingConfig.VerboseLogLevel = level;
   }
 }
 
-int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const uint32_t line_number,
-                       const char *const p_file_name, const char *const p_format, ...)
+void vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const uint32_t line_number,
+                    const char *const p_file_name, const char *const p_format, ...)
 {
   int32_t offset = 0;
   va_list args;
@@ -271,26 +274,26 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
 
   if ((log_level > LoggingConfig.VerboseLogLevel) || (log_level > MAX_LOG_LEVEL))
   {
-    return -1;  /* Filter out messages above the threshold */
+    return;  /* Filter out messages above the threshold */
   }
 
   if (LoggingConfig.allocated_log_mem > MAX_LOG_MEMORY)
   {
-    printf("Max log malloc reached\n");
-    return 0;
+    (void)printf("Max log malloc reached\n");
+    return;
   }
 
   /* Allocate memory for the log structure */
   LogMessage_t *newLog = (LogMessage_t *)LOG_MALLOC(sizeof(LogMessage_t));
   if (newLog == NULL)
   {
-    printf("Log malloc failed\n");
-    return 0;
+    (void)printf("Log malloc failed\n");
+    return;
   }
 
   va_start(args, p_format);
 
-  if (metadata_print)
+  if (metadata_print != 0U)
   {
     offset += snprintf(log_include_str, LOG_INCLUDE_MAX_LENGTH, "[%s] ", logLevelStrings[log_level]);
 
@@ -309,7 +312,7 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
 #endif /* LOG_INCLUDE_TASKNAME */
 
 #if LOG_INCLUDE_FILENAME
-    if ((offset < LOG_INCLUDE_MAX_LENGTH) && (p_file_name != NULL) && (line_number != 0))
+    if ((offset < LOG_INCLUDE_MAX_LENGTH) && (p_file_name != NULL) && (line_number != 0U))
     {
       /* Extract the filename if p_file_name contains a full path */
       char *p_file = (char *)p_file_name;
@@ -334,11 +337,11 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
 #endif /* LOG_INCLUDE_FILENAME */
   }
 
-  configASSERT(offset < LOG_INCLUDE_MAX_LENGTH)
+  configASSERT(offset < LOG_INCLUDE_MAX_LENGTH);
 
   /* Calculate the log message size */
   int32_t alloc_len = vsnprintf(dummy_str, sizeof(dummy_str), p_format, args); /*Get format length */
-  alloc_len += offset + 1; /*offset for log include string + 1 for \0 */
+  alloc_len += offset + 1U; /* offset for log include string + 1 for \0 */
 
   /* Max alloc_len is MAX_LOG_MESSAGE_LENGTH */
   if (alloc_len > MAX_LOG_MESSAGE_LENGTH)
@@ -351,33 +354,32 @@ int32_t vLoggingPrintf(uint32_t log_level, const uint8_t metadata_print, const u
   if (newLog->message == NULL)
   {
     LOG_FREE(newLog);
-    printf("Log message malloc failed\n");
+    (void)printf("Log message malloc failed\n");
     va_end(args);
-    return 0;
+    return;
   }
 
   /* Track log memory allocation */
   LoggingConfig.allocated_log_mem += alloc_len;
   newLog->message_len = alloc_len;
 
-  strncpy(newLog->message, log_include_str, offset);
+  (void)strncpy(newLog->message, log_include_str, offset + 1U);
 
-  offset += vsnprintf(newLog->message + offset, alloc_len, p_format, args);
+  offset += vsnprintf(newLog->message + offset, alloc_len - offset, p_format, args);
 
   va_end(args);
 
-  newLog->message[offset++] = '\0';
+  newLog->message[offset] = '\0';
 
   newLog->message_id = LOG_MESSAGE_ID;
 
   /* Send the log to the queue */
-  if (xQueueSendToBack(xLogQueue, &newLog, 0) != pdPASS)
+  if (xQueueSendToBack(LoggingQueue, &newLog, 0) != pdPASS)
   {
     LOG_FREE(newLog->message);
     LOG_FREE(newLog);
-    printf("Log queue full, message dropped\n");
+    (void)printf("Log queue full, message dropped\n");
   }
-  return offset;
 }
 
 void vLoggingDeInit(void)
@@ -387,10 +389,10 @@ void vLoggingDeInit(void)
     vTaskDelete(OutputTaskHandle);
   }
 
-  if (xLogQueue != NULL)
+  if (LoggingQueue != NULL)
   {
     /* Check Queue empty to clean? */
-    vQueueDelete(xLogQueue);
+    vQueueDelete(LoggingQueue);
   }
 }
 /* Private Functions Definition ----------------------------------------------*/
@@ -401,14 +403,14 @@ static void OutputTask(void *pvParameters)
   for (;;)
   {
     /* Wait for a log message from the queue */
-    if (xQueueReceive(xLogQueue, &receivedLog, portMAX_DELAY) == pdPASS)
+    if (xQueueReceive(LoggingQueue, &receivedLog, portMAX_DELAY) == pdPASS)
     {
-      if ((receivedLog) && (receivedLog->message != 0))
+      if ((receivedLog != NULL) && (receivedLog->message != NULL))
       {
         if (LoggingConfig.log_output != NULL)
         {
           LoggingConfig.log_output(receivedLog->message);
-          fflush(stdout);
+          (void)fflush(stdout);
         }
         /* Free the memory after transfer completes */
         LOG_FREE(receivedLog->message);

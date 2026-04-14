@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file    w61_driver_config.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   Header file for the W61 configuration module
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025-2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -40,7 +40,7 @@ extern "C" {
   */
 
 /** Maximum number of detected AP during the scan. Cannot be greater than 50 */
-#define W61_WIFI_MAX_DETECTED_AP                20
+#define W61_WIFI_MAX_DETECTED_AP                20U
 
 /** Enable/Disable Wi-Fi module logging */
 #define WIFI_LOG_ENABLE                         1
@@ -58,10 +58,10 @@ extern "C" {
   * - Client mode (9 connection max)
   * - Dual Mode (10 connections max with up to 9 as Client)
   */
-#define W61_BLE_MAX_CONN_NBR                    2
+#define W61_BLE_MAX_CONN_NBR                    2U
 
 /** Maximum number of detected peripheral during the scan. Cannot be greater than 50 */
-#define W61_BLE_MAX_DETECTED_PERIPHERAL         10
+#define W61_BLE_MAX_DETECTED_PERIPHERAL         10U
 
 /** Enable/Disable BLE module logging */
 #define BLE_LOG_ENABLE                          1
@@ -73,7 +73,7 @@ extern "C" {
   * ============================
   */
 /** Maximum SPI buffer size */
-#define W61_MAX_SPI_XFER                        1520
+#define W61_MAX_SPI_XFER                        1520U
 
 /** Enable/Disable System module logging */
 #define SYS_LOG_ENABLE                          1

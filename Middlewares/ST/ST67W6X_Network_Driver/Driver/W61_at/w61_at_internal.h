@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    w61_at_internal.h
-  * @author  GPM Application Team
+  * @author  ST67 Application Team
   * @brief   This file provides the internal definitions of the AT driver
   ******************************************************************************
   * @attention
